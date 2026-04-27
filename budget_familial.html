@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget Familial Pascal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --blue:#1a6fc4; --blue-light:#e8f1fb;
+  --green:#1a7a3c; --green-light:#e8f5e9; --green-mid:#c8e6c9;
+  --red:#c0392b; --red-light:#fdecea;
+  --orange:#e67e22; --orange-light:#fff3e0;
+  --purple:#7b1fa2; --purple-light:#f3e5f5;
+  --gray:#5a6472; --gray-light:#f4f5f7;
+  --border:#dde1e7; --shadow:0 2px 8px rgba(0,0,0,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:13px;background:#eef0f3;color:#2c3e50}
+
+/* ── HEADER ── */
+header{background:linear-gradient(135deg,#1a3c6e,#2980b9);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+header h1{font-size:19px;font-weight:700}
+header .sub{font-size:11px;opacity:.8;margin-top:2px}
+.header-btns{display:flex;gap:8px}
+.btn{padding:6px 13px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s}
+.btn-save{background:#27ae60;color:#fff}.btn-save:hover{background:#219a52}
+.btn-reset{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)}.btn-reset:hover{background:rgba(255,255,255,.3)}
+.btn-csv{background:#e67e22;color:#fff}.btn-csv:hover{background:#d35400}
+
+/* ── TABS ── */
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--border);padding:0 20px;gap:2px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tab{padding:11px 18px;cursor:pointer;font-size:13px;font-weight:600;color:var(--gray);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;border-radius:6px 6px 0 0}
+.tab:hover{color:var(--blue);background:var(--blue-light)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--blue-light)}
+
+/* ── LAYOUT ── */
+.container{max-width:1500px;margin:0 auto;padding:18px 20px}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── SOLDE CARDS ── */
+.soldes-grid{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.solde-card{background:#fff;border-radius:10px;padding:12px 16px;min-width:155px;box-shadow:var(--shadow);border-left:4px solid var(--blue)}
+.solde-card.computed{border-left-color:var(--green);background:var(--green-light)}
+.solde-card label{display:block;font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.solde-card input{width:100%;border:none;font-size:15px;font-weight:700;color:var(--blue);background:transparent;outline:none}
+.solde-card input:focus{border-bottom:2px solid var(--blue)}
+.solde-card .computed-val{font-size:15px;font-weight:700;color:var(--green)}
+
+/* ── SECTION CARDS ── */
+.section-card{background:#fff;border-radius:10px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.section-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;border-bottom:1px solid var(--border)}
+.section-header:hover{background:var(--gray-light)}
+.section-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
+.badge-g{background:var(--green-light);color:var(--green)}
+.badge-b{background:var(--blue-light);color:var(--blue)}
+.badge-o{background:var(--orange-light);color:var(--orange)}
+.badge-p{background:var(--purple-light);color:var(--purple)}
+.badge-r{background:var(--red-light);color:var(--red)}
+.chevron{font-size:14px;color:var(--gray);transition:transform .25s}
+.collapsed .chevron{transform:rotate(-90deg)}
+.section-body{overflow:auto}.collapsed .section-body{display:none}
+
+/* ── CHARGE TABLE ── */
+.charge-table{width:100%;border-collapse:collapse;min-width:1100px}
+.charge-table thead th{background:#f0f2f5;font-size:10px;font-weight:700;text-transform:uppercase;padding:8px 4px;text-align:center;border-bottom:2px solid var(--border);color:var(--gray);min-width:82px}
+.charge-table thead th.lbl-col{text-align:left;min-width:205px;padding-left:14px}
+.charge-table thead th.tot-col{background:#2c3e50;color:#fff !important;min-width:95px;border-left:3px solid #1a252f}
+.charge-table tbody tr:hover td{background:rgba(26,111,196,.03)}
+.charge-table tbody td{padding:3px 3px;border-bottom:1px solid #f0f2f4;text-align:center;min-width:82px;vertical-align:middle}
+.charge-table tbody td.lbl-col{text-align:left;padding-left:14px;font-weight:500;min-width:205px}
+.charge-table tbody td.tot-col{font-weight:800;background:#dde3eb;min-width:95px;font-size:13px;border-left:3px solid #b0bec5;color:#1a252f}
+/* separator row */
+.sep-row td{background:#1a3c6e;color:#fff;font-weight:700;padding:6px 14px;font-size:11px;letter-spacing:.5px}
+/* occasional row */
+.occ-row td{background:#fffde7}
+.occ-row td.lbl-col::before{content:'📌 ';font-size:10px}
+
+/* Cell with paid toggle */
+.cell-wrap{display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 0}
+.cell-amt{width:100%;border:none;background:transparent;text-align:right;font-size:12px;font-family:Arial,sans-serif;color:#2c3e50;outline:none;padding:1px 4px;border-radius:3px}
+.cell-amt:focus{background:var(--blue-light);box-shadow:0 0 0 2px var(--blue)}
+.cell-amt.neg{color:var(--red)}
+.paid-dot{font-size:9px;color:#ccc;cursor:pointer;display:block;text-align:right;padding-right:3px;user-select:none;transition:color .15s;line-height:1;margin-top:1px}
+.charge-table tbody td:hover .paid-dot{color:rgba(0,150,0,.5)}
+td.is-paid{background:var(--green-light) !important;cursor:pointer}
+td.is-paid .paid-dot{color:var(--green) !important;font-weight:700;font-size:10px}
+td.is-paid .cell-amt{color:var(--green);font-weight:600}
+.del-btn{background:none;border:none;color:#ddd;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px}
+.cal-check{display:none;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--blue)}
+.cfg-compte .cal-check-compte{display:inline-block}
+.cfg-livret .cal-check-livret{display:inline-block}
+.lbl-inner{display:flex;align-items:center;gap:5px}
+.cfg-compte .solde-card .calc-config-btn[data-type="compte"],.cfg-livret .solde-card .calc-config-btn[data-type="livret"]{background:var(--blue-light);border-radius:3px;outline:2px solid var(--blue)}
+.del-btn:hover{color:var(--red);background:var(--red-light)}
+
+/* ── VAR EXPENSE TABLE ── */
+.var-section{padding:14px 16px}
+.var-cat{margin-bottom:20px}
+.var-cat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.var-cat-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.var-total-badge{font-size:12px;font-weight:700;color:var(--blue)}
+.add-tx-btn{background:none;border:1px dashed var(--green);color:var(--green);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:600}
+.add-tx-btn:hover{background:var(--green-light)}
+.var-table{width:100%;border-collapse:collapse;font-size:12px}
+.var-table thead th{background:#f0f2f5;font-size:10px;font-weight:700;text-transform:uppercase;padding:6px 8px;text-align:left;border-bottom:2px solid var(--border);color:var(--gray)}
+.var-table tbody tr{border-bottom:1px solid #f0f2f4}
+.var-table tbody tr:hover{background:rgba(0,0,0,.02)}
+.var-table td{padding:4px 6px;vertical-align:middle}
+/* method colors */
+/* method styles now applied via inline styles */
+/* method select */
+.method-sel{border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:11px;background:#fff;cursor:pointer}
+/* method select colors applied via inline styles */
+/* month selector */
+.month-sel{border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:11px;background:#fff}
+/* inputs in var table */
+.var-input{width:100%;border:1px solid transparent;border-radius:3px;padding:3px 5px;font-size:12px;background:transparent;font-family:Arial,sans-serif}
+.var-input:focus{border-color:var(--blue);background:#fff;outline:none}
+.var-input.amt{width:80px;text-align:right}
+.var-input.date{width:110px}
+.var-input.comment{width:200px}
+/* month group header */
+.var-month-row td{background:#e8ecf2;font-weight:700;font-size:11px;color:#3a4a5c;padding:5px 8px}
+.var-subtotal td{background:#f5f7fa;font-weight:700;font-size:11px;color:var(--gray);text-align:right;padding:4px 8px}
+
+/* ── RÉSUMÉ ── */
+.summary-wrap{overflow:auto}
+.summary-table{width:100%;border-collapse:collapse;min-width:1100px}
+.summary-table thead th{background:#dce3ec;font-size:10px;font-weight:700;text-transform:uppercase;padding:8px 6px;text-align:center;border-bottom:2px solid var(--border);color:var(--gray);min-width:82px}
+.summary-table thead th.lbl-col{text-align:left;min-width:205px;padding-left:14px}
+.summary-table tbody td{padding:5px 6px;border-bottom:1px solid #eef0f3;text-align:center;min-width:82px}
+.summary-table tbody td.lbl-col{text-align:left;padding-left:24px;font-weight:500}
+.summary-table tr.yr-hdr td{background:#1a3c6e;color:#fff;font-weight:700;padding:7px 14px;font-size:12px}
+.summary-table tr.tot-row td{background:#e4e9ef;font-weight:700;font-size:12px}
+.summary-table tr.bal-row td{background:#e8f5e9;font-weight:800;font-size:13px}
+.pos{color:var(--green)}.neg{color:var(--red)}
+
+/* ── LEGEND ── */
+.legend{display:flex;gap:14px;padding:10px 16px;background:#fafbfc;border-top:1px solid var(--border);font-size:11px;align-items:center;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+/* ── ADD YEAR BUTTON ── */
+.btn-add-year{padding:7px 14px;border:2px dashed #b0c4de;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--blue);background:transparent;margin-left:8px;transition:all .2s;align-self:center}
+.btn-add-year:hover{background:var(--blue-light);border-color:var(--blue)}
+/* day input */
+.var-input.day{width:46px;text-align:center}
+
+/* ── USER SWITCHER ── */
+.user-switcher{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 12px;cursor:pointer;position:relative;user-select:none;color:#fff;font-size:12px;font-weight:600;margin-right:4px}
+.user-switcher:hover{background:rgba(255,255,255,.25)}
+.user-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.18);min-width:200px;z-index:200;overflow:hidden;border:1px solid var(--border)}
+.user-menu.open{display:block}
+.user-menu-item{padding:10px 14px;font-size:12px;font-weight:600;color:#2c3e50;cursor:pointer;display:flex;align-items:center;gap:8px;border:none;background:none;width:100%;text-align:left}
+.user-menu-item:hover{background:var(--blue-light);color:var(--blue)}
+.user-menu-sep{border:none;border-top:1px solid var(--border);margin:4px 0}
+/* ── CHARTS ── */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:4px 0 18px}
+.chart-card{background:#fff;border-radius:10px;box-shadow:var(--shadow);padding:16px 20px}
+.chart-card h4{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.chart-year-sel{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;padding-top:4px}
+.chart-year-btn{padding:5px 14px;border-radius:5px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:var(--gray);transition:all .15s}
+.chart-year-btn.active,.chart-year-btn:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* ── CONFIG ── */
+.config-grid{display:grid;grid-template-columns:360px 1fr;gap:16px}
+.config-card{background:#fff;border-radius:10px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+.config-card h3{font-size:13px;font-weight:700;margin-bottom:14px;color:#1a3c6e;border-bottom:1px solid var(--border);padding-bottom:8px}
+.user-card{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;background:var(--gray-light);margin-bottom:6px}
+.user-card-name{font-weight:600;font-size:13px;flex:1}
+.user-card-actions{display:flex;gap:4px}
+.btn-sm{padding:3px 9px;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600}
+.btn-sm-del{background:var(--red-light);color:var(--red)}.btn-sm-del:hover{background:var(--red);color:#fff}
+.btn-sm-edit{background:var(--blue-light);color:var(--blue)}.btn-sm-edit:hover{background:var(--blue);color:#fff}
+.add-user-form{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.add-user-form input[type="text"]{flex:1;min-width:110px;border:1px solid var(--border);border-radius:5px;padding:5px 9px;font-size:12px}
+/* ── DELETE MODAL ── */
+.del-modal-msg{font-size:13px;color:#2c3e50;margin-bottom:14px;line-height:1.5}
+.del-modal-backup{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--orange-light);border-radius:6px;margin-bottom:16px;font-size:12px;font-weight:600;color:#b7610a;cursor:pointer}
+.del-modal-backup input{width:15px;height:15px;cursor:pointer;accent-color:var(--orange)}
+.del-modal-btns{display:flex;gap:8px}
+.btn-del-confirm{flex:1;padding:9px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700}
+.btn-del-confirm:hover{background:#a93226}
+.btn-del-cancel{flex:1;padding:9px;background:var(--gray-light);color:var(--gray);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+/* ── REVENUE DIALOG ── */
+.rev-dialog-table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px}
+.rev-dialog-table th{background:#f0f2f5;font-size:10px;font-weight:700;text-transform:uppercase;padding:6px 10px;text-align:left;color:var(--gray);border-bottom:2px solid var(--border)}
+.rev-dialog-table td{padding:6px 10px;border-bottom:1px solid #f0f2f4}
+.rev-dialog-input{border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;width:90px;text-align:right}
+.rev-dialog-input:focus{border-color:var(--blue);outline:none;background:var(--blue-light)}
+.rev-dialog-btns{display:flex;gap:8px;justify-content:flex-end}
+.btn-rev-confirm{padding:9px 20px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700}
+.btn-rev-confirm:hover{background:#155e2e}
+.btn-rev-cancel{padding:9px 16px;background:var(--gray-light);color:var(--gray);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px}
+/* ── TAB DELETE ── */
+.tab-del{font-size:10px;margin-left:5px;opacity:0;color:#c0392b;font-weight:900;transition:opacity .15s;vertical-align:middle;line-height:1}
+.tab:hover .tab-del{opacity:.7}
+.tab-del:hover{opacity:1 !important}
+
+/* ── BACKUP MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:12px;padding:24px;min-width:360px;max-width:520px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.modal-box h3{font-size:15px;font-weight:700;margin-bottom:14px;color:#1a3c6e}
+.backup-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:6px;margin-bottom:4px;background:#f4f5f7;font-size:12px}
+.backup-item:hover{background:var(--blue-light)}
+.backup-item .bk-date{font-weight:600;color:#2c3e50}
+.backup-item .bk-restore{background:var(--blue);color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:600}
+.backup-item .bk-restore:hover{background:#145da0}
+.modal-close{margin-top:14px;width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:var(--gray)}
+.modal-close:hover{background:var(--gray-light)}
+.no-backup{color:var(--gray);font-size:12px;text-align:center;padding:16px 0}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:#27ae60;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ── WELCOME SCREEN ── */
+#welcome-screen{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;overflow:auto;background:linear-gradient(135deg,#0d1b2a 0%,#1a3c6e 55%,#2980b9 100%);transition:opacity .4s}
+.welcome-box{text-align:center;max-width:640px;width:100%;padding:50px 28px 40px}
+.welcome-logo-icon{font-size:60px;margin-bottom:10px;display:inline-block;animation:wPop .5s cubic-bezier(.34,1.56,.64,1)}
+.welcome-title{font-size:30px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:4px}
+.welcome-sub{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:38px}
+.welcome-users-grid{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:28px}
+.welcome-user-card{background:rgba(255,255,255,.09);border:2px solid rgba(255,255,255,.18);border-radius:16px;padding:22px 28px;cursor:pointer;transition:all .2s;min-width:140px;text-align:center;backdrop-filter:blur(10px)}
+.welcome-user-card:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.55);transform:translateY(-4px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.welcome-avatar{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin:0 auto 12px;box-shadow:0 4px 14px rgba(0,0,0,.4);letter-spacing:-1px}
+.welcome-user-name{font-size:14px;font-weight:700;color:#fff}
+.welcome-divider{border:none;border-top:1px solid rgba(255,255,255,.12);margin:4px 0 24px}
+.welcome-add-toggle{padding:11px 28px;border:2px dashed rgba(255,255,255,.35);border-radius:9px;background:transparent;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;letter-spacing:.2px}
+.welcome-add-toggle:hover{border-color:rgba(255,255,255,.8);color:#fff;background:rgba(255,255,255,.08)}
+.welcome-add-panel{margin-top:20px;background:rgba(255,255,255,.09);border-radius:14px;padding:22px 26px;border:1px solid rgba(255,255,255,.18);text-align:left;display:none}
+.welcome-add-panel label{font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px}
+.welcome-field{width:100%;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:10px 14px;font-size:13px;background:rgba(255,255,255,.1);color:#fff;outline:none;font-family:Arial,sans-serif;margin-bottom:14px}
+.welcome-field::placeholder{color:rgba(255,255,255,.35)}
+.welcome-field:focus{border-color:rgba(255,255,255,.65);background:rgba(255,255,255,.16)}
+.welcome-color-row{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.welcome-color-row label{margin-bottom:0;flex-shrink:0}
+.welcome-color-row input[type=color]{width:50px;height:38px;border:1px solid rgba(255,255,255,.25);border-radius:7px;cursor:pointer;background:transparent;padding:2px;flex-shrink:0}
+.welcome-create-btn{width:100%;padding:12px;background:linear-gradient(135deg,#27ae60,#1a7a3c);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;box-shadow:0 4px 14px rgba(39,174,96,.4)}
+.welcome-create-btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+@keyframes wPop{from{transform:scale(.4) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+/* ── PIN OVERLAY ── */
+.pin-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.pin-box{background:#fff;border-radius:18px;padding:34px 38px;text-align:center;max-width:300px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.pin-inputs{display:flex;gap:10px;justify-content:center;margin:20px 0 8px}
+.pin-digit{width:54px;height:66px;font-size:30px;font-weight:800;text-align:center;border:2px solid #dde;border-radius:10px;outline:none;color:#1a3c6e;background:#f7f9ff;transition:border-color .15s}
+.pin-digit:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(26,111,196,.15)}
+.pin-error{color:var(--red);font-size:12px;font-weight:600;min-height:18px;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<!-- ── PIN OVERLAY ── -->
+<div id="pin-overlay" class="pin-overlay" style="display:none" onclick="closePinOverlay(event)">
+  <div class="pin-box" onclick="event.stopPropagation()">
+    <div style="font-size:36px;margin-bottom:8px">🔒</div>
+    <div id="pin-user-name" style="font-size:16px;font-weight:800;color:#1a3c6e;margin-bottom:4px"></div>
+    <div id="pin-label" style="font-size:12px;color:#888;margin-bottom:2px">Entrez votre code PIN</div>
+    <div class="pin-inputs">
+      <input class="pin-digit" id="pin0" type="password" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinInput(0)" onkeydown="pinKey(event,0)">
+      <input class="pin-digit" id="pin1" type="password" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinInput(1)" onkeydown="pinKey(event,1)">
+      <input class="pin-digit" id="pin2" type="password" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinInput(2)" onkeydown="pinKey(event,2)">
+      <input class="pin-digit" id="pin3" type="password" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinInput(3)" onkeydown="pinKey(event,3)">
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+    <button style="background:none;border:none;color:#aaa;font-size:12px;cursor:pointer;text-decoration:underline" onclick="closePinOverlay()">Annuler</button>
+  </div>
+</div>
+
+<!-- ── WELCOME SCREEN ── -->
+<div id="welcome-screen">
+  <div class="welcome-box">
+    <div class="welcome-logo-icon">💰</div>
+    <div class="welcome-title">Mon Budget</div>
+    <div class="welcome-sub">Gestion mensuelle des revenus et dépenses</div>
+    <div class="welcome-users-grid" id="welcome-users-grid"></div>
+    <hr class="welcome-divider">
+    <button class="welcome-add-toggle" onclick="toggleWelcomeAddPanel()">＋ Créer un utilisateur</button>
+    <div class="welcome-add-panel" id="welcome-add-panel">
+      <div id="wizard-content"></div>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div>
+    <h1>💰 Mon Budget</h1>
+    <div class="sub">Gestion mensuelle des revenus et dépenses</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="user-switcher" id="user-switcher" onclick="goToWelcome()">
+      <span class="user-dot" id="user-dot" style="width:10px;height:10px;border-radius:50%;background:#1a6fc4;display:inline-block;flex-shrink:0"></span>
+      <span id="user-name-display">–</span>
+    </div>
+    <div class="header-btns">
+      <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
+      <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder</button>
+      <button class="btn btn-csv"  onclick="exportCSV()">📥 Export CSV</button>
+      <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 Backups</button>
+    </div>
+  </div>
+</header>
+
+<div id="tab-charts" class="tab-panel"></div>
+<div id="tab-config" class="tab-panel"></div>
+
+<div class="modal-overlay" id="del-confirm-modal" onclick="if(event.target===this)cancelDelete()">
+  <div class="modal-box" style="max-width:400px">
+    <h3 style="color:var(--red);margin-bottom:10px">⚠️ Confirmer la suppression</h3>
+    <p class="del-modal-msg" id="del-confirm-msg"></p>
+    <label class="del-modal-backup"><input type="checkbox" id="del-confirm-backup"> Créer une sauvegarde avant de supprimer</label>
+    <div class="del-modal-btns">
+      <button class="btn-del-cancel" onclick="cancelDelete()">Annuler</button>
+      <button class="btn-del-confirm" onclick="execDelete()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="rev-dialog-modal" onclick="if(event.target===this)cancelRevDialog()">
+  <div class="modal-box" style="max-width:560px">
+    <h3>📅 Nouvelle année <span id="rev-dialog-year-title"></span> — Revenus</h3>
+    <p style="font-size:12px;color:var(--gray);margin:6px 0 12px">Laissez vide pour conserver les montants de l'année précédente.</p>
+    <div style="overflow:auto;max-height:52vh">
+      <table class="rev-dialog-table"><thead><tr><th>Revenu</th><th>Référence (moy. mensuelle)</th><th>Nouveau montant mensuel</th></tr></thead>
+      <tbody id="rev-dialog-tbody"></tbody></table>
+    </div>
+    <div class="rev-dialog-btns">
+      <button class="btn-rev-cancel" onclick="cancelRevDialog()">Annuler</button>
+      <button class="btn-rev-confirm" onclick="confirmRevDialog()">✅ Créer l'année</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="backup-modal" onclick="if(event.target===this)closeBackups()">
+  <div class="modal-box">
+    <h3>📦 Sauvegardes mensuelles</h3>
+    <div id="backup-list"></div>
+    <button class="modal-close" onclick="closeBackups()">Fermer</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('resume',this)">📊 Résumé</div>
+  <div id="year-tabs" style="display:contents"></div>
+  <button class="btn-add-year" onclick="addYear()">＋ Année</button>
+  <div class="tab" onclick="switchTab('charts',this)">📈 Graphiques</div>
+  <div class="tab" onclick="switchTab('config',this)">⚙️ Config</div>
+</div>
+
+<div class="container" id="main-container">
+  <div id="tab-resume" class="tab-panel active">
+    <div class="section-card">
+      <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <span class="section-title">📈 Vue d'ensemble annuelle <span class="badge badge-b" id="sum-badge">–</span></span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="section-body summary-wrap"><table class="summary-table" id="summary-table"></table></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+const MONTHS = ['JAN','FÉV','MAR','AVR','MAI','JUIN','JUIL','AOÛT','SEPT','OCT','NOV','DÉC'];
+const f2 = v => (parseFloat(v)||0).toFixed(2).replace('.',',');
+const fmtN = v => { const n=parseFloat(v)||0; return n===0?'0,00':n.toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+const sum = a => a.reduce((s,x)=>s+(parseFloat(x)||0),0);
+const F12 = () => Array(12).fill(false);
+let _id = 1000;
+const T = (m,a,method='carte',date='',comment='') => ({id:_id++,month:m,amount:a,date,comment,method});
+
+// ─────────────────────────────────────────────
+// DEFAULT DATA
+// ─────────────────────────────────────────────
+function buildDefaults() {
+const D = {
+  '2025': {
+    soldes: {compteIng:2458.40, comptePro:263.38, livretInitial:9064.87, boite:1245},
+    revenus: [
+      {label:'05 Chèque repas',      v:[64,160,160,200,144,176,144,136,176,160,112,152]},
+      {label:'06 Salaire',            v:[2001.43,2878.84,2525.12,2934.47,2507.82,2660.43,2743.88,2232.10,2102.10,2487.79,2523.39,2700.37]},
+      {label:'07 Prime ancienneté',   v:[0,0,0,1300,0,0,0,0,1500,0,0,0]},
+      {label:'08 Congé payé',         v:[0,0,0,0,6016.26,0,0,0,0,0,0,0]},
+      {label:"19 Prime fin d'année",  v:[0,0,0,0,0,0,0,0,0,0,0,1914.57]},
+      {label:'Vente moto (reste)',    v:[0,0,16250,0,0,0,0,0,0,0,0,0]},
+      {label:'Remboursement Christine',v:[0,0,-12200,0,0,0,0,0,0,0,0,0]},
+      {label:'Assurance dégat eau',   v:[0,0,0,0,0,0,10730.80,0,0,0,0,0]},
+      {label:'Versement moins livret/visa',v:[0,0,0,0,0,0,-10030,0,0,0,0,0]},
+      {label:'Remb. auto/moto solde', v:[0,0,-16881.75,0,0,0,0,0,0,0,0,0]},
+      {label:'Avance moto Christine', v:[0,0,12200,0,0,0,0,0,0,0,0,0]},
+    ],
+    charges: [
+      // ── CHARGES FIXES ──
+      {label:'01 Logement',               cat:'fixed', v:[972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63], paid:F12()},
+      {label:'02 Assurance SRD emprunt',  cat:'fixed', v:[87.08,87.08,87.08,87.08,87.08,87.08,87.08,87.08,87.08,87.08,87.08,87.08],           paid:F12()},
+      {label:'03 Geonative',              cat:'fixed', v:[14.4,14.4,14.4,14.4,14.4,14.4,14.4,14.4,14.4,14.4,14.4,14.4],                       paid:F12()},
+      {label:'05 CGSLB',                  cat:'fixed', v:[19.8,19.8,19.8,19.8,19.8,19.8,19.8,19.8,19.8,19.8,19.8,19.8],                       paid:F12()},
+      {label:'07 Voo',                    cat:'fixed', v:[52.76,52.76,52.76,52.76,52.76,52.76,52.76,52.76,52.76,52.76,52.76,52.76],             paid:F12()},
+      {label:'07 Taxe poubelle',          cat:'fixed', v:[0,0,0,0,0,0,117.74,0,0,0,0,0],                                                       paid:F12()},
+      {label:'10 Livret ordre permanent', cat:'livret_in', v:[0,0,0,300,300,300,300,300.12,300,300,300,300],                                    paid:F12()},
+      {label:'10 Versement compte→Livret',cat:'livret_in', v:[0,0,0,0,5000,0,9000,0,0,0,0,0],                                                  paid:F12()},
+      {label:'11 Retrait Livret→compte',  cat:'livret_out',v:[0,0,0,0,0,-300,-200,-300,-4500,-1200,-1200,0],                                   paid:F12()},
+      {label:'11 Eau',                    cat:'fixed', v:[14.63,18.10,18.10,104.14,0,23.05,23.05,23.05,23.05,23.05,23.05,23.05],               paid:F12()},
+      {label:'11 Épargne pension',        cat:'fixed', v:[62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5],                       paid:F12()},
+      {label:'11 Protection juridique',   cat:'fixed', v:[0,0,0,0,0,0,0,174.25,0,0,0,0],                                                       paid:F12()},
+      {label:'11 Mazout',                 cat:'fixed', v:[80,80,80,80,80,80,60,60,60,60,60,60],                                                 paid:F12()},
+      {label:'12 Assurance maison',       cat:'fixed', v:[0,0,333.49,0,0,333.49,0,0,333.49,0,0,337.89],                                        paid:F12()},
+      {label:'12 Assurance RC entreprise',cat:'fixed', v:[42.47,0,0,0,0,0,0,0,0,0,0,0],                                                        paid:F12()},
+      {label:'14 Assurance familiale',    cat:'fixed', v:[75,0,0,0,0,0,0,0,0,0,0,0],                                                           paid:F12()},
+      {label:'15 Mutuelle',               cat:'fixed', v:[0,45,0,45,0,0,45,0,45,0,0,0],                                                        paid:F12()},
+      {label:'17 AG Familis',             cat:'fixed', v:[0,0,0,0,0,22.05,0,0,136.89,38.07,0,181.78],                                          paid:F12()},
+      {label:'16 Proximus',               cat:'fixed', v:[31.97,33.35,36.80,32.81,30.22,30.49,30.68,31.22,29.99,29.99,29.99,29.99],            paid:F12()},
+      {label:'18 Basic Fit',              cat:'fixed', v:[0,0,0,0,0,0,0,29.99,29.99,29.99,29.99,29.99],                                        paid:F12()},
+      {label:'21 Engie',                  cat:'fixed', v:[100,100,100,68.47,67.95,67.95,67.95,67.95,75,75,75,75],                              paid:F12()},
+      {label:'26 Assurance auto',         cat:'fixed', v:[0,0,0,0,0,0,0,0,0,0,0,0],                                                            paid:F12()},
+      {label:'26 Cadastre',               cat:'fixed', v:[0,0,0,0,0,0,0,0,1035.79,0,0,0],                                                      paid:F12()},
+      {label:'29 Taxe voiture',           cat:'fixed', v:[295.02,0,0,0,0,0,0,0,0,354,0,0],                                                     paid:F12()},
+      {label:'Taxe moto',                 cat:'fixed', v:[0,0,0,0,0,71.54,0,0,0,0,0,0],                                                        paid:F12()},
+      // ── CHARGES OCCASIONNELLES ──
+      {label:'02 Visa + Spotify',         cat:'occasional', v:[136.40,124.16,113.03,102.78,96.57,97.96,1138,17.60,0,11.99,25.52,25],           paid:F12()},
+      {label:'10 Contribution',           cat:'occasional', v:[0,326,326,2585.39,0,0,0,0,0,0,0,0],                                             paid:F12()},
+      {label:'15 Assurance prêt voiture', cat:'occasional', v:[0,0,0,0,0,0,0,0,0,8.64,8.64,8.64],                                             paid:F12()},
+      {label:'22 Prêt voiture',           cat:'occasional', v:[235.04,235.04,235.04,2096.36,0,0,0,0,0,208.39,208.39,208.39],                   paid:F12()},
+      {label:'23 Location moto',          cat:'occasional', v:[207.48,207.48,207.48,0,0,0,0,0,0,0,0,0],                                        paid:F12()},
+      {label:'24 Solde résiduel moto',    cat:'occasional', v:[0,0,12200,0,0,0,0,0,0,0,0,0],                                                   paid:F12()},
+    ],
+    vars: {
+      carburant: [
+        T(0,79.72),T(0,61.88),T(0,74.86),T(0,77.54),
+        T(1,78.18),T(1,28),
+        T(2,77.76),T(2,78.03),T(2,75.79),
+        T(3,82.56),T(3,77.86),T(3,72.05),T(3,77.42),T(3,30.85),T(3,71.42),
+        T(4,77.79),T(4,50.01),T(4,54.65),T(4,71.24),T(4,75.81),
+        T(5,78.07),T(5,79.15),
+        T(6,75.93),T(6,60.15),T(6,74.07),T(6,64.66),T(6,65.12),
+        T(7,71.58),T(7,67.21),T(7,72.28),T(7,35.08),T(7,40.01),T(7,40.03),
+        T(8,35.87),T(8,39.87),T(8,81.71),
+        T(9,82.25),T(9,92.44),T(9,56.33),T(9,89.92),
+        T(10,97.95),T(10,92.94),
+        T(11,98.17),T(11,71.6),
+      ],
+      courses: [
+        T(0,76.24),T(0,6.7),T(0,20.84),T(0,2.38),T(0,11.38),T(0,64.23),T(0,7.92),T(0,39.94),
+        T(1,44.51),T(1,13.2),T(1,18.43),T(1,35.83),T(1,4.28),T(1,43.96),T(1,3.97),T(1,27.65),T(1,35.32),T(1,14.3),T(1,6.57),
+        T(2,4.5),T(2,3.75),T(2,20.03),T(2,55.1),T(2,36.98),T(2,7.83),T(2,100.7),T(2,5.78),T(2,31.96),T(2,32),T(2,10.56),T(2,33.55),T(2,8.17),T(2,46.28),T(2,22.74),
+        T(3,31.07),T(3,34.42),T(3,14.97),T(3,33.56),T(3,4.99),T(3,3.5),T(3,16.34),T(3,16.79),T(3,64.88),T(3,5),T(3,12.71),T(3,49),T(3,15),
+        T(4,5.99),T(4,34.17),T(4,36.92),T(4,6.47),T(4,34.68),T(4,19.35),T(4,7.49),T(4,16.37),T(4,16.14),
+        T(5,6.1),T(5,7.85),T(5,32.7),T(5,26.5),T(5,26.7),T(5,29.16),T(5,7.3),T(5,43.81),T(5,38.61),T(5,33.39),T(5,13.68),T(5,42.44),T(5,81.05),T(5,8.95),
+        T(6,44.38),T(6,62.67),T(6,3.06),T(6,6),T(6,18),T(6,19.74),T(6,6.99),T(6,160.46),T(6,112),T(6,8.95),T(6,7.5),T(6,31),T(6,16.32),T(6,16.03),
+        T(7,13.5),T(7,13.25),T(7,37.08),T(7,0.69),T(7,18.34),T(7,3.2),T(7,4.53),T(7,60),T(7,8.5),T(7,8.3),T(7,61.03),T(7,40.2),
+        T(8,7.6),T(8,47.55),T(8,14.88),T(8,52.47),T(8,5.29),T(8,21.82),T(8,21.42),T(8,16.9),T(8,7.7),T(8,6),T(8,24),T(8,41.75),T(8,109.18),
+        T(9,100.22),T(9,31),T(9,11.67),T(9,4.99),T(9,76.39),T(9,6.25),T(9,5.85),T(9,54.27),T(9,18.51),T(9,19.51),T(9,37.94),T(9,94.69),
+        T(10,11.78),T(10,14.41),T(10,39.48),T(10,79.41),T(10,1.89),T(10,52.68),T(10,35.76),T(10,19.84),T(10,48.44),T(10,3.8),T(10,78.65),
+        T(11,87.86),T(11,86.72),T(11,13.22),T(11,26.96),T(11,1),T(11,4.64),T(11,15.43),T(11,32.42),T(11,32.97),T(11,28.8),T(11,5.7),
+      ],
+      divers: [
+        T(0,4),T(0,9.45),T(0,11.1),T(0,23),T(0,10.5),T(0,30),T(0,7),T(0,15),T(0,65.33),T(0,17.5),T(0,23),
+        T(1,4.5),T(1,17.5),T(1,16),T(1,20),T(1,18.4),T(1,39.2),T(1,35),T(1,30),T(1,15.5),T(1,36),T(1,23),T(1,36),T(1,17.9),T(1,36),T(1,4.99),
+        T(2,18),T(2,15.9),T(2,17.5),T(2,4.5),T(2,20),T(2,36),T(2,14.97),T(2,27.47),T(2,23),T(2,36),T(2,90),T(2,2),T(2,160),T(2,-50),T(2,20),T(2,12.99),T(2,36),T(2,5.8),T(2,5.98),T(2,70),
+        T(3,4.5),T(3,23),T(3,59.75),T(3,11.1),T(3,28.4),T(3,60),T(3,17.45),T(3,18),T(3,1.99),T(3,48.98),T(3,18),T(3,17.39),T(3,24),T(3,18),T(3,18),T(3,50),T(3,15.9),T(3,25.65),T(3,23),T(3,199),T(3,12),T(3,18),T(3,22.5),T(3,17.2),
+        T(4,4.5),T(4,26.81),T(4,40),T(4,9.89),T(4,4),T(4,18),T(4,11.48),T(4,9),T(4,46),T(4,140),T(4,16),T(4,63.42),T(4,36.37),T(4,280.99),T(4,30),T(4,24.99),T(4,9.5),T(4,60),T(4,24.99),T(4,18.5),T(4,23),T(4,6.5),T(4,63.42),T(4,28.9),T(4,14.95),T(4,25),T(4,548),
+        T(5,4.5),T(5,11),T(5,14.99),T(5,68.95),T(5,23),T(5,7.3),T(5,37),T(5,377.5),T(5,28),T(5,24.6),T(5,15.5),T(5,7.85),T(5,20),T(5,73.5),T(5,6.36),T(5,31),T(5,10.95),T(5,9.9),T(5,22.6),T(5,23),T(5,97.77),T(5,4),T(5,18),
+        T(6,4.5),T(6,20.5),T(6,2),T(6,21.1),T(6,18),T(6,14),T(6,17.85),T(6,20),T(6,30),T(6,15.5),T(6,118.24),T(6,12),T(6,8),T(6,16.5),T(6,320.26),T(6,33.25),T(6,22.3),T(6,19.9),T(6,85.49),T(6,15.5),T(6,30),T(6,23),T(6,18),T(6,69),T(6,18),T(6,7),T(6,50),T(6,15.6),T(6,19.5),T(6,18),T(6,11),T(6,161.39),T(6,49.7),
+        T(7,4.5),T(7,8.2),T(7,68.31),T(7,18.5),T(7,23),T(7,4.5),T(7,5),T(7,27),T(7,19),T(7,10.6),T(7,30),T(7,15),T(7,25.55),T(7,21.4),T(7,45.07),T(7,100),T(7,8.8),T(7,12),T(7,20),
+        T(8,4.5),T(8,23.75),T(8,15.86),T(8,69.9),T(8,32.9),T(8,17.41),T(8,6),T(8,7.29),T(8,43.8),T(8,23),T(8,60),T(8,30.5),T(8,22.17),T(8,31),T(8,26),T(8,155),T(8,98.1),
+        T(9,4.5),T(9,31),T(9,9.45),T(9,30.5),T(9,9.95),T(9,15.5),T(9,9.1),T(9,19.6),T(9,13),T(9,8.6),T(9,130),T(9,28.7),T(9,18),T(9,15.5),T(9,48.26),T(9,101),T(9,12),T(9,23.2),
+        T(10,4.5),T(10,27.2),T(10,40),T(10,23),T(10,17.4),T(10,4),T(10,30),T(10,21),T(10,15.5),T(10,68.51),T(10,37.9),T(10,15.5),T(10,14.36),T(10,31.1),T(10,83.49),T(10,25),T(10,194.81),T(10,15.5),T(10,23),T(10,46.46),T(10,15.5),T(10,46.46),T(10,68.95),T(10,45),T(10,5.97),T(10,4.95),T(10,12.5),
+        T(11,4.5),T(11,14),T(11,14.7),T(11,15.5),T(11,4.74),T(11,28),T(11,26.1),T(11,15.5),T(11,15.5),T(11,20),T(11,28),T(11,110),T(11,6),T(11,23),T(11,15.5),T(11,25),T(11,40),T(11,5),T(11,23),T(11,15.5),T(11,100),T(11,15.5),T(11,36.72),T(11,241.88),T(11,60),T(11,23),T(11,27),T(11,24.11),T(11,13.22),T(11,9),
+      ],
+      chien: [
+        T(7,113.05),T(7,100),T(7,82.39),T(7,75.36),T(7,13.89),
+        T(8,79.82),T(8,31.2),T(8,400),T(8,61.64),T(8,33.7),T(8,3.9),T(8,72.55),T(8,26.53),T(8,34.41),
+        T(9,45),T(9,41.27),T(9,11.95),T(9,119),T(9,10.85),T(9,12.99),T(9,28.84),T(9,135.25),
+        T(10,11.13),T(10,103.97),T(10,6.25),T(10,6.95),
+        T(11,20),T(11,20),T(11,3.8),T(11,23.75),T(11,3.99),T(11,9),T(11,55),T(11,50.76),
+      ],
+    },
+  },
+  '2026': {
+    soldes: {compteIng:1701.85, comptePro:32.41, livretInitial:6269.96, boite:0},
+    revenus: [
+      {label:'04 Remb. syndicat',       v:[0,0,0,0,0,0,0,0,0,0,145,0]},
+      {label:'05 Chèque repas',          v:[40,230,200,220,200,200,200,200,200,200,200,200]},
+      {label:'06 Salaire',               v:[1566.20,2868.07,2582.64,2811.91,2500,2500,2500,2500,2500,2500,2500,2500]},
+      {label:'07 Prime ancienneté',      v:[0,0,0,0,0,0,0,0,1500,0,0,0]},
+      {label:'08 Congé payé',            v:[0,0,0,0,6218.02,0,0,0,0,0,0,0]},
+      {label:"19 Prime fin d'année",     v:[0,0,0,0,0,0,0,0,0,0,0,1856]},
+      {label:'26 CCT90',                 v:[0,366.41,0,0,0,0,0,0,0,0,0,0]},
+    ],
+    charges: [
+      {label:'01 Logement',               cat:'fixed',    v:[972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63,972.63], paid:F12()},
+      {label:'02 Assurance SRD emprunt',  cat:'fixed',    v:[90.84,90.84,90.84,90.84,90.84,90.84,90.84,90.84,90.84,90.84,90.84,90.84],             paid:F12()},
+      {label:'03 Geonative',              cat:'fixed',    v:[14.4,0,0,0,0,0,0,0,0,0,0,0],                                                           paid:F12()},
+      {label:'05 CGSLB',                  cat:'fixed',    v:[20.2,20.2,20.2,20.2,20.2,20.2,20.2,20.2,20.2,20.2,20.2,20.2],                         paid:F12()},
+      {label:'07 Voo',                    cat:'fixed',    v:[56.39,56.39,56.39,56.39,56.39,56.39,56.39,56.39,56.39,56.39,56.39,56.39],               paid:F12()},
+      {label:'07 Taxe poubelle',          cat:'fixed',    v:[0,0,0,0,0,0,117.74,0,0,0,0,0],                                                         paid:F12()},
+      {label:'10 Livret ordre permanent', cat:'livret_in',v:[300,300,300,300,300,300,300,300,300,300,300,300],                                        paid:F12()},
+      {label:'10 Versement compte→Livret',cat:'livret_in',v:[0,0,0,0,0,0,0,0,0,0,0,0],                                                              paid:F12()},
+      {label:'11 Retrait Livret→compte',  cat:'livret_out',v:[-1994.91,-2000,0,0,0,0,0,0,0,0,0,0],                                                  paid:F12()},
+      {label:'11 Eau',                    cat:'fixed',    v:[23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93],               paid:F12()},
+      {label:'11 Épargne pension',        cat:'fixed',    v:[62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5],                         paid:F12()},
+      {label:'11 Protection juridique',   cat:'fixed',    v:[0,0,0,0,0,0,0,174.25,0,0,0,0],                                                         paid:F12()},
+      {label:'11 Mazout',                 cat:'fixed',    v:[60,60,60,60,60,60,60,60,60,60,60,60],                                                   paid:F12()},
+      {label:'12 Assurance maison',       cat:'fixed',    v:[0,0,337.89,0,0,337.89,0,0,337.89,0,0,337.89],                                          paid:F12()},
+      {label:'14 Assurance familiale',    cat:'fixed',    v:[75,0,0,0,0,0,0,0,0,0,0,0],                                                             paid:F12()},
+      {label:'15 Mutuelle',               cat:'fixed',    v:[45,0,0,45,0,0,45,0,0,45,0,0],                                                          paid:F12()},
+      {label:'17 AG Familis',             cat:'fixed',    v:[0,0,181.78,0,0,181.78,0,0,181.78,0,0,181.78],                                          paid:F12()},
+      {label:'16 Proximus',               cat:'fixed',    v:[33.53,30.64,29.99,29.99,29.99,29.99,29.99,29.99,29.99,29.99,29.99,29.99],               paid:F12()},
+      {label:'18 Basic Fit',              cat:'fixed',    v:[29.99,29.99,59.98,29.99,29.99,29.99,29.99,29.99,29.99,29.99,29.99,29.99],               paid:F12()},
+      {label:'21 Engie',                  cat:'fixed',    v:[63.68,63.68,63.68,63.68,63.68,63.68,63.68,63.68,63.68,63.68,63.68,63.68],               paid:F12()},
+      {label:'26 Assurance auto',         cat:'fixed',    v:[0,136.75,0,0,136.75,0,0,136.75,0,0,136.75,0],                                          paid:F12()},
+      {label:'26 Cadastre',               cat:'fixed',    v:[0,0,0,0,0,0,0,0,1003.88,0,0,0],                                                        paid:F12()},
+      {label:'29 Taxe voiture',           cat:'fixed',    v:[0,0,0,0,0,0,0,0,0,354,0,0],                                                            paid:F12()},
+      // Occasionnelles
+      {label:'02 Visa',                   cat:'occasional',v:[25,25,82.49,85.67,0,0,0,0,0,0,0,0],                                                   paid:F12()},
+      {label:'10 Contribution',           cat:'occasional',v:[0,0,0,0,0,0,0,0,0,0,0,0],                                                             paid:F12()},
+      {label:'15 Assurance prêt voiture', cat:'occasional',v:[8.64,8.64,8.64,8.64,8.64,8.64,8.64,8.64,8.64,8.64,8.64,8.64],                        paid:F12()},
+      {label:'22 Prêt voiture Tucson',    cat:'occasional',v:[208.39,208.39,208.39,208.39,208.39,208.39,208.39,208.39,208.39,208.39,208.39,208.39],  paid:F12()},
+    ],
+    vars: {
+      carburant: [
+        T(0,92.56),T(0,89.09),T(0,81.12),
+        T(1,87.49),T(1,98.1),
+        T(2,94.29),T(2,113.88),T(2,109.44),
+        T(3,89.38),
+      ],
+      courses: [
+        T(0,35.76),T(0,107.85),T(0,4,'repas'),T(0,2.98,'repas'),T(0,63.88),T(0,28.22,'repas'),T(0,40),T(0,19.88),T(0,16.3),T(0,6.84),T(0,40.39),T(0,4.8,'repas'),
+        T(1,4.95),T(1,9.7),T(1,118.94),T(1,23.43),T(1,16.78),T(1,28.45),T(1,40.81),T(1,68.41),T(1,17.11,'repas'),T(1,1.19,'repas'),T(1,6.5),T(1,2.09),T(1,38.62,'repas'),T(1,9.99),T(1,24.8,'repas'),T(1,7.9,'repas'),T(1,25.2),T(1,10.35),T(1,14.2,'repas'),T(1,5,'repas'),T(1,16.43,'repas'),
+        T(2,23,'repas'),T(2,23.04,'repas'),T(2,22.09,'repas'),T(2,3.03,'repas'),T(2,66.89,'repas'),T(2,1.49),T(2,53.77,'repas'),T(2,40.75),T(2,100,'repas'),T(2,5.98),T(2,56.49),T(2,26.08),T(2,70.66),T(2,94.96),T(2,40,'liquide'),T(2,54.73),
+        T(3,3.6),T(3,2.85),T(3,20.5,'repas'),T(3,4.75,'repas'),T(3,7.61,'repas'),T(3,3.99),T(3,94.1,'repas'),T(3,6.2,'repas'),
+      ],
+      divers: [
+        T(0,9.99),T(0,199.28),T(0,-177.28),T(0,10.95),T(0,1.49),T(0,7.79),T(0,27),T(0,12.35),T(0,12),T(0,268.1),T(0,-238.6),T(0,4.8,'repas'),T(0,21.2),T(0,40.32),T(0,46.7),T(0,66.46),T(0,35.05),T(0,149.13),T(0,75),T(0,-38.45),T(0,735.99),T(0,-582.99),T(0,23),T(0,15.5),T(0,2.49),T(0,22.4),T(0,43.19),
+        T(1,4.5),T(1,18),T(1,1347),T(1,11.2),T(1,175),T(1,31),T(1,71.26),T(1,504.73),T(1,464.42),T(1,11.5),T(1,18),T(1,23),T(1,29.99),T(1,15.5),T(1,36),T(1,6.53),T(1,38),T(1,14.5),T(1,6.5),T(1,10.59,'repas'),
+        T(2,4.5),T(2,25),T(2,16.5),T(2,23),T(2,21.2),T(2,29),T(2,22),T(2,20),T(2,60),T(2,16.5),T(2,12),T(2,20),T(2,6.5),T(2,10),T(2,10),T(2,7),T(2,23),T(2,20.1),T(2,54.73),T(2,14.5),T(2,6.5),T(2,6),
+        T(3,4.5),T(3,10),T(3,29),T(3,10),T(3,31.95),T(3,22),T(3,90,'liquide'),
+      ],
+      chien: [
+        T(0,141.11),T(0,68.57),T(0,61.8),
+        T(1,99.71),T(1,21),T(1,15.44),
+        T(2,138.53),T(2,61.72),
+        T(3,10.84),
+      ],
+    },
+  },
+};
+// Auto-set paid=true for zero-value charges
+['2025','2026'].forEach(y => D[y].charges.forEach(r => r.v.forEach((v,i) => { if ((parseFloat(v)||0)===0) r.paid[i]=true; })));
+D.methods = [
+  {key:'carte',  label:'Carte bancaire', color:'#90caf9', bg:'#f0f7ff'},
+  {key:'liquide',label:'Liquide',        color:'#9c27b0', bg:'#ede7f6'},
+  {key:'repas',  label:'Chèque repas',   color:'#ef6c00', bg:'#fff3e0'},
+];
+return D;
+}
+
+const DEFAULT_METHODS = [
+  {key:'carte',  label:'Carte bancaire', color:'#90caf9', bg:'#f0f7ff'},
+  {key:'liquide',label:'Liquide',        color:'#9c27b0', bg:'#ede7f6'},
+  {key:'repas',  label:'Chèque repas',   color:'#ef6c00', bg:'#fff3e0'},
+];
+function getMethods()        { return (DATA && DATA.methods && DATA.methods.length) ? DATA.methods : DEFAULT_METHODS; }
+function getMethodObj(key)   { return getMethods().find(m=>m.key===key) || {key,label:key,color:'#b0bec5',bg:'#f5f5f5'}; }
+function getYears()          { return Object.keys(DATA||{}).filter(k=>/^\d{4}$/.test(k)).sort(); }
+
+function loadUserConfig()    { try { return JSON.parse(localStorage.getItem(`budget_cfg_${CURRENT_USER_ID}`) || '{}'); } catch(e) { return {}; } }
+function saveUserConfig(cfg) { localStorage.setItem(`budget_cfg_${CURRENT_USER_ID}`, JSON.stringify(cfg)); }
+
+function buildDefaultsForNewUser() {
+  const cfg = loadUserConfig();
+  const year = String(new Date().getFullYear());
+  const F12b = () => Array(12).fill(false);
+  const mkRevPaid = v => v.map(x => (parseFloat(x)||0) === 0);
+  const revenus = cfg.tplRevs?.length ?
+    cfg.tplRevs.map(r => { const v=Array(12).fill(parseFloat(r.amount)||0); return {label:r.label, v, paid:mkRevPaid(v), inCalc:true}; }) :
+    [{label:'💼 Salaire', v:Array(12).fill(2000), paid:Array(12).fill(false), inCalc:true}, {label:'🎁 Autres revenus', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true}];
+  const charges = cfg.tplChgs?.length ?
+    cfg.tplChgs.map(c => ({label:c.label, cat:c.cat||'fixed', v:Array(12).fill(parseFloat(c.amount)||0), paid:F12b()})) :
+    [
+      {label:'🏠 Loyer / Remboursement',       cat:'fixed', v:Array(12).fill(800), paid:F12b()},
+      {label:'🔌 Énergie (eau, élec, gaz)',     cat:'fixed', v:Array(12).fill(100), paid:F12b()},
+      {label:'📱 Abonnements (tel, internet)', cat:'fixed', v:Array(12).fill(60),  paid:F12b()},
+      {label:'🚗 Transport / Carburant',        cat:'fixed', v:Array(12).fill(80),  paid:F12b()},
+      {label:'🛡 Assurances',                  cat:'fixed', v:Array(12).fill(50),  paid:F12b()},
+    ];
+  // Livret lines always present for the livret button to work
+  if (!charges.some(c => c.cat === 'livret_in' || c.cat === 'livret_out')) {
+    charges.push({label:'📈 Livret — virement mensuel',       cat:'livret_in',  v:Array(12).fill(0), paid:F12b()});
+    charges.push({label:'📈 Livret — versement exceptionnel', cat:'livret_in',  v:Array(12).fill(0), paid:F12b()});
+    charges.push({label:'📉 Livret — retrait vers compte',    cat:'livret_out', v:Array(12).fill(0), paid:F12b()});
+  }
+  const d = { methods: [...DEFAULT_METHODS] };
+  d[year] = { soldes:{compteIng:0,comptePro:0,livretInitial:0,boite:0}, revenus, charges, vars:{carburant:[],courses:[],divers:[],chien:[]} };
+  Object.keys(d).filter(k=>/^\d{4}$/.test(k)).forEach(y =>
+    d[y].charges.forEach(r => r.v.forEach((v,i) => { if((parseFloat(v)||0)===0) r.paid[i]=true; })));
+  return d;
+}
+
+// ─────────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────────
+let USERS = {};
+let CURRENT_USER_ID = '';
+
+function initUsers() {
+  try { USERS = JSON.parse(localStorage.getItem('budget_users') || '{}'); } catch(e) { USERS = {}; }
+  if (!Object.keys(USERS).length) {
+    USERS['pascal'] = { name: 'Pascal', color: '#1a6fc4', admin: true };
+    saveUsers();
+  }
+  // Ensure at least one admin
+  if (!Object.values(USERS).some(u => u.admin)) {
+    USERS[Object.keys(USERS)[0]].admin = true;
+    saveUsers();
+  }
+  renderWelcomeScreen();
+}
+function renderWelcomeScreen() {
+  const grid = document.getElementById('welcome-users-grid');
+  if (!grid) return;
+  grid.innerHTML = Object.entries(USERS).map(([id,u]) => {
+    const initials = u.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="welcome-user-card" onclick="selectUserFromWelcome('${id}')">
+      <div class="welcome-avatar" style="background:${u.color}">${initials}</div>
+      <div class="welcome-user-name">${u.name}</div>
+    </div>`;
+  }).join('');
+}
+let _pinTarget = null, _pinMode = 'login', _pinFirst = null;
+function selectUserFromWelcome(id) {
+  if (!USERS[id]) return;
+  if (USERS[id].pin) { showPinOverlay(id, 'login'); } else { doLogin(id); }
+}
+function showPinOverlay(id, mode) {
+  _pinTarget = id; _pinMode = mode; _pinFirst = null;
+  document.getElementById('pin-user-name').textContent = USERS[id]?.name || '';
+  document.getElementById('pin-label').textContent = mode === 'set' ? 'Définir un code PIN (4 chiffres)' : 'Entrez votre code PIN';
+  document.getElementById('pin-error').textContent = '';
+  [0,1,2,3].forEach(i => document.getElementById('pin'+i).value = '');
+  document.getElementById('pin-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('pin0').focus(), 80);
+}
+function closePinOverlay(e) {
+  if (e && e.target !== document.getElementById('pin-overlay')) return;
+  document.getElementById('pin-overlay').style.display = 'none';
+  _pinTarget = null;
+}
+function pinInput(idx) {
+  const el = document.getElementById('pin'+idx);
+  el.value = el.value.replace(/\D/g,'').slice(-1);
+  document.getElementById('pin-error').textContent = '';
+  if (el.value && idx < 3) document.getElementById('pin'+(idx+1)).focus();
+  if (idx === 3 && el.value) setTimeout(submitPin, 80);
+}
+function pinKey(e, idx) {
+  if (e.key === 'Backspace' && !document.getElementById('pin'+idx).value && idx > 0)
+    document.getElementById('pin'+(idx-1)).focus();
+  if (e.key === 'Enter') submitPin();
+}
+function submitPin() {
+  const entered = [0,1,2,3].map(i => document.getElementById('pin'+i).value).join('');
+  if (entered.length < 4) return;
+  if (_pinMode === 'login') {
+    if (entered === USERS[_pinTarget].pin) {
+      document.getElementById('pin-overlay').style.display = 'none';
+      doLogin(_pinTarget);
+    } else {
+      document.getElementById('pin-error').textContent = '❌ Code incorrect';
+      [0,1,2,3].forEach(i => document.getElementById('pin'+i).value = '');
+      document.getElementById('pin0').focus();
+    }
+  } else if (_pinMode === 'set') {
+    if (!_pinFirst) {
+      _pinFirst = entered;
+      document.getElementById('pin-label').textContent = 'Confirmez le code PIN';
+      document.getElementById('pin-error').textContent = '';
+      [0,1,2,3].forEach(i => document.getElementById('pin'+i).value = '');
+      document.getElementById('pin0').focus();
+    } else {
+      if (entered === _pinFirst) {
+        USERS[_pinTarget].pin = entered;
+        saveUsers();
+        document.getElementById('pin-overlay').style.display = 'none';
+        renderConfigTab();
+        showToast('🔒 Code PIN défini');
+      } else {
+        document.getElementById('pin-error').textContent = '❌ Les codes ne correspondent pas';
+        _pinFirst = null;
+        document.getElementById('pin-label').textContent = 'Définir un code PIN (4 chiffres)';
+        [0,1,2,3].forEach(i => document.getElementById('pin'+i).value = '');
+        document.getElementById('pin0').focus();
+      }
+    }
+  }
+}
+function doLogin(id) {
+  CURRENT_USER_ID = id;
+  localStorage.setItem('budget_current_user', id);
+  loadData();
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  updateUserDisplay(); renderTabs();
+  getYears().forEach(y => renderYear(y));
+  renderSummary();
+  const ws = document.getElementById('welcome-screen');
+  if (ws) { ws.style.opacity='0'; setTimeout(()=>{ ws.style.display='none'; ws.style.opacity=''; },400); }
+  const years = getYears();
+  const lastYear = years[years.length - 1];
+  if (lastYear) setTimeout(() => {
+    const tabs = document.querySelectorAll('#year-tabs .tab');
+    const tab = tabs[tabs.length - 1];
+    if (tab) switchTab('y'+lastYear, tab);
+  }, 50);
+  // Cloud sync: pull latest data after local render
+  const cfg = getCloudCfg();
+  if (cfg.dbUrl && cfg.code) {
+    setCloudStatus('syncing');
+    cloudPull(id).then(cloudData => {
+      if (!cloudData) { setCloudStatus('error'); return; }
+      DATA = cloudData;
+      if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+      document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+      renderTabs();
+      getYears().forEach(y => renderYear(y));
+      renderSummary();
+      const ly = getYears().slice(-1)[0];
+      if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
+      setCloudStatus('ok');
+    });
+  } else { setCloudStatus('off'); }
+}
+// ── EXCEL IMPORT DATA ──
+const EXCEL_IMPORT_DATA = {"2025":{"carburant":[{"id":10000,"month":0,"amount":79.72,"date":2,"comment":"","method":"carte"},{"id":10001,"month":0,"amount":78.18,"date":11,"comment":"","method":"carte"},{"id":10002,"month":1,"amount":77.76,"date":1,"comment":"","method":"carte"},{"id":10003,"month":1,"amount":82.56,"date":6,"comment":"","method":"carte"},{"id":10004,"month":2,"amount":77.79,"date":5,"comment":"","method":"carte"},{"id":10005,"month":2,"amount":78.07,"date":7,"comment":"","method":"carte"},{"id":10006,"month":3,"amount":75.93,"date":5,"comment":"","method":"carte"},{"id":10007,"month":3,"amount":71.58,"date":9,"comment":"","method":"carte"},{"id":10008,"month":4,"amount":35.87,"date":6,"comment":"","method":"carte"},{"id":10009,"month":4,"amount":82.25,"date":4,"comment":"","method":"carte"},{"id":10010,"month":5,"amount":97.95,"date":12,"comment":"","method":"carte"},{"id":10011,"month":5,"amount":98.17,"date":8,"comment":"","method":"carte"},{"id":10012,"month":0,"amount":61.88,"date":14,"comment":"","method":"carte"},{"id":10013,"month":0,"amount":28,"date":26,"comment":"moto","method":"carte"},{"id":10014,"month":1,"amount":78.03,"date":15,"comment":"","method":"carte"},{"id":10015,"month":1,"amount":77.86,"date":14,"comment":"","method":"carte"},{"id":10016,"month":2,"amount":50.01,"date":null,"comment":"12 demi plein","method":"carte"},{"id":10017,"month":2,"amount":79.15,"date":null,"comment":"","method":"carte"},{"id":10018,"month":3,"amount":60.15,"date":11,"comment":"","method":"carte"},{"id":10019,"month":3,"amount":67.21,"date":17,"comment":"","method":"carte"},{"id":10020,"month":4,"amount":39.87,"date":14,"comment":"","method":"carte"},{"id":10021,"month":4,"amount":92.44,"date":15,"comment":"","method":"carte"},{"id":10022,"month":5,"amount":92.94,"date":22,"comment":"","method":"carte"},{"id":10023,"month":5,"amount":71.6,"date":24,"comment":"","method":"carte"},{"id":10024,"month":0,"amount":74.86,"date":23,"comment":"","method":"carte"},{"id":10025,"month":1,"amount":75.79,"date":24,"comment":"","method":"carte"},{"id":10026,"month":1,"amount":72.05,"date":19,"comment":"","method":"carte"},{"id":10027,"month":2,"amount":54.65,"date":14,"comment":"","method":"carte"},{"id":10028,"month":3,"amount":74.07,"date":19,"comment":"","method":"carte"},{"id":10029,"month":3,"amount":72.28,"date":24,"comment":"","method":"carte"},{"id":10030,"month":4,"amount":81.71,"date":26,"comment":"","method":"carte"},{"id":10031,"month":4,"amount":56.33,"date":23,"comment":"","method":"carte"},{"id":10032,"month":0,"amount":77.54,"date":31,"comment":"","method":"carte"},{"id":10033,"month":1,"amount":77.42,"date":23,"comment":"","method":"carte"},{"id":10034,"month":2,"amount":71.24,"date":19,"comment":"","method":"carte"},{"id":10035,"month":3,"amount":64.66,"date":27,"comment":"","method":"carte"},{"id":10036,"month":3,"amount":35.08,"date":26,"comment":"Diesel véhicule de remplacement","method":"carte"},{"id":10037,"month":4,"amount":89.92,"date":31,"comment":"","method":"carte"},{"id":10038,"month":1,"amount":30.85,"date":26,"comment":"huile et carburant tondeuse","method":"carte"},{"id":10039,"month":2,"amount":75.81,"date":30,"comment":"","method":"carte"},{"id":10040,"month":3,"amount":65.12,"date":31,"comment":"","method":"carte"},{"id":10041,"month":3,"amount":40.01,"date":28,"comment":"Diesel Hilux","method":"carte"},{"id":10042,"month":1,"amount":71.42,"date":30,"comment":"","method":"carte"},{"id":10043,"month":3,"amount":40.03,"date":30,"comment":"Diesel Hilux","method":"carte"}],"courses":[{"id":10044,"month":0,"amount":76.24,"date":2,"comment":"lidl","method":"carte"},{"id":10045,"month":0,"amount":44.51,"date":3,"comment":"lidl","method":"carte"},{"id":10046,"month":1,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10047,"month":1,"amount":31.07,"date":4,"comment":"lidl","method":"carte"},{"id":10048,"month":2,"amount":5.99,"date":7,"comment":"lidl","method":"carte"},{"id":10049,"month":2,"amount":6.1,"date":3,"comment":"colruyt","method":"carte"},{"id":10050,"month":3,"amount":44.38,"date":4,"comment":"lidl","method":"carte"},{"id":10051,"month":3,"amount":13.5,"date":2,"comment":"delhaise","method":"carte"},{"id":10052,"month":4,"amount":7.6,"date":3,"comment":"delice","method":"carte"},{"id":10053,"month":4,"amount":100.22,"date":3,"comment":"lidl","method":"carte"},{"id":10054,"month":5,"amount":11.78,"date":5,"comment":"lidl","method":"carte"},{"id":10055,"month":5,"amount":87.86,"date":11,"comment":"lidl","method":"carte"},{"id":10056,"month":0,"amount":6.7,"date":null,"comment":"AD Delhaise","method":"repas"},{"id":10057,"month":0,"amount":13.2,"date":3,"comment":"renmans","method":"carte"},{"id":10058,"month":1,"amount":3.75,"date":2,"comment":"Night and day frisk","method":"carte"},{"id":10059,"month":1,"amount":34.42,"date":11,"comment":"lidl","method":"carte"},{"id":10060,"month":2,"amount":34.17,"date":7,"comment":"lidl","method":"carte"},{"id":10061,"month":2,"amount":7.85,"date":3,"comment":"bollendorf chocolat","method":"carte"},{"id":10062,"month":3,"amount":62.67,"date":10,"comment":"lidl","method":"carte"},{"id":10063,"month":3,"amount":13.25,"date":7,"comment":"delice","method":"carte"},{"id":10064,"month":4,"amount":47.55,"date":7,"comment":"carrefour","method":"carte"},{"id":10065,"month":4,"amount":31,"date":3,"comment":"crassse","method":"carte"},{"id":10066,"month":5,"amount":14.41,"date":7,"comment":"Kruidvat","method":"carte"},{"id":10067,"month":5,"amount":86.72,"date":20,"comment":"intermarché","method":"carte"},{"id":10068,"month":0,"amount":20.84,"date":2,"comment":"renmans","method":"carte"},{"id":10069,"month":0,"amount":18.43,"date":7,"comment":"Delhaize","method":"carte"},{"id":10070,"month":1,"amount":20.03,"date":3,"comment":"lidl","method":"carte"},{"id":10071,"month":1,"amount":14.97,"date":11,"comment":"colruyt","method":"carte"},{"id":10072,"month":2,"amount":36.92,"date":9,"comment":"lidl","method":"carte"},{"id":10073,"month":2,"amount":32.7,"date":3,"comment":"bollendorf sandwich diner","method":"carte"},{"id":10074,"month":3,"amount":3.06,"date":10,"comment":"lidl","method":"carte"},{"id":10075,"month":3,"amount":37.08,"date":7,"comment":"Aldi","method":"carte"},{"id":10076,"month":4,"amount":14.88,"date":11,"comment":"reimans","method":"carte"},{"id":10077,"month":4,"amount":11.67,"date":3,"comment":"delhaize","method":"carte"},{"id":10078,"month":5,"amount":39.48,"date":7,"comment":"lidl","method":"carte"},{"id":10079,"month":5,"amount":13.22,"date":22,"comment":"intermarché mettet","method":"carte"},{"id":10080,"month":0,"amount":2.38,"date":3,"comment":"Yes","method":"carte"},{"id":10081,"month":0,"amount":35.83,"date":8,"comment":"Lidl","method":"carte"},{"id":10082,"month":1,"amount":55.1,"date":7,"comment":"lidl","method":"carte"},{"id":10083,"month":1,"amount":33.56,"date":16,"comment":"lidl","method":"carte"},{"id":10084,"month":2,"amount":6.47,"date":12,"comment":"comblain au pont murielle","method":"carte"},{"id":10085,"month":2,"amount":26.5,"date":4,"comment":"Pizza Luxembourg anniverasire Murielle","method":"carte"},{"id":10086,"month":3,"amount":6,"date":10,"comment":"yess","method":"carte"},{"id":10087,"month":3,"amount":0.69,"date":7,"comment":"Aldi","method":"carte"},{"id":10088,"month":4,"amount":52.47,"date":12,"comment":"lidl","method":"carte"},{"id":10089,"month":4,"amount":4.99,"date":6,"comment":"tarte aldi","method":"carte"},{"id":10090,"month":5,"amount":79.41,"date":11,"comment":"carrefour","method":"carte"},{"id":10091,"month":5,"amount":26.96,"date":26,"comment":"reimans","method":"carte"},{"id":10092,"month":0,"amount":11.38,"date":6,"comment":"Take eat","method":"carte"},{"id":10093,"month":0,"amount":4.28,"date":10,"comment":"lidl","method":"carte"},{"id":10094,"month":1,"amount":36.98,"date":12,"comment":"lidl","method":"carte"},{"id":10095,"month":1,"amount":4.99,"date":16,"comment":"lidl","method":"carte"},{"id":10096,"month":2,"amount":34.68,"date":15,"comment":"lidl","method":"carte"},{"id":10097,"month":2,"amount":26.7,"date":5,"comment":"glace luxembourgg anniversaire Murielle","method":"carte"},{"id":10098,"month":3,"amount":18,"date":10,"comment":"cigarette","method":"carte"},{"id":10099,"month":3,"amount":18.34,"date":7,"comment":"renmans","method":"carte"},{"id":10100,"month":4,"amount":5.29,"date":17,"comment":"Aldi","method":"carte"},{"id":10101,"month":4,"amount":76.39,"date":9,"comment":"lidl","method":"carte"},{"id":10102,"month":5,"amount":1.89,"date":14,"comment":"lidl","method":"carte"},{"id":10103,"month":5,"amount":1,"date":26,"comment":"reinmans","method":"carte"},{"id":10104,"month":0,"amount":64.23,"date":10,"comment":"lidl","method":"carte"},{"id":10105,"month":0,"amount":43.96,"date":14,"comment":"Lidl","method":"carte"},{"id":10106,"month":1,"amount":7.83,"date":14,"comment":"Lidl","method":"carte"},{"id":10107,"month":1,"amount":3.5,"date":16,"comment":"Sac bleu commune","method":"carte"},{"id":10108,"month":2,"amount":19.35,"date":20,"comment":"la gaillaiarde","method":"carte"},{"id":10109,"month":2,"amount":29.16,"date":4,"comment":"aldi luxembourgg anniversaire Murielle","method":"carte"},{"id":10110,"month":3,"amount":19.74,"date":14,"comment":"colruyt","method":"carte"},{"id":10111,"month":3,"amount":3.2,"date":7,"comment":"baguette","method":"carte"},{"id":10112,"month":4,"amount":21.82,"date":17,"comment":"Aldi","method":"carte"},{"id":10113,"month":4,"amount":6.25,"date":9,"comment":"lidl","method":"carte"},{"id":10114,"month":5,"amount":52.68,"date":14,"comment":"lidl","method":"carte"},{"id":10115,"month":5,"amount":4.64,"date":27,"comment":"la gaillarde","method":"carte"},{"id":10116,"month":0,"amount":7.92,"date":13,"comment":"Lidl","method":"repas"},{"id":10117,"month":0,"amount":3.97,"date":19,"comment":"Lidl","method":"carte"},{"id":10118,"month":1,"amount":100.7,"date":18,"comment":"Pascal lidl","method":"carte"},{"id":10119,"month":1,"amount":16.34,"date":null,"comment":"reinmans17","method":"carte"},{"id":10120,"month":2,"amount":7.49,"date":20,"comment":"reinmans","method":"carte"},{"id":10121,"month":2,"amount":7.3,"date":6,"comment":"delice","method":"carte"},{"id":10122,"month":3,"amount":6.99,"date":16,"comment":"di","method":"carte"},{"id":10123,"month":3,"amount":4.53,"date":8,"comment":"lidl","method":"carte"},{"id":10124,"month":4,"amount":21.42,"date":19,"comment":"Take eat","method":"carte"},{"id":10125,"month":4,"amount":5.85,"date":11,"comment":"tôt ou tard","method":"carte"},{"id":10126,"month":5,"amount":35.76,"date":19,"comment":"aldi","method":"carte"},{"id":10127,"month":5,"amount":15.43,"date":27,"comment":"renmans","method":"carte"},{"id":10128,"month":0,"amount":39.94,"date":21,"comment":"lidl","method":"carte"},{"id":10129,"month":0,"amount":27.65,"date":19,"comment":"lidl","method":"carte"},{"id":10130,"month":1,"amount":5.78,"date":18,"comment":"lidl","method":"carte"},{"id":10131,"month":1,"amount":16.79,"date":25,"comment":"reimans","method":"carte"},{"id":10132,"month":2,"amount":16.37,"date":21,"comment":"lidl","method":"carte"},{"id":10133,"month":2,"amount":43.81,"date":10,"comment":"lidl","method":"carte"},{"id":10134,"month":3,"amount":160.46,"date":19,"comment":"Colruyt","method":"carte"},{"id":10135,"month":3,"amount":60,"date":11,"comment":"vin J.mourat","method":"carte"},{"id":10136,"month":4,"amount":16.9,"date":20,"comment":"colruyt","method":"carte"},{"id":10137,"month":4,"amount":54.27,"date":17,"comment":"aldi","method":"carte"},{"id":10138,"month":5,"amount":19.84,"date":19,"comment":"lidl","method":"carte"},{"id":10139,"month":5,"amount":32.42,"date":27,"comment":"aldi","method":"carte"},{"id":10140,"month":0,"amount":35.32,"date":26,"comment":"colruyt","method":"carte"},{"id":10141,"month":1,"amount":31.96,"date":18,"comment":"ldl","method":"carte"},{"id":10142,"month":1,"amount":64.88,"date":25,"comment":"Aldi","method":"carte"},{"id":10143,"month":2,"amount":16.14,"date":30,"comment":"lidl","method":"carte"},{"id":10144,"month":2,"amount":38.61,"date":13,"comment":"lidl","method":"carte"},{"id":10145,"month":3,"amount":112,"date":18,"comment":"krefel airfryer phillips","method":"carte"},{"id":10146,"month":3,"amount":8.5,"date":13,"comment":"Fruits et legumes","method":"carte"},{"id":10147,"month":4,"amount":7.7,"date":21,"comment":"boulangerie","method":"carte"},{"id":10148,"month":4,"amount":18.51,"date":17,"comment":"aldi","method":"carte"},{"id":10149,"month":5,"amount":48.44,"date":19,"comment":"lidl","method":"carte"},{"id":10150,"month":5,"amount":32.97,"date":27,"comment":"colruyt","method":"carte"},{"id":10151,"month":0,"amount":14.3,"date":26,"comment":"colruyt","method":"carte"},{"id":10152,"month":1,"amount":32,"date":19,"comment":"renmans","method":"carte"},{"id":10153,"month":1,"amount":5,"date":25,"comment":"aldi moustiquaire lamelle","method":"carte"},{"id":10154,"month":2,"amount":33.39,"date":26,"comment":"lidl","method":"carte"},{"id":10155,"month":3,"amount":8.95,"date":23,"comment":"Bouteille pour chez Stéphanie","method":"carte"},{"id":10156,"month":3,"amount":8.3,"date":18,"comment":"aldi","method":"carte"},{"id":10157,"month":4,"amount":6,"date":26,"comment":"delice","method":"carte"},{"id":10158,"month":4,"amount":19.51,"date":17,"comment":"reinmans","method":"carte"},{"id":10159,"month":5,"amount":3.8,"date":22,"comment":"take eat","method":"carte"},{"id":10160,"month":5,"amount":28.8,"date":28,"comment":"hennau ciney","method":"carte"},{"id":10161,"month":0,"amount":6.57,"date":27,"comment":"lidl","method":"carte"},{"id":10162,"month":1,"amount":10.56,"date":19,"comment":"Aldi","method":"carte"},{"id":10163,"month":1,"amount":12.71,"date":26,"comment":"banneux leffe beauraing","method":"carte"},{"id":10164,"month":2,"amount":13.68,"date":26,"comment":"lidl","method":"carte"},{"id":10165,"month":3,"amount":7.5,"date":26,"comment":"quick","method":"carte"},{"id":10166,"month":3,"amount":61.03,"date":29,"comment":"Lidl","method":"carte"},{"id":10167,"month":4,"amount":24,"date":24,"comment":"macarons","method":"carte"},{"id":10168,"month":4,"amount":37.94,"date":26,"comment":"course airbnb Luxembourg","method":"carte"},{"id":10169,"month":5,"amount":78.65,"date":29,"comment":"lidl","method":"carte"},{"id":10170,"month":5,"amount":5.7,"date":29,"comment":"take eat pain et pistolet","method":"carte"},{"id":10171,"month":1,"amount":33.55,"date":23,"comment":"take eat sandwich cigarette plateau gourmet pour maasmechelen","method":"carte"},{"id":10172,"month":1,"amount":49,"date":29,"comment":"colruyt","method":"carte"},{"id":10173,"month":2,"amount":42.44,"date":23,"comment":"take eat","method":"carte"},{"id":10174,"month":3,"amount":31,"date":null,"comment":"","method":"carte"},{"id":10175,"month":3,"amount":40.2,"date":31,"comment":"friterie après marche adeps de Arbre","method":"carte"},{"id":10176,"month":4,"amount":109.18,"date":26,"comment":"lidl","method":"carte"},{"id":10177,"month":4,"amount":94.69,"date":31,"comment":"lidl","method":"carte"},{"id":10178,"month":1,"amount":8.17,"date":25,"comment":"lidl","method":"carte"},{"id":10179,"month":1,"amount":15,"date":30,"comment":"lidl","method":"carte"},{"id":10180,"month":2,"amount":81.05,"date":null,"comment":"","method":"carte"},{"id":10181,"month":3,"amount":31.59,"date":29,"comment":"Colruyt","method":"carte"},{"id":10182,"month":4,"amount":41.75,"date":27,"comment":"delhaize","method":"carte"},{"id":10183,"month":1,"amount":46.28,"date":28,"comment":"Reinmans","method":"carte"},{"id":10184,"month":2,"amount":8.95,"date":30,"comment":"delhaize","method":"carte"},{"id":10185,"month":3,"amount":15.1,"date":29,"comment":"fruit et legume","method":"carte"},{"id":10186,"month":1,"amount":22.74,"date":29,"comment":"Lidl","method":"carte"},{"id":10187,"month":3,"amount":6.86,"date":29,"comment":"action","method":"carte"},{"id":10188,"month":3,"amount":16.32,"date":31,"comment":"lidl","method":"carte"},{"id":10189,"month":3,"amount":16.03,"date":31,"comment":"lidl","method":"carte"}],"divers":[{"id":10190,"month":0,"amount":4,"date":null,"comment":"adeps dorinne","method":"liquide"},{"id":10191,"month":0,"amount":4.5,"date":1,"comment":"Frais bancaire","method":"carte"},{"id":10192,"month":1,"amount":18,"date":null,"comment":"Cover Aznavour","method":"carte"},{"id":10193,"month":1,"amount":4.5,"date":1,"comment":"Frais bancaire","method":"carte"},{"id":10194,"month":2,"amount":4.5,"date":1,"comment":"Frais bancaire","method":"carte"},{"id":10195,"month":2,"amount":4.5,"date":1,"comment":"Frais bancaire","method":"carte"},{"id":10196,"month":3,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10197,"month":3,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10198,"month":4,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10199,"month":4,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10200,"month":5,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10201,"month":5,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10202,"month":0,"amount":9.45,"date":2,"comment":"Frais bancaire","method":"carte"},{"id":10203,"month":0,"amount":17.5,"date":1,"comment":"Take eat","method":"carte"},{"id":10204,"month":1,"amount":15.9,"date":5,"comment":"Gaby","method":"carte"},{"id":10205,"month":1,"amount":23,"date":4,"comment":"Coiffeur","method":"carte"},{"id":10206,"month":2,"amount":26.81,"date":3,"comment":"nettoyant essence","method":"carte"},{"id":10207,"month":2,"amount":11,"date":1,"comment":"Adeps","method":"carte"},{"id":10208,"month":3,"amount":20.5,"date":1,"comment":"take eat","method":"carte"},{"id":10209,"month":3,"amount":8.2,"date":5,"comment":"Take eat sandwich + pains chocolat","method":"carte"},{"id":10210,"month":4,"amount":23.75,"date":1,"comment":"lidl","method":"carte"},{"id":10211,"month":4,"amount":31,"date":1,"comment":"friterie barrage de l'eau d'heure","method":"carte"},{"id":10212,"month":5,"amount":27.2,"date":null,"comment":"boulangerie chatelet","method":"carte"},{"id":10213,"month":5,"amount":14,"date":2,"comment":"Clinique st luc bouge Gastroscopie visite 12€ parking 2€","method":"carte"},{"id":10214,"month":0,"amount":11.1,"date":7,"comment":"quick andenne","method":"repas"},{"id":10215,"month":0,"amount":16,"date":2,"comment":"Adeps Thon Sanson","method":"carte"},{"id":10216,"month":1,"amount":17.5,"date":6,"comment":"cigarette ohey","method":"carte"},{"id":10217,"month":1,"amount":59.75,"date":4,"comment":"Mr Bricolage papier abrasif","method":"carte"},{"id":10218,"month":2,"amount":40,"date":3,"comment":"cigarettes 2xl","method":"carte"},{"id":10219,"month":2,"amount":14.99,"date":1,"comment":"livre club","method":"carte"},{"id":10220,"month":3,"amount":2,"date":2,"comment":"farde comptable action","method":"carte"},{"id":10221,"month":3,"amount":68.31,"date":7,"comment":"grille BBQ amazon buisness","method":"carte"},{"id":10222,"month":4,"amount":15.86,"date":4,"comment":"Facture du 02/08 laboratoire olivier prise de sang","method":"carte"},{"id":10223,"month":4,"amount":9.45,"date":1,"comment":"apéro pour marche","method":"carte"},{"id":10224,"month":5,"amount":40,"date":3,"comment":"Housse de couette","method":"carte"},{"id":10225,"month":5,"amount":14.7,"date":2,"comment":"mc do","method":"carte"},{"id":10226,"month":0,"amount":23,"date":10,"comment":"coiffeur","method":"carte"},{"id":10227,"month":0,"amount":20,"date":3,"comment":"versement basic fit vers comptre marquabel","method":"carte"},{"id":10228,"month":1,"amount":4.5,"date":6,"comment":"sandwich","method":"carte"},{"id":10229,"month":1,"amount":11.1,"date":6,"comment":"quick","method":"carte"},{"id":10230,"month":2,"amount":9.89,"date":4,"comment":"temu rateu desherbant","method":"carte"},{"id":10231,"month":2,"amount":68.95,"date":3,"comment":"pharmacie","method":"carte"},{"id":10232,"month":3,"amount":21.1,"date":3,"comment":"friterie","method":"carte"},{"id":10233,"month":3,"amount":18.5,"date":7,"comment":"vin","method":"carte"},{"id":10234,"month":4,"amount":69.9,"date":5,"comment":"Pharmacie tadafil 5mg","method":"carte"},{"id":10235,"month":4,"amount":30.5,"date":8,"comment":"Pizza fosse la ville","method":"carte"},{"id":10236,"month":5,"amount":23,"date":4,"comment":"coiffeur","method":"carte"},{"id":10237,"month":5,"amount":15.5,"date":3,"comment":"crasse","method":"carte"},{"id":10238,"month":0,"amount":10.5,"date":12,"comment":"Adeps Durnal","method":"liquide"},{"id":10239,"month":0,"amount":18.4,"date":4,"comment":"friterie","method":"carte"},{"id":10240,"month":1,"amount":20,"date":8,"comment":"cover aznavour","method":"carte"},{"id":10241,"month":1,"amount":28.4,"date":null,"comment":"fdriterie chez rogeer","method":"carte"},{"id":10242,"month":2,"amount":4,"date":4,"comment":"Pain saucisse brocante corbion","method":"carte"},{"id":10243,"month":2,"amount":23,"date":6,"comment":"Coiffeur","method":"carte"},{"id":10244,"month":3,"amount":18,"date":3,"comment":"cigarette","method":"carte"},{"id":10245,"month":3,"amount":23,"date":8,"comment":"coiffeur","method":"carte"},{"id":10246,"month":4,"amount":32.9,"date":5,"comment":"Friterie","method":"carte"},{"id":10247,"month":4,"amount":9.95,"date":8,"comment":"Yessss boites congélation","method":"carte"},{"id":10248,"month":5,"amount":17.4,"date":4,"comment":"sunset","method":"carte"},{"id":10249,"month":5,"amount":4.74,"date":4,"comment":"Pharmacie","method":"carte"},{"id":10250,"month":0,"amount":30,"date":23,"comment":"Carwash","method":"carte"},{"id":10251,"month":0,"amount":39.2,"date":6,"comment":"Labo prise de sang","method":"carte"},{"id":10252,"month":1,"amount":36,"date":7,"comment":"take eat cigarette","method":"carte"},{"id":10253,"month":1,"amount":60,"date":8,"comment":"Pharmacie","method":"carte"},{"id":10254,"month":2,"amount":18,"date":4,"comment":"quick mondelz livraison","method":"carte"},{"id":10255,"month":2,"amount":7.3,"date":6,"comment":"sandwich","method":"carte"},{"id":10256,"month":3,"amount":14,"date":4,"comment":"ventilateur temu","method":"carte"},{"id":10257,"month":3,"amount":4.5,"date":10,"comment":"croissant sucré 3pcs","method":"carte"},{"id":10258,"month":4,"amount":17.41,"date":9,"comment":"aldi","method":"carte"},{"id":10259,"month":4,"amount":15.5,"date":9,"comment":"cigarettes","method":"carte"},{"id":10260,"month":5,"amount":4,"date":6,"comment":"medecin aline mailleux","method":"carte"},{"id":10261,"month":5,"amount":28,"date":6,"comment":"Marché de noel ciney","method":"carte"},{"id":10262,"month":0,"amount":7,"date":24,"comment":"QG ampsin","method":"carte"},{"id":10263,"month":0,"amount":35,"date":6,"comment":"take eat cigarette","method":"carte"},{"id":10264,"month":1,"amount":14.97,"date":11,"comment":"Yesss aerosol couleur plexi","method":"carte"},{"id":10265,"month":1,"amount":17.45,"date":15,"comment":"Piece pour le Karcher","method":"carte"},{"id":10266,"month":2,"amount":11.48,"date":9,"comment":"4 Bombes de couleur aerosol","method":"carte"},{"id":10267,"month":2,"amount":37,"date":7,"comment":"cover dallida","method":"carte"},{"id":10268,"month":3,"amount":17.85,"date":4,"comment":"night and day cigarette","method":"carte"},{"id":10269,"month":3,"amount":5,"date":10,"comment":"take eat dagobert","method":"carte"},{"id":10270,"month":4,"amount":6,"date":9,"comment":"aldi","method":"carte"},{"id":10271,"month":4,"amount":9.95,"date":10,"comment":"Yessss boites congélation","method":"carte"},{"id":10272,"month":5,"amount":30,"date":7,"comment":"carwash","method":"carte"},{"id":10273,"month":5,"amount":26.1,"date":7,"comment":"aux 9 papilles","method":"carte"},{"id":10274,"month":0,"amount":15,"date":24,"comment":"galettes et crêpes","method":"carte"},{"id":10275,"month":0,"amount":30,"date":9,"comment":"Facebook marquet vente moto","method":"carte"},{"id":10276,"month":1,"amount":27.47,"date":12,"comment":"aldi gonfleur sur batterie","method":"carte"},{"id":10277,"month":1,"amount":18,"date":15,"comment":"take eat cigarette","method":"carte"},{"id":10278,"month":2,"amount":9,"date":9,"comment":"Glace Esneux","method":"carte"},{"id":10279,"month":2,"amount":377.5,"date":9,"comment":"lxd cars entretien et reparation dephasage arbre à came","method":"carte"},{"id":10280,"month":3,"amount":20,"date":4,"comment":"Fermier embourber","method":"carte"},{"id":10281,"month":3,"amount":27,"date":10,"comment":"il cappricio","method":"carte"},{"id":10282,"month":4,"amount":7.29,"date":11,"comment":"vandenborre delonghi","method":"carte"},{"id":10283,"month":4,"amount":15.5,"date":11,"comment":"cigarettes","method":"carte"},{"id":10284,"month":5,"amount":21,"date":8,"comment":"texaco","method":"carte"},{"id":10285,"month":5,"amount":15.5,"date":7,"comment":"Crasses","method":"carte"},{"id":10286,"month":0,"amount":65.33,"date":30,"comment":"Pharmacie","method":"carte"},{"id":10287,"month":0,"amount":15.5,"date":11,"comment":"night and day cigarette","method":"carte"},{"id":10288,"month":1,"amount":23,"date":14,"comment":"coiffeur","method":"carte"},{"id":10289,"month":1,"amount":1.99,"date":16,"comment":"Rustine velo Action","method":"carte"},{"id":10290,"month":2,"amount":46,"date":9,"comment":"Boissons Esneux","method":"carte"},{"id":10291,"month":2,"amount":28,"date":13,"comment":"Cigarette et pharmacie","method":"carte"},{"id":10292,"month":3,"amount":30,"date":5,"comment":"Anniversaire Charles","method":"carte"},{"id":10293,"month":3,"amount":4.5,"date":12,"comment":"pain burger","method":"carte"},{"id":10294,"month":4,"amount":43.8,"date":18,"comment":"Take eat","method":"carte"},{"id":10295,"month":4,"amount":13,"date":11,"comment":"fritapapa","method":"carte"},{"id":10296,"month":5,"amount":15.5,"date":9,"comment":"crasse","method":"carte"},{"id":10297,"month":5,"amount":15.5,"date":10,"comment":"crasse","method":"carte"},{"id":10298,"month":0,"amount":17.5,"date":30,"comment":"Take eat","method":"carte"},{"id":10299,"month":0,"amount":36,"date":14,"comment":"Take eat cigarette","method":"carte"},{"id":10300,"month":1,"amount":36,"date":14,"comment":"cigarette","method":"carte"},{"id":10301,"month":1,"amount":48.98,"date":18,"comment":"Gaz opel airco","method":"carte"},{"id":10302,"month":2,"amount":140,"date":10,"comment":"Philippe cigarettes Luxembourg","method":"carte"},{"id":10303,"month":2,"amount":24.6,"date":14,"comment":"Friterie","method":"carte"},{"id":10304,"month":3,"amount":15.5,"date":6,"comment":"cigarette","method":"carte"},{"id":10305,"month":3,"amount":19,"date":14,"comment":"pitta","method":"carte"},{"id":10306,"month":4,"amount":23,"date":19,"comment":"coiffeur","method":"carte"},{"id":10307,"month":4,"amount":9.1,"date":13,"comment":"ampoulez tucson","method":"carte"},{"id":10308,"month":5,"amount":68.51,"date":11,"comment":"Pharmacie","method":"carte"},{"id":10309,"month":5,"amount":20,"date":10,"comment":"la récré","method":"carte"},{"id":10310,"month":0,"amount":23,"date":31,"comment":"coiffeur","method":"carte"},{"id":10311,"month":0,"amount":23,"date":21,"comment":"coiffeur","method":"carte"},{"id":10312,"month":1,"amount":90,"date":13,"comment":"IPTV","method":"carte"},{"id":10313,"month":1,"amount":18,"date":18,"comment":"cigarette","method":"carte"},{"id":10314,"month":2,"amount":16,"date":11,"comment":"Adeps dorinne","method":"carte"},{"id":10315,"month":2,"amount":15.5,"date":17,"comment":"cigarette","method":"carte"},{"id":10316,"month":3,"amount":118.24,"date":7,"comment":"coupe pour la vache 2025","method":"carte"},{"id":10317,"month":3,"amount":10.6,"date":15,"comment":"sandwich et croissants sucrés","method":"carte"},{"id":10318,"month":4,"amount":60,"date":19,"comment":"Pharmacie","method":"carte"},{"id":10319,"month":4,"amount":8.6,"date":16,"comment":"aeroport bruxelles","method":"carte"},{"id":10320,"month":5,"amount":37.9,"date":11,"comment":"restaurant Fa Lai chinoisµ","method":"carte"},{"id":10321,"month":5,"amount":28,"date":11,"comment":"amazon télécommande et batterie pour écouteur sony","method":"carte"},{"id":10322,"month":0,"amount":36,"date":21,"comment":"take eat cigarette","method":"carte"},{"id":10323,"month":1,"amount":2,"date":17,"comment":"yessss pot de fleur","method":"carte"},{"id":10324,"month":1,"amount":17.39,"date":18,"comment":"lxd car essuieglass arrière","method":"carte"},{"id":10325,"month":2,"amount":63.42,"date":9,"comment":"Amende routière","method":"carte"},{"id":10326,"month":2,"amount":7.85,"date":17,"comment":"sandwich boisson","method":"carte"},{"id":10327,"month":3,"amount":12,"date":8,"comment":"parking namur","method":"carte"},{"id":10328,"month":3,"amount":30,"date":15,"comment":"Adeps et feu d'artifice Huy","method":"carte"},{"id":10329,"month":4,"amount":30.5,"date":22,"comment":"dentiste détartrage 136€ - 105,5mutuelle","method":"carte"},{"id":10330,"month":4,"amount":19.6,"date":15,"comment":"sandwich Biesmes","method":"carte"},{"id":10331,"month":5,"amount":15.5,"date":13,"comment":"crasse","method":"carte"},{"id":10332,"month":5,"amount":110,"date":11,"comment":"lampe cadeau stéphanie","method":"carte"},{"id":10333,"month":0,"amount":17.9,"date":26,"comment":"gaby","method":"carte"},{"id":10334,"month":1,"amount":160,"date":18,"comment":"Décathlon bottine de marche et trail","method":"carte"},{"id":10335,"month":1,"amount":24,"date":18,"comment":"Pédicure pieds caroline Evrard","method":"carte"},{"id":10336,"month":2,"amount":36.37,"date":13,"comment":"bracelet photo","method":"carte"},{"id":10337,"month":2,"amount":20,"date":18,"comment":"cigarette","method":"carte"},{"id":10338,"month":3,"amount":8,"date":8,"comment":"Glace stephanie","method":"carte"},{"id":10339,"month":3,"amount":15,"date":null,"comment":"Adeps Crupet","method":"carte"},{"id":10340,"month":4,"amount":15.04,"date":23,"comment":"aliexpress cadenceur vélo","method":"carte"},{"id":10341,"month":4,"amount":19.8,"date":17,"comment":"yesss miroir 30x30 8 exemplaires","method":"carte"},{"id":10342,"month":5,"amount":14.36,"date":14,"comment":"Yesss boule de noel pour test couleur acton","method":"carte"},{"id":10343,"month":5,"amount":6,"date":11,"comment":"Pain saucisse","method":"carte"},{"id":10344,"month":0,"amount":36,"date":27,"comment":"take eat cigarettes","method":"carte"},{"id":10345,"month":1,"amount":-50,"date":18,"comment":"voucher de 50€ pour mon anniversaire de la part de Vanessa et Christine","method":"carte"},{"id":10346,"month":1,"amount":18,"date":19,"comment":"Night and day cigarette","method":"carte"},{"id":10347,"month":2,"amount":280.99,"date":13,"comment":"airbnb echternach avec Murielle du 03 au 05 juin","method":"carte"},{"id":10348,"month":2,"amount":73.5,"date":20,"comment":"le pèlerin beauraing","method":"carte"},{"id":10349,"month":3,"amount":16.5,"date":8,"comment":"cocktail stéphanie","method":"carte"},{"id":10350,"month":3,"amount":12,"date":18,"comment":"carwash","method":"carte"},{"id":10351,"month":4,"amount":22.17,"date":24,"comment":"renmans","method":"carte"},{"id":10352,"month":4,"amount":48.26,"date":17,"comment":"la for'fouille","method":"carte"},{"id":10353,"month":5,"amount":31.1,"date":16,"comment":"fritapapa","method":"carte"},{"id":10354,"month":5,"amount":23,"date":12,"comment":"coiffeur","method":"carte"},{"id":10355,"month":0,"amount":4.99,"date":28,"comment":"Yess couleur bombe","method":"carte"},{"id":10356,"month":1,"amount":20,"date":17,"comment":"Theatre ebv Pierre-Yves Noël ressuscite les stars du 24 mai","method":"carte"},{"id":10357,"month":1,"amount":18,"date":21,"comment":"Night and day","method":"carte"},{"id":10358,"month":2,"amount":30,"date":13,"comment":"carwash","method":"carte"},{"id":10359,"month":2,"amount":6.36,"date":20,"comment":"gifi givet","method":"carte"},{"id":10360,"month":3,"amount":320.26,"date":9,"comment":"Pneus voiture","method":"carte"},{"id":10361,"month":3,"amount":20,"date":21,"comment":"night and day fosse la ville","method":"carte"},{"id":10362,"month":4,"amount":98.1,"date":26,"comment":"Contrôle technique tucson vente","method":"carte"},{"id":10363,"month":4,"amount":15.5,"date":19,"comment":"cigarette","method":"carte"},{"id":10364,"month":5,"amount":15.5,"date":16,"comment":"crasse","method":"carte"},{"id":10365,"month":5,"amount":25,"date":13,"comment":"Fleur Caro pour l'anniversaire Danae","method":"carte"},{"id":10366,"month":1,"amount":12.99,"date":20,"comment":"vanden borre gaz sodastream","method":"carte"},{"id":10367,"month":1,"amount":50,"date":22,"comment":"Scarificateur","method":"carte"},{"id":10368,"month":2,"amount":30,"date":null,"comment":"Concert et yoga 38 AVENUE CHARLOTTE L-4530 DIFFERDANGE 13 Luxembourg","method":"carte"},{"id":10369,"month":2,"amount":31,"date":20,"comment":"cigarette","method":"carte"},{"id":10370,"month":3,"amount":33.25,"date":11,"comment":"cigarettes","method":"carte"},{"id":10371,"month":3,"amount":100,"date":22,"comment":"Anniversaire Manon","method":"carte"},{"id":10372,"month":4,"amount":31,"date":26,"comment":"cigarettes","method":"carte"},{"id":10373,"month":4,"amount":101,"date":21,"comment":"décathlon veste et pantalon de pluie","method":"carte"},{"id":10374,"month":5,"amount":25,"date":16,"comment":"Anniversaire Vanessa","method":"carte"},{"id":10375,"month":5,"amount":40,"date":13,"comment":"Anniversaire Danae","method":"carte"},{"id":10376,"month":1,"amount":36,"date":20,"comment":"take eat cigarettes","method":"carte"},{"id":10377,"month":1,"amount":15.9,"date":22,"comment":"friterie","method":"carte"},{"id":10378,"month":2,"amount":9.5,"date":14,"comment":"recharge deo voiture nutal","method":"carte"},{"id":10379,"month":2,"amount":15.5,"date":23,"comment":"cigarette","method":"carte"},{"id":10380,"month":3,"amount":22.3,"date":13,"comment":"Q8 cigarette","method":"carte"},{"id":10381,"month":3,"amount":8.8,"date":22,"comment":"délice","method":"carte"},{"id":10382,"month":4,"amount":26,"date":28,"comment":"DIV carte grise tucson","method":"carte"},{"id":10383,"month":4,"amount":12,"date":23,"comment":"crasse","method":"carte"},{"id":10384,"month":5,"amount":194.81,"date":18,"comment":"BHSI comptable 31/08","method":"carte"},{"id":10385,"month":5,"amount":5,"date":13,"comment":"ticket grattage anniversare Danae","method":"carte"},{"id":10386,"month":1,"amount":5.8,"date":23,"comment":"boisson marche maasmechelen","method":"carte"},{"id":10387,"month":1,"amount":25.65,"date":null,"comment":"cigarette xl plus chocolat","method":"carte"},{"id":10388,"month":2,"amount":60,"date":14,"comment":"sildenafil","method":"carte"},{"id":10389,"month":2,"amount":11.9,"date":23,"comment":"sandwich","method":"carte"},{"id":10390,"month":3,"amount":19.9,"date":15,"comment":"Papier imprimante action","method":"carte"},{"id":10391,"month":3,"amount":45.07,"date":22,"comment":"lidl","method":"carte"},{"id":10392,"month":4,"amount":155,"date":18,"comment":"caution cambio avance de 400, rempboursé 275","method":"carte"},{"id":10393,"month":4,"amount":130,"date":26,"comment":"airbnb Luxembourg","method":"carte"},{"id":10394,"month":5,"amount":83.49,"date":18,"comment":"BHSI comptable fact 31/10","method":"carte"},{"id":10395,"month":5,"amount":15.5,"date":14,"comment":"crasse","method":"carte"},{"id":10396,"month":1,"amount":5.98,"date":27,"comment":"yesss au javel","method":"carte"},{"id":10397,"month":1,"amount":23,"date":25,"comment":"coiffeur","method":"carte"},{"id":10398,"month":2,"amount":24.99,"date":15,"comment":"lidl rasoir","method":"carte"},{"id":10399,"month":2,"amount":9.9,"date":22,"comment":"quick","method":"carte"},{"id":10400,"month":3,"amount":85.49,"date":16,"comment":"Deloox parfun Cartier Déclaration","method":"carte"},{"id":10401,"month":3,"amount":25.55,"date":22,"comment":"lidl","method":"carte"},{"id":10402,"month":4,"amount":28.7,"date":26,"comment":"la recré","method":"carte"},{"id":10403,"month":5,"amount":15.5,"date":21,"comment":"crasse","method":"carte"},{"id":10404,"month":5,"amount":88.2,"date":17,"comment":"ferme cremerie cadeau noel pour le papa de stéphanie","method":"carte"},{"id":10405,"month":1,"amount":70,"date":29,"comment":"Cigarette Armand farde","method":"carte"},{"id":10406,"month":1,"amount":199,"date":25,"comment":"Tondeuse aldi","method":"carte"},{"id":10407,"month":2,"amount":18.5,"date":17,"comment":"Sandwich + frite +basket 16 et","method":"carte"},{"id":10408,"month":2,"amount":22.6,"date":26,"comment":"Pharmacie","method":"carte"},{"id":10409,"month":3,"amount":15.5,"date":16,"comment":"cigarette","method":"carte"},{"id":10410,"month":3,"amount":21.4,"date":25,"comment":"Friterie Laurent pingaut remorquage voiture","method":"carte"},{"id":10411,"month":4,"amount":18,"date":30,"comment":"crasses","method":"carte"},{"id":10412,"month":5,"amount":23,"date":21,"comment":"coiffeur","method":"carte"},{"id":10413,"month":5,"amount":15.5,"date":17,"comment":"Crasse","method":"carte"},{"id":10414,"month":1,"amount":12,"date":27,"comment":"Cigarette","method":"carte"},{"id":10415,"month":2,"amount":23,"date":20,"comment":"coiffeur","method":"carte"},{"id":10416,"month":2,"amount":23,"date":27,"comment":"coiffeur","method":"carte"},{"id":10417,"month":3,"amount":30,"date":17,"comment":"carwash","method":"carte"},{"id":10418,"month":3,"amount":12,"date":29,"comment":"Friterie houyet","method":"carte"},{"id":10419,"month":4,"amount":23.2,"date":30,"comment":"friterie","method":"carte"},{"id":10420,"month":5,"amount":15.5,"date":23,"comment":"crasse","method":"carte"},{"id":10421,"month":5,"amount":20,"date":22,"comment":"crasse","method":"carte"},{"id":10422,"month":1,"amount":18,"date":28,"comment":"take eat cigarette","method":"carte"},{"id":10423,"month":2,"amount":6.5,"date":19,"comment":"di","method":"carte"},{"id":10424,"month":2,"amount":97.77,"date":27,"comment":"Pharmacie","method":"carte"},{"id":10425,"month":3,"amount":23,"date":18,"comment":"coiffeur","method":"carte"},{"id":10426,"month":3,"amount":23,"date":29,"comment":"coiffeur","method":"carte"},{"id":10427,"month":5,"amount":46.46,"date":25,"comment":"peppol","method":"carte"},{"id":10428,"month":5,"amount":100,"date":24,"comment":"participation noel stéphanie","method":"carte"},{"id":10429,"month":1,"amount":22.5,"date":30,"comment":"cigarette","method":"carte"},{"id":10430,"month":2,"amount":63.42,"date":20,"comment":"amaende routière","method":"carte"},{"id":10431,"month":2,"amount":4,"date":27,"comment":"médecin","method":"carte"},{"id":10432,"month":3,"amount":69,"date":18,"comment":"Pharmacie tadafil 5mg","method":"carte"},{"id":10433,"month":5,"amount":20,"date":28,"comment":"crasse","method":"carte"},{"id":10434,"month":5,"amount":36.72,"date":24,"comment":"trafic noel","method":"carte"},{"id":10435,"month":1,"amount":17.2,"date":30,"comment":"café avec philippe jo et angelo","method":"carte"},{"id":10436,"month":2,"amount":119.79,"date":20,"comment":"comptable","method":"carte"},{"id":10437,"month":2,"amount":10.95,"date":28,"comment":"Pharmacie","method":"carte"},{"id":10438,"month":3,"amount":18,"date":18,"comment":"cigarettte","method":"carte"},{"id":10439,"month":5,"amount":14.9,"date":27,"comment":"mc do","method":"carte"},{"id":10440,"month":5,"amount":142.97,"date":26,"comment":"vetements gosselies","method":"carte"},{"id":10441,"month":2,"amount":5,"date":20,"comment":"sandwich","method":"carte"},{"id":10442,"month":2,"amount":18,"date":28,"comment":"Cigarette","method":"carte"},{"id":10443,"month":3,"amount":7,"date":20,"comment":"Croustillons statue en marche","method":"carte"},{"id":10444,"month":5,"amount":46.46,"date":25,"comment":"doccle pro tva obligatoire","method":"carte"},{"id":10445,"month":5,"amount":13.22,"date":22,"comment":"intermarché mettet","method":"carte"},{"id":10446,"month":2,"amount":21.4,"date":21,"comment":"la récre","method":"carte"},{"id":10447,"month":3,"amount":18,"date":22,"comment":"cigarette","method":"carte"},{"id":10448,"month":5,"amount":68.95,"date":28,"comment":"pharmacie","method":"carte"},{"id":10449,"month":5,"amount":9,"date":24,"comment":"boulangerie hennau","method":"carte"},{"id":10450,"month":2,"amount":548,"date":22,"comment":"nouveau tél xiaomi","method":"carte"},{"id":10451,"month":3,"amount":50,"date":24,"comment":"décathlon","method":"carte"},{"id":10452,"month":5,"amount":30,"date":28,"comment":"take eat","method":"carte"},{"id":10453,"month":5,"amount":14.96,"date":24,"comment":"intermarché assesse","method":"carte"},{"id":10454,"month":2,"amount":28.9,"date":26,"comment":"botanica","method":"carte"},{"id":10455,"month":3,"amount":15.6,"date":24,"comment":"quick","method":"carte"},{"id":10456,"month":5,"amount":45,"date":28,"comment":"marché de noel annevoie","method":"carte"},{"id":10457,"month":5,"amount":241.88,"date":24,"comment":"pneus montage Tucson","method":"carte"},{"id":10458,"month":2,"amount":14.95,"date":26,"comment":"charheur usb","method":"carte"},{"id":10459,"month":3,"amount":19.5,"date":26,"comment":"cinema stéphanie level+ verre avant le film","method":"carte"},{"id":10460,"month":5,"amount":5.97,"date":29,"comment":"Action, gants de toilette.","method":"carte"},{"id":10461,"month":5,"amount":60,"date":29,"comment":"Pharmacie","method":"carte"},{"id":10462,"month":2,"amount":25,"date":29,"comment":"marché comblain aux ponts","method":"carte"},{"id":10463,"month":3,"amount":18,"date":26,"comment":"cigarette","method":"carte"},{"id":10464,"month":5,"amount":4.95,"date":30,"comment":"Take eat","method":"carte"},{"id":10465,"month":5,"amount":23,"date":31,"comment":"coiffeur","method":"carte"},{"id":10466,"month":3,"amount":11,"date":null,"comment":"Boisson rando luxembourg","method":"carte"},{"id":10467,"month":5,"amount":12.5,"date":30,"comment":"Delice","method":"carte"},{"id":10468,"month":5,"amount":27,"date":31,"comment":"crasse","method":"carte"},{"id":10469,"month":3,"amount":161.39,"date":30,"comment":"cigarettes farde 2","method":"carte"},{"id":10470,"month":5,"amount":24.11,"date":null,"comment":"gastroscopie ucl dinant","method":"carte"},{"id":10471,"month":3,"amount":49.7,"date":12,"comment":"pizza hut marche","method":"carte"}],"chien":[{"id":10472,"month":3,"amount":113.05,"date":null,"comment":"temu accessoire chien","method":"carte"},{"id":10473,"month":4,"amount":79.82,"date":1,"comment":"nourriture et jeu aveve","method":"carte"},{"id":10474,"month":4,"amount":45,"date":5,"comment":"croquettes 2*4kg","method":"carte"},{"id":10475,"month":5,"amount":11.13,"date":4,"comment":"poils et plumes","method":"carte"},{"id":10476,"month":5,"amount":20,"date":7,"comment":"dressage","method":"carte"},{"id":10477,"month":3,"amount":100,"date":26,"comment":"Acompte chien","method":"carte"},{"id":10478,"month":4,"amount":31.2,"date":2,"comment":"poil et plume","method":"carte"},{"id":10479,"month":4,"amount":41.27,"date":7,"comment":"sac à dos amazon","method":"carte"},{"id":10480,"month":5,"amount":103.97,"date":14,"comment":"vétérinaire oscultation oreilles vermifuge, produit pour irritation oreilles","method":"carte"},{"id":10481,"month":5,"amount":20,"date":21,"comment":"dressage","method":"carte"},{"id":10482,"month":3,"amount":82.39,"date":28,"comment":"Cailloux pour fond de jardin","method":"carte"},{"id":10483,"month":4,"amount":400,"date":null,"comment":"solde du chien ekko","method":"carte"},{"id":10484,"month":4,"amount":11.95,"date":8,"comment":"poils et plumes","method":"carte"},{"id":10485,"month":5,"amount":6.25,"date":20,"comment":"sabot de veau poils et plumes","method":"carte"},{"id":10486,"month":5,"amount":3.8,"date":9,"comment":"poils et plume bonbons training","method":"carte"},{"id":10487,"month":3,"amount":75.36,"date":28,"comment":"accesoire et jeux temu","method":"carte"},{"id":10488,"month":4,"amount":61.64,"date":8,"comment":"vétérinaire visite + produit puces","method":"carte"},{"id":10489,"month":4,"amount":119,"date":14,"comment":"Vaccin vétérinaire","method":"carte"},{"id":10490,"month":5,"amount":6.95,"date":27,"comment":"poils et plumes bonbons dressage","method":"carte"},{"id":10491,"month":5,"amount":23.75,"date":10,"comment":"zooplus croquette entrainement","method":"carte"},{"id":10492,"month":3,"amount":13.89,"date":29,"comment":"jeu lidl","method":"carte"},{"id":10493,"month":4,"amount":33.7,"date":9,"comment":"poil etr plume","method":"carte"},{"id":10494,"month":4,"amount":10.85,"date":16,"comment":"poils et plumes shampoing et lingettes","method":"carte"},{"id":10495,"month":5,"amount":3.99,"date":18,"comment":"sifflet","method":"carte"},{"id":10496,"month":4,"amount":3.9,"date":10,"comment":"poils et plumes collier","method":"carte"},{"id":10497,"month":4,"amount":12.99,"date":17,"comment":"panier chien aldi","method":"carte"},{"id":10498,"month":5,"amount":9,"date":19,"comment":"nourriture cinachien","method":"carte"},{"id":10499,"month":4,"amount":72.55,"date":15,"comment":"consultation 35 vaccin dhppil 32,5 comprimé vermifuge 5,05","method":"carte"},{"id":10500,"month":4,"amount":28.84,"date":23,"comment":"poils et plumes","method":"carte"},{"id":10501,"month":5,"amount":55,"date":19,"comment":"cours ekko nathalie capelle","method":"carte"},{"id":10502,"month":4,"amount":26.53,"date":16,"comment":"poil et plume bois de daim et toutue","method":"carte"},{"id":10503,"month":4,"amount":135.25,"date":31,"comment":"croquettes 2*15kg zooplus","method":"carte"},{"id":10504,"month":5,"amount":50.76,"date":22,"comment":"aveve","method":"carte"},{"id":10505,"month":4,"amount":34.41,"date":24,"comment":"produit de nettoyage","method":"carte"}]},"2026":{"carburant":[{"id":10506,"month":0,"amount":92.56,"date":8,"comment":"","method":"carte"},{"id":10507,"month":1,"amount":87.49,"date":9,"comment":"","method":"carte"},{"id":10508,"month":2,"amount":94.29,"date":2,"comment":"","method":"carte"},{"id":10509,"month":3,"amount":89.38,"date":7,"comment":"","method":"carte"},{"id":10510,"month":0,"amount":89.09,"date":19,"comment":"","method":"carte"},{"id":10511,"month":1,"amount":98.1,"date":23,"comment":"","method":"carte"},{"id":10512,"month":2,"amount":113.88,"date":18,"comment":"","method":"carte"},{"id":10513,"month":0,"amount":81.12,"date":30,"comment":"","method":"carte"},{"id":10514,"month":2,"amount":109.44,"date":31,"comment":"","method":"carte"}],"courses":[{"id":10515,"month":0,"amount":35.76,"date":2,"comment":"lidl","method":"carte"},{"id":10516,"month":1,"amount":4.95,"date":3,"comment":"Pomme de terre frite la gailliarde","method":"carte"},{"id":10517,"month":2,"amount":23,"date":3,"comment":"Delhaize","method":"carte"},{"id":10518,"month":3,"amount":3.6,"date":1,"comment":"takeeat","method":"carte"},{"id":10519,"month":0,"amount":107.85,"date":6,"comment":"lidl","method":"carte"},{"id":10520,"month":1,"amount":9.7,"date":3,"comment":"vandercammen mokka","method":"carte"},{"id":10521,"month":2,"amount":23.04,"date":4,"comment":"reimans","method":"carte"},{"id":10522,"month":3,"amount":2.85,"date":1,"comment":"boisson balade","method":"carte"},{"id":10523,"month":0,"amount":4,"date":9,"comment":"la gailliarde","method":"carte"},{"id":10524,"month":1,"amount":118.94,"date":3,"comment":"lidl","method":"carte"},{"id":10525,"month":2,"amount":22.09,"date":4,"comment":"reinmans fosse la ville","method":"carte"},{"id":10526,"month":3,"amount":20.5,"date":3,"comment":"intermarché","method":"carte"},{"id":10527,"month":0,"amount":2.98,"date":9,"comment":"lidl","method":"carte"},{"id":10528,"month":1,"amount":23.43,"date":6,"comment":"lidl","method":"carte"},{"id":10529,"month":2,"amount":3.03,"date":4,"comment":"alfi fosse la ville","method":"carte"},{"id":10530,"month":3,"amount":4.75,"date":7,"comment":"station service","method":"carte"},{"id":10531,"month":0,"amount":63.88,"date":16,"comment":"lidl","method":"carte"},{"id":10532,"month":1,"amount":16.78,"date":8,"comment":"delhaise","method":"carte"},{"id":10533,"month":2,"amount":66.89,"date":6,"comment":"lidl","method":"carte"},{"id":10534,"month":3,"amount":7.61,"date":null,"comment":"carrefour fosse la ville","method":"carte"},{"id":10535,"month":0,"amount":28.22,"date":16,"comment":"lidl","method":"carte"},{"id":10536,"month":1,"amount":28.45,"date":10,"comment":"intyermarché","method":"carte"},{"id":10537,"month":2,"amount":1.49,"date":6,"comment":"lidl","method":"carte"},{"id":10538,"month":3,"amount":3.99,"date":10,"comment":"aldi","method":"carte"},{"id":10539,"month":0,"amount":40,"date":16,"comment":"crasse","method":"carte"},{"id":10540,"month":1,"amount":40.81,"date":10,"comment":"colruyt","method":"carte"},{"id":10541,"month":2,"amount":53.77,"date":13,"comment":"lidl","method":"carte"},{"id":10542,"month":3,"amount":94.1,"date":10,"comment":"aldi","method":"carte"},{"id":10543,"month":0,"amount":19.88,"date":23,"comment":"renmans","method":"carte"},{"id":10544,"month":1,"amount":68.41,"date":11,"comment":"aldi","method":"carte"},{"id":10545,"month":2,"amount":40.75,"date":19,"comment":"intermarché assesse","method":"carte"},{"id":10546,"month":3,"amount":6.2,"date":11,"comment":"image","method":"carte"},{"id":10547,"month":0,"amount":16.3,"date":23,"comment":"hennau","method":"carte"},{"id":10548,"month":1,"amount":17.11,"date":13,"comment":"lidl","method":"carte"},{"id":10549,"month":2,"amount":100,"date":19,"comment":"intermarché assesse","method":"carte"},{"id":10550,"month":0,"amount":6.84,"date":29,"comment":"reimans","method":"carte"},{"id":10551,"month":1,"amount":1.19,"date":14,"comment":"lidl","method":"carte"},{"id":10552,"month":2,"amount":5.98,"date":19,"comment":"aldi","method":"carte"},{"id":10553,"month":0,"amount":40.39,"date":30,"comment":"lidl","method":"carte"},{"id":10554,"month":1,"amount":6.5,"date":18,"comment":"vert jardin","method":"carte"},{"id":10555,"month":2,"amount":56.49,"date":20,"comment":"la guaiarde","method":"carte"},{"id":10556,"month":0,"amount":4.8,"date":11,"comment":"friterie","method":"carte"},{"id":10557,"month":1,"amount":2.09,"date":18,"comment":"boisson retour de la marche","method":"carte"},{"id":10558,"month":2,"amount":26.08,"date":20,"comment":"lidl","method":"carte"},{"id":10559,"month":1,"amount":38.62,"date":20,"comment":"lidl","method":"carte"},{"id":10560,"month":2,"amount":70.66,"date":21,"comment":"reimans","method":"carte"},{"id":10561,"month":1,"amount":9.99,"date":20,"comment":"lidl","method":"carte"},{"id":10562,"month":2,"amount":94.96,"date":21,"comment":"Vin et rhum anniversaire","method":"carte"},{"id":10563,"month":1,"amount":24.8,"date":22,"comment":"friterie","method":"carte"},{"id":10564,"month":2,"amount":40,"date":28,"comment":"Tarte mondelez","method":"carte"},{"id":10565,"month":1,"amount":7.9,"date":25,"comment":"asndwich anthée","method":"carte"},{"id":10566,"month":2,"amount":54.73,"date":27,"comment":"lidl","method":"carte"},{"id":10567,"month":1,"amount":25.2,"date":26,"comment":"carrefour boulogne sur mer","method":"carte"},{"id":10568,"month":1,"amount":10.35,"date":27,"comment":"Pharmacie colle dentier","method":"carte"},{"id":10569,"month":1,"amount":14.2,"date":15,"comment":"boulangerie hennau","method":"carte"},{"id":10570,"month":1,"amount":5,"date":18,"comment":"take eat","method":"carte"},{"id":10571,"month":1,"amount":16.43,"date":19,"comment":"intermarché anthee","method":"carte"}],"divers":[{"id":10572,"month":0,"amount":9.99,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10573,"month":1,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10574,"month":2,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10575,"month":3,"amount":4.5,"date":1,"comment":"frais bancaire","method":"carte"},{"id":10576,"month":0,"amount":199.28,"date":6,"comment":"Dentiste avant remboursement mutuelle","method":"carte"},{"id":10577,"month":1,"amount":18,"date":1,"comment":"crasse","method":"carte"},{"id":10578,"month":2,"amount":25,"date":2,"comment":"Anniversaire Christine verser sur le compte de Vanessa","method":"carte"},{"id":10579,"month":3,"amount":10,"date":3,"comment":"crasse","method":"carte"},{"id":10580,"month":0,"amount":-177.28,"date":9,"comment":"remboursement mutuelle","method":"carte"},{"id":10581,"month":1,"amount":1347,"date":12,"comment":"04/02 acompte lunette 150€","method":"carte"},{"id":10582,"month":2,"amount":16.5,"date":3,"comment":"crasse","method":"carte"},{"id":10583,"month":3,"amount":29,"date":3,"comment":"Hamburger Biesme","method":"carte"},{"id":10584,"month":0,"amount":10.95,"date":6,"comment":"Pharmacie bain de bouche et ibuprofen","method":"carte"},{"id":10585,"month":1,"amount":11.2,"date":5,"comment":"McDo","method":"carte"},{"id":10586,"month":2,"amount":23,"date":6,"comment":"coiffeur","method":"carte"},{"id":10587,"month":3,"amount":10,"date":6,"comment":"crasse","method":"carte"},{"id":10588,"month":0,"amount":1.49,"date":6,"comment":"Yesss gratoire parebrise","method":"carte"},{"id":10589,"month":1,"amount":175,"date":null,"comment":"06 acompte st valentin 50€ 20 soldes 125€","method":"carte"},{"id":10590,"month":2,"amount":21.2,"date":6,"comment":"friterie la récré","method":"carte"},{"id":10591,"month":3,"amount":31.95,"date":10,"comment":"yesss","method":"carte"},{"id":10592,"month":0,"amount":7.79,"date":6,"comment":"Mr bricolage lave glace voiture","method":"carte"},{"id":10593,"month":1,"amount":31,"date":6,"comment":"crasse 2*","method":"carte"},{"id":10594,"month":2,"amount":29,"date":6,"comment":"crasses","method":"carte"},{"id":10595,"month":3,"amount":22,"date":10,"comment":"take eat","method":"carte"},{"id":10596,"month":0,"amount":27,"date":7,"comment":"crasse","method":"carte"},{"id":10597,"month":1,"amount":71.26,"date":6,"comment":"Pharmacie","method":"carte"},{"id":10598,"month":2,"amount":22,"date":8,"comment":"adeps hamois","method":"carte"},{"id":10599,"month":3,"amount":90,"date":12,"comment":"IPTV","method":"carte"},{"id":10600,"month":0,"amount":12.35,"date":9,"comment":"Timbre Bpost","method":"carte"},{"id":10601,"month":1,"amount":504.73,"date":6,"comment":"contribution","method":"carte"},{"id":10602,"month":2,"amount":20,"date":11,"comment":"crasses","method":"carte"},{"id":10603,"month":0,"amount":12,"date":11,"comment":"crasse","method":"carte"},{"id":10604,"month":1,"amount":464.42,"date":6,"comment":"lxd cars","method":"carte"},{"id":10605,"month":2,"amount":60,"date":12,"comment":"Pharmacie","method":"carte"},{"id":10606,"month":0,"amount":268.1,"date":12,"comment":"dentiste extraction avant remboursement mutuelle","method":"carte"},{"id":10607,"month":1,"amount":11.5,"date":6,"comment":"bonbon cinema gumgum","method":"carte"},{"id":10608,"month":2,"amount":16.5,"date":13,"comment":"Crasse","method":"carte"},{"id":10609,"month":0,"amount":-238.6,"date":15,"comment":"remboursement mutuelle","method":"carte"},{"id":10610,"month":1,"amount":18,"date":13,"comment":"Crasse","method":"carte"},{"id":10611,"month":2,"amount":12,"date":17,"comment":"crasses","method":"carte"},{"id":10612,"month":0,"amount":4.8,"date":11,"comment":"boisson friterie mettet","method":"carte"},{"id":10613,"month":1,"amount":23,"date":23,"comment":"coiffeur","method":"carte"},{"id":10614,"month":2,"amount":20,"date":null,"comment":"apéro Sébastien","method":"carte"},{"id":10615,"month":0,"amount":21.2,"date":17,"comment":"friterie","method":"carte"},{"id":10616,"month":1,"amount":29.99,"date":13,"comment":"grignoteuse coupe metal lidl","method":"carte"},{"id":10617,"month":2,"amount":6.5,"date":21,"comment":"friterie","method":"carte"},{"id":10618,"month":0,"amount":40.32,"date":19,"comment":"Temu","method":"carte"},{"id":10619,"month":1,"amount":15.5,"date":13,"comment":"crasse","method":"carte"},{"id":10620,"month":2,"amount":10,"date":21,"comment":"take eat","method":"carte"},{"id":10621,"month":0,"amount":46.7,"date":21,"comment":"pizza hut","method":"carte"},{"id":10622,"month":1,"amount":36,"date":null,"comment":"","method":"carte"},{"id":10623,"month":2,"amount":10,"date":25,"comment":"take eat","method":"carte"},{"id":10624,"month":0,"amount":66.46,"date":21,"comment":"bent chaussure","method":"carte"},{"id":10625,"month":1,"amount":6.53,"date":24,"comment":"piles action","method":"carte"},{"id":10626,"month":2,"amount":7,"date":26,"comment":"vert jardin","method":"carte"},{"id":10627,"month":0,"amount":35.05,"date":21,"comment":"luxus chaussure","method":"carte"},{"id":10628,"month":1,"amount":38,"date":26,"comment":"restaurant boulogne sur mer","method":"carte"},{"id":10629,"month":2,"amount":23,"date":27,"comment":"Coiffeur","method":"carte"},{"id":10630,"month":0,"amount":149.13,"date":19,"comment":"cartouche encres brother","method":"carte"},{"id":10631,"month":1,"amount":14.5,"date":26,"comment":"crasse","method":"carte"},{"id":10632,"month":2,"amount":20.1,"date":27,"comment":"Clinique st luc gastro anterologue du 02/12","method":"carte"},{"id":10633,"month":0,"amount":75,"date":22,"comment":"ophtalmo","method":"carte"},{"id":10634,"month":1,"amount":6.5,"date":27,"comment":"friterie","method":"carte"},{"id":10635,"month":2,"amount":54.73,"date":27,"comment":"lidl","method":"carte"},{"id":10636,"month":0,"amount":-38.45,"date":27,"comment":"remboursement ophtalmo","method":"carte"},{"id":10637,"month":1,"amount":10.59,"date":28,"comment":"image ciney","method":"carte"},{"id":10638,"month":2,"amount":14.5,"date":29,"comment":"crasse","method":"carte"},{"id":10639,"month":0,"amount":735.99,"date":5,"comment":"acomptes dentier justine peret 22/01/26 200€ 29/01/26 200€","method":"carte"},{"id":10640,"month":2,"amount":6.5,"date":28,"comment":"vert jardin","method":"carte"},{"id":10641,"month":0,"amount":-582.99,"date":9,"comment":"remboursement mutuelle dentier","method":"carte"},{"id":10642,"month":2,"amount":6,"date":31,"comment":"mcdo","method":"carte"},{"id":10643,"month":0,"amount":23,"date":23,"comment":"coiffeur","method":"carte"},{"id":10644,"month":0,"amount":15.5,"date":23,"comment":"crasse","method":"carte"},{"id":10645,"month":0,"amount":2.49,"date":27,"comment":"pile action","method":"carte"},{"id":10646,"month":0,"amount":22.4,"date":29,"comment":"take eat","method":"carte"},{"id":10647,"month":0,"amount":43.19,"date":31,"comment":"pathé chaleroix film femme de ménage","method":"carte"}],"chien":[{"id":10648,"month":0,"amount":141.11,"date":15,"comment":"croquettes zooplus","method":"carte"},{"id":10649,"month":1,"amount":99.71,"date":10,"comment":"vétérinaire blessure pendant la balade, il ne posait plus la patte arrière droite muscle rond du bassin certainement touché. Après 48h c'est redevenu +- normale mais repos pendant 10jours","method":"carte"},{"id":10650,"month":2,"amount":138.53,"date":9,"comment":"harnais laisse et colier","method":"carte"},{"id":10651,"month":3,"amount":10.84,"date":3,"comment":"bonbon + oreilles","method":"carte"},{"id":10652,"month":0,"amount":68.57,"date":19,"comment":"Temu protection siège et coffre","method":"carte"},{"id":10653,"month":1,"amount":21,"date":14,"comment":"Tapis portes aldi","method":"carte"},{"id":10654,"month":2,"amount":61.72,"date":null,"comment":"Vermifuge","method":"carte"},{"id":10655,"month":0,"amount":61.8,"date":31,"comment":"Temu - pannier 2 - sangle siège - couverture couvre siège","method":"carte"},{"id":10656,"month":1,"amount":15.44,"date":24,"comment":"poils et plumes","method":"carte"}]}};
+
+function applyExcelImport() {
+  if (CURRENT_USER_ID !== 'pascal') return;
+  if (localStorage.getItem('budget_notes_imported_v2')) return;
+  ['2025','2026'].forEach(year => {
+    if (!DATA[year] || !EXCEL_IMPORT_DATA[year]) return;
+    DATA[year].vars = JSON.parse(JSON.stringify(EXCEL_IMPORT_DATA[year]));
+  });
+  dSave();
+  localStorage.setItem('budget_notes_imported_v2', '1');
+}
+
+// ── WIZARD SUGGESTIONS ──
+const WIZARD_REVS = [
+  {label:'💼 Salaire',              amount:2000, checked:true},
+  {label:'💼 Salaire conjoint(e)',  amount:0,    checked:false},
+  {label:'🏦 Allocations / CAF',   amount:0,    checked:false},
+  {label:'🏘 Revenus locatifs',    amount:0,    checked:false},
+  {label:'📈 Revenus financiers',  amount:0,    checked:false},
+  {label:'🎁 Autres revenus',      amount:0,    checked:false},
+];
+const WIZARD_CHGS = [
+  {label:'🏠 Loyer / Rembt prêt immo',       amount:800, checked:true,  cat:'fixed'},
+  {label:'⚡ Électricité / Gaz',              amount:80,  checked:true,  cat:'fixed'},
+  {label:'💧 Eau',                             amount:30,  checked:false, cat:'fixed'},
+  {label:'📱 Téléphone mobile',               amount:25,  checked:true,  cat:'fixed'},
+  {label:'🌐 Internet / Box',                 amount:35,  checked:true,  cat:'fixed'},
+  {label:'🚗 Assurance auto',                 amount:70,  checked:false, cat:'fixed'},
+  {label:'⛽ Carburant',                       amount:100, checked:false, cat:'fixed'},
+  {label:'🚌 Transport en commun',             amount:50,  checked:false, cat:'fixed'},
+  {label:'🛡 Assurance habitation',            amount:30,  checked:true,  cat:'fixed'},
+  {label:'🏥 Mutuelle santé',                  amount:60,  checked:false, cat:'fixed'},
+  {label:'🐾 Animaux de compagnie',           amount:50,  checked:false, cat:'fixed'},
+  {label:'🎬 Abonnements streaming',           amount:20,  checked:false, cat:'fixed'},
+  {label:'🏋 Sport / Loisirs',                amount:30,  checked:false, cat:'fixed'},
+  {label:'📚 Scolarité / Garde enfants',       amount:0,   checked:false, cat:'fixed'},
+  {label:'💳 Remboursement crédit',            amount:0,   checked:false, cat:'fixed'},
+  {label:'📈 Livret — virement mensuel',       amount:0,   checked:false, cat:'livret_in'},
+  {label:'📈 Livret — versement exceptionnel', amount:0,   checked:false, cat:'livret_in'},
+  {label:'📉 Livret — retrait vers compte',    amount:0,   checked:false, cat:'livret_out'},
+];
+let _wiz = {step:1, name:'', color:'#e67e22', revs:[], chgs:[], pin:''};
+
+function toggleWelcomeAddPanel() {
+  const p = document.getElementById('welcome-add-panel');
+  if (!p) return;
+  const open = p.style.display === 'block';
+  if (open) { p.style.display='none'; return; }
+  _wiz = {step:1, name:'', color:'#e67e22', pin:'',
+    revs: JSON.parse(JSON.stringify(WIZARD_REVS)),
+    chgs: JSON.parse(JSON.stringify(WIZARD_CHGS))};
+  p.style.display = 'block';
+  renderWizard();
+  setTimeout(()=>{
+    p.scrollIntoView({behavior:'smooth', block:'nearest'});
+    document.getElementById('wiz-name')?.focus();
+  }, 80);
+}
+
+function renderWizard() {
+  const c = document.getElementById('wizard-content');
+  if (!c) return;
+  const stepLabels = ['Profil','Revenus','Charges','PIN'];
+  const indicator = `<div style="display:flex;align-items:flex-start;justify-content:center;gap:0;margin-bottom:22px">
+    ${stepLabels.map((s,i)=>{
+      const done = i+1 < _wiz.step, active = i+1 === _wiz.step;
+      const circle = done ? '✓' : i+1;
+      const bg = done||active ? '#27ae60' : 'rgba(255,255,255,.15)';
+      const border = active ? '2px solid #fff' : '2px solid transparent';
+      const sep = i<3 ? `<div style="flex:1;height:2px;background:${i+1<_wiz.step?'#27ae60':'rgba(255,255,255,.18)'};margin:14px 4px 0"></div>` : '';
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+        <div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:${bg};color:#fff;border:${border}">${circle}</div>
+        <div style="font-size:10px;color:${active?'#fff':'rgba(255,255,255,.5)'};font-weight:700;text-transform:uppercase;letter-spacing:.4px">${s}</div>
+      </div>${sep}`;
+    }).join('')}
+  </div>`;
+
+  let body = '';
+  if (_wiz.step === 1) {
+    const colors = ['#1a6fc4','#27ae60','#e67e22','#9b59b6','#e74c3c','#16a085','#d35400','#2980b9'];
+    const swatches = colors.map(col=>`<div onclick="_wiz.color='${col}';document.getElementById('wiz-color-inp').value='${col}';document.querySelectorAll('.wiz-swatch').forEach(s=>s.style.outline='none');this.style.outline='3px solid #fff'"
+      class="wiz-swatch" style="width:26px;height:26px;border-radius:50%;background:${col};cursor:pointer;flex-shrink:0;transition:transform .15s"
+      onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></div>`).join('');
+    body = `
+      <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px">Prénom / Nom</label>
+      <input type="text" id="wiz-name" class="welcome-field" placeholder="Ex : Marie…" value="${_wiz.name}"
+        onkeydown="if(event.key==='Enter')wizardNext()" oninput="_wiz.name=this.value.trim()">
+      <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:8px">Couleur de profil</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        ${swatches}
+        <input type="color" id="wiz-color-inp" value="${_wiz.color}" style="width:30px;height:30px;border:1px solid rgba(255,255,255,.25);border-radius:50%;cursor:pointer;background:transparent;padding:1px" oninput="_wiz.color=this.value">
+      </div>
+      <button class="welcome-create-btn" onclick="wizardNext()">Suivant — Revenus &rarr;</button>`;
+  } else if (_wiz.step === 2) {
+    const rows = _wiz.revs.map((r,i)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+        <input type="checkbox" ${r.checked?'checked':''} style="width:17px;height:17px;cursor:pointer;accent-color:#27ae60;flex-shrink:0"
+          onchange="_wiz.revs[${i}].checked=this.checked;wizRowToggle('wr',${i},this.checked)">
+        <span id="wr-lbl-${i}" style="flex:1;font-size:13px;color:${r.checked?'#fff':'rgba(255,255,255,.4)'};font-weight:500">${r.label}</span>
+        <input type="number" value="${r.amount||''}" placeholder="0" min="0" id="wr-amt-${i}"
+          style="width:82px;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 8px;font-size:12px;background:rgba(255,255,255,.1);color:#fff;text-align:right;outline:none;${r.checked?'':'opacity:.35;pointer-events:none'}"
+          oninput="_wiz.revs[${i}].amount=+this.value">
+        <span style="font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0">€/mois</span>
+      </div>`).join('');
+    body = `<div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:10px">Cochez et ajustez vos sources de revenus mensuels.</div>
+      ${rows}
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
+        <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">Suivant — Charges &rarr;</button>
+      </div>`;
+  } else if (_wiz.step === 3) {
+    const rows = _wiz.chgs.map((ch,i)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+        <input type="checkbox" ${ch.checked?'checked':''} style="width:17px;height:17px;cursor:pointer;accent-color:#27ae60;flex-shrink:0"
+          onchange="_wiz.chgs[${i}].checked=this.checked;wizRowToggle('wc',${i},this.checked)">
+        <span id="wc-lbl-${i}" style="flex:1;font-size:12px;color:${ch.checked?'#fff':'rgba(255,255,255,.4)'};font-weight:500">${ch.label}</span>
+        <input type="number" value="${ch.amount||''}" placeholder="0" min="0" id="wc-amt-${i}"
+          style="width:78px;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 7px;font-size:12px;background:rgba(255,255,255,.1);color:#fff;text-align:right;outline:none;${ch.checked?'':'opacity:.35;pointer-events:none'}"
+          oninput="_wiz.chgs[${i}].amount=+this.value">
+        <span style="font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0">€/mois</span>
+      </div>`).join('');
+    body = `<div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:10px">Cochez vos charges fixes et ajustez les montants.</div>
+      <div style="max-height:270px;overflow-y:auto;padding-right:4px">${rows}</div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
+        <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">Suivant — PIN &rarr;</button>
+      </div>`;
+  } else if (_wiz.step === 4) {
+    const pinInputs = [0,1,2,3].map(i=>`<input id="wpin${i}" type="password" maxlength="1" inputmode="numeric" autocomplete="off"
+      style="width:54px;height:64px;font-size:30px;font-weight:800;text-align:center;border:2px solid rgba(255,255,255,.3);border-radius:10px;background:rgba(255,255,255,.12);color:#fff;outline:none;transition:border-color .15s"
+      oninput="wizPinInput(${i})" onkeydown="wizPinKey(event,${i})">`).join('');
+    body = `<div style="text-align:center;padding:4px 0 10px">
+      <div style="font-size:36px;margin-bottom:8px">🔒</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.9);font-weight:700;margin-bottom:4px">Protégez votre compte</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:18px">Définissez un code PIN à 4 chiffres pour sécuriser vos données.<br>Vous pouvez aussi ignorer cette étape.</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:6px">${pinInputs}</div>
+      <div id="wiz-pin-err" style="color:#ff6b6b;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
+      <button onclick="wizardSkipPin()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">⏭ Passer</button>
+      <button onclick="wizardConfirmPin()" class="welcome-create-btn" style="flex:2">✅ Créer mon budget</button>
+    </div>`;
+  }
+  c.innerHTML = indicator + body;
+}
+
+function wizRowToggle(prefix, i, on) {
+  const lbl = document.getElementById(`${prefix}-lbl-${i}`);
+  const amt = document.getElementById(`${prefix}-amt-${i}`);
+  if (lbl) lbl.style.color = on ? '#fff' : 'rgba(255,255,255,.4)';
+  if (amt) { amt.style.opacity = on ? '1' : '.35'; amt.style.pointerEvents = on ? '' : 'none'; }
+}
+function wizardNext() {
+  if (_wiz.step === 1) {
+    const name = document.getElementById('wiz-name')?.value.trim();
+    if (!name) { document.getElementById('wiz-name')?.focus(); return; }
+    _wiz.name = name;
+    _wiz.color = document.getElementById('wiz-color-inp')?.value || '#e67e22';
+  }
+  _wiz.step = Math.min(4, _wiz.step + 1);
+  renderWizard();
+}
+function wizardBack() { _wiz.step = Math.max(1, _wiz.step - 1); renderWizard(); }
+function wizPinInput(idx) {
+  const el = document.getElementById('wpin'+idx);
+  el.value = el.value.replace(/\D/g,'').slice(-1);
+  document.getElementById('wiz-pin-err').textContent = '';
+  el.style.borderColor = el.value ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.3)';
+  if (el.value && idx < 3) document.getElementById('wpin'+(idx+1)).focus();
+}
+function wizPinKey(e, idx) {
+  if (e.key==='Backspace' && !document.getElementById('wpin'+idx).value && idx > 0)
+    document.getElementById('wpin'+(idx-1)).focus();
+  if (e.key==='Enter') wizardConfirmPin();
+}
+function wizardSkipPin() { _wiz.pin = ''; wizardFinish(); }
+function wizardConfirmPin() {
+  const pin = [0,1,2,3].map(i=>document.getElementById('wpin'+i)?.value||'').join('');
+  if (pin.length < 4) { document.getElementById('wiz-pin-err').textContent = '⚠️ Entrez 4 chiffres ou cliquez Passer'; return; }
+  _wiz.pin = pin; wizardFinish();
+}
+function wizardFinish() {
+  if (!_wiz.name) { wizardBack(); wizardBack(); return; }
+  const id = _wiz.name.toLowerCase().replace(/[^a-z0-9]/g,'_') + '_' + Date.now();
+  USERS[id] = { name: _wiz.name, color: _wiz.color, ...(_wiz.pin ? {pin: _wiz.pin} : {}) };
+  saveUsers();
+  CURRENT_USER_ID = id;
+  const cfg = {
+    tplRevs: _wiz.revs.filter(r=>r.checked).map(r=>({label:r.label, amount:r.amount||0})),
+    tplChgs: _wiz.chgs.filter(c=>c.checked).map(c=>({label:c.label, amount:c.amount||0, cat:c.cat||'fixed'})),
+  };
+  saveUserConfig(cfg);
+  selectUserFromWelcome(id);
+}
+function saveUsers() { localStorage.setItem('budget_users', JSON.stringify(USERS)); }
+function dataKey() { return `budget_data_${CURRENT_USER_ID}`; }
+function bakPrefix() { return `budget_bak_${CURRENT_USER_ID}_`; }
+
+function updateUserDisplay() {
+  const u = USERS[CURRENT_USER_ID];
+  if (!u) return;
+  const dot = document.getElementById('user-dot');
+  const nm = document.getElementById('user-name-display');
+  if (dot) dot.style.background = u.color;
+  if (nm) nm.textContent = u.name;
+}
+
+function switchUser(userId) {
+  if (!USERS[userId]) return;
+  CURRENT_USER_ID = userId;
+  localStorage.setItem('budget_current_user', userId);
+  loadData();
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  renderTabs();
+  getYears().forEach(y => renderYear(y));
+  renderSummary();
+  updateUserDisplay();
+  document.getElementById('user-menu')?.classList.remove('open');
+  const years = getYears();
+  const lastYear = years[years.length - 1];
+  if (lastYear) {
+    const yearTabs = document.querySelectorAll('#year-tabs .tab');
+    const tabEl = yearTabs[yearTabs.length - 1];
+    if (tabEl) switchTab('y' + lastYear, tabEl);
+  }
+  showToast('👤 ' + USERS[userId].name);
+}
+function openUserWizardFromConfig() {
+  goToWelcome();
+  setTimeout(()=>toggleWelcomeAddPanel(), 450);
+}
+function addUserFromForm() {
+  const nameEl = document.getElementById('new-user-name');
+  const colorEl = document.getElementById('new-user-color');
+  const name = nameEl?.value.trim();
+  const color = colorEl?.value || '#e67e22';
+  if (!name) { showToast('⚠️ Entrez un nom'); return; }
+  const id = name.toLowerCase().replace(/[^a-z0-9]/g,'_') + '_' + Date.now();
+  USERS[id] = { name, color };
+  saveUsers();
+  if (nameEl) nameEl.value = '';
+  renderConfigTab();
+  showToast('👤 ' + name + ' ajouté');
+}
+function confirmDeleteUser(userId) {
+  const name = USERS[userId]?.name || userId;
+  confirmDelete(`Supprimer l'utilisateur "${name}" et toutes ses données ?`, () => {
+    Object.keys(localStorage).filter(k => k.includes(userId)).forEach(k => localStorage.removeItem(k));
+    delete USERS[userId];
+    saveUsers();
+    renderConfigTab();
+    showToast('🗑 Utilisateur supprimé');
+  });
+}
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let DATA;
+const DATA_VERSION = '4';
+function loadData() {
+  DATA = null;
+  ['budget_pascal_2025','budget_pascal_v2'].forEach(k => localStorage.removeItem(k));
+  const s = localStorage.getItem(dataKey()) || (CURRENT_USER_ID==='pascal' ? localStorage.getItem('budget_pascal_v6') : null);
+  if (s) { try { DATA = JSON.parse(s); if (!DATA.methods) DATA.methods=[...DEFAULT_METHODS]; } catch(e){ DATA = null; } }
+  if (!DATA) DATA = CURRENT_USER_ID==='pascal' ? buildDefaults() : buildDefaultsForNewUser();
+  if (CURRENT_USER_ID==='pascal') applyExcelImport();
+  // Migration: revenue paid = false by default, true only if amount = 0
+  if (!localStorage.getItem('rev_paid_v2')) {
+    getYears().forEach(y => {
+      (DATA[y].revenus||[]).forEach(r => { r.paid = r.v.map(v => (parseFloat(v)||0) === 0); });
+    });
+    localStorage.setItem('rev_paid_v2', '1');
+  }
+  // Migration: ensure revenue rows have paid + inCalc
+  getYears().forEach(y => {
+    (DATA[y].revenus||[]).forEach(r => {
+      if (!r.paid) r.paid = r.v.map(v => (parseFloat(v)||0) === 0);
+      if (r.inCalc === undefined) r.inCalc = true;
+    });
+    (DATA[y].charges||[]).forEach(r => { if (r.inCalc === undefined) r.inCalc = true; });
+  });
+}
+
+// ─────────────────────────────────────────────
+// LIVRET FORMULA
+// ─────────────────────────────────────────────
+function computeLivret(year) {
+  const d = DATA[year];
+  let bal = parseFloat(d.soldes.livretInitial) || 0;
+  d.charges.forEach(row => {
+    if (row.inCalc === false) return;
+    if (row.cat === 'livret_in' || row.cat === 'livret_out') {
+      row.v.forEach((v,i) => { if (row.paid[i]) bal += parseFloat(v) || 0; });
+    }
+  });
+  return bal;
+}
+
+// ─────────────────────────────────────────────
+// COMPTE FORMULA
+// ─────────────────────────────────────────────
+function computeCompte(year) {
+  const d = DATA[year];
+  let bal = parseFloat(d.soldes.compteIng) || 0;
+  d.revenus.forEach(r => {
+    if (r.inCalc === false) return;
+    r.v.forEach((v,i) => { if (!r.paid || r.paid[i]) bal += parseFloat(v)||0; });
+  });
+  d.charges.forEach(r => {
+    if (r.inCalc === false) return;
+    r.v.forEach((v,i) => { if (r.paid[i]) bal -= parseFloat(v)||0; });
+  });
+  const excMeth = d.excludeCalcMethods || [];
+  Object.values(d.vars).forEach(txs => txs.forEach(tx => {
+    if (!excMeth.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
+  }));
+  return bal;
+}
+
+// ─────────────────────────────────────────────
+// CALCS
+// ─────────────────────────────────────────────
+function revTotal(year) {
+  const t = Array(12).fill(0);
+  DATA[year].revenus.forEach(r => r.v.forEach((v,i) => t[i] += parseFloat(v)||0));
+  return t;
+}
+function chgTotal(year) {
+  const t = Array(12).fill(0);
+  DATA[year].charges.forEach(r => {
+    if (r.cat === 'livret_in' || r.cat === 'livret_out') return;
+    r.v.forEach((v,i) => t[i] += parseFloat(v)||0);
+  });
+  return t;
+}
+function varTotal(year, cat) {
+  const t = Array(12).fill(0);
+  DATA[year].vars[cat].forEach(tx => { t[tx.month] += parseFloat(tx.amount)||0; });
+  return t;
+}
+function allVarTotal(year) {
+  return Array(12).fill(0).map((_,i) =>
+    ['carburant','courses','divers','chien'].reduce((a,k)=>a+varTotal(year,k)[i],0));
+}
+function depTotal(year) { return chgTotal(year).map((v,i)=>v+allVarTotal(year)[i]); }
+function varTotalByMethod(year, method) {
+  const t = Array(12).fill(0);
+  ['carburant','courses','divers','chien'].forEach(k =>
+    DATA[year].vars[k].forEach(tx => { if (tx.method===method) t[tx.month] += tx.amount||0; }));
+  return t;
+}
+function balance(year) { return revTotal(year).map((v,i)=>v-depTotal(year)[i]); }
+function resteAPayer(year) {
+  return Array(12).fill(0).map((_,i) =>
+    DATA[year].charges.reduce((s,r) => {
+      if (r.cat === 'livret_in' || r.cat === 'livret_out') return s;
+      return s + (r.paid[i] ? 0 : Math.max(0, parseFloat(r.v[i])||0));
+    }, 0));
+}
+
+// ─────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if (id==='resume') renderSummary();
+  else if (id==='charts') renderCharts();
+  else if (id==='config') renderConfigTab();
+}
+
+function renderTabs() {
+  const cont = document.getElementById('year-tabs');
+  const years = getYears();
+  cont.innerHTML = years.map(y =>
+    `<div class="tab" onclick="switchTab('y${y}',this)">📅 ${y}${years.length > 1 ? `<span class="tab-del" onclick="event.stopPropagation();deleteYear('${y}')">✕</span>` : ''}</div>`
+  ).join('');
+  const container = document.getElementById('main-container');
+  years.forEach(y => {
+    if (!document.getElementById('tab-y'+y)) {
+      const div = document.createElement('div');
+      div.id = 'tab-y' + y;
+      div.className = 'tab-panel';
+      container.appendChild(div);
+    }
+  });
+}
+
+function deleteYear(year) {
+  confirmDelete(`Supprimer l'année ${year} et toutes ses données ?`, () => {
+    delete DATA[year];
+    const panel = document.getElementById('tab-y' + year);
+    if (panel) panel.remove();
+    renderTabs();
+    const remaining = getYears();
+    if (remaining.length) {
+      const firstTab = document.querySelector('#year-tabs .tab');
+      if (firstTab) switchTab('y' + remaining[0], firstTab);
+    }
+    dSave(); renderSummary();
+    showToast('🗑 Année ' + year + ' supprimée');
+  });
+}
+let _pendingDeleteFn = null;
+function confirmDelete(msg, onConfirm) {
+  document.getElementById('del-confirm-msg').textContent = msg;
+  document.getElementById('del-confirm-backup').checked = false;
+  _pendingDeleteFn = onConfirm;
+  document.getElementById('del-confirm-modal').classList.add('open');
+}
+function execDelete() {
+  if (document.getElementById('del-confirm-backup').checked) {
+    const now = new Date();
+    const mk = bakPrefix() + `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    localStorage.setItem(mk, JSON.stringify(DATA));
+    showToast('💾 Backup créé');
+  }
+  if (_pendingDeleteFn) { _pendingDeleteFn(); _pendingDeleteFn = null; }
+  document.getElementById('del-confirm-modal').classList.remove('open');
+}
+function cancelDelete() {
+  _pendingDeleteFn = null;
+  document.getElementById('del-confirm-modal').classList.remove('open');
+}
+
+let _pendingNewYear = null;
+function addYear() {
+  const years = getYears();
+  const lastYear = years[years.length - 1];
+  const newYear = String(parseInt(lastYear) + 1);
+  if (DATA[newYear]) { showToast('Année ' + newYear + ' existe déjà'); return; }
+  _pendingNewYear = { lastYear, newYear };
+  document.getElementById('rev-dialog-year-title').textContent = newYear;
+  const prev = DATA[lastYear];
+  const tbody = document.getElementById('rev-dialog-tbody');
+  tbody.innerHTML = prev.revenus.map((r, i) => {
+    const vals = r.v.filter(v=>v>0);
+    const avg = vals.length ? Math.round(sum(vals)/vals.length*100)/100 : 0;
+    return `<tr><td style="font-weight:600">${r.label}</td>
+      <td style="color:var(--gray)">${fmtN(avg)} €/mois</td>
+      <td><input class="rev-dialog-input" type="number" step="0.01" id="rev-inp-${i}" placeholder="${fmtN(avg)}"></td></tr>`;
+  }).join('');
+  document.getElementById('rev-dialog-modal').classList.add('open');
+}
+function cancelRevDialog() {
+  _pendingNewYear = null;
+  document.getElementById('rev-dialog-modal').classList.remove('open');
+}
+function confirmRevDialog() {
+  if (!_pendingNewYear) return;
+  const { lastYear, newYear } = _pendingNewYear;
+  const prev = DATA[lastYear];
+  const livretFinal = computeLivret(lastYear);
+  DATA[newYear] = {
+    soldes: { compteIng: 0, comptePro: 0, livretInitial: livretFinal, boite: 0 },
+    excludeCalcMethods: [...(prev.excludeCalcMethods || [])],
+    revenus: prev.revenus.map((r, i) => {
+      const inp = document.getElementById(`rev-inp-${i}`);
+      const val = parseFloat(inp?.value);
+      const v = (!isNaN(val) && val >= 0) ? Array(12).fill(val) : [...r.v];
+      return { label: r.label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false };
+    }),
+    charges: prev.charges.map(r => {
+      const isLivret = r.cat === 'livret_in' || r.cat === 'livret_out';
+      const v = isLivret ? Array(12).fill(0) : [...r.v];
+      return { label: r.label, cat: r.cat, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false };
+    }),
+    vars: { carburant: [], courses: [], divers: [], chien: [] }
+  };
+  document.getElementById('rev-dialog-modal').classList.remove('open');
+  _pendingNewYear = null;
+  renderTabs(); renderYear(newYear);
+  document.querySelectorAll('#year-tabs .tab').forEach(t => {
+    if (t.textContent.includes(newYear)) {
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('tab-y'+newYear).classList.add('active');
+    }
+  });
+  dSave(); renderSummary();
+  showToast('📅 Année ' + newYear + ' créée');
+}
+
+function txDay(d) {
+  if (d === '' || d === null || d === undefined) return '';
+  const n = parseInt(d);
+  if (!isNaN(n) && n > 0) return n;
+  if (typeof d === 'string' && d.includes('-')) { const p = parseInt(d.split('-')[2]); return p > 0 ? p : ''; }
+  return '';
+}
+
+// ─────────────────────────────────────────────
+// RENDER YEAR
+// ─────────────────────────────────────────────
+function renderYear(year) {
+  const wrap = document.getElementById('tab-y'+year);
+  wrap.innerHTML = renderSoldes(year) + renderRevSection(year) +
+    renderChargeSection(year) + renderVarSection(year) + renderMonthSummary(year);
+  updateLivretDisplay(year);
+  updateCompteDisplay(year);
+}
+
+// ── SOLDES ──
+function renderSoldes(year) {
+  const s = DATA[year].soldes;
+  const lv = computeLivret(year);
+  return `<div class="soldes-grid">
+    <div class="solde-card"><label>Compte (01/01)</label>
+      <input type="number" step="0.01" value="${s.compteIng}"
+        oninput="DATA['${year}'].soldes.compteIng=+this.value;updateCompteDisplay('${year}');dSave()"></div>
+    <div class="solde-card computed"><label>Compte actuel (calculé)
+        <button class="calc-config-btn" data-type="compte" onclick="openCalcConfig('${year}','compte')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+      </label>
+      <span class="computed-val" id="compte-calc-${year}">${fmtN(computeCompte(year))} €</span></div>
+    <div class="solde-card"><label>Livret initial (01/01)</label>
+      <input type="number" step="0.01" value="${s.livretInitial}"
+        oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()"></div>
+    <div class="solde-card computed"><label>Livret actuel (calculé)
+        <button class="calc-config-btn" data-type="livret" onclick="openCalcConfig('${year}','livret')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+      </label>
+      <span class="computed-val" id="livret-calc-${year}">${fmtN(lv)} €</span></div>
+  </div>
+  ${renderMethodPaymentSummary(year)}`;
+}
+function renderMethodPaymentSummary(year) {
+  const excluded = DATA[year].excludeCalcMethods || [];
+  const pills = getMethods().map(mo => {
+    const tot = sum(varTotalByMethod(year, mo.key));
+    const incl = !excluded.includes(mo.key);
+    return `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;background:${mo.bg};border:2px solid ${mo.color};margin:3px;font-size:12px;font-weight:600">
+      <input type="checkbox" ${incl?'checked':''}
+        onchange="toggleMethodCalc('${year}','${mo.key}',this.checked)" onclick="event.stopPropagation()"
+        style="width:13px;height:13px;accent-color:${mo.color};cursor:pointer">
+      <span style="color:${mo.color}">${mo.label}</span>
+      <span style="color:#444">${tot>0?fmtN(tot)+' €':'—'}</span>
+    </span>`;
+  }).join('');
+  return `<div style="padding:8px 14px 12px;border-top:1px solid var(--border);margin-top:4px">
+    <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">
+      Dépenses variables par mode de paiement
+      <span style="font-size:10px;color:var(--gray);margin-left:8px;font-weight:400;text-transform:none">Cocher = inclure dans Compte calculé</span>
+    </div>
+    <div id="method-summary-${year}">${pills}</div>
+  </div>`;
+}
+function updateLivretDisplay(year) {
+  const el = document.getElementById('livret-calc-'+year);
+  if (el) el.textContent = fmtN(computeLivret(year)) + ' €';
+}
+function updateCompteDisplay(year) {
+  const el = document.getElementById('compte-calc-'+year);
+  if (el) el.textContent = fmtN(computeCompte(year)) + ' €';
+}
+let _calcCfg = {year:null, type:null};
+function openCalcConfig(year, type) {
+  const container = document.getElementById('tab-y'+year);
+  if (!container) return;
+  const same = _calcCfg.year===year && _calcCfg.type===type;
+  // Remove previous mode
+  if (_calcCfg.year) {
+    const prev = document.getElementById('tab-y'+_calcCfg.year);
+    if (prev) { prev.classList.remove('cfg-compte','cfg-livret'); }
+  }
+  if (same) { _calcCfg = {year:null,type:null}; return; }
+  _calcCfg = {year, type};
+  container.classList.add('cfg-'+type);
+  // Scroll to first visible checkbox
+  container.querySelector('.cal-check.cal-check-'+type)?.closest('tr')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function toggleRowCalc(year, type, ri, checked, src) {
+  if (src==='charge') DATA[year].charges[ri].inCalc = checked;
+  else DATA[year].revenus[ri].inCalc = checked;
+  dSave();
+  if (type==='livret') updateLivretDisplay(year); else updateCompteDisplay(year);
+}
+function toggleMethodCalc(year, key, checked) {
+  if (!DATA[year].excludeCalcMethods) DATA[year].excludeCalcMethods = [];
+  if (checked) DATA[year].excludeCalcMethods = DATA[year].excludeCalcMethods.filter(k => k !== key);
+  else if (!DATA[year].excludeCalcMethods.includes(key)) DATA[year].excludeCalcMethods.push(key);
+  dSave();
+  updateCompteDisplay(year);
+}
+
+// ── REVENUS ──
+function renderRevSection(year) {
+  const rows = DATA[year].revenus;
+  const totVec = rows.map((_,_2,_3) => null); // unused
+  const monthTots = Array(12).fill(0);
+  rows.forEach(r => r.v.forEach((v,i) => monthTots[i] += parseFloat(v)||0));
+  const grandTot = sum(monthTots);
+
+  let tbody = rows.map((r,ri) => {
+    if (!r.paid) r.paid = Array(12).fill(true);
+    const tot = sum(r.v);
+    const cells = r.v.map((v,mi) => {
+      const paid = r.paid[mi];
+      return `<td id="rc-${year}-${ri}-${mi}" class="${paid?'is-paid':''}" onclick="toggleRevPaid('${year}',${ri},${mi})">
+        <span class="paid-dot">${paid?'✓':'○'}</span>
+        <input class="cell-amt${v<0?' neg':''}" type="number" step="0.01" value="${v}"
+          oninput="DATA['${year}'].revenus[${ri}].v[${mi}]=+this.value;refreshRevTotals('${year}');dSave()" onclick="event.stopPropagation()"></td>`;
+    }).join('');
+    return `<tr><td class="lbl-col"><div class="lbl-inner">
+        <input class="cal-check cal-check-compte" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','compte',${ri},this.checked)" onclick="event.stopPropagation()">
+        <input class="cell-amt" style="text-align:left;width:100%;font-weight:500" type="text"
+          value="${r.label}" oninput="DATA['${year}'].revenus[${ri}].label=this.value">
+      </div></td>${cells}
+      <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
+      <td><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
+  }).join('');
+
+  const totRow = Array(12).fill(0).map((_,i)=>`<td class="${monthTots[i]<0?'neg':'pos'}" id="revmth-${year}-${i}">${fmtN(monthTots[i])}</td>`).join('');
+
+  return `<div class="section-card collapsed">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="section-title">💹 Revenus <span class="badge badge-g" id="rev-badge-${year}">${fmtN(grandTot)} €</span></span>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body">
+      <table class="charge-table"><thead><tr>
+        <th class="lbl-col">Libellé</th>
+        ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
+        <th class="tot-col">TOTAL</th><th style="width:28px"></th>
+      </tr></thead>
+      <tbody>${tbody}
+        <tr class="sep-row"><td colspan="15" style="background:#2d6a4f;font-size:10px">TOTAL REVENUS</td></tr>
+        <tr style="background:#e8f5e9;font-weight:700">
+          <td class="lbl-col">REVENU TOTAL</td>${totRow}
+          <td class="tot-col pos" id="revtot-${year}">${fmtN(grandTot)}</td><td></td>
+        </tr>
+      </tbody></table>
+      <div style="padding:8px 14px">
+        <button class="add-tx-btn" onclick="addRevRow('${year}')">+ Ajouter une ligne</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function refreshRevTotals(year) {
+  const rows = DATA[year].revenus;
+  const mths = Array(12).fill(0);
+  rows.forEach((r,ri) => {
+    const tot = sum(r.v);
+    r.v.forEach((v,i) => mths[i] += parseFloat(v)||0);
+    const el = document.getElementById(`revrow-${year}-${ri}`);
+    if (el) { el.textContent = fmtN(tot); el.className = `tot-col ${tot<0?'neg':'pos'}`; }
+  });
+  mths.forEach((v,i) => {
+    const el = document.getElementById(`revmth-${year}-${i}`);
+    if (el) { el.textContent = fmtN(v); el.className = v<0?'neg':'pos'; }
+  });
+  const gt = sum(mths);
+  const el = document.getElementById(`revtot-${year}`);
+  if (el) { el.textContent = fmtN(gt); el.className = `tot-col ${gt<0?'neg':'pos'}`; }
+  const b = document.getElementById(`rev-badge-${year}`);
+  if (b) b.textContent = fmtN(gt) + ' €';
+  refreshMonthSummary(year);
+}
+function toggleRevPaid(year, ri, mi) {
+  if (!DATA[year].revenus[ri].paid) DATA[year].revenus[ri].paid = Array(12).fill(true);
+  DATA[year].revenus[ri].paid[mi] = !DATA[year].revenus[ri].paid[mi];
+  const paid = DATA[year].revenus[ri].paid[mi];
+  const td = document.getElementById(`rc-${year}-${ri}-${mi}`);
+  if (td) {
+    td.className = paid ? 'is-paid' : '';
+    const dot = td.querySelector('.paid-dot');
+    if (dot) dot.textContent = paid ? '✓' : '○';
+    const inp = td.querySelector('.cell-amt');
+    if (inp) inp.className = 'cell-amt' + ((parseFloat(inp.value)||0)<0?' neg':'');
+  }
+  updateCompteDisplay(year);
+  dSave();
+}
+
+function addRevRow(year) {
+  DATA[year].revenus.push({label:'Nouveau revenu', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true});
+  renderYear(year);
+}
+function delRevRow(year, ri) {
+  const lbl = DATA[year].revenus[ri]?.label || 'ce revenu';
+  confirmDelete(`Supprimer "${lbl}" ?`, () => { DATA[year].revenus.splice(ri,1); renderYear(year); dSave(); });
+}
+
+// ── CHARGES ──
+function renderChargeSection(year) {
+  const rows = DATA[year].charges;
+  let sepDone = false;
+  let tbody = '';
+
+  rows.forEach((r, ri) => {
+    if (r.cat === 'occasional' && !sepDone) {
+      tbody += `<tr class="sep-row"><td colspan="15">📌 CHARGES OCCASIONNELLES</td></tr>`;
+      sepDone = true;
+    }
+    const rowTot = sum(r.v);
+    const cells = r.v.map((v,mi) => {
+      const paid = r.paid[mi];
+      return `<td id="cc-${year}-${ri}-${mi}" class="${paid?'is-paid':''}" onclick="togglePaid('${year}',${ri},${mi})">
+        <div class="cell-wrap">
+          <input class="cell-amt${v<0?' neg':''}" type="number" step="0.01" value="${v}"
+            oninput="updateCharge('${year}',${ri},${mi},this)" onclick="event.stopPropagation()">
+          <span class="paid-dot">✓</span>
+        </div></td>`;
+    }).join('');
+    const isLivretRow = r.cat==='livret_in'||r.cat==='livret_out';
+    const chkClass = isLivretRow ? 'cal-check-livret' : 'cal-check-compte';
+    tbody += `<tr class="${r.cat==='occasional'?'occ-row':''}">
+      <td class="lbl-col"><div class="lbl-inner">
+        <input class="cal-check ${chkClass}" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','${isLivretRow?'livret':'compte'}',${ri},this.checked,'charge')" onclick="event.stopPropagation()">
+        <input class="cell-amt" style="text-align:left;width:100%;font-weight:500" type="text"
+          value="${r.label}" oninput="DATA['${year}'].charges[${ri}].label=this.value;dSave()">
+      </div></td>${cells}
+      <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
+      <td><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
+    </tr>`;
+  });
+
+  const mths = chgTotal(year);
+  const totRow = mths.map((v,i)=>`<td style="font-weight:700" id="chmth-${year}-${i}">${fmtN(v)}</td>`).join('');
+  const gt = sum(mths);
+
+  return `<div class="section-card collapsed">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="section-title">🏠 Charges &amp; Dépenses fixes
+        <span class="badge badge-r" id="chg-badge-${year}">${fmtN(gt)} €</span></span>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body">
+      <div class="legend">
+        <span style="font-weight:700;margin-right:4px">Statut :</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#c8e6c9;border:1px solid #81c784"></span>✓ Payé (cliquer ○ pour marquer)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#fff;border:1px solid #ddd"></span>Non payé</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#fffde7;border:1px solid #fff176"></span>📌 Charge occasionnelle</span>
+      </div>
+      <table class="charge-table"><thead><tr>
+        <th class="lbl-col">Libellé</th>
+        ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
+        <th class="tot-col">TOTAL</th><th style="width:28px"></th>
+      </tr></thead>
+      <tbody>
+        <tr class="sep-row"><td colspan="15">🔄 CHARGES RÉCURRENTES</td></tr>
+        ${tbody}
+        <tr class="sep-row"><td colspan="15" style="background:#2c3e50">TOTAL CHARGES</td></tr>
+        <tr style="font-weight:700;background:#f0f2f5">
+          <td class="lbl-col">TOTAL</td>${totRow}
+          <td class="tot-col" id="chtot-${year}">${fmtN(gt)}</td><td></td>
+        </tr>
+      </tbody></table>
+      <div style="padding:8px 14px">
+        <button class="add-tx-btn" onclick="addCharge('${year}','fixed')">+ Charge récurrente</button>
+        &nbsp;
+        <button class="add-tx-btn" onclick="addCharge('${year}','occasional')" style="border-color:var(--orange);color:var(--orange)">+ Charge occasionnelle</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function updateCharge(year, ri, mi, input) {
+  const v = parseFloat(input.value)||0;
+  DATA[year].charges[ri].v[mi] = v;
+  input.className = 'cell-amt' + (v<0?' neg':'');
+  if (v === 0 && !DATA[year].charges[ri].paid[mi]) {
+    DATA[year].charges[ri].paid[mi] = true;
+    const td = document.getElementById(`cc-${year}-${ri}-${mi}`);
+    if (td) td.className = 'is-paid';
+  }
+  refreshChargeTotals(year); dSave();
+}
+function togglePaid(year, ri, mi) {
+  DATA[year].charges[ri].paid[mi] = !DATA[year].charges[ri].paid[mi];
+  const paid = DATA[year].charges[ri].paid[mi];
+  const td = document.getElementById(`cc-${year}-${ri}-${mi}`);
+  if (td) {
+    td.className = paid ? 'is-paid' : '';
+    const inp = td.querySelector('.cell-amt');
+    if (inp) inp.className = 'cell-amt' + ((parseFloat(inp.value)||0)<0?' neg':'');
+  }
+  updateLivretDisplay(year);
+  updateCompteDisplay(year);
+  refreshChargeTotals(year); dSave();
+}
+function refreshChargeTotals(year) {
+  const rows = DATA[year].charges;
+  rows.forEach((r,ri) => {
+    const el = document.getElementById(`chrow-${year}-${ri}`);
+    if (el) el.textContent = fmtN(sum(r.v));
+  });
+  const mths = chgTotal(year);
+  mths.forEach((v,i) => { const el=document.getElementById(`chmth-${year}-${i}`); if(el) el.textContent=fmtN(v); });
+  const gt = sum(mths);
+  const el = document.getElementById(`chtot-${year}`); if(el) el.textContent = fmtN(gt);
+  const b = document.getElementById(`chg-badge-${year}`); if(b) b.textContent = fmtN(gt)+' €';
+  refreshMonthSummary(year);
+}
+function addCharge(year, cat) {
+  DATA[year].charges.push({label:'Nouvelle charge',cat,v:Array(12).fill(0),paid:F12()});
+  renderYear(year); dSave();
+}
+function delCharge(year, ri) {
+  const lbl = DATA[year].charges[ri]?.label || 'cette charge';
+  confirmDelete(`Supprimer "${lbl}" ?`, () => { DATA[year].charges.splice(ri,1); renderYear(year); dSave(); });
+}
+
+// ── VARIABLE EXPENSES ──
+const VAR_CATS = [
+  {key:'carburant', icon:'⛽', label:'Carburant'},
+  {key:'courses',   icon:'🛍', label:'Courses'},
+  {key:'divers',    icon:'📦', label:'Divers'},
+  {key:'chien',     icon:'🐕', label:'Chien'},
+];
+function renderMethodTotals(year) {
+  const rows = getMethods().map(mo => {
+    const t = varTotalByMethod(year, mo.key);
+    const tot = sum(t);
+    if (tot === 0) return '';
+    return `<tr><td class="lbl-col" style="padding-left:14px;border-left:3px solid ${mo.color}">${mo.label}</td>
+      ${t.map(v=>`<td style="text-align:right;padding:4px 6px;font-size:12px">${v>0?fmtN(v)+' €':'-'}</td>`).join('')}
+      <td class="tot-col" style="font-weight:700">${fmtN(tot)} €</td><td></td></tr>`;
+  }).join('');
+  if (!rows) return '';
+  return `<div style="padding:0 16px 14px">
+    <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-top:8px;border-top:1px solid var(--border)">Répartition par mode de paiement</div>
+    <table class="charge-table"><thead><tr>
+      <th class="lbl-col">Mode</th>
+      ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
+      <th class="tot-col">TOTAL</th><th style="width:28px"></th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderVarSection(year) {
+  const gt = sum(allVarTotal(year));
+  return `<div class="section-card" id="var-section-${year}">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="section-title">🛒 Dépenses variables
+        <span class="badge badge-o" id="var-badge-${year}">${fmtN(gt)} €</span></span>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body">
+      <div class="legend">
+        <span style="font-weight:700;margin-right:4px">Mode de paiement :</span>
+        ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${mo.label}</span>`).join('')}
+      </div>
+      <div class="var-section">${VAR_CATS.map(c => renderVarCat(year, c)).join('')}</div>
+      ${renderMethodTotals(year)}
+    </div>
+  </div>`;
+}
+
+// Renders only the 12-row monthly summary (fast). Transactions load lazily on click.
+function renderVarCat(year, cat) {
+  const txs = DATA[year].vars[cat.key];
+  const grand = sum(txs.map(t=>t.amount));
+  let summaryRows = '';
+  for (let m=0; m<12; m++) {
+    const mTxs = txs.filter(t=>t.month===m);
+    const mTot = sum(mTxs.map(t=>t.amount));
+    summaryRows += `
+    <tr id="vsumrow-${year}-${cat.key}-${m}">
+      <td style="font-weight:600;padding-left:10px">${MONTHS[m]}</td>
+      <td id="vsum-n-${year}-${cat.key}-${m}" style="color:var(--gray);text-align:center">${mTxs.length} tx</td>
+      <td id="vsum-t-${year}-${cat.key}-${m}" style="font-weight:700;text-align:right">${fmtN(mTot)} €</td>
+      <td style="text-align:center">
+        <button class="add-tx-btn" style="padding:2px 8px;font-size:10px"
+          onclick="addTxForMonth('${year}','${cat.key}',${m})">+ Ajouter</button>
+      </td>
+      <td style="text-align:center">
+        <button class="add-tx-btn" style="padding:2px 8px;font-size:10px;border-color:var(--blue);color:var(--blue)"
+          id="vexp-btn-${year}-${cat.key}-${m}"
+          onclick="toggleMonthDetail('${year}','${cat.key}',${m},this)">▾ Détail</button>
+      </td>
+    </tr>
+    <tr id="vdetrow-${year}-${cat.key}-${m}" style="display:none">
+      <td colspan="5" style="padding:0">
+        <table class="var-table" style="margin:0">
+          <thead><tr>
+            <th style="width:55px">Jour</th>
+            <th style="width:90px">Montant €</th>
+            <th>Commentaire</th>
+            <th style="width:155px">Mode de paiement</th>
+            <th style="width:30px"></th>
+          </tr></thead>
+          <tbody id="vbody-${year}-${cat.key}-${m}"></tbody>
+        </table>
+      </td>
+    </tr>`;
+  }
+  return `<div class="section-card collapsed" style="margin-bottom:10px;border-radius:8px">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')" style="padding:10px 14px">
+      <span class="section-title" style="font-size:13px">
+        ${cat.icon} ${cat.label}
+        <span class="badge badge-o" id="vartot-${year}-${cat.key}">${fmtN(grand)} €</span>
+      </span>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body">
+      <table class="var-table">
+        <thead><tr>
+          <th>Mois</th><th style="width:60px">Nb</th>
+          <th style="width:110px">Total</th>
+          <th style="width:110px"></th><th style="width:90px"></th>
+        </tr></thead>
+        <tbody>${summaryRows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// Build transaction rows for one month (called lazily)
+function buildMonthTxRows(year, catKey, m) {
+  const txs = DATA[year].vars[catKey].filter(t=>t.month===m)
+    .sort((a,b)=>(a.date||99)-(b.date||99));
+  return txs.map(tx => txRow(year, catKey, tx)).join('');
+}
+function txRow(year, catKey, tx) {
+  const m = getMethodObj(tx.method);
+  const opts = getMethods().map(mo=>`<option value="${mo.key}"${tx.method===mo.key?' selected':''}>${mo.label}</option>`).join('');
+  return `<tr id="vtr-${tx.id}" style="border-left:4px solid ${m.color};background:${m.bg}">
+    <td><input class="var-input day" type="number" min="1" max="31" placeholder="—" value="${txDay(tx.date)}"
+      oninput="updateTxField('${year}','${catKey}',${tx.id},'date',this.value?+this.value:'');dSave()"></td>
+    <td><input class="var-input amt" type="number" step="0.01" value="${tx.amount}"
+      oninput="updateTxField('${year}','${catKey}',${tx.id},'amount',+this.value);syncMonthTotals('${year}','${catKey}',${tx.id})"></td>
+    <td><input class="var-input comment" type="text" value="${tx.comment||''}" placeholder="Commentaire…"
+      oninput="updateTxField('${year}','${catKey}',${tx.id},'comment',this.value)"></td>
+    <td><select class="method-sel" style="background:${m.bg};border-color:${m.color}"
+      onchange="updateTxMethod('${year}','${catKey}',${tx.id},this)">${opts}</select></td>
+    <td><button class="del-btn" onclick="delTx('${year}','${catKey}',${tx.id},${tx.month})">✕</button></td>
+  </tr>`;
+}
+
+const _expandedMonths = {}; // track which month panels are open
+
+function toggleMonthDetail(year, catKey, m, btn) {
+  const key = `${year}-${catKey}-${m}`;
+  const detRow = document.getElementById(`vdetrow-${year}-${catKey}-${m}`);
+  const tbody  = document.getElementById(`vbody-${year}-${catKey}-${m}`);
+  if (!detRow) return;
+  const open = _expandedMonths[key];
+  if (open) {
+    detRow.style.display = 'none';
+    btn.textContent = '▾ Détail';
+    _expandedMonths[key] = false;
+  } else {
+    tbody.innerHTML = buildMonthTxRows(year, catKey, m);
+    detRow.style.display = '';
+    btn.textContent = '▴ Fermer';
+    _expandedMonths[key] = true;
+  }
+}
+
+function addTxForMonth(year, catKey, m) {
+  const newTx = {id:_id++, month:m, amount:0, date:'', comment:'', method:'carte'};
+  DATA[year].vars[catKey].push(newTx);
+  // Ensure month detail is open
+  const key = `${year}-${catKey}-${m}`;
+  const detRow = document.getElementById(`vdetrow-${year}-${catKey}-${m}`);
+  const tbody  = document.getElementById(`vbody-${year}-${catKey}-${m}`);
+  const btn    = document.getElementById(`vexp-btn-${year}-${catKey}-${m}`);
+  if (detRow) {
+    tbody.innerHTML = buildMonthTxRows(year, catKey, m);
+    detRow.style.display = '';
+    if (btn) btn.textContent = '▴ Fermer';
+    _expandedMonths[key] = true;
+  }
+  syncMonthSummary(year, catKey, m);
+  dSave();
+}
+
+function syncMonthTotals(year, catKey, txId) {
+  const tx = DATA[year].vars[catKey].find(t=>t.id===txId);
+  if (tx) syncMonthSummary(year, catKey, tx.month);
+  refreshMonthSummary(year);
+  dSave();
+}
+function syncMonthSummary(year, catKey, m) {
+  const txs = DATA[year].vars[catKey].filter(t=>t.month===m);
+  const mTot = sum(txs.map(t=>t.amount));
+  const nt = document.getElementById(`vsum-n-${year}-${catKey}-${m}`);
+  const tt = document.getElementById(`vsum-t-${year}-${catKey}-${m}`);
+  if (nt) nt.textContent = txs.length + ' tx';
+  if (tt) tt.textContent = fmtN(mTot) + ' €';
+  const grand = sum(DATA[year].vars[catKey].map(t=>t.amount));
+  const gb = document.getElementById(`vartot-${year}-${catKey}`);
+  if (gb) gb.textContent = fmtN(grand) + ' €';
+  const allGrand = sum(allVarTotal(year));
+  const vb = document.getElementById(`var-badge-${year}`);
+  if (vb) vb.textContent = fmtN(allGrand) + ' €';
+}
+
+function updateTxField(year, catKey, id, field, val) {
+  const tx = DATA[year].vars[catKey].find(t=>t.id===id);
+  if (tx) { tx[field] = val; dSave(); }
+}
+function updateTxMethod(year, catKey, id, sel) {
+  const method = sel.value;
+  updateTxField(year, catKey, id, 'method', method);
+  const mo = getMethodObj(method);
+  sel.style.background = mo.bg; sel.style.borderColor = mo.color;
+  const tr = document.getElementById(`vtr-${id}`);
+  if (tr) { tr.style.borderLeftColor = mo.color; tr.style.background = mo.bg; }
+}
+function delTx(year, catKey, id, m) {
+  confirmDelete('Supprimer cette transaction ?', () => {
+    DATA[year].vars[catKey] = DATA[year].vars[catKey].filter(t=>t.id!==id);
+    const tr = document.getElementById(`vtr-${id}`);
+    if (tr) tr.remove();
+    syncMonthSummary(year, catKey, m);
+    refreshMonthSummary(year);
+    dSave();
+  });
+}
+
+// ── RÉSUMÉ MENSUEL ──
+function renderMonthSummary(year) {
+  const rv=revTotal(year), ch=chgTotal(year), vr=allVarTotal(year);
+  const dep=ch.map((v,i)=>v+vr[i]);
+  const bal=rv.map((v,i)=>v-dep[i]);
+  const rap=resteAPayer(year);
+
+  const row=(lbl,vec,cls,bg='#f0f2f5')=>
+    `<tr style="font-weight:700;background:${bg}">
+      <td class="lbl-col">${lbl}</td>
+      ${vec.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-${cls}-${i}">${fmtN(v)}</td>`).join('')}
+      <td class="tot-col ${sum(vec)<0?'neg':'pos'}" id="sm-${year}-${cls}-tot">${fmtN(sum(vec))}</td>
+      <td></td>
+    </tr>`;
+
+  const balRow=bal.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bal-${i}">${fmtN(v)}</td>`).join('');
+  const balTot=sum(bal);
+
+  return `<div class="section-card">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="section-title">📊 Résumé mensuel
+        <span class="badge ${balTot<0?'badge-r':'badge-g'}" id="bal-badge-${year}">${fmtN(balTot)} €</span></span>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body"><table class="charge-table"><thead><tr>
+      <th class="lbl-col">Indicateur</th>
+      ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
+      <th class="tot-col">TOTAL</th><th style="width:28px"></th>
+    </tr></thead><tbody>
+      ${row('💹 Revenus totaux',rv,'rev')}
+      ${row('🏠 Charges récurrentes & occasionnelles',ch,'chg')}
+      ${row('🛒 Dépenses variables',vr,'var')}
+      ${row('📉 Dépenses totales',dep,'dep')}
+      ${row('🔴 Reste à payer (charges non payées)',rap,'rap','#fff8e1')}
+      <tr style="background:#e8f5e9;font-weight:800;font-size:13px">
+        <td class="lbl-col">💰 SOLDE MENSUEL</td>
+        ${balRow}
+        <td class="tot-col ${balTot<0?'neg':'pos'}" id="sm-${year}-bal-tot">${fmtN(balTot)}</td>
+        <td></td>
+      </tr>
+    </tbody></table></div>
+  </div>`;
+}
+function refreshMonthSummary(year) {
+  const rv=revTotal(year), ch=chgTotal(year), vr=allVarTotal(year);
+  const dep=ch.map((v,i)=>v+vr[i]), bal=rv.map((v,i)=>v-dep[i]);
+  const rap=resteAPayer(year);
+  const sets=[['rev',rv],['chg',ch],['var',vr],['dep',dep],['rap',rap],['bal',bal]];
+  sets.forEach(([cls,vec])=>{
+    vec.forEach((v,i)=>{
+      const el=document.getElementById(`sm-${year}-${cls}-${i}`);
+      if(el){el.textContent=fmtN(v);el.className=v<0?'neg':'pos';}
+    });
+    const et=document.getElementById(`sm-${year}-${cls}-tot`);
+    const sv=sum(vec);
+    if(et){et.textContent=fmtN(sv);et.className=`tot-col ${sv<0?'neg':'pos'}`;}
+  });
+  const bb=document.getElementById(`bal-badge-${year}`);
+  const bt=sum(bal);
+  if(bb){bb.textContent=fmtN(bt)+' €';bb.className=`badge ${bt<0?'badge-r':'badge-g'}`;}
+}
+
+// ── RÉSUMÉ TAB ──
+function renderSummary() {
+  const table = document.getElementById('summary-table');
+  const years = getYears();
+  let html = `<thead><tr>
+    <th class="lbl-col">Indicateur</th>
+    ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
+    <th class="tot-col">TOTAL</th>
+  </tr></thead><tbody>`;
+
+  years.forEach(year => {
+    const rv=revTotal(year), ch=chgTotal(year), vr=allVarTotal(year);
+    const dep=ch.map((v,i)=>v+vr[i]), bal=rv.map((v,i)=>v-dep[i]);
+    const addRow=(lbl,vec)=>{
+      const t=sum(vec);
+      html+=`<tr><td class="lbl-col" style="padding-left:24px">${lbl}</td>
+        ${vec.map(v=>`<td class="${v<0?'neg':''}">${fmtN(v)}</td>`).join('')}
+        <td class="tot-col ${t<0?'neg':'pos'}">${fmtN(t)}</td></tr>`;
+    };
+    const carte=varTotalByMethod(year,'carte'), liquide=varTotalByMethod(year,'liquide'), repas=varTotalByMethod(year,'repas');
+    html+=`<tr class="yr-hdr"><td colspan="15">📅 ANNÉE ${year}</td></tr>`;
+    addRow('💹 Revenus totaux',rv);
+    addRow('🏠 Charges récurrentes & occasionnelles',ch);
+    addRow('🛒 Dépenses variables',vr);
+    addRow('&nbsp;&nbsp;&nbsp;💳 dont Carte bancaire',carte);
+    addRow('&nbsp;&nbsp;&nbsp;💵 dont Liquide',liquide);
+    addRow('&nbsp;&nbsp;&nbsp;🎟 dont Chèque repas',repas);
+    addRow('📉 Dépenses totales',dep);
+    const bt=sum(bal);
+    html+=`<tr class="bal-row"><td class="lbl-col">💰 Solde ${year}</td>
+      ${bal.map(v=>`<td class="${v<0?'neg':'pos'}">${fmtN(v)}</td>`).join('')}
+      <td class="tot-col ${bt<0?'neg':'pos'}">${fmtN(bt)}</td></tr>`;
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+
+  const b=document.getElementById('sum-badge');
+  if(b){
+    const t=getYears().reduce((s,y)=>s+sum(balance(y)),0);
+    b.textContent=fmtN(t)+' €';
+    b.className='badge '+(t<0?'badge-r':'badge-b');
+  }
+}
+
+// ── TOGGLE COLLAPSE ──
+function toggleSection(hdr) { hdr.parentElement.classList.toggle('collapsed'); }
+
+// ── CLOUD SYNC ──
+const CLOUD_CFG_KEY = 'budget_cloud_v1';
+function getCloudCfg() { try { return JSON.parse(localStorage.getItem(CLOUD_CFG_KEY)||'null')||{}; } catch(e) { return {}; } }
+function setCloudCfg(cfg) { localStorage.setItem(CLOUD_CFG_KEY, JSON.stringify(cfg)); }
+function cloudApiUrl(userId) {
+  const c = getCloudCfg();
+  if (!c.dbUrl || !c.code || !userId) return null;
+  return c.dbUrl.replace(/\/+$/,'') + '/mb/' + encodeURIComponent(c.code) + '/' + userId + '.json';
+}
+function setCloudStatus(s) {
+  const el = document.getElementById('cloud-status');
+  if (!el) return;
+  const map = {off:'', syncing:'🔄', ok:'☁️ Sync', error:'⚠️ Sync'};
+  const col = {off:'', syncing:'rgba(255,255,255,.7)', ok:'#7effa0', error:'#ffb3b3'};
+  el.textContent = map[s]||''; el.style.color = col[s]||'';
+  el.title = {off:'', syncing:'Synchronisation…', ok:'Synchronisé avec le cloud', error:'Erreur de synchronisation'}[s]||'';
+}
+async function cloudPush() {
+  const url = cloudApiUrl(CURRENT_USER_ID);
+  if (!url || !DATA) return;
+  setCloudStatus('syncing');
+  try {
+    const r = await fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(DATA)});
+    setCloudStatus(r.ok ? 'ok' : 'error');
+  } catch(e) { setCloudStatus('error'); }
+}
+async function cloudPull(userId) {
+  const url = cloudApiUrl(userId);
+  if (!url) return null;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return (d && typeof d === 'object' && !Array.isArray(d)) ? d : null;
+  } catch(e) { return null; }
+}
+function saveCloudConfig() {
+  const url = document.getElementById('cfg-cloud-url')?.value.trim();
+  const code = document.getElementById('cfg-cloud-code')?.value.trim();
+  if (!url || !code) { showToast('⚠️ Remplissez les deux champs'); return; }
+  setCloudCfg({dbUrl: url, code});
+  showToast('☁️ Configuration cloud enregistrée');
+  renderConfigTab();
+  cloudPush();
+}
+async function testCloudSync() {
+  const url = cloudApiUrl(CURRENT_USER_ID || '_test');
+  if (!url) { showToast('⚠️ Configurez d\'abord le cloud'); return; }
+  showToast('🔄 Test en cours…');
+  try {
+    const pingUrl = getCloudCfg().dbUrl.replace(/\/+$/,'') + '/.json?shallow=true';
+    const r = await fetch(pingUrl);
+    showToast(r.ok ? '✅ Connexion Firebase OK !' : '❌ Erreur ' + r.status + ' — vérifiez l\'URL');
+  } catch(e) { showToast('❌ Impossible de joindre Firebase — vérifiez l\'URL'); }
+}
+function removeCloudConfig() {
+  confirmDelete('Supprimer la configuration cloud ?', () => {
+    localStorage.removeItem(CLOUD_CFG_KEY);
+    setCloudStatus('off');
+    renderConfigTab();
+    showToast('☁️ Configuration cloud supprimée');
+  });
+}
+
+// ── SAVE / RESET / EXPORT ──
+let _saveTimer;
+function dSave() { clearTimeout(_saveTimer); _saveTimer=setTimeout(saveData,1500); }
+function saveData() {
+  const json = JSON.stringify(DATA);
+  localStorage.setItem(dataKey(), json);
+  const now = new Date();
+  localStorage.setItem(bakPrefix() + `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`, json);
+  showToast('✅ Sauvegardé');
+  cloudPush();
+}
+
+function openBackups() {
+  const pfx = bakPrefix();
+  const keys = Object.keys(localStorage).filter(k=>k.startsWith(pfx)).sort().reverse();
+  const MOIS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+  const list = document.getElementById('backup-list');
+  if (!keys.length) { list.innerHTML = '<p class="no-backup">Aucune sauvegarde disponible.</p>'; }
+  else {
+    list.innerHTML = keys.map(k => {
+      const parts = k.replace(pfx,'').split('-');
+      const label = `${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}${parts[2]?' — '+parts[2]:''}`;
+      return `<div class="backup-item"><span class="bk-date">📅 ${label}</span><button class="bk-restore" onclick="restoreBackup('${k}')">Restaurer</button></div>`;
+    }).join('');
+  }
+  document.getElementById('backup-modal').classList.add('open');
+}
+
+function closeBackups() { document.getElementById('backup-modal').classList.remove('open'); }
+
+function restoreBackup(key) {
+  if (!confirm('Restaurer cette sauvegarde ? Les données actuelles seront remplacées.')) return;
+  try {
+    DATA = JSON.parse(localStorage.getItem(key));
+    // Remove panel divs for years no longer in DATA
+    document.querySelectorAll('[id^="tab-y"]').forEach(el => {
+      const y = el.id.replace('tab-y','');
+      if (y && !DATA[y]) el.remove();
+    });
+    renderTabs();
+    getYears().forEach(y => renderYear(y));
+    renderSummary();
+    closeBackups();
+    showToast('↺ Backup restauré');
+  } catch(e) { showToast('❌ Erreur lors de la restauration'); }
+}
+function goToWelcome() {
+  CURRENT_USER_ID = '';
+  const panel = document.getElementById('welcome-add-panel');
+  if (panel) panel.style.display = 'none';
+  const ws = document.getElementById('welcome-screen');
+  if (ws) { ws.style.display='flex'; ws.style.opacity='0'; setTimeout(()=>ws.style.opacity='1',10); }
+  renderWelcomeScreen();
+}
+function resetData() {
+  const bk = bakPrefix() + 'pre-reset_' + new Date().toISOString().slice(0,10);
+  localStorage.setItem(bk, JSON.stringify(DATA));
+  if (!confirm('⚠️ ATTENTION\n\nRéinitialiser TOUTES les données de cet utilisateur ?\n\nUne sauvegarde automatique vient d\'être créée (visible dans Backups).\nCette action est irréversible.')) return;
+  localStorage.removeItem(dataKey());
+  DATA = CURRENT_USER_ID==='pascal' ? buildDefaults() : buildDefaultsForNewUser();
+  renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+  showToast('↺ Réinitialisé — backup créé');
+}
+function exportCSV() {
+  const activeYear = getYears().find(y => document.getElementById('tab-y'+y)?.classList.contains('active')) || '2025';
+  const d = DATA[activeYear];
+  let rows=[['LIBELLÉ',...MONTHS,'TOTAL']];
+  rows.push(['--- REVENUS ---']);
+  d.revenus.forEach(r=>rows.push([r.label,...r.v.map(v=>v||0),sum(r.v)]));
+  rows.push(['--- CHARGES ---']);
+  d.charges.forEach(r=>rows.push([r.label,...r.v.map(v=>v||0),sum(r.v)]));
+  rows.push(['--- DÉPENSES VARIABLES ---']);
+  VAR_CATS.forEach(c=>{
+    const t=varTotal(activeYear,c.key);
+    rows.push([c.label,...t.map(v=>v||0),sum(t)]);
+    d.vars[c.key].forEach(tx=>rows.push([`  ${c.label} - ${tx.date||'sans date'}`,
+      ...Array(12).fill(0).map((_,i)=>i===tx.month?tx.amount:0),tx.amount,tx.comment||'',getMethodObj(tx.method).label]));
+  });
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(';')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`budget_${activeYear}.csv`;a.click();
+}
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── CHARTS ──
+const PALETTE = ['#1a6fc4','#27ae60','#e67e22','#9b59b6','#c0392b','#16a085','#f39c12'];
+let _charts = {}, _chartYear = '';
+function renderCharts() {
+  const years = getYears();
+  _chartYear = _chartYear && DATA[_chartYear] ? _chartYear : years[years.length-1];
+  const wrap = document.getElementById('tab-charts');
+  wrap.innerHTML = `<div class="container">
+    <div class="chart-year-sel" id="chart-year-sel">${years.map(y=>`<button class="chart-year-btn${y===_chartYear?' active':''}" onclick="selectChartYear('${y}',this)">${y}</button>`).join('')}</div>
+    <div class="charts-grid">
+      <div class="chart-card" style="grid-column:1/-1"><h4>💰 Solde mensuel — comparaison des années</h4><canvas id="chart-balance" height="80"></canvas></div>
+      <div class="chart-card"><h4>📊 Revenus vs Dépenses — <span id="chart-rd-yr">${_chartYear}</span></h4><canvas id="chart-revdep"></canvas></div>
+      <div class="chart-card"><h4>🗂 Répartition des dépenses — <span id="chart-cat-yr">${_chartYear}</span></h4><canvas id="chart-cat"></canvas></div>
+      <div class="chart-card"><h4>💳 Modes de paiement — <span id="chart-meth-yr">${_chartYear}</span></h4><canvas id="chart-meth"></canvas></div>
+    </div></div>`;
+  Object.values(_charts).forEach(c=>c.destroy());
+  _charts = {};
+  buildBalanceChart(); buildPerYearCharts();
+}
+function selectChartYear(y, btn) {
+  _chartYear = y;
+  document.querySelectorAll('.chart-year-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['rd','cat','meth'].forEach(id=>{const el=document.getElementById(`chart-${id}-yr`);if(el)el.textContent=y;});
+  ['revdep','cat','meth'].forEach(id=>{if(_charts[id]){_charts[id].destroy();delete _charts[id];}});
+  buildPerYearCharts();
+}
+function buildBalanceChart() {
+  const years = getYears();
+  _charts.balance = new Chart(document.getElementById('chart-balance'), {
+    type:'line',
+    data:{ labels:MONTHS, datasets:years.map((y,i)=>({label:y,data:balance(y).map(v=>Math.round(v*100)/100),borderColor:PALETTE[i%PALETTE.length],backgroundColor:PALETTE[i%PALETTE.length]+'22',tension:.3,fill:false,pointRadius:4}))},
+    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+' €'}}}}
+  });
+}
+function buildPerYearCharts() {
+  const y = _chartYear; if(!DATA[y]) return;
+  const rv=revTotal(y), dep=depTotal(y);
+  _charts.revdep = new Chart(document.getElementById('chart-revdep'),{type:'bar',
+    data:{labels:MONTHS,datasets:[{label:'Revenus',data:rv.map(v=>Math.round(v*100)/100),backgroundColor:'#27ae6088'},{label:'Dépenses',data:dep.map(v=>Math.round(v*100)/100),backgroundColor:'#c0392b88'}]},
+    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+' €'}}}}});
+  const chgT=sum(chgTotal(y)); const varCatTotals=VAR_CATS.map(c=>Math.round(sum(varTotal(y,c.key))*100)/100);
+  _charts.cat = new Chart(document.getElementById('chart-cat'),{type:'doughnut',
+    data:{labels:['Charges fixes & occ.',...VAR_CATS.map(c=>c.label)],datasets:[{data:[Math.round(chgT*100)/100,...varCatTotals],backgroundColor:PALETTE}]},
+    options:{responsive:true,plugins:{legend:{position:'right'}}}});
+  const methData = getMethods().map(mo=>({label:mo.label,val:Math.round(sum(varTotalByMethod(y,mo.key))*100)/100,color:mo.color}));
+  _charts.meth = new Chart(document.getElementById('chart-meth'),{type:'pie',
+    data:{labels:methData.map(m=>m.label),datasets:[{data:methData.map(m=>m.val),backgroundColor:methData.map(m=>m.color)}]},
+    options:{responsive:true,plugins:{legend:{position:'right'}}}});
+}
+
+// ── CONFIG ──
+function renderConfigTab() {
+  const wrap = document.getElementById('tab-config');
+  const cfg = loadUserConfig();
+  const isAdmin = !!USERS[CURRENT_USER_ID]?.admin;
+  const userList = Object.entries(USERS).map(([id,u])=>`
+    <div class="user-card">
+      <span style="width:14px;height:14px;border-radius:50%;background:${u.color};flex-shrink:0;display:inline-block"></span>
+      <span class="user-card-name">${u.name}${u.admin?' <span style="font-size:10px;color:#e67e22;font-weight:700" title="Administrateur">👑</span>':''}${id===CURRENT_USER_ID?' <span style="font-size:10px;color:var(--green);font-weight:400">(actif)</span>':''}</span>
+      <span style="font-size:10px;color:${u.pin?'var(--blue)':'#ccc'};margin-right:4px" title="${u.pin?'PIN activé':'Sans PIN'}">${u.pin?'🔒':'🔓'}</span>
+      <div class="user-card-actions">
+        ${id!==CURRENT_USER_ID?`<button class="btn-sm btn-sm-edit" onclick="switchUser('${id}')">Activer</button>`:''}
+        ${isAdmin && Object.keys(USERS).length>1?`<button class="btn-sm btn-sm-del" onclick="confirmDeleteUser('${id}')">✕</button>`:''}
+      </div>
+    </div>`).join('');
+  const curPin = USERS[CURRENT_USER_ID]?.pin;
+  const methodList = getMethods().map((mo,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${mo.bg};border:2px solid ${mo.color};flex-shrink:0"></span>
+      <span style="flex:1;font-size:12px;font-weight:600">${mo.label}</span>
+      <span style="font-size:10px;color:var(--gray);font-family:monospace">${mo.key}</span>
+      <input type="color" value="${mo.color}" style="width:28px;height:24px;border:none;border-radius:3px;cursor:pointer;padding:0"
+        onchange="updateMethodColor(${i},'color',this.value)">
+      <input type="color" value="${mo.bg}" style="width:28px;height:24px;border:none;border-radius:3px;cursor:pointer;padding:0"
+        onchange="updateMethodColor(${i},'bg',this.value)">
+      <button class="del-btn" onclick="deleteMethod(${i})" title="Supprimer">✕</button>
+    </div>`).join('');
+  wrap.innerHTML = `<div class="container"><div class="config-grid">
+    <div>
+      <div class="config-card"><h3>👤 Utilisateurs</h3>${userList}
+        <div class="add-user-form">
+          <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="openUserWizardFromConfig()">＋ Ajouter un utilisateur</button>
+        </div>
+      </div>
+      <div class="config-card" style="margin-top:14px"><h3>🔒 Code PIN — ${USERS[CURRENT_USER_ID]?.name||''}</h3>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:12px">${curPin?'✅ Code PIN activé — vos données sont protégées':'⚠️ Aucun code PIN — tout le monde peut accéder à vos données'}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="showPinOverlay('${CURRENT_USER_ID}','set')">${curPin?'✏️ Modifier le PIN':'🔒 Définir un PIN'}</button>
+          ${curPin?`<button class="btn" style="background:var(--red-light);color:var(--red);border:1px solid var(--red);padding:5px 12px;font-size:12px" onclick="removePIN()">🔓 Supprimer le PIN</button>`:''}
+        </div>
+      </div>
+      <div class="config-card" style="margin-top:14px"><h3>💳 Modes de paiement</h3>
+        <div style="margin-bottom:8px">${methodList}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
+          <input type="text" id="new-method-key" placeholder="Clé (ex: virement)" style="flex:1;min-width:90px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
+          <input type="text" id="new-method-label" placeholder="Libellé" style="flex:2;min-width:120px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
+          <input type="color" id="new-method-color" value="#1a6fc4" style="width:32px;height:30px;border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:2px">
+          <input type="color" id="new-method-bg" value="#e8f1fb" style="width:32px;height:30px;border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:2px">
+          <button class="btn btn-save" style="padding:5px 10px;font-size:12px" onclick="addMethodFromForm()">＋</button>
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:4px">Couleur bordure + couleur fond</div>
+      </div>
+    </div>
+    <div>
+      <div class="config-card"><h3>☁️ Synchronisation Cloud</h3>
+        ${(() => { const c = getCloudCfg(); return `
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px">
+          Accédez à vos données depuis n'importe quel appareil.<br>
+          Nécessite un projet <strong>Firebase</strong> gratuit.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:4px">URL Firebase Database</div>
+            <input type="url" id="cfg-cloud-url" value="${c.dbUrl||''}" placeholder="https://mon-projet-default-rtdb.firebaseio.com"
+              style="width:100%;border:1px solid var(--border);border-radius:5px;padding:7px 10px;font-size:12px;box-sizing:border-box">
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:4px">Code perso (secret)</div>
+            <input type="text" id="cfg-cloud-code" value="${c.code||''}" placeholder="Ex: pascal-budget-2024"
+              style="width:100%;border:1px solid var(--border);border-radius:5px;padding:7px 10px;font-size:12px;box-sizing:border-box">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-save" style="flex:2;padding:6px 10px;font-size:12px" onclick="saveCloudConfig()">💾 Enregistrer</button>
+            <button class="btn" style="flex:1;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue);padding:6px 10px;font-size:12px" onclick="testCloudSync()">🧪 Tester</button>
+            ${c.dbUrl ? `<button class="btn" style="background:var(--red-light);color:var(--red);border:1px solid var(--red);padding:6px 8px;font-size:12px" onclick="removeCloudConfig()" title="Supprimer la config">✕</button>` : ''}
+          </div>
+          <div style="font-size:11px;font-weight:600;color:${c.dbUrl?'var(--green)':'var(--gray)'}">
+            ${c.dbUrl ? '✅ Cloud configuré — synchronisation active' : '⚠️ Non configuré — données locales uniquement'}
+          </div>
+        </div>
+        <div style="margin-top:12px;padding:10px 12px;background:var(--blue-light);border-radius:7px;font-size:11px;color:#1a3c6e;line-height:1.7">
+          <strong>⚡ Configuration en 5 minutes :</strong><br>
+          1. Aller sur <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue)">console.firebase.google.com</a><br>
+          2. Créer un projet → <em>Build → Realtime Database → Créer → Mode test</em><br>
+          3. Copier l'URL de la base (https://xxx.firebaseio.com)<br>
+          4. Coller ici + entrer un code perso → <strong>Enregistrer</strong>
+        </div>`; })()}
+      </div>
+      <div class="config-card"><h3>🗄 Données</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-save" onclick="saveData()">💾 Forcer sauvegarde</button>
+          <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">📦 Voir les backups</button>
+          <button class="btn" style="background:#fff;color:var(--red);border:2px solid var(--red);font-weight:700" onclick="resetData()">⚠️ Réinitialiser les données…</button>
+        </div>
+      </div>
+    </div>
+  </div></div>`;
+}
+
+function addMethodFromForm() {
+  const key = document.getElementById('new-method-key').value.trim().replace(/\s+/g,'_').toLowerCase();
+  const label = document.getElementById('new-method-label').value.trim();
+  const color = document.getElementById('new-method-color').value;
+  const bg = document.getElementById('new-method-bg').value;
+  if (!key || !label) { showToast('Clé et libellé requis'); return; }
+  if (getMethods().find(m=>m.key===key)) { showToast('Cette clé existe déjà'); return; }
+  DATA.methods = getMethods();
+  DATA.methods.push({key,label,color,bg});
+  dSave(); renderConfigTab(); refreshVarLegends();
+  showToast(`Mode "${label}" ajouté`);
+}
+function removePIN() {
+  confirmDelete('Supprimer le code PIN ?', () => {
+    delete USERS[CURRENT_USER_ID].pin;
+    saveUsers();
+    renderConfigTab();
+    showToast('🔓 Code PIN supprimé');
+  });
+}
+function deleteMethod(i) {
+  confirmDelete(`Supprimer le mode "${getMethods()[i]?.label}" ?`, () => {
+    DATA.methods = getMethods().filter((_,j)=>j!==i);
+    dSave(); renderConfigTab(); refreshVarLegends();
+  });
+}
+function updateMethodColor(i, prop, val) {
+  DATA.methods = getMethods().map((m,j)=>j===i?{...m,[prop]:val}:m);
+  dSave(); refreshVarLegends();
+}
+function refreshVarLegends() {
+  getYears().forEach(y => {
+    const sec = document.getElementById(`var-section-${y}`);
+    if (sec) { const lgd = sec.querySelector('.legend'); if (lgd) lgd.innerHTML = getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${mo.label}</span>`).join(''); }
+  });
+}
+function updateTplRev(i, field, val) { const cfg=loadUserConfig(); (cfg.tplRevs||[])[i][field]=val; saveUserConfig(cfg); }
+function updateTplChg(i, field, val) { const cfg=loadUserConfig(); (cfg.tplChgs||[])[i][field]=val; saveUserConfig(cfg); }
+function addTplRev() { const cfg=loadUserConfig(); cfg.tplRevs=(cfg.tplRevs||[]); cfg.tplRevs.push({label:'',amount:0}); saveUserConfig(cfg); renderConfigTab(); }
+function addTplChg() { const cfg=loadUserConfig(); cfg.tplChgs=(cfg.tplChgs||[]); cfg.tplChgs.push({label:'',amount:0}); saveUserConfig(cfg); renderConfigTab(); }
+function deleteTplRev(i) { const cfg=loadUserConfig(); cfg.tplRevs=(cfg.tplRevs||[]).filter((_,j)=>j!==i); saveUserConfig(cfg); renderConfigTab(); }
+function deleteTplChg(i) { const cfg=loadUserConfig(); cfg.tplChgs=(cfg.tplChgs||[]).filter((_,j)=>j!==i); saveUserConfig(cfg); renderConfigTab(); }
+
+// ── INIT ──
+initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
+</script>
+</body>
+</html>
