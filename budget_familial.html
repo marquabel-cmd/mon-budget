@@ -49,7 +49,7 @@ header .sub{font-size:11px;opacity:.8;margin-top:2px}
 
 /* ── SECTION CARDS ── */
 .section-card{background:#fff;border-radius:10px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
-.section-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;border-bottom:1px solid var(--border)}
+.section-header{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;border-bottom:1px solid var(--border)}
 .section-header:hover{background:var(--gray-light)}
 .section-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
 .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
@@ -248,6 +248,39 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .pin-digit{width:54px;height:66px;font-size:30px;font-weight:800;text-align:center;border:2px solid #dde;border-radius:10px;outline:none;color:#1a3c6e;background:#f7f9ff;transition:border-color .15s}
 .pin-digit:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(26,111,196,.15)}
 .pin-error{color:var(--red);font-size:12px;font-weight:600;min-height:18px;margin-bottom:10px}
+.mth-mini-row{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:7px;width:100%;box-sizing:border-box}
+.mth-mini-cell{text-align:center;border-radius:5px;padding:3px 2px}
+.mth-mini-label{font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase}
+.mth-mini-val{font-size:11px;font-weight:800;white-space:nowrap}
+@media(max-width:700px){
+  .mth-mini-row{grid-template-columns:repeat(6,1fr);gap:4px}
+  .mth-mini-val{font-size:10px}
+}
+@media(max-width:700px){
+  header{flex-wrap:wrap;gap:6px;padding:10px 12px}
+  .header-btns{gap:4px;flex-wrap:wrap}
+  .header-btns .btn{font-size:10px;padding:4px 8px}
+  .user-switcher{font-size:11px;padding:4px 8px;margin-right:0}
+  #cloud-status{display:none}
+  .tabs{padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{font-size:11px;padding:8px 10px;white-space:nowrap;flex-shrink:0}
+  .container{padding:10px 8px}
+  .config-grid{grid-template-columns:1fr}
+  .soldes-grid{gap:6px}
+  .solde-card{min-width:120px;padding:9px 10px}
+  .solde-card input{font-size:13px}
+  .solde-card .computed-val{font-size:13px}
+  .section-header{padding:10px 12px}
+  .section-title{font-size:12px}
+  .badge{font-size:10px;padding:2px 6px}
+}
+@media(max-width:480px){
+  .header-btns .btn:nth-child(2){display:none}
+  .header-btns .btn:nth-child(3){display:none}
+  .soldes-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .solde-card{min-width:0}
+}
 </style>
 </head>
 <body>
@@ -266,6 +299,44 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
     </div>
     <div class="pin-error" id="pin-error"></div>
     <button style="background:none;border:none;color:#aaa;font-size:12px;cursor:pointer;text-decoration:underline" onclick="closePinOverlay()">Annuler</button>
+  </div>
+</div>
+
+<!-- ── QUICK ADD OVERLAY ── -->
+<div id="quick-add-overlay" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center" onclick="closeQuickAdd(event)">
+  <div style="background:#fff;border-radius:16px;padding:22px 24px;width:min(360px,92%);box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0;font-size:16px;color:var(--blue)">⚡ Ajout rapide</h3>
+      <button onclick="closeQuickAdd()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray)">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Catégorie</label>
+          <select id="qa-cat" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Mois</label>
+          <select id="qa-month" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Montant (€)</label>
+          <input id="qa-amount" type="number" step="0.01" min="0" placeholder="0,00" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:15px;font-weight:700;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Paiement</label>
+          <select id="qa-method" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Commentaire (optionnel)</label>
+        <input id="qa-comment" type="text" placeholder="ex: Supermarché, Total..." style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
+      </div>
+      <div id="qa-error" style="color:var(--red);font-size:12px;font-weight:600;min-height:16px"></div>
+      <button onclick="submitQuickAdd()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--blue),#2980b9);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:2px">✅ Ajouter</button>
+    </div>
   </div>
 </div>
 
@@ -558,6 +629,7 @@ D.methods = [
   {key:'liquide',label:'Liquide',        color:'#9c27b0', bg:'#ede7f6'},
   {key:'repas',  label:'Chèque repas',   color:'#ef6c00', bg:'#fff3e0'},
 ];
+D.varCats = JSON.parse(JSON.stringify(DEFAULT_VAR_CATS));
 return D;
 }
 
@@ -596,8 +668,10 @@ function buildDefaultsForNewUser() {
     charges.push({label:'📈 Livret — versement exceptionnel', cat:'livret_in',  v:Array(12).fill(0), paid:F12b()});
     charges.push({label:'📉 Livret — retrait vers compte',    cat:'livret_out', v:Array(12).fill(0), paid:F12b()});
   }
-  const d = { methods: [...DEFAULT_METHODS] };
-  d[year] = { soldes:{compteIng:0,comptePro:0,livretInitial:0,boite:0}, revenus, charges, vars:{carburant:[],courses:[],divers:[],chien:[]} };
+  const d = { methods: [...DEFAULT_METHODS], varCats: JSON.parse(JSON.stringify(DEFAULT_VAR_CATS)) };
+  const varsForYear = {};
+  DEFAULT_VAR_CATS.forEach(c => { varsForYear[c.key] = []; });
+  d[year] = { soldes:{compteIng:0,comptePro:0,livretInitial:0,boite:0}, revenus, charges, vars: varsForYear };
   Object.keys(d).filter(k=>/^\d{4}$/.test(k)).forEach(y =>
     d[y].charges.forEach(r => r.v.forEach((v,i) => { if((parseFloat(v)||0)===0) r.paid[i]=true; })));
   return d;
@@ -1002,7 +1076,7 @@ function loadData() {
   DATA = null;
   ['budget_pascal_2025','budget_pascal_v2'].forEach(k => localStorage.removeItem(k));
   const s = localStorage.getItem(dataKey()) || (CURRENT_USER_ID==='pascal' ? localStorage.getItem('budget_pascal_v6') : null);
-  if (s) { try { DATA = JSON.parse(s); if (!DATA.methods) DATA.methods=[...DEFAULT_METHODS]; } catch(e){ DATA = null; } }
+  if (s) { try { DATA = JSON.parse(s); if (!DATA.methods) DATA.methods=[...DEFAULT_METHODS]; if (!DATA.varCats) DATA.varCats=JSON.parse(JSON.stringify(DEFAULT_VAR_CATS)); } catch(e){ DATA = null; } }
   if (!DATA) DATA = CURRENT_USER_ID==='pascal' ? buildDefaults() : buildDefaultsForNewUser();
   if (CURRENT_USER_ID==='pascal') applyExcelImport();
   // Migration: revenue paid = false by default, true only if amount = 0
@@ -1208,7 +1282,7 @@ function confirmRevDialog() {
       const v = isLivret ? Array(12).fill(0) : [...r.v];
       return { label: r.label, cat: r.cat, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false };
     }),
-    vars: { carburant: [], courses: [], divers: [], chien: [] }
+    vars: Object.fromEntries(getVarCats().map(c => [c.key, []]))
   };
   document.getElementById('rev-dialog-modal').classList.remove('open');
   _pendingNewYear = null;
@@ -1260,9 +1334,15 @@ function renderSoldes(year) {
       <input type="number" step="0.01" value="${s.livretInitial}"
         oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()"></div>
     <div class="solde-card computed"><label>Livret actuel (calculé)
-        <button class="calc-config-btn" data-type="livret" onclick="openCalcConfig('${year}','livret')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+        <button class="calc-config-btn" data-type="livret" onclick="openCalcConfig('${year}','livret')" title="Choisir les lignes" style="margin-left:6px;background:none;border:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
       </label>
       <span class="computed-val" id="livret-calc-${year}">${fmtN(lv)} €</span></div>
+  </div>
+  <div style="padding:10px 14px 4px;border-top:1px solid var(--border)">
+    <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">💵 Budget disponible / mois <span style="font-weight:400;text-transform:none">(Revenus − Charges fixes)</span></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${MONTHS.map((m,i)=>{const bud=revTotal(year)[i]-chgTotal(year)[i];const c=bud>=0?'var(--green)':'var(--red)';const bg=bud>=0?'var(--green-light)':'#fff5f5';return`<div style="background:${bg};border-left:3px solid ${c};border-radius:7px;padding:5px 8px;min-width:60px;box-shadow:var(--shadow)"><div style="font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase">${m}</div><div style="font-size:12px;font-weight:800;color:${c}">${fmtN(bud)}</div></div>`;}).join('')}
+    </div>
   </div>
   ${renderMethodPaymentSummary(year)}`;
 }
@@ -1325,6 +1405,14 @@ function toggleMethodCalc(year, key, checked) {
   updateCompteDisplay(year);
 }
 
+// ── MONTH MINI ROW ──
+function fmtK(v){return Math.round(v).toLocaleString('fr-FR');}
+function mthMiniRow(arr, auto) {
+  return `<div class="mth-mini-row" onclick="event.stopPropagation()">
+    ${MONTHS.map((m,i)=>{const v=arr[i]||0;const c=auto?(v>=0?'var(--green)':'var(--red)'):'var(--gray)';const bg=auto?(v>=0?'var(--green-light)':'#fff5f5'):'var(--gray-light)';return`<div class="mth-mini-cell" style="background:${bg}"><div class="mth-mini-label">${m}</div><div class="mth-mini-val" style="color:${c}">${fmtK(v)}</div></div>`;}).join('')}
+  </div>`;
+}
+
 // ── REVENUS ──
 function renderRevSection(year) {
   const rows = DATA[year].revenus;
@@ -1356,7 +1444,7 @@ function renderRevSection(year) {
 
   return `<div class="section-card collapsed">
     <div class="section-header" onclick="toggleSection(this)">
-      <span class="section-title">💹 Revenus <span class="badge badge-g" id="rev-badge-${year}">${fmtN(grandTot)} €</span></span>
+      <div style="flex:1;min-width:0"><span class="section-title">💹 Revenus <span class="badge badge-g" id="rev-badge-${year}">${fmtN(grandTot)} €</span></span>${mthMiniRow(monthTots,false)}</div>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
@@ -1464,8 +1552,7 @@ function renderChargeSection(year) {
 
   return `<div class="section-card collapsed">
     <div class="section-header" onclick="toggleSection(this)">
-      <span class="section-title">🏠 Charges &amp; Dépenses fixes
-        <span class="badge badge-r" id="chg-badge-${year}">${fmtN(gt)} €</span></span>
+      <div style="flex:1;min-width:0"><span class="section-title">🏠 Charges &amp; Dépenses fixes <span class="badge badge-r" id="chg-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(mths,false)}</div>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
@@ -1545,12 +1632,13 @@ function delCharge(year, ri) {
 }
 
 // ── VARIABLE EXPENSES ──
-const VAR_CATS = [
+const DEFAULT_VAR_CATS = [
   {key:'carburant', icon:'⛽', label:'Carburant'},
   {key:'courses',   icon:'🛍', label:'Courses'},
   {key:'divers',    icon:'📦', label:'Divers'},
   {key:'chien',     icon:'🐕', label:'Chien'},
 ];
+function getVarCats() { return (DATA && DATA.varCats) ? DATA.varCats : DEFAULT_VAR_CATS; }
 function renderMethodTotals(year) {
   const rows = getMethods().map(mo => {
     const t = varTotalByMethod(year, mo.key);
@@ -1571,11 +1659,11 @@ function renderMethodTotals(year) {
 }
 
 function renderVarSection(year) {
-  const gt = sum(allVarTotal(year));
+  const varMths = allVarTotal(year);
+  const gt = sum(varMths);
   return `<div class="section-card" id="var-section-${year}">
     <div class="section-header" onclick="toggleSection(this)">
-      <span class="section-title">🛒 Dépenses variables
-        <span class="badge badge-o" id="var-badge-${year}">${fmtN(gt)} €</span></span>
+      <div style="flex:1;min-width:0"><span class="section-title">🛒 Dépenses variables <span class="badge badge-o" id="var-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(varMths,false)}</div>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
@@ -1583,7 +1671,7 @@ function renderVarSection(year) {
         <span style="font-weight:700;margin-right:4px">Mode de paiement :</span>
         ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${mo.label}</span>`).join('')}
       </div>
-      <div class="var-section">${VAR_CATS.map(c => renderVarCat(year, c)).join('')}</div>
+      <div class="var-section">${getVarCats().map(c => renderVarCat(year, c)).join('')}</div>
       ${renderMethodTotals(year)}
     </div>
   </div>`;
@@ -1633,7 +1721,11 @@ function renderVarCat(year, cat) {
         ${cat.icon} ${cat.label}
         <span class="badge badge-o" id="vartot-${year}-${cat.key}">${fmtN(grand)} €</span>
       </span>
-      <span class="chevron">▾</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="event.stopPropagation();openQuickAdd('${year}','${cat.key}')"
+          style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">⚡ +</button>
+        <span class="chevron">▾</span>
+      </div>
     </div>
     <div class="section-body">
       <table class="var-table">
@@ -1688,6 +1780,47 @@ function toggleMonthDetail(year, catKey, m, btn) {
     btn.textContent = '▴ Fermer';
     _expandedMonths[key] = true;
   }
+}
+
+// ── QUICK ADD ──
+let _qaYear = null, _qaCat = null;
+function openQuickAdd(year, catKey) {
+  _qaYear = year; _qaCat = catKey;
+  const overlay = document.getElementById('quick-add-overlay');
+  // Populate category
+  const catSel = document.getElementById('qa-cat');
+  catSel.innerHTML = getVarCats().map(c=>`<option value="${c.key}"${c.key===catKey?' selected':''}>${c.icon} ${c.label}</option>`).join('');
+  // Populate months
+  const mSel = document.getElementById('qa-month');
+  const curM = new Date().getMonth();
+  mSel.innerHTML = MONTHS.map((m,i)=>`<option value="${i}"${i===curM?' selected':''}>${m}</option>`).join('');
+  // Populate payment methods
+  const methSel = document.getElementById('qa-method');
+  methSel.innerHTML = getMethods().map(mo=>`<option value="${mo.key}">${mo.label}</option>`).join('');
+  // Reset fields
+  document.getElementById('qa-amount').value = '';
+  document.getElementById('qa-comment').value = '';
+  document.getElementById('qa-error').textContent = '';
+  overlay.style.display = 'flex';
+  setTimeout(()=>document.getElementById('qa-amount').focus(), 50);
+}
+function closeQuickAdd(e) {
+  if (e && e.target !== document.getElementById('quick-add-overlay')) return;
+  document.getElementById('quick-add-overlay').style.display = 'none';
+}
+function submitQuickAdd() {
+  const amount = parseFloat(document.getElementById('qa-amount').value);
+  if (!amount || amount <= 0) { document.getElementById('qa-error').textContent = '⚠️ Entrez un montant valide'; return; }
+  const catKey = document.getElementById('qa-cat').value;
+  const month  = +document.getElementById('qa-month').value;
+  const method = document.getElementById('qa-method').value;
+  const comment= document.getElementById('qa-comment').value.trim();
+  const newTx  = {id:_id++, month, amount, date:'', comment, method};
+  DATA[_qaYear].vars[catKey].push(newTx);
+  syncMonthSummary(_qaYear, catKey, month);
+  dSave();
+  document.getElementById('quick-add-overlay').style.display = 'none';
+  showToast(`✅ ${fmtN(amount)} € ajouté en ${MONTHS[month]}`);
 }
 
 function addTxForMonth(year, catKey, m) {
@@ -1772,8 +1905,7 @@ function renderMonthSummary(year) {
 
   return `<div class="section-card">
     <div class="section-header" onclick="toggleSection(this)">
-      <span class="section-title">📊 Résumé mensuel
-        <span class="badge ${balTot<0?'badge-r':'badge-g'}" id="bal-badge-${year}">${fmtN(balTot)} €</span></span>
+      <div style="flex:1;min-width:0"><span class="section-title">📊 Résumé mensuel <span class="badge ${balTot<0?'badge-r':'badge-g'}" id="bal-badge-${year}">${fmtN(balTot)} €</span></span>${mthMiniRow(bal,true)}</div>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body"><table class="charge-table"><thead><tr>
@@ -1783,6 +1915,7 @@ function renderMonthSummary(year) {
     </tr></thead><tbody>
       ${row('💹 Revenus totaux',rv,'rev')}
       ${row('🏠 Charges récurrentes & occasionnelles',ch,'chg')}
+      ${(()=>{const bud=rv.map((v,i)=>v-ch[i]);const bt=sum(bud);return`<tr style="background:#e8f5f9;font-weight:800;font-size:13px"><td class="lbl-col">💵 Budget disponible</td>${bud.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bud-${i}">${fmtN(v)}</td>`).join('')}<td class="tot-col ${bt<0?'neg':'pos'}" id="sm-${year}-bud-tot">${fmtN(bt)}</td><td></td></tr>`;})()}
       ${row('🛒 Dépenses variables',vr,'var')}
       ${row('📉 Dépenses totales',dep,'dep')}
       ${row('🔴 Reste à payer (charges non payées)',rap,'rap','#fff8e1')}
@@ -1799,7 +1932,8 @@ function refreshMonthSummary(year) {
   const rv=revTotal(year), ch=chgTotal(year), vr=allVarTotal(year);
   const dep=ch.map((v,i)=>v+vr[i]), bal=rv.map((v,i)=>v-dep[i]);
   const rap=resteAPayer(year);
-  const sets=[['rev',rv],['chg',ch],['var',vr],['dep',dep],['rap',rap],['bal',bal]];
+  const bud=rv.map((v,i)=>v-ch[i]);
+  const sets=[['rev',rv],['chg',ch],['bud',bud],['var',vr],['dep',dep],['rap',rap],['bal',bal]];
   sets.forEach(([cls,vec])=>{
     vec.forEach((v,i)=>{
       const el=document.getElementById(`sm-${year}-${cls}-${i}`);
@@ -1997,7 +2131,7 @@ function exportCSV() {
   rows.push(['--- CHARGES ---']);
   d.charges.forEach(r=>rows.push([r.label,...r.v.map(v=>v||0),sum(r.v)]));
   rows.push(['--- DÉPENSES VARIABLES ---']);
-  VAR_CATS.forEach(c=>{
+  getVarCats().forEach(c=>{
     const t=varTotal(activeYear,c.key);
     rows.push([c.label,...t.map(v=>v||0),sum(t)]);
     d.vars[c.key].forEach(tx=>rows.push([`  ${c.label} - ${tx.date||'sans date'}`,
@@ -2055,9 +2189,9 @@ function buildPerYearCharts() {
   _charts.revdep = new Chart(document.getElementById('chart-revdep'),{type:'bar',
     data:{labels:MONTHS,datasets:[{label:'Revenus',data:rv.map(v=>Math.round(v*100)/100),backgroundColor:'#27ae6088'},{label:'Dépenses',data:dep.map(v=>Math.round(v*100)/100),backgroundColor:'#c0392b88'}]},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+' €'}}}}});
-  const chgT=sum(chgTotal(y)); const varCatTotals=VAR_CATS.map(c=>Math.round(sum(varTotal(y,c.key))*100)/100);
+  const chgT=sum(chgTotal(y)); const varCatTotals=getVarCats().map(c=>Math.round(sum(varTotal(y,c.key))*100)/100);
   _charts.cat = new Chart(document.getElementById('chart-cat'),{type:'doughnut',
-    data:{labels:['Charges fixes & occ.',...VAR_CATS.map(c=>c.label)],datasets:[{data:[Math.round(chgT*100)/100,...varCatTotals],backgroundColor:PALETTE}]},
+    data:{labels:['Charges fixes & occ.',...getVarCats().map(c=>c.label)],datasets:[{data:[Math.round(chgT*100)/100,...varCatTotals],backgroundColor:PALETTE}]},
     options:{responsive:true,plugins:{legend:{position:'right'}}}});
   const methData = getMethods().map(mo=>({label:mo.label,val:Math.round(sum(varTotalByMethod(y,mo.key))*100)/100,color:mo.color}));
   _charts.meth = new Chart(document.getElementById('chart-meth'),{type:'pie',
@@ -2153,6 +2287,23 @@ function renderConfigTab() {
           4. Coller ici + entrer un code perso → <strong>Enregistrer</strong>
         </div>`; })()}
       </div>
+      <div class="config-card" style="margin-top:14px"><h3>🗂 Catégories de dépenses</h3>
+        <div style="margin-bottom:8px">
+          ${getVarCats().map(c=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:16px">${c.icon}</span>
+            <span style="flex:1;font-size:12px;font-weight:600">${c.label}</span>
+            <span style="font-size:10px;color:var(--gray);font-family:monospace">${c.key}</span>
+            <button class="del-btn" onclick="removeVarCat('${c.key}')" title="Supprimer">✕</button>
+          </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
+          <input type="text" id="new-varcat-icon" placeholder="⛽" style="width:44px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:14px;text-align:center">
+          <input type="text" id="new-varcat-label" placeholder="Libellé" style="flex:1;min-width:100px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
+          <button class="btn btn-save" style="padding:5px 10px;font-size:12px" onclick="addVarCat(document.getElementById('new-varcat-icon').value,document.getElementById('new-varcat-label').value)">＋</button>
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:4px">Emoji + libellé de la nouvelle catégorie</div>
+      </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Forcer sauvegarde</button>
@@ -2164,6 +2315,36 @@ function renderConfigTab() {
   </div></div>`;
 }
 
+function addVarCat(icon, label) {
+  icon = (icon || '').trim();
+  label = (label || '').trim();
+  if (!label) { showToast('⚠️ Libellé requis'); return; }
+  const key = label.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  if (!key) { showToast('⚠️ Libellé invalide'); return; }
+  if (getVarCats().find(c => c.key === key)) { showToast('⚠️ Cette catégorie existe déjà'); return; }
+  DATA.varCats = getVarCats();
+  DATA.varCats.push({key, icon: icon||'📦', label});
+  getYears().forEach(y => { if (DATA[y] && DATA[y].vars) DATA[y].vars[key] = DATA[y].vars[key] || []; });
+  dSave();
+  renderConfigTab();
+  getYears().forEach(y => renderYear(y));
+  // Re-activate current year tab
+  const activeTab = document.querySelector('#year-tabs .tab.active');
+  if (activeTab) { /* already re-rendered, just keep active state */ }
+  showToast(`Catégorie "${label}" ajoutée`);
+}
+function removeVarCat(key) {
+  const cats = getVarCats();
+  if (cats.length <= 1) { showToast('⚠️ Impossible de supprimer la dernière catégorie'); return; }
+  const hasTransactions = getYears().some(y => DATA[y]?.vars?.[key]?.length > 0);
+  if (hasTransactions) { showToast("⚠️ Supprimez d'abord toutes les dépenses de cette catégorie"); return; }
+  DATA.varCats = cats.filter(c => c.key !== key);
+  getYears().forEach(y => { if (DATA[y]?.vars) delete DATA[y].vars[key]; });
+  dSave();
+  renderConfigTab();
+  getYears().forEach(y => renderYear(y));
+  showToast('Catégorie supprimée');
+}
 function addMethodFromForm() {
   const key = document.getElementById('new-method-key').value.trim().replace(/\s+/g,'_').toLowerCase();
   const label = document.getElementById('new-method-label').value.trim();
