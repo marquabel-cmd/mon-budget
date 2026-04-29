@@ -280,7 +280,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 @media(max-width:700px){
   header{flex-wrap:wrap;gap:6px;padding:10px 12px}
   .header-btns{gap:4px;flex-wrap:wrap}
-  .header-btns .btn{font-size:10px;padding:4px 8px}
+  .header-btns .btn{font-size:11px;padding:5px 9px}
+  .btn-label{display:none}
   .user-switcher{font-size:11px;padding:4px 8px;margin-right:0}
   #cloud-status{display:none}
   .tabs{padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -297,8 +298,6 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   .badge{font-size:10px;padding:2px 6px}
 }
 @media(max-width:480px){
-  .header-btns .btn:nth-child(2){display:none}
-  .header-btns .btn:nth-child(3){display:none}
   .soldes-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .solde-card{min-width:0}
 }
@@ -445,10 +444,10 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
     </div>
     <div class="header-btns">
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
-      <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder</button>
-      <button class="btn btn-csv"  onclick="exportCSV()">📥 Export CSV</button>
-      <button class="btn" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 Import CSV</button>
-      <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 Backups</button>
+      <button class="btn btn-save" onclick="saveData()">💾 <span class="btn-label">Sauvegarder</span></button>
+      <button class="btn btn-csv"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
+      <button class="btn" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
+      <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
     </div>
   </div>
 </header>
