@@ -323,6 +323,63 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   </div>
 </div>
 
+<!-- ── CSV IMPORT OVERLAY ── -->
+<div id="csv-import-overlay" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center" onclick="closeCsvImport(event)">
+  <div style="background:#fff;border-radius:16px;width:min(660px,96%);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
+    <div style="padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">📂 Import relevé bancaire</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:2px" id="csv-filename"></div>
+      </div>
+      <button onclick="closeCsvImport()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--gray);line-height:1">✕</button>
+    </div>
+    <!-- Step 1: Upload -->
+    <div id="csv-step-1" style="padding:28px">
+      <div id="csv-drop-zone" style="border:2px dashed var(--border);border-radius:12px;padding:44px 24px;cursor:pointer;transition:border-color .2s;text-align:center"
+          ondragover="event.preventDefault();this.style.borderColor='var(--blue)'"
+          ondragleave="this.style.borderColor='var(--border)'"
+          ondrop="handleCsvDrop(event);this.style.borderColor='var(--border)'"
+          onclick="document.getElementById('csv-file-input').click()">
+        <div style="font-size:44px;margin-bottom:10px">📄</div>
+        <div style="font-weight:600;color:var(--text);margin-bottom:4px;font-size:15px">Glissez votre fichier CSV ici</div>
+        <div style="font-size:12px;color:var(--gray)">ou cliquez pour choisir un fichier</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:14px;line-height:1.6">Compatible : Crédit Agricole, BNP, Société Générale, CIC, LCL, Boursorama…<br>Colonnes détectées automatiquement (date, libellé, montant)</div>
+      </div>
+      <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="handleCsvFile(this)">
+    </div>
+    <!-- Step 2: Review -->
+    <div id="csv-step-2" style="display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+      <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap;flex-shrink:0">
+        <label style="font-size:12px;font-weight:600">Année :
+          <select id="csv-year-select" style="margin-left:6px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px"></select>
+        </label>
+        <label style="font-size:12px;color:var(--gray);cursor:pointer;display:flex;align-items:center;gap:4px">
+          <input type="checkbox" id="csv-select-all" checked onchange="csvToggleAll(this.checked)">Tout sélectionner
+        </label>
+        <span style="font-size:11px;color:var(--gray);margin-left:auto" id="csv-row-count"></span>
+      </div>
+      <div style="overflow-y:auto;flex:1">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead style="position:sticky;top:0;background:#fff;z-index:1;box-shadow:0 1px 0 var(--border)">
+            <tr>
+              <th style="padding:8px 6px;width:32px"></th>
+              <th style="padding:8px 6px;text-align:left;white-space:nowrap;color:var(--gray);font-weight:600">Date</th>
+              <th style="padding:8px 6px;text-align:left;color:var(--gray);font-weight:600">Libellé</th>
+              <th style="padding:8px 6px;text-align:right;white-space:nowrap;color:var(--gray);font-weight:600">Montant</th>
+              <th style="padding:8px 6px;text-align:left;min-width:130px;color:var(--gray);font-weight:600">Catégorie</th>
+            </tr>
+          </thead>
+          <tbody id="csv-tbody"></tbody>
+        </table>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0">
+        <button onclick="document.getElementById('csv-step-1').style.display='';document.getElementById('csv-step-2').style.display='none'" style="background:var(--gray-light);color:var(--text);border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">← Retour</button>
+        <button id="csv-import-btn" onclick="confirmCsvImport()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Importer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── QUICK ADD OVERLAY ── -->
 <div id="quick-add-overlay" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center" onclick="closeQuickAdd(event)">
   <div style="background:#fff;border-radius:16px;padding:22px 24px;width:min(360px,92%);box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
@@ -390,6 +447,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
       <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder</button>
       <button class="btn btn-csv"  onclick="exportCSV()">📥 Export CSV</button>
+      <button class="btn" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 Import CSV</button>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 Backups</button>
     </div>
   </div>
@@ -2408,6 +2466,180 @@ function addTplRev() { const cfg=loadUserConfig(); cfg.tplRevs=(cfg.tplRevs||[])
 function addTplChg() { const cfg=loadUserConfig(); cfg.tplChgs=(cfg.tplChgs||[]); cfg.tplChgs.push({label:'',amount:0}); saveUserConfig(cfg); renderConfigTab(); }
 function deleteTplRev(i) { const cfg=loadUserConfig(); cfg.tplRevs=(cfg.tplRevs||[]).filter((_,j)=>j!==i); saveUserConfig(cfg); renderConfigTab(); }
 function deleteTplChg(i) { const cfg=loadUserConfig(); cfg.tplChgs=(cfg.tplChgs||[]).filter((_,j)=>j!==i); saveUserConfig(cfg); renderConfigTab(); }
+
+// ── CSV IMPORT ──
+let _csvRows = [];
+
+function openCsvImport() {
+  const ov = document.getElementById('csv-import-overlay');
+  ov.style.display = 'flex';
+  document.getElementById('csv-step-1').style.display = '';
+  document.getElementById('csv-step-2').style.display = 'none';
+  document.getElementById('csv-filename').textContent = '';
+  document.getElementById('csv-file-input').value = '';
+}
+function closeCsvImport(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('csv-import-overlay').style.display = 'none';
+}
+function handleCsvDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) processCsvFile(file);
+}
+function handleCsvFile(input) {
+  if (input.files[0]) processCsvFile(input.files[0]);
+}
+function processCsvFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    let text = ev.target.result.replace(/^\uFEFF/, '');
+    parseAndReview(text, file.name);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+function _csvSep(line) {
+  return (line.match(/;/g)||[]).length >= (line.match(/,/g)||[]).length ? ';' : ',';
+}
+function _csvParseLine(line, sep) {
+  const res = []; let f = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (inQ && line[i+1]==='"') { f+='"'; i++; } else inQ=!inQ; }
+    else if (c === sep && !inQ) { res.push(f.trim()); f=''; }
+    else f += c;
+  }
+  res.push(f.trim()); return res;
+}
+function _csvAmount(s) {
+  if (!s) return null;
+  const n = parseFloat(s.trim().replace(/\s/g,'').replace(',','.'));
+  return isNaN(n) ? null : n;
+}
+function _csvDate(s) {
+  s = (s||'').trim();
+  let m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) return {month:+m[2]-1, day:+m[1], year:+m[3]};
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return {month:+m[2]-1, day:+m[3], year:+m[1]};
+  m = s.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (m) return {month:+m[2]-1, day:+m[1], year:+m[3]};
+  return null;
+}
+function _csvDetectCols(headers) {
+  const h = headers.map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''));
+  const find = (...t) => h.findIndex(hi => t.some(x => hi.includes(x)));
+  return {
+    date:   find('date'),
+    label:  find('libel','label','descrip','operat','reference','motif','intitule'),
+    debit:  find('debit','retrait','sortie'),
+    credit: find('credit','depot','entree'),
+    amount: find('montant','amount','somme','valeur'),
+  };
+}
+const _CSV_KW = [
+  {keys:['courses','alimentation'], words:['carrefour','leclerc','aldi','lidl','intermarche','monoprix','casino','super u','simply','netto','picard','biocoop','franprix','match','cora','auchan','ed ','leader price']},
+  {keys:['carburant','essence'],    words:['total access','bp ','shell','esso','elf ','carburant','essence','gazole','station service','q8']},
+  {keys:['restaurant','resto'],     words:['restaurant','mcdonald','kfc','burger king','pizza','brasserie','bistrot','snack','kebab','sushi']},
+  {keys:['chien','animaux','veto'], words:['veterin','clinique veter','animal','zoo','petfood','pets','wanimo','zooplus']},
+  {keys:['sante','pharmacie'],      words:['pharmacie','medecin','docteur','hopital','clinique sante','labo']},
+  {keys:['loisirs','sport'],        words:['netflix','spotify','disney','canal','amazon prime','gym','salle de sport','cinema','fnac','decathlon','go sport']},
+  {keys:['divers'],                 words:[]},
+];
+function _csvAutocat(label) {
+  const lc = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const cats = getVarCats().map(c => ({...c, lc: c.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}));
+  for (const grp of _CSV_KW) {
+    if (grp.words.some(w => lc.includes(w))) {
+      const hit = cats.find(c => grp.keys.some(k => c.lc.includes(k) || c.key.includes(k)));
+      if (hit) return hit.key;
+    }
+  }
+  for (const cat of cats) {
+    if (cat.lc.length >= 4 && lc.includes(cat.lc)) return cat.key;
+  }
+  return cats[cats.length-1]?.key || '';
+}
+function parseAndReview(text, filename) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) { showToast('❌ Fichier CSV vide ou invalide'); return; }
+  const sep = _csvSep(lines[0]);
+  const headers = _csvParseLine(lines[0], sep);
+  const cols = _csvDetectCols(headers);
+  if (cols.date < 0 || (cols.amount < 0 && cols.debit < 0)) {
+    showToast('❌ Colonnes date/montant introuvables — vérifiez le format');
+    return;
+  }
+  const activeYear = getYears().find(y => document.getElementById('tab-y'+y)?.classList.contains('active')) || getYears()[0];
+  _csvRows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = _csvParseLine(lines[i], sep);
+    if (!cells.length || cells.every(c=>!c)) continue;
+    const parsed = _csvDate(cells[cols.date]||'');
+    if (!parsed) continue;
+    let amount = null;
+    if (cols.amount >= 0) {
+      amount = _csvAmount(cells[cols.amount]);
+      if (amount != null) amount = Math.abs(amount);
+    } else {
+      const deb = _csvAmount(cols.debit>=0 ? cells[cols.debit] : '');
+      if (deb != null && deb > 0) amount = deb;
+      else if (deb != null && deb < 0) amount = -deb;
+    }
+    if (!amount || amount <= 0) continue;
+    const label = cols.label >= 0 ? cells[cols.label] : (cells[1]||'');
+    _csvRows.push({month:parsed.month, day:parsed.day, year:parsed.year, label, amount, catKey:_csvAutocat(label), include:true});
+  }
+  if (!_csvRows.length) { showToast('❌ Aucune dépense détectée dans ce fichier'); return; }
+  document.getElementById('csv-filename').textContent = filename + ' — ' + _csvRows.length + ' dépenses détectées';
+  document.getElementById('csv-year-select').innerHTML = getYears().map(y=>`<option value="${y}"${y==activeYear?' selected':''}>${y}</option>`).join('');
+  const cats = getVarCats();
+  document.getElementById('csv-tbody').innerHTML = _csvRows.map((row,i)=>`
+    <tr id="csv-row-${i}" style="border-bottom:1px solid var(--border);${row.include?'':'opacity:.35'}">
+      <td style="text-align:center;padding:6px"><input type="checkbox" ${row.include?'checked':''} onchange="csvToggleRow(${i},this.checked)"></td>
+      <td style="padding:6px;white-space:nowrap;color:var(--gray)">${MONTHS[row.month]} ${row.day}</td>
+      <td style="padding:6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${row.label}">${row.label}</td>
+      <td style="padding:6px;text-align:right;font-weight:700;color:var(--red);white-space:nowrap">${fmtN(row.amount)} €</td>
+      <td style="padding:6px"><select style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;width:100%" onchange="csvSetCat(${i},this.value)">
+        ${cats.map(c=>`<option value="${c.key}"${c.key===row.catKey?' selected':''}>${c.icon} ${c.label}</option>`).join('')}
+      </select></td>
+    </tr>`).join('');
+  document.getElementById('csv-step-1').style.display = 'none';
+  document.getElementById('csv-step-2').style.display = 'flex';
+  document.getElementById('csv-select-all').checked = true;
+  _csvUpdateCount();
+}
+function csvToggleRow(i, checked) {
+  _csvRows[i].include = checked;
+  const tr = document.getElementById('csv-row-'+i);
+  if (tr) tr.style.opacity = checked ? '' : '.35';
+  _csvUpdateCount();
+}
+function csvSetCat(i, key) { _csvRows[i].catKey = key; }
+function csvToggleAll(checked) { _csvRows.forEach((_,i) => csvToggleRow(i, checked)); }
+function _csvUpdateCount() {
+  const n = _csvRows.filter(r=>r.include).length;
+  const btn = document.getElementById('csv-import-btn');
+  btn.textContent = `✅ Importer ${n} transaction${n>1?'s':''}`;
+  btn.disabled = n === 0;
+  const rc = document.getElementById('csv-row-count');
+  if (rc) rc.textContent = `${n} / ${_csvRows.length} sélectionnées`;
+}
+function confirmCsvImport() {
+  const year = document.getElementById('csv-year-select').value;
+  if (!DATA[year]) { showToast('❌ Année introuvable'); return; }
+  let count = 0;
+  for (const row of _csvRows) {
+    if (!row.include) continue;
+    if (!DATA[year].vars[row.catKey]) DATA[year].vars[row.catKey] = [];
+    DATA[year].vars[row.catKey].push({month:row.month, day:row.day, amount:Math.round(row.amount*100)/100, comment:row.label, method:getMethods()[0]?.key||'carte'});
+    count++;
+  }
+  closeCsvImport();
+  renderYear(year);
+  dSave();
+  showToast(`✅ ${count} transaction${count>1?'s importées':' importée'}`);
+}
 
 // ── INIT ──
 initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
