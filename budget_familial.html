@@ -1915,12 +1915,12 @@ function renderMonthSummary(year) {
     </tr></thead><tbody>
       ${row('💹 Revenus totaux',rv,'rev')}
       ${row('🏠 Charges récurrentes & occasionnelles',ch,'chg')}
-      ${(()=>{const bud=rv.map((v,i)=>v-ch[i]);const bt=sum(bud);return`<tr style="background:#e8f5f9;font-weight:800;font-size:13px"><td class="lbl-col">💵 Budget disponible</td>${bud.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bud-${i}">${fmtN(v)}</td>`).join('')}<td class="tot-col ${bt<0?'neg':'pos'}" id="sm-${year}-bud-tot">${fmtN(bt)}</td><td></td></tr>`;})()}
       ${row('🛒 Dépenses variables',vr,'var')}
       ${row('📉 Dépenses totales',dep,'dep')}
       ${row('🔴 Reste à payer (charges non payées)',rap,'rap','#fff8e1')}
+      ${(()=>{const bud=rv.map((v,i)=>v-ch[i]);const bt=sum(bud);return`<tr style="background:#e8f5f9;font-weight:800;font-size:13px"><td class="lbl-col">💰 Disponible avant dépenses</td>${bud.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bud-${i}">${fmtN(v)}</td>`).join('')}<td class="tot-col ${bt<0?'neg':'pos'}" id="sm-${year}-bud-tot">${fmtN(bt)}</td><td></td></tr>`;})()}
       <tr style="background:#e8f5e9;font-weight:800;font-size:13px">
-        <td class="lbl-col">💰 SOLDE MENSUEL</td>
+        <td class="lbl-col">✅ SOLDE RÉEL DU MOIS</td>
         ${balRow}
         <td class="tot-col ${balTot<0?'neg':'pos'}" id="sm-${year}-bal-tot">${fmtN(balTot)}</td>
         <td></td>
