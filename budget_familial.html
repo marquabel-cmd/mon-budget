@@ -322,6 +322,28 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   </div>
 </div>
 
+<!-- ── UPGRADE OVERLAY ── -->
+<div id="upgrade-overlay" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center" onclick="if(event.target===this)closeUpgrade()">
+  <div style="background:#fff;border-radius:20px;width:min(420px,94%);padding:28px 28px 24px;box-shadow:0 24px 64px rgba(0,0,0,.3);text-align:center">
+    <div style="font-size:40px;margin-bottom:6px">⭐</div>
+    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px">Passez à Premium</div>
+    <div id="upgrade-reason" style="font-size:13px;color:var(--gray);margin-bottom:18px"></div>
+    <div style="background:var(--blue-light);border-radius:10px;padding:14px 16px;margin-bottom:20px;text-align:left">
+      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:8px">Premium inclut :</div>
+      <div style="font-size:13px;line-height:2;color:var(--text)">✅ Utilisateurs illimités<br>✅ Historique multi-années<br>✅ Catégories de dépenses illimitées<br>✅ Synchronisation Firebase cloud</div>
+    </div>
+    <a id="upgrade-stripe-btn" href="#" target="_blank" style="display:block;background:var(--blue);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:16px">💳 Acheter — 14,90 €</a>
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <div style="font-size:12px;color:var(--gray);margin-bottom:8px">Déjà une clé de licence ?</div>
+      <div style="display:flex;gap:8px">
+        <input id="upgrade-key-input" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;letter-spacing:1px">
+        <button onclick="activateLicenseFromOverlay()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">Activer</button>
+      </div>
+    </div>
+    <button onclick="closeUpgrade()" style="margin-top:14px;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Continuer en version gratuite</button>
+  </div>
+</div>
+
 <!-- ── CSV IMPORT OVERLAY ── -->
 <div id="csv-import-overlay" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center" onclick="closeCsvImport(event)">
   <div style="background:#fff;border-radius:16px;width:min(660px,96%);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
@@ -933,6 +955,7 @@ const WIZARD_CHGS = [
 let _wiz = {step:1, name:'', color:'#e67e22', revs:[], chgs:[], pin:''};
 
 function toggleWelcomeAddPanel() {
+  if (!isLicensed() && Object.keys(USERS).length >= 1) { showUpgrade('multi-utilisateurs'); return; }
   const p = document.getElementById('welcome-add-panel');
   if (!p) return;
   const open = p.style.display === 'block';
@@ -1320,6 +1343,7 @@ function cancelDelete() {
 
 let _pendingNewYear = null;
 function addYear() {
+  if (!isLicensed() && getYears().length >= FREE_MAX_YEARS) { showUpgrade('historique multi-années'); return; }
   const years = getYears();
   const lastYear = years[years.length - 1];
   const newYear = String(parseInt(lastYear) + 1);
@@ -2331,8 +2355,36 @@ function renderConfigTab() {
       </div>
     </div>
     <div>
+      <div class="config-card" style="margin-bottom:14px"><h3>🔑 Licence</h3>
+        ${isLicensed() ? `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--green-light);border-radius:8px;margin-bottom:10px">
+            <span style="font-size:22px">⭐</span>
+            <div><div style="font-weight:700;color:var(--green);font-size:13px">Premium actif</div>
+            <div style="font-size:11px;color:var(--gray)">Clé : ${getLicenseKey()?.substring(0,8)}…</div></div>
+          </div>
+          <button onclick="deactivateLicense()" style="font-size:11px;color:var(--gray);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer">Désactiver sur cet appareil</button>
+        ` : `
+          <div style="font-size:12px;color:var(--gray);margin-bottom:12px;line-height:1.6">
+            Version gratuite : 1 utilisateur · 1 année · ${FREE_MAX_CATS} catégories · local uniquement
+          </div>
+          <a href="${STRIPE_LINK}" target="_blank" style="display:block;background:var(--blue);color:#fff;border-radius:8px;padding:10px;font-size:13px;font-weight:700;text-decoration:none;text-align:center;margin-bottom:12px">⭐ Passer à Premium — 14,90 €</a>
+          <div style="font-size:12px;color:var(--gray);margin-bottom:6px">Déjà une clé ?</div>
+          <div style="display:flex;gap:6px">
+            <input id="cfg-license-input" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;letter-spacing:1px">
+            <button onclick="activateLicense(document.getElementById('cfg-license-input').value)" style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">Activer</button>
+          </div>
+        `}
+      </div>
       <div class="config-card"><h3>☁️ Synchronisation Cloud</h3>
-        ${(() => { const c = getCloudCfg(); return `
+        ${!isLicensed() ? `
+          <div style="text-align:center;padding:16px 8px">
+            <div style="font-size:28px;margin-bottom:8px">🔒</div>
+            <div style="font-weight:600;font-size:13px;margin-bottom:6px">Fonctionnalité Premium</div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:14px">La synchronisation cloud est disponible avec la licence Premium.</div>
+            <button onclick="showUpgrade('synchronisation cloud Firebase')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer">⭐ Voir Premium</button>
+          </div>
+        ` : ''}
+        ${isLicensed() ? (() => { const c = getCloudCfg(); return `
         <div style="font-size:12px;color:var(--gray);margin-bottom:10px">
           Accédez à vos données depuis n'importe quel appareil.<br>
           Nécessite un projet <strong>Firebase</strong> gratuit.
@@ -2363,7 +2415,7 @@ function renderConfigTab() {
           2. Créer un projet → <em>Build → Realtime Database → Créer → Mode test</em><br>
           3. Copier l'URL de la base (https://xxx.firebaseio.com)<br>
           4. Coller ici + entrer un code perso → <strong>Enregistrer</strong>
-        </div>`; })()}
+        </div>`; })() : ''}
       </div>
       <div class="config-card" style="margin-top:14px"><h3>🗂 Catégories de dépenses</h3>
         <div style="margin-bottom:8px">
@@ -2394,6 +2446,7 @@ function renderConfigTab() {
 }
 
 function addVarCat(icon, label) {
+  if (!isLicensed() && getVarCats().length >= FREE_MAX_CATS) { showUpgrade(`catégories illimitées (max ${FREE_MAX_CATS} en gratuit)`); return; }
   icon = (icon || '').trim();
   label = (label || '').trim();
   if (!label) { showToast('⚠️ Libellé requis'); return; }
@@ -2465,6 +2518,47 @@ function addTplRev() { const cfg=loadUserConfig(); cfg.tplRevs=(cfg.tplRevs||[])
 function addTplChg() { const cfg=loadUserConfig(); cfg.tplChgs=(cfg.tplChgs||[]); cfg.tplChgs.push({label:'',amount:0}); saveUserConfig(cfg); renderConfigTab(); }
 function deleteTplRev(i) { const cfg=loadUserConfig(); cfg.tplRevs=(cfg.tplRevs||[]).filter((_,j)=>j!==i); saveUserConfig(cfg); renderConfigTab(); }
 function deleteTplChg(i) { const cfg=loadUserConfig(); cfg.tplChgs=(cfg.tplChgs||[]).filter((_,j)=>j!==i); saveUserConfig(cfg); renderConfigTab(); }
+
+// ── LICENCE ──
+const LICENSE_DB  = 'https://mon-budget-licences-default-rtdb.europe-west1.firebasedatabase.app';
+const STRIPE_LINK = 'https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00';
+const FREE_MAX_CATS  = 3;
+const FREE_MAX_YEARS = 1;
+
+function isLicensed()  { return !!localStorage.getItem('mbudget-license'); }
+function getLicenseKey(){ return localStorage.getItem('mbudget-license') || null; }
+
+function showUpgrade(reason) {
+  document.getElementById('upgrade-reason').textContent = 'Fonctionnalité Premium requise : ' + reason + '.';
+  document.getElementById('upgrade-stripe-btn').href = STRIPE_LINK;
+  document.getElementById('upgrade-key-input').value = '';
+  document.getElementById('upgrade-overlay').style.display = 'flex';
+}
+function closeUpgrade() { document.getElementById('upgrade-overlay').style.display = 'none'; }
+
+async function activateLicense(key) {
+  key = (key||'').trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
+  if (!key) { showToast('⚠️ Clé vide'); return false; }
+  try {
+    const res  = await fetch(`${LICENSE_DB}/licenses/${key}.json`);
+    const data = await res.json();
+    if (!data || data.active !== true) { showToast('❌ Clé invalide ou expirée'); return false; }
+    localStorage.setItem('mbudget-license', key);
+    showToast('🎉 Licence activée — bienvenue en Premium !');
+    closeUpgrade();
+    renderConfigTab();
+    return true;
+  } catch { showToast('❌ Impossible de vérifier (réseau ?)'); return false; }
+}
+function activateLicenseFromOverlay() {
+  activateLicense(document.getElementById('upgrade-key-input').value);
+}
+function deactivateLicense() {
+  if (!confirm('Désactiver la licence Premium sur cet appareil ?')) return;
+  localStorage.removeItem('mbudget-license');
+  renderConfigTab();
+  showToast('Licence désactivée');
+}
 
 // ── CSV IMPORT ──
 let _csvRows = [];
