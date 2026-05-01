@@ -454,9 +454,37 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   </div>
 </div>
 
+<!-- ADMIN BANNER -->
+<div id="admin-banner" style="display:none;background:#F5A623;color:#1A1D2E;padding:6px 16px;font-size:12px;font-weight:700;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:200">
+  <span>👁️ MODE ADMIN — Clé : <span id="admin-banner-key" style="font-family:monospace"></span></span>
+  <button onclick="exitAdminMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ Quitter</button>
+</div>
+
+<!-- ADMIN MODAL -->
+<div id="admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#1A1D2E;border-radius:16px;padding:28px;width:340px;max-width:90vw;color:#fff">
+    <h3 style="margin:0 0 20px;font-size:16px">🔐 Mode Admin</h3>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:6px">Mot de passe admin</div>
+      <input type="password" id="admin-password-input" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')enterAdminMode()">
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:6px">Clé de licence client</div>
+      <input type="text" id="admin-license-input" placeholder="-OrSgJYUP..." style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')enterAdminMode()">
+      <div style="margin-top:8px">
+        <button onclick="loadDemoData()" style="width:100%;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px dashed rgba(255,255,255,.3);border-radius:8px;padding:8px;font-size:12px;cursor:pointer">🎭 Charger données de démo</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeAdminPanel()" style="flex:1;background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;cursor:pointer">Annuler</button>
+      <button onclick="enterAdminMode()" style="flex:2;background:#F5A623;color:#1A1D2E;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">👁️ Voir les données</button>
+    </div>
+  </div>
+</div>
+
 <header>
   <div>
-    <h1>💰 Mon Budget</h1>
+    <h1 id="app-title" onclick="adminTitleClick()" style="cursor:default">💰 Mon Budget</h1>
     <div class="sub">Gestion mensuelle des revenus et dépenses</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
@@ -2121,6 +2149,7 @@ async function cloudPull() {
 let _saveTimer;
 function dSave() { clearTimeout(_saveTimer); _saveTimer=setTimeout(saveData,1500); }
 function saveData() {
+  if (_isAdminMode) { showToast('⚠️ Mode admin — sauvegarde désactivée'); return; }
   const json = JSON.stringify(DATA);
   localStorage.setItem(dataKey(), json);
   const now = new Date();
@@ -2672,6 +2701,124 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
+}
+
+// ── ADMIN MODE ──
+const ADMIN_SECRET = 'marquabel2026';
+let _adminClickCount = 0, _adminClickTimer = null;
+let _adminSavedData = null, _isAdminMode = false;
+
+function adminTitleClick() {
+  _adminClickCount++;
+  clearTimeout(_adminClickTimer);
+  if (_adminClickCount >= 5) { _adminClickCount = 0; openAdminPanel(); }
+  else { _adminClickTimer = setTimeout(() => { _adminClickCount = 0; }, 2000); }
+}
+function openAdminPanel() {
+  document.getElementById('admin-modal').style.display = 'flex';
+  document.getElementById('admin-password-input').value = '';
+  document.getElementById('admin-license-input').value = '';
+  setTimeout(() => document.getElementById('admin-password-input').focus(), 100);
+}
+function closeAdminPanel() { document.getElementById('admin-modal').style.display = 'none'; }
+
+async function enterAdminMode() {
+  const pwd = document.getElementById('admin-password-input').value.trim();
+  const key = document.getElementById('admin-license-input').value.trim().replace(/[^A-Za-z0-9_-]/g,'');
+  if (pwd !== ADMIN_SECRET) { showToast('❌ Mot de passe incorrect'); return; }
+  if (!key) { showToast('⚠️ Entrez une clé de licence'); return; }
+  showToast('🔄 Chargement…');
+  try {
+    const url = LICENSE_DB.replace(/\/+$/,'') + '/user-data/' + key + '/budget.json';
+    const r = await fetch(url);
+    if (!r.ok) { showToast('❌ Erreur Firebase ' + r.status); return; }
+    const d = await r.json();
+    if (!d || typeof d !== 'object' || Array.isArray(d)) { showToast('⚠️ Aucune donnée pour cette clé'); return; }
+    _adminSavedData = JSON.stringify(DATA);
+    _isAdminMode = true;
+    DATA = d;
+    if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+    closeAdminPanel();
+    document.getElementById('admin-banner').style.display = 'flex';
+    document.getElementById('admin-banner-key').textContent = key;
+    document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+    renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+    const ly = getYears().slice(-1)[0];
+    if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
+    showToast('👁️ Mode admin — ' + key.slice(0,16) + '…');
+  } catch(e) { showToast('❌ Impossible de charger les données'); }
+}
+
+function exitAdminMode() {
+  if (!_isAdminMode) return;
+  DATA = JSON.parse(_adminSavedData);
+  _isAdminMode = false;
+  document.getElementById('admin-banner').style.display = 'none';
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+  const ly = getYears().slice(-1)[0];
+  if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
+  showToast('✅ Retour à vos données');
+}
+
+// ── DEMO DATA ──
+function loadDemoData() {
+  closeAdminPanel();
+  const m = (month, day, amount, comment, method='carte') => ({id: Math.round(Math.random()*90000+10000), month, day, amount, comment, method});
+  _adminSavedData = JSON.stringify(DATA);
+  _isAdminMode = true;
+  DATA = {
+    methods: [{key:'carte',label:'Carte bancaire'},{key:'virement',label:'Virement'},{key:'liquide',label:'Liquide'}],
+    varCats: [{key:'courses',label:'Courses',icon:'🛒'},{key:'carburant',label:'Carburant',icon:'⛽'},{key:'divers',label:'Divers',icon:'📦'},{key:'sante',label:'Santé',icon:'💊'}],
+    "2026": {
+      revs: {
+        "0":[{id:1,label:'Salaire Jean',amount:2400,paid:true},{id:2,label:'Salaire Marie',amount:1850,paid:true}],
+        "1":[{id:3,label:'Salaire Jean',amount:2400,paid:true},{id:4,label:'Salaire Marie',amount:1850,paid:true}],
+        "2":[{id:5,label:'Salaire Jean',amount:2400,paid:true},{id:6,label:'Salaire Marie',amount:1850,paid:true}],
+        "3":[{id:7,label:'Salaire Jean',amount:2400,paid:false},{id:8,label:'Salaire Marie',amount:1850,paid:false}]
+      },
+      fixed: [
+        {id:100,label:'Loyer',amount:850,month:0,method:'virement'},{id:101,label:'Loyer',amount:850,month:1,method:'virement'},
+        {id:102,label:'Loyer',amount:850,month:2,method:'virement'},{id:103,label:'Loyer',amount:850,month:3,method:'virement'},
+        {id:104,label:'Électricité',amount:120,month:0,method:'virement'},{id:105,label:'Électricité',amount:98,month:1,method:'virement'},
+        {id:106,label:'Internet',amount:35,month:0,method:'virement'},{id:107,label:'Internet',amount:35,month:1,method:'virement'},
+        {id:108,label:'Internet',amount:35,month:2,method:'virement'},{id:109,label:'Internet',amount:35,month:3,method:'virement'},
+        {id:110,label:'Assurance voiture',amount:72,month:0,method:'virement'},{id:111,label:'Assurance voiture',amount:72,month:1,method:'virement'},
+        {id:112,label:'Assurance voiture',amount:72,month:2,method:'virement'},{id:113,label:'Assurance voiture',amount:72,month:3,method:'virement'}
+      ],
+      vars: {
+        courses: [
+          m(0,3,87.40,'Lidl'),m(0,8,23.50,'Aldi'),m(0,15,102.30,'Lidl'),m(0,22,41.80,'Colruyt'),
+          m(1,4,94.20,'Lidl'),m(1,11,18.90,'Aldi'),m(1,18,76.50,'Intermarché'),m(1,25,55.30,'Lidl'),
+          m(2,1,88.70,'Lidl'),m(2,9,32.40,'Colruyt'),m(2,16,67.90,'Lidl'),m(2,23,44.10,'Aldi'),
+          m(3,5,91.30,'Lidl'),m(3,12,28.60,'Aldi')
+        ],
+        carburant: [
+          m(0,6,85.40,'Plein voiture'),m(0,20,82.10,'Plein voiture'),
+          m(1,7,79.30,'Plein voiture'),m(1,21,88.50,'Plein voiture'),
+          m(2,4,83.70,'Plein voiture'),m(2,18,86.20,'Plein voiture'),
+          m(3,3,81.90,'Plein voiture')
+        ],
+        divers: [
+          m(0,2,45,'Coiffeur','liquide'),m(0,14,23.99,'Amazon'),m(0,28,15.50,'Cinéma'),
+          m(1,5,38.90,'Vêtements Zara'),m(1,19,12,'Resto midi'),m(1,26,67.50,'Pharmacie'),
+          m(2,3,22,'Coiffeur','liquide'),m(2,11,189,'Réparation voiture'),m(2,25,34.90,'Amazon'),
+          m(3,8,16,'Resto'),m(3,15,48.50,'Vêtements')
+        ],
+        sante: [
+          m(0,10,25,'Médecin généraliste'),m(0,18,42.30,'Pharmacie'),
+          m(1,8,18.50,'Pharmacie'),m(2,5,75,'Dentiste'),m(2,20,12.80,'Pharmacie')
+        ]
+      }
+    }
+  };
+  document.getElementById('admin-banner').style.display = 'flex';
+  document.getElementById('admin-banner-key').textContent = 'DÉMO';
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+  const ly = getYears().slice(-1)[0];
+  if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
+  showToast('🎭 Données de démo chargées');
 }
 </script>
 </body>
