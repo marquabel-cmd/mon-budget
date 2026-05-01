@@ -2475,7 +2475,6 @@ function renderConfigTab() {
       </div>
       <div class="config-card" style="margin-top:14px"><h3>⚙️ Application</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="forceUpdate()">🔄 Vérifier les mises à jour</button>
           <button class="btn" style="background:#fff3e0;color:#e65100;border:2px solid #e65100;font-weight:700" onclick="uninstallApp()">🗑 Désinstaller l'application…</button>
         </div>
       </div>
@@ -2811,7 +2810,23 @@ async function uninstallApp() {
 // ── PWA SERVICE WORKER ──
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      // Vérification automatique toutes les 30 minutes
+      setInterval(() => reg.update(), 30 * 60 * 1000);
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showToast('🔄 Mise à jour disponible…');
+            setTimeout(() => window.location.reload(), 1500);
+          }
+        });
+      });
+    }).catch(() => {});
+    // Rechargement quand le nouveau SW prend le contrôle
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
   });
 }
 
