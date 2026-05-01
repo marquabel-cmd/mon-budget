@@ -829,8 +829,11 @@ function renderWelcomeScreen() {
   if (!grid) return;
   grid.innerHTML = Object.entries(USERS).map(([id,u]) => {
     const initials = u.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const avatarHtml = u.photo
+      ? `<div class="welcome-avatar" style="background:none;padding:0;overflow:hidden"><img src="${u.photo}" style="width:58px;height:58px;border-radius:50%;object-fit:cover;display:block"></div>`
+      : `<div class="welcome-avatar" style="background:${u.color}">${initials}</div>`;
     return `<div class="welcome-user-card" onclick="selectUserFromWelcome('${id}')">
-      <div class="welcome-avatar" style="background:${u.color}">${initials}</div>
+      ${avatarHtml}
       <div class="welcome-user-name">${u.name}</div>
     </div>`;
   }).join('');
@@ -1130,7 +1133,21 @@ function updateUserDisplay() {
   if (!u) return;
   const dot = document.getElementById('user-dot');
   const nm = document.getElementById('user-name-display');
-  if (dot) dot.style.background = u.color;
+  if (dot) {
+    if (u.photo) {
+      dot.style.background = 'none';
+      dot.style.backgroundImage = `url(${u.photo})`;
+      dot.style.backgroundSize = 'cover';
+      dot.style.backgroundPosition = 'center';
+      dot.style.width = '22px';
+      dot.style.height = '22px';
+    } else {
+      dot.style.background = u.color;
+      dot.style.backgroundImage = '';
+      dot.style.width = '10px';
+      dot.style.height = '10px';
+    }
+  }
   if (nm) nm.textContent = u.name;
 }
 
@@ -2111,19 +2128,57 @@ function renderSummary() {
 // ── TOGGLE COLLAPSE ──
 function toggleSection(hdr) { hdr.parentElement.classList.toggle('collapsed'); }
 
+// ── PHOTO PROFIL ──
+function uploadUserPhoto(userId) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 800000) { showToast('⚠️ Image trop grande (max 800 Ko)'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      // Redimensionner via canvas
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = 200;
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const ratio = Math.min(size/img.width, size/img.height);
+        const w = img.width*ratio, h = img.height*ratio;
+        ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+        USERS[userId].photo = canvas.toDataURL('image/jpeg', 0.8);
+        saveUsers();
+        renderWelcomeScreen();
+        renderConfigTab();
+        if (userId === CURRENT_USER_ID) updateUserDisplay();
+        showToast('✅ Photo mise à jour');
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
 // ── CLOUD SYNC ──
+let _lastSyncError = '';
 function cloudApiUrl() {
   const key = getLicenseKey();
   if (!key || !isLicensed()) return null;
   return LICENSE_DB.replace(/\/+$/,'') + '/user-data/' + key + '/budget.json';
 }
-function setCloudStatus(s) {
+function setCloudStatus(s, errMsg) {
   const el = document.getElementById('cloud-status');
   if (!el) return;
+  if (errMsg) _lastSyncError = errMsg;
   const map = {off:'', syncing:'🔄', ok:'☁️ Sync', error:'⚠️ Sync'};
   const col = {off:'', syncing:'rgba(255,255,255,.7)', ok:'#7effa0', error:'#ffb3b3'};
   el.textContent = map[s]||''; el.style.color = col[s]||'';
-  el.title = {off:'', syncing:'Synchronisation…', ok:'Synchronisé avec le cloud', error:'Erreur de synchronisation'}[s]||'';
+  el.style.cursor = s === 'error' ? 'pointer' : 'default';
+  el.title = s === 'error' ? (_lastSyncError || 'Erreur de synchronisation') : {off:'', syncing:'Synchronisation…', ok:'Synchronisé avec le cloud'}[s]||'';
+  el.onclick = s === 'error' ? () => showToast('❌ Sync : ' + (_lastSyncError || 'Erreur inconnue')) : null;
 }
 async function cloudPush() {
   const url = cloudApiUrl();
@@ -2131,18 +2186,19 @@ async function cloudPush() {
   setCloudStatus('syncing');
   try {
     const r = await fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(DATA)});
-    setCloudStatus(r.ok ? 'ok' : 'error');
-  } catch(e) { setCloudStatus('error'); }
+    if (r.ok) { setCloudStatus('ok'); _lastSyncError = ''; }
+    else { setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); }
+  } catch(e) { setCloudStatus('error', e.message || 'Réseau inaccessible'); }
 }
 async function cloudPull() {
   const url = cloudApiUrl();
   if (!url) return null;
   try {
     const r = await fetch(url);
-    if (!r.ok) return null;
+    if (!r.ok) { _lastSyncError = `HTTP ${r.status} — vérifiez les règles Firebase`; return null; }
     const d = await r.json();
     return (d && typeof d === 'object' && !Array.isArray(d)) ? d : null;
-  } catch(e) { return null; }
+  } catch(e) { _lastSyncError = e.message || 'Réseau inaccessible'; return null; }
 }
 
 // ── SAVE / RESET / EXPORT ──
@@ -2293,10 +2349,13 @@ function renderConfigTab() {
   const isAdmin = !!USERS[CURRENT_USER_ID]?.admin;
   const userList = Object.entries(USERS).map(([id,u])=>`
     <div class="user-card">
-      <span style="width:14px;height:14px;border-radius:50%;background:${u.color};flex-shrink:0;display:inline-block"></span>
+      ${u.photo
+        ? `<img src="${u.photo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer;border:2px solid ${u.color}" onclick="uploadUserPhoto('${id}')" title="Changer la photo">`
+        : `<span style="width:28px;height:28px;border-radius:50%;background:${u.color};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer" onclick="uploadUserPhoto('${id}')" title="Ajouter une photo">${u.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase()}</span>`}
       <span class="user-card-name">${u.name}${u.admin?' <span style="font-size:10px;color:#e67e22;font-weight:700" title="Administrateur">👑</span>':''}${id===CURRENT_USER_ID?' <span style="font-size:10px;color:var(--green);font-weight:400">(actif)</span>':''}</span>
       <span style="font-size:10px;color:${u.pin?'var(--blue)':'#ccc'};margin-right:4px" title="${u.pin?'PIN activé':'Sans PIN'}">${u.pin?'🔒':'🔓'}</span>
       <div class="user-card-actions">
+        <button class="btn-sm" style="background:#f0f4ff;color:var(--blue);border:1px solid var(--blue)" onclick="uploadUserPhoto('${id}')" title="Photo de profil">📷</button>
         ${id!==CURRENT_USER_ID?`<button class="btn-sm btn-sm-edit" onclick="switchUser('${id}')">Activer</button>`:''}
         ${isAdmin && Object.keys(USERS).length>1?`<button class="btn-sm btn-sm-del" onclick="confirmDeleteUser('${id}')">✕</button>`:''}
       </div>
