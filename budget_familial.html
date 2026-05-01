@@ -2537,7 +2537,7 @@ function showUpgrade(reason) {
 function closeUpgrade() { document.getElementById('upgrade-overlay').style.display = 'none'; }
 
 async function activateLicense(key) {
-  key = (key||'').trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
+  key = (key||'').trim().replace(/[^A-Za-z0-9_-]/g,'');
   if (!key) { showToast('⚠️ Clé vide'); return false; }
   try {
     const res  = await fetch(`${LICENSE_DB}/licenses/${key}.json`);
