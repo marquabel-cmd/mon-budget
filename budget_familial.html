@@ -926,7 +926,8 @@ function doLogin(id) {
   if (isLicensed()) {
     setCloudStatus('syncing');
     cloudPull().then(cloudData => {
-      if (!cloudData) { setCloudStatus('error'); return; }
+      if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; } // Pas encore de données cloud
+      if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
       DATA = cloudData;
       if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
       document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
@@ -1445,10 +1446,20 @@ function txDay(d) {
 // ─────────────────────────────────────────────
 function renderYear(year) {
   const wrap = document.getElementById('tab-y'+year);
-  wrap.innerHTML = renderSoldes(year) + renderRevSection(year) +
-    renderChargeSection(year) + renderVarSection(year) + renderMonthSummary(year);
-  updateLivretDisplay(year);
-  updateCompteDisplay(year);
+  if (!wrap) return;
+  // S'assurer que vars contient toutes les catégories
+  if (!DATA[year].vars) DATA[year].vars = {};
+  getVarCats().forEach(c => { if (!DATA[year].vars[c.key]) DATA[year].vars[c.key] = []; });
+  try {
+    wrap.innerHTML = renderSoldes(year) + renderRevSection(year) +
+      renderChargeSection(year) + renderVarSection(year) + renderMonthSummary(year);
+    updateLivretDisplay(year);
+    updateCompteDisplay(year);
+  } catch(e) {
+    console.error('renderYear error', year, e);
+    showToast('❌ Erreur rendu ' + year + ' : ' + e.message);
+    wrap.innerHTML = `<div style="padding:20px;color:var(--red)">❌ Erreur : ${e.message}</div>`;
+  }
 }
 
 // ── SOLDES ──
@@ -2197,7 +2208,9 @@ async function cloudPull() {
     const r = await fetch(url);
     if (!r.ok) { _lastSyncError = `HTTP ${r.status} — vérifiez les règles Firebase`; return null; }
     const d = await r.json();
-    return (d && typeof d === 'object' && !Array.isArray(d)) ? d : null;
+    if (!d || Array.isArray(d)) return null; // Pas de données encore (Firebase retourne null)
+    if (typeof d !== 'object') { _lastSyncError = 'Format de données invalide'; return null; }
+    return d;
   } catch(e) { _lastSyncError = e.message || 'Réseau inaccessible'; return null; }
 }
 
