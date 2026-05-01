@@ -2400,6 +2400,12 @@ function renderConfigTab() {
           <button class="btn" style="background:#fff;color:var(--red);border:2px solid var(--red);font-weight:700" onclick="resetData()">⚠️ Réinitialiser les données…</button>
         </div>
       </div>
+      <div class="config-card" style="margin-top:14px"><h3>⚙️ Application</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="forceUpdate()">🔄 Vérifier les mises à jour</button>
+          <button class="btn" style="background:#fff3e0;color:#e65100;border:2px solid #e65100;font-weight:700" onclick="uninstallApp()">🗑 Désinstaller l'application…</button>
+        </div>
+      </div>
     </div>
   </div></div>`;
 }
@@ -2695,6 +2701,39 @@ function confirmCsvImport() {
 
 // ── INIT ──
 initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
+
+// ── FORCE UPDATE & UNINSTALL ──
+async function forceUpdate() {
+  showToast('🔄 Recherche de mise à jour…');
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) await r.unregister();
+    }
+    const keys = await caches.keys();
+    for (const k of keys) await caches.delete(k);
+    showToast('✅ Mise à jour trouvée — rechargement…');
+    setTimeout(() => window.location.reload(true), 800);
+  } catch(e) { window.location.reload(true); }
+}
+
+async function uninstallApp() {
+  if (!confirm('Désinstaller l\'application ?\n\n⚠️ Toutes vos données locales seront supprimées.\nCette action est irréversible.')) return;
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) await r.unregister();
+    }
+    const keys = await caches.keys();
+    for (const k of keys) await caches.delete(k);
+    localStorage.clear();
+    document.body.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:Inter,sans-serif;text-align:center;padding:20px;background:#F4F5FA">
+      <div style="font-size:48px;margin-bottom:16px">✅</div>
+      <h2 style="margin:0 0 8px;color:#1A1D2E">Application désinstallée</h2>
+      <p style="color:#6b7280;font-size:14px">Vos données ont été effacées.<br>Vous pouvez maintenant supprimer l'icône de votre écran d'accueil.</p>
+    </div>`;
+  } catch(e) { localStorage.clear(); window.location.reload(true); }
+}
 
 // ── PWA SERVICE WORKER ──
 if ('serviceWorker' in navigator) {

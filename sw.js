@@ -1,13 +1,12 @@
-const CACHE = 'mon-budget-v3';
-const ASSETS = [
-  './budget_familial.html',
+const CACHE = 'mon-budget-v4';
+const STATIC = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)));
   self.skipWaiting();
 });
 
@@ -21,13 +20,28 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-      if (res && res.status === 200 && res.type === 'basic') {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-      }
-      return res;
-    }))
-  );
+  const url = new URL(e.request.url);
+  const isHtml = url.pathname.endsWith('.html') || url.pathname.endsWith('/') || url.pathname === '/';
+
+  if (isHtml) {
+    // Network-first pour le HTML : toujours la dernière version
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res && res.status === 200) {
+          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        }
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+  } else {
+    // Cache-first pour les assets statiques
+    e.respondWith(
+      caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+        if (res && res.status === 200 && res.type === 'basic') {
+          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        }
+        return res;
+      }))
+    );
+  }
 });
