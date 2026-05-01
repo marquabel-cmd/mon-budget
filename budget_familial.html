@@ -892,10 +892,9 @@ function doLogin(id) {
     if (tab) switchTab('y'+lastYear, tab);
   }, 50);
   // Cloud sync: pull latest data after local render
-  const cfg = getCloudCfg();
-  if (cfg.dbUrl && cfg.code) {
+  if (isLicensed()) {
     setCloudStatus('syncing');
-    cloudPull(id).then(cloudData => {
+    cloudPull().then(cloudData => {
       if (!cloudData) { setCloudStatus('error'); return; }
       DATA = cloudData;
       if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
@@ -2098,13 +2097,10 @@ function renderSummary() {
 function toggleSection(hdr) { hdr.parentElement.classList.toggle('collapsed'); }
 
 // ── CLOUD SYNC ──
-const CLOUD_CFG_KEY = 'budget_cloud_v1';
-function getCloudCfg() { try { return JSON.parse(localStorage.getItem(CLOUD_CFG_KEY)||'null')||{}; } catch(e) { return {}; } }
-function setCloudCfg(cfg) { localStorage.setItem(CLOUD_CFG_KEY, JSON.stringify(cfg)); }
-function cloudApiUrl(userId) {
-  const c = getCloudCfg();
-  if (!c.dbUrl || !c.code || !userId) return null;
-  return c.dbUrl.replace(/\/+$/,'') + '/mb/' + encodeURIComponent(c.code) + '/' + userId + '.json';
+function cloudApiUrl() {
+  const key = getLicenseKey();
+  if (!key || !isLicensed()) return null;
+  return LICENSE_DB.replace(/\/+$/,'') + '/user-data/' + key + '/budget.json';
 }
 function setCloudStatus(s) {
   const el = document.getElementById('cloud-status');
@@ -2115,7 +2111,7 @@ function setCloudStatus(s) {
   el.title = {off:'', syncing:'Synchronisation…', ok:'Synchronisé avec le cloud', error:'Erreur de synchronisation'}[s]||'';
 }
 async function cloudPush() {
-  const url = cloudApiUrl(CURRENT_USER_ID);
+  const url = cloudApiUrl();
   if (!url || !DATA) return;
   setCloudStatus('syncing');
   try {
@@ -2123,8 +2119,8 @@ async function cloudPush() {
     setCloudStatus(r.ok ? 'ok' : 'error');
   } catch(e) { setCloudStatus('error'); }
 }
-async function cloudPull(userId) {
-  const url = cloudApiUrl(userId);
+async function cloudPull() {
+  const url = cloudApiUrl();
   if (!url) return null;
   try {
     const r = await fetch(url);
@@ -2132,33 +2128,6 @@ async function cloudPull(userId) {
     const d = await r.json();
     return (d && typeof d === 'object' && !Array.isArray(d)) ? d : null;
   } catch(e) { return null; }
-}
-function saveCloudConfig() {
-  const url = document.getElementById('cfg-cloud-url')?.value.trim();
-  const code = document.getElementById('cfg-cloud-code')?.value.trim();
-  if (!url || !code) { showToast('⚠️ Remplissez les deux champs'); return; }
-  setCloudCfg({dbUrl: url, code});
-  showToast('☁️ Configuration cloud enregistrée');
-  renderConfigTab();
-  cloudPush();
-}
-async function testCloudSync() {
-  const url = cloudApiUrl(CURRENT_USER_ID || '_test');
-  if (!url) { showToast('⚠️ Configurez d\'abord le cloud'); return; }
-  showToast('🔄 Test en cours…');
-  try {
-    const pingUrl = getCloudCfg().dbUrl.replace(/\/+$/,'') + '/.json?shallow=true';
-    const r = await fetch(pingUrl);
-    showToast(r.ok ? '✅ Connexion Firebase OK !' : '❌ Erreur ' + r.status + ' — vérifiez l\'URL');
-  } catch(e) { showToast('❌ Impossible de joindre Firebase — vérifiez l\'URL'); }
-}
-function removeCloudConfig() {
-  confirmDelete('Supprimer la configuration cloud ?', () => {
-    localStorage.removeItem(CLOUD_CFG_KEY);
-    setCloudStatus('off');
-    renderConfigTab();
-    showToast('☁️ Configuration cloud supprimée');
-  });
 }
 
 // ── SAVE / RESET / EXPORT ──
@@ -2383,39 +2352,13 @@ function renderConfigTab() {
             <div style="font-size:12px;color:var(--gray);margin-bottom:14px">La synchronisation cloud est disponible avec la licence Premium.</div>
             <button onclick="showUpgrade('synchronisation cloud Firebase')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer">⭐ Voir Premium</button>
           </div>
-        ` : ''}
-        ${isLicensed() ? (() => { const c = getCloudCfg(); return `
-        <div style="font-size:12px;color:var(--gray);margin-bottom:10px">
-          Accédez à vos données depuis n'importe quel appareil.<br>
-          Nécessite un projet <strong>Firebase</strong> gratuit.
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:4px">URL Firebase Database</div>
-            <input type="url" id="cfg-cloud-url" value="${c.dbUrl||''}" placeholder="https://mon-projet-default-rtdb.firebaseio.com"
-              style="width:100%;border:1px solid var(--border);border-radius:5px;padding:7px 10px;font-size:12px;box-sizing:border-box">
+        ` : `
+          <div style="text-align:center;padding:12px 8px">
+            <div style="font-size:28px;margin-bottom:8px">☁️</div>
+            <div style="font-weight:600;font-size:13px;margin-bottom:6px;color:var(--green)">✅ Synchronisation active</div>
+            <div style="font-size:12px;color:var(--gray);line-height:1.6">Vos données sont automatiquement sauvegardées dans le cloud.<br>Accessible depuis tous vos appareils avec votre clé de licence.</div>
           </div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:4px">Code perso (secret)</div>
-            <input type="text" id="cfg-cloud-code" value="${c.code||''}" placeholder="Ex: pascal-budget-2024"
-              style="width:100%;border:1px solid var(--border);border-radius:5px;padding:7px 10px;font-size:12px;box-sizing:border-box">
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-save" style="flex:2;padding:6px 10px;font-size:12px" onclick="saveCloudConfig()">💾 Enregistrer</button>
-            <button class="btn" style="flex:1;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue);padding:6px 10px;font-size:12px" onclick="testCloudSync()">🧪 Tester</button>
-            ${c.dbUrl ? `<button class="btn" style="background:var(--red-light);color:var(--red);border:1px solid var(--red);padding:6px 8px;font-size:12px" onclick="removeCloudConfig()" title="Supprimer la config">✕</button>` : ''}
-          </div>
-          <div style="font-size:11px;font-weight:600;color:${c.dbUrl?'var(--green)':'var(--gray)'}">
-            ${c.dbUrl ? '✅ Cloud configuré — synchronisation active' : '⚠️ Non configuré — données locales uniquement'}
-          </div>
-        </div>
-        <div style="margin-top:12px;padding:10px 12px;background:var(--blue-light);border-radius:7px;font-size:11px;color:#1a3c6e;line-height:1.7">
-          <strong>⚡ Configuration en 5 minutes :</strong><br>
-          1. Aller sur <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue)">console.firebase.google.com</a><br>
-          2. Créer un projet → <em>Build → Realtime Database → Créer → Mode test</em><br>
-          3. Copier l'URL de la base (https://xxx.firebaseio.com)<br>
-          4. Coller ici + entrer un code perso → <strong>Enregistrer</strong>
-        </div>`; })() : ''}
+        `}
       </div>
       <div class="config-card" style="margin-top:14px"><h3>🗂 Catégories de dépenses</h3>
         <div style="margin-bottom:8px">

@@ -1,4 +1,4 @@
-const CACHE = 'mon-budget-v2';
+const CACHE = 'mon-budget-v3';
 const ASSETS = [
   './budget_familial.html',
   './manifest.json',
