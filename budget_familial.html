@@ -1288,13 +1288,14 @@ function varTotal(year, cat) {
 }
 function allVarTotal(year) {
   return Array(12).fill(0).map((_,i) =>
-    ['carburant','courses','divers','chien'].reduce((a,k)=>a+varTotal(year,k)[i],0));
+    getVarCats().reduce((a,c)=>a+varTotal(year,c.key)[i],0));
 }
 function depTotal(year) { return chgTotal(year).map((v,i)=>v+allVarTotal(year)[i]); }
 function varTotalByMethod(year, method) {
   const t = Array(12).fill(0);
-  ['carburant','courses','divers','chien'].forEach(k =>
-    DATA[year].vars[k].forEach(tx => { if (tx.method===method) t[tx.month] += tx.amount||0; }));
+  getVarCats().forEach(c => {
+    (DATA[year].vars[c.key]||[]).forEach(tx => { if (tx.method===method) t[tx.month] += tx.amount||0; });
+  });
   return t;
 }
 function balance(year) { return revTotal(year).map((v,i)=>v-depTotal(year)[i]); }
