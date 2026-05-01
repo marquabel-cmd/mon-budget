@@ -2764,50 +2764,54 @@ function exitAdminMode() {
 // ── DEMO DATA ──
 function loadDemoData() {
   closeAdminPanel();
-  const m = (month, day, amount, comment, method='carte') => ({id: Math.round(Math.random()*90000+10000), month, day, amount, comment, method});
+  let _did = 50000;
+  const tx = (month,amount,comment,method='carte',date=null) => ({id:_did++,month,amount,date,comment,method});
+  const F12 = (v=false) => Array(12).fill(v);
   _adminSavedData = JSON.stringify(DATA);
   _isAdminMode = true;
   DATA = {
     methods: [{key:'carte',label:'Carte bancaire'},{key:'virement',label:'Virement'},{key:'liquide',label:'Liquide'}],
     varCats: [{key:'courses',label:'Courses',icon:'🛒'},{key:'carburant',label:'Carburant',icon:'⛽'},{key:'divers',label:'Divers',icon:'📦'},{key:'sante',label:'Santé',icon:'💊'}],
     "2026": {
-      revs: {
-        "0":[{id:1,label:'Salaire Jean',amount:2400,paid:true},{id:2,label:'Salaire Marie',amount:1850,paid:true}],
-        "1":[{id:3,label:'Salaire Jean',amount:2400,paid:true},{id:4,label:'Salaire Marie',amount:1850,paid:true}],
-        "2":[{id:5,label:'Salaire Jean',amount:2400,paid:true},{id:6,label:'Salaire Marie',amount:1850,paid:true}],
-        "3":[{id:7,label:'Salaire Jean',amount:2400,paid:false},{id:8,label:'Salaire Marie',amount:1850,paid:false}]
-      },
-      fixed: [
-        {id:100,label:'Loyer',amount:850,month:0,method:'virement'},{id:101,label:'Loyer',amount:850,month:1,method:'virement'},
-        {id:102,label:'Loyer',amount:850,month:2,method:'virement'},{id:103,label:'Loyer',amount:850,month:3,method:'virement'},
-        {id:104,label:'Électricité',amount:120,month:0,method:'virement'},{id:105,label:'Électricité',amount:98,month:1,method:'virement'},
-        {id:106,label:'Internet',amount:35,month:0,method:'virement'},{id:107,label:'Internet',amount:35,month:1,method:'virement'},
-        {id:108,label:'Internet',amount:35,month:2,method:'virement'},{id:109,label:'Internet',amount:35,month:3,method:'virement'},
-        {id:110,label:'Assurance voiture',amount:72,month:0,method:'virement'},{id:111,label:'Assurance voiture',amount:72,month:1,method:'virement'},
-        {id:112,label:'Assurance voiture',amount:72,month:2,method:'virement'},{id:113,label:'Assurance voiture',amount:72,month:3,method:'virement'}
+      soldes: {compteIng:1850, comptePro:0, livretInitial:5200, boite:0},
+      revenus: [
+        {label:'💼 Salaire Jean',   v:[2400,2400,2400,2400,2400,2400,2400,2400,2400,2400,2400,2400], paid:[true,true,true,false,...F12()], inCalc:true},
+        {label:'💼 Salaire Marie',  v:[1850,1850,1850,1850,1850,1850,1850,1850,1850,1850,1850,1850], paid:[true,true,true,false,...F12()], inCalc:true},
+        {label:'🎁 Allocations',    v:[250,250,250,250,250,250,250,250,250,250,250,250],             paid:[true,true,true,false,...F12()], inCalc:true}
+      ],
+      charges: [
+        {label:'🏠 Loyer',                    cat:'fixed',    v:[850,850,850,850,850,850,850,850,850,850,850,850],     paid:[true,true,true,...F12()]},
+        {label:'🔌 Énergie (élec + gaz)',     cat:'fixed',    v:[120,108,95,88,72,65,62,68,85,100,115,125],           paid:[true,true,true,...F12()]},
+        {label:'💧 Eau',                      cat:'fixed',    v:[25,25,25,25,25,25,25,25,25,25,25,25],               paid:[true,true,true,...F12()]},
+        {label:'📱 Téléphone + Internet',     cat:'fixed',    v:[65,65,65,65,65,65,65,65,65,65,65,65],               paid:[true,true,true,...F12()]},
+        {label:'🚗 Assurance voiture',        cat:'fixed',    v:[72,72,72,72,72,72,72,72,72,72,72,72],               paid:[true,true,true,...F12()]},
+        {label:'🛡 Assurance habitation',     cat:'fixed',    v:[0,0,285,0,0,0,0,0,0,0,0,0],                         paid:[true,true,true,...F12()]},
+        {label:'🎓 École / Garderie',         cat:'occasional',v:[180,180,180,180,0,0,0,0,180,180,180,180],          paid:[true,true,true,...F12()]},
+        {label:'📈 Livret — virement mensuel',cat:'livret_in', v:[200,200,200,200,200,200,200,200,200,200,200,200],   paid:[true,true,true,...F12()]},
+        {label:'📉 Livret — retrait vers compte',cat:'livret_out',v:[0,0,0,0,0,0,0,0,0,0,0,0],                       paid:F12(true)}
       ],
       vars: {
         courses: [
-          m(0,3,87.40,'Lidl'),m(0,8,23.50,'Aldi'),m(0,15,102.30,'Lidl'),m(0,22,41.80,'Colruyt'),
-          m(1,4,94.20,'Lidl'),m(1,11,18.90,'Aldi'),m(1,18,76.50,'Intermarché'),m(1,25,55.30,'Lidl'),
-          m(2,1,88.70,'Lidl'),m(2,9,32.40,'Colruyt'),m(2,16,67.90,'Lidl'),m(2,23,44.10,'Aldi'),
-          m(3,5,91.30,'Lidl'),m(3,12,28.60,'Aldi')
+          tx(0,87.40,'Lidl'),tx(0,23.50,'Aldi'),tx(0,102.30,'Lidl'),tx(0,41.80,'Colruyt'),
+          tx(1,94.20,'Lidl'),tx(1,18.90,'Aldi'),tx(1,76.50,'Intermarché'),tx(1,55.30,'Lidl'),
+          tx(2,88.70,'Lidl'),tx(2,32.40,'Colruyt'),tx(2,67.90,'Lidl'),tx(2,44.10,'Aldi'),
+          tx(3,91.30,'Lidl'),tx(3,28.60,'Aldi'),tx(3,63.50,'Colruyt')
         ],
         carburant: [
-          m(0,6,85.40,'Plein voiture'),m(0,20,82.10,'Plein voiture'),
-          m(1,7,79.30,'Plein voiture'),m(1,21,88.50,'Plein voiture'),
-          m(2,4,83.70,'Plein voiture'),m(2,18,86.20,'Plein voiture'),
-          m(3,3,81.90,'Plein voiture')
+          tx(0,85.40,'Plein voiture'),tx(0,82.10,'Plein voiture'),
+          tx(1,79.30,'Plein voiture'),tx(1,88.50,'Plein voiture'),
+          tx(2,83.70,'Plein voiture'),tx(2,86.20,'Plein voiture'),
+          tx(3,81.90,'Plein voiture')
         ],
         divers: [
-          m(0,2,45,'Coiffeur','liquide'),m(0,14,23.99,'Amazon'),m(0,28,15.50,'Cinéma'),
-          m(1,5,38.90,'Vêtements Zara'),m(1,19,12,'Resto midi'),m(1,26,67.50,'Pharmacie'),
-          m(2,3,22,'Coiffeur','liquide'),m(2,11,189,'Réparation voiture'),m(2,25,34.90,'Amazon'),
-          m(3,8,16,'Resto'),m(3,15,48.50,'Vêtements')
+          tx(0,45,'Coiffeur','liquide'),tx(0,23.99,'Amazon'),tx(0,15.50,'Cinéma'),
+          tx(1,38.90,'Vêtements'),tx(1,12,'Restaurant midi'),tx(1,67.50,'Pharmacie'),
+          tx(2,22,'Coiffeur','liquide'),tx(2,189,'Réparation voiture'),tx(2,34.90,'Amazon'),
+          tx(3,16,'Restaurant'),tx(3,48.50,'Vêtements')
         ],
         sante: [
-          m(0,10,25,'Médecin généraliste'),m(0,18,42.30,'Pharmacie'),
-          m(1,8,18.50,'Pharmacie'),m(2,5,75,'Dentiste'),m(2,20,12.80,'Pharmacie')
+          tx(0,25,'Médecin généraliste'),tx(0,42.30,'Pharmacie'),
+          tx(1,18.50,'Pharmacie'),tx(2,75,'Dentiste'),tx(2,12.80,'Pharmacie')
         ]
       }
     }
