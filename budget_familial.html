@@ -1861,7 +1861,10 @@ function updateCharge(year, ri, mi, input) {
     const td = document.getElementById(`cc-${year}-${ri}-${mi}`);
     if (td) td.className = 'is-paid';
   }
-  refreshChargeTotals(year); dSave();
+  refreshChargeTotals(year);
+  updateLivretDisplay(year);
+  updateCompteDisplay(year);
+  dSave();
 }
 function togglePaid(year, ri, mi) {
   DATA[year].charges[ri].paid[mi] = !DATA[year].charges[ri].paid[mi];
