@@ -456,8 +456,11 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 
 <!-- ADMIN BANNER -->
 <div id="admin-banner" style="display:none;background:#F5A623;color:#1A1D2E;padding:6px 16px;font-size:12px;font-weight:700;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:200">
-  <span>👁️ MODE ADMIN — Clé : <span id="admin-banner-key" style="font-family:monospace"></span></span>
-  <button onclick="exitAdminMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ Quitter</button>
+  <span>👁️ MODE ADMIN — <span id="admin-banner-key" style="font-family:monospace"></span></span>
+  <div style="display:flex;gap:8px">
+    <button onclick="openAdminPanel()" style="background:rgba(0,0,0,.15);color:#1A1D2E;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔄 Changer</button>
+    <button onclick="exitAdminMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ Mes données</button>
+  </div>
 </div>
 
 <!-- ADMIN MODAL -->
@@ -488,7 +491,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
     <div class="sub">Gestion mensuelle des revenus et dépenses</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
-    <div class="user-switcher" id="user-switcher" onclick="goToWelcome()">
+    <div class="user-switcher" id="user-switcher" onclick="_isAdminMode ? openAdminPanel() : goToWelcome()">
       <span class="user-dot" id="user-dot" style="width:10px;height:10px;border-radius:50%;background:#1a6fc4;display:inline-block;flex-shrink:0"></span>
       <span id="user-name-display">–</span>
     </div>
@@ -2843,9 +2846,15 @@ function adminTitleClick() {
 }
 function openAdminPanel() {
   document.getElementById('admin-modal').style.display = 'flex';
-  document.getElementById('admin-password-input').value = '';
   document.getElementById('admin-license-input').value = '';
-  setTimeout(() => document.getElementById('admin-password-input').focus(), 100);
+  // En mode admin, le mot de passe est déjà validé — on le pré-remplit
+  if (_isAdminMode) {
+    document.getElementById('admin-password-input').value = ADMIN_SECRET;
+    setTimeout(() => document.getElementById('admin-license-input').focus(), 100);
+  } else {
+    document.getElementById('admin-password-input').value = '';
+    setTimeout(() => document.getElementById('admin-password-input').focus(), 100);
+  }
 }
 function closeAdminPanel() { document.getElementById('admin-modal').style.display = 'none'; }
 
@@ -2861,13 +2870,14 @@ async function enterAdminMode() {
     if (!r.ok) { showToast('❌ Erreur Firebase ' + r.status); return; }
     const d = await r.json();
     if (!d || typeof d !== 'object' || Array.isArray(d)) { showToast('⚠️ Aucune donnée pour cette clé'); return; }
-    _adminSavedData = JSON.stringify(DATA);
+    // Conserver les données originales (pas écraser si déjà en admin)
+    if (!_isAdminMode) _adminSavedData = JSON.stringify(DATA);
     _isAdminMode = true;
     DATA = d;
     if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
     closeAdminPanel();
     document.getElementById('admin-banner').style.display = 'flex';
-    document.getElementById('admin-banner-key').textContent = key;
+    document.getElementById('admin-banner-key').textContent = 'Client : ' + key.slice(0,12) + '…';
     document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
     renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
     const ly = getYears().slice(-1)[0];
