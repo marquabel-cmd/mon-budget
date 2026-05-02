@@ -7,7 +7,12 @@ const STATIC = [
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)));
-  self.skipWaiting();
+  // NE PAS appeler skipWaiting ici — on attend le clic "Mettre à jour"
+});
+
+// Réception du signal depuis la page → activer le nouveau SW
+self.addEventListener('message', e => {
+  if (e.data?.action === 'skipWaiting') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
