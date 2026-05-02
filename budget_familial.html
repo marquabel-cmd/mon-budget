@@ -262,6 +262,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .welcome-create-btn{width:100%;padding:12px;background:linear-gradient(135deg,#27ae60,#1a7a3c);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;box-shadow:0 4px 14px rgba(39,174,96,.4)}
 .welcome-create-btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
 @keyframes wPop{from{transform:scale(.4) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+@keyframes spin { to { transform: rotate(360deg); } }
 /* ── PIN OVERLAY ── */
 .pin-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .pin-box{background:#fff;border-radius:18px;padding:34px 38px;text-align:center;max-width:300px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -452,6 +453,18 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
       <div id="wizard-content"></div>
     </div>
   </div>
+</div>
+
+<!-- UPDATE BAR -->
+<div id="update-bar" style="display:none;position:sticky;top:0;z-index:500;background:linear-gradient(135deg,#1a6fc4,#0e4d8f);color:#fff;padding:9px 16px;font-size:13px;font-weight:600;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.3)">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:16px;animation:spin 2s linear infinite">🔄</span>
+    <div>
+      <div>Mise à jour disponible</div>
+      <div style="font-size:11px;font-weight:400;opacity:.8">Une nouvelle version de l'application est prête</div>
+    </div>
+  </div>
+  <button onclick="window.location.reload()" style="background:#fff;color:#1a6fc4;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">↻ Mettre à jour</button>
 </div>
 
 <!-- ADMIN BANNER -->
@@ -845,9 +858,25 @@ function initUsers() {
       banner.style.color = isPro ? '#7effa0' : '#aaa';
       banner.style.display = 'block';
     }
+    // Feature chips bar
+    const featureBar = document.createElement('div');
+    featureBar.id = 'compare-feature-bar';
+    featureBar.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:6px 12px;background:' + (isPro ? 'rgba(26,74,42,.95)' : 'rgba(42,42,60,.95)') + ';flex-shrink:0';
+    const chips = isPro
+      ? [['✅','Sync cloud','#7effa0'], ['✅','Multi-utilisateurs','#7effa0'], ['✅','Historique illimité','#7effa0'], ['✅','Catégories illimitées','#7effa0'], ['✅','14,90€ / an','#f0c040']]
+      : [['🔒','Sync cloud','#ff9999'], ['🔒','Multi-utilisateurs','#ff9999'], ['🔒','1 an historique','#ff9999'], ['🔒','3 catégories max','#ff9999'], ['✅','Gratuit','#aaa']];
+    chips.forEach(([icon, label, color]) => {
+      const chip = document.createElement('span');
+      chip.style.cssText = 'padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(255,255,255,.08);color:' + color;
+      chip.textContent = icon + ' ' + label;
+      featureBar.appendChild(chip);
+    });
+    const frameBanner = document.getElementById('compare-frame-banner');
+    if (frameBanner && frameBanner.parentNode) frameBanner.parentNode.insertBefore(featureBar, frameBanner.nextSibling);
     const ws = document.getElementById('welcome-screen');
     if (ws) ws.style.display = 'none';
     renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary(); updateUserDisplay();
+    _applyCompareHighlights();
     const ly = getYears().slice(-1)[0];
     if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
     return;
@@ -865,6 +894,53 @@ function initUsers() {
   }
   renderWelcomeScreen();
 }
+function _applyCompareHighlights() {
+  if (!_compareMode) return;
+  const isPro = _compareMode === 'pro';
+  requestAnimationFrame(() => {
+    // 1. Year tabs — lock 2nd+ in free mode
+    document.querySelectorAll('#year-tabs .tab').forEach((tab, i) => {
+      if (!isPro && i > 0) {
+        tab.style.cssText += ';opacity:.35;pointer-events:none;position:relative';
+        const lock = document.createElement('span');
+        lock.textContent = '🔒';
+        lock.style.cssText = 'position:absolute;top:-5px;right:-5px;font-size:9px;background:#e74c3c;border-radius:50%;padding:1px 2px;line-height:1';
+        tab.style.position = 'relative';
+        tab.appendChild(lock);
+      }
+    });
+    // 2. Cloud sync indicator
+    const syncEl = document.getElementById('cloud-status');
+    if (syncEl) {
+      if (isPro) {
+        syncEl.textContent = '☁️ Sync actif';
+        syncEl.style.cssText += ';color:#7effa0;font-weight:800;background:rgba(126,255,160,.15);border-radius:6px;padding:2px 8px';
+      } else {
+        syncEl.textContent = '🔒 Sync';
+        syncEl.style.cssText += ';color:#ff8080;text-decoration:line-through;opacity:.7';
+      }
+    }
+    // 3. User switcher badge
+    const sw = document.getElementById('user-switcher');
+    if (sw) {
+      sw.style.position = 'relative';
+      const badge = document.createElement('div');
+      badge.style.cssText = 'position:absolute;top:-8px;right:-8px;background:' + (isPro ? '#7effa0' : '#e74c3c') + ';color:#1A1D2E;font-size:9px;font-weight:800;padding:1px 5px;border-radius:8px;white-space:nowrap;z-index:10;pointer-events:none';
+      badge.textContent = isPro ? '✨ PRO' : '🆓 GRATUIT';
+      sw.appendChild(badge);
+    }
+    // 4. Save button — hide in compare (read only)
+    document.querySelectorAll('.btn-save,.btn-csv').forEach(b => { b.style.display='none'; });
+    // 5. Add upgrade banner at bottom of page in free mode
+    if (!isPro) {
+      const upg = document.createElement('div');
+      upg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#1a6fc4,#9b59b6);color:#fff;padding:10px 16px;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:space-between;z-index:500;box-shadow:0 -2px 12px rgba(0,0,0,.4)';
+      upg.innerHTML = '<span>⭐ Passez à la version Pro — 14,90 € / an<br><span style="font-weight:400;font-size:10px;opacity:.8">Sync cloud · Multi-utilisateurs · Historique illimité</span></span><span style="background:#fff;color:#1a6fc4;border-radius:8px;padding:6px 14px;font-size:12px;cursor:default">Voir le Prix →</span>';
+      document.body.appendChild(upg);
+    }
+  });
+}
+
 function renderWelcomeScreen() {
   const grid = document.getElementById('welcome-users-grid');
   if (!grid) return;
@@ -2817,6 +2893,11 @@ function confirmCsvImport() {
 }
 
 // ── INIT ──
+// Notifier si l'app vient d'être mise à jour
+if (sessionStorage.getItem('app-updated')) {
+  sessionStorage.removeItem('app-updated');
+  setTimeout(() => showToast('✅ Application mise à jour !'), 800);
+}
 initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
 
 // ── FORCE UPDATE & UNINSTALL ──
@@ -2862,14 +2943,15 @@ if ('serviceWorker' in navigator) {
         const newWorker = reg.installing;
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            showToast('🔄 Mise à jour disponible…');
-            setTimeout(() => window.location.reload(), 1500);
+            const bar = document.getElementById('update-bar');
+            if (bar) bar.style.display = 'flex';
           }
         });
       });
     }).catch(() => {});
     // Rechargement quand le nouveau SW prend le contrôle
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      sessionStorage.setItem('app-updated', '1');
       window.location.reload();
     });
   });
