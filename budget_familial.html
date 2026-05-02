@@ -847,6 +847,11 @@ function initUsers() {
     USERS = { demo: { name: isPro ? '✨ Avec licence' : '🔓 Sans licence', color: isPro ? '#27ae60' : '#95a5a6', admin: false } };
     CURRENT_USER_ID = 'demo';
     DATA = _buildCompareDemoData();
+    // Mode gratuit : limiter à FREE_MAX_YEARS année(s)
+    if (!isPro) {
+      const years = Object.keys(DATA).filter(k => /^\d{4}$/.test(k)).sort();
+      years.slice(FREE_MAX_YEARS).forEach(y => delete DATA[y]);
+    }
     // Masquer éléments inutiles dans les iframes
     const hideIds = ['admin-banner','cloud-status','compare-overlay-btn'];
     hideIds.forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
