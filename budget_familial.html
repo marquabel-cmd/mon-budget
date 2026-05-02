@@ -1152,7 +1152,7 @@ function updateUserDisplay() {
       dot.style.height = '10px';
     }
   }
-  if (nm) nm.textContent = u.name;
+  if (nm) nm.textContent = _isAdminMode ? _adminLabel : u.name;
 }
 
 function switchUser(userId) {
@@ -2836,7 +2836,7 @@ if ('serviceWorker' in navigator) {
 // ── ADMIN MODE ──
 const ADMIN_SECRET = 'marquabel2026';
 let _adminClickCount = 0, _adminClickTimer = null;
-let _adminSavedData = null, _isAdminMode = false;
+let _adminSavedData = null, _isAdminMode = false, _adminLabel = '';
 
 function adminTitleClick() {
   _adminClickCount++;
@@ -2873,13 +2873,14 @@ async function enterAdminMode() {
     // Conserver les données originales (pas écraser si déjà en admin)
     if (!_isAdminMode) _adminSavedData = JSON.stringify(DATA);
     _isAdminMode = true;
+    _adminLabel = 'Client ' + key.slice(0,8) + '…';
     DATA = d;
     if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
     closeAdminPanel();
     document.getElementById('admin-banner').style.display = 'flex';
     document.getElementById('admin-banner-key').textContent = 'Client : ' + key.slice(0,12) + '…';
     document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
-    renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+    renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary(); updateUserDisplay();
     const ly = getYears().slice(-1)[0];
     if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
     showToast('👁️ Mode admin — ' + key.slice(0,16) + '…');
@@ -2890,9 +2891,10 @@ function exitAdminMode() {
   if (!_isAdminMode) return;
   DATA = JSON.parse(_adminSavedData);
   _isAdminMode = false;
+  _adminLabel = '';
   document.getElementById('admin-banner').style.display = 'none';
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
-  renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+  renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary(); updateUserDisplay();
   const ly = getYears().slice(-1)[0];
   if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
   showToast('✅ Retour à vos données');
@@ -2932,6 +2934,7 @@ function loadDemoData() {
 
   if (!_isAdminMode) _adminSavedData = JSON.stringify(DATA);
   _isAdminMode = true;
+  _adminLabel = '🎭 Démo';
   DATA = {
     methods: [{key:'carte',label:'Carte bancaire'},{key:'virement',label:'Virement'},{key:'liquide',label:'Liquide'}],
     varCats: [{key:'courses',label:'Courses',icon:'🛒'},{key:'carburant',label:'Carburant',icon:'⛽'},{key:'divers',label:'Divers',icon:'📦'},{key:'sante',label:'Santé',icon:'💊'}],
@@ -3013,7 +3016,7 @@ function loadDemoData() {
   document.getElementById('admin-banner').style.display = 'flex';
   document.getElementById('admin-banner-key').textContent = 'DÉMO';
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
-  renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+  renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary(); updateUserDisplay();
   const ly = getYears().slice(-1)[0];
   if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
   showToast('🎭 Données de démo chargées — 2025 + 2026');
