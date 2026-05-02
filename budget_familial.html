@@ -455,9 +455,13 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 </div>
 
 <!-- ADMIN BANNER -->
+<!-- Bannière dans les iframes compare (demoMode=free|pro) -->
+<div id="compare-frame-banner" style="display:none;padding:6px 14px;font-size:11px;font-weight:700;text-align:center;letter-spacing:.5px"></div>
+
 <div id="admin-banner" style="display:none;background:#F5A623;color:#1A1D2E;padding:6px 16px;font-size:12px;font-weight:700;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:200">
   <span>👁️ MODE ADMIN — <span id="admin-banner-key" style="font-family:monospace"></span></span>
-  <div style="display:flex;gap:8px">
+  <div style="display:flex;gap:8px;align-items:center">
+    <button id="compare-overlay-btn" onclick="openCompareView()" style="display:none;background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔍 Comparer</button>
     <button onclick="openAdminPanel()" style="background:rgba(0,0,0,.15);color:#1A1D2E;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔄 Changer</button>
     <button onclick="exitAdminMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ Mes données</button>
   </div>
@@ -566,6 +570,15 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 <div class="toast" id="toast"></div>
 
 <script>
+// ─────────────────────────────────────────────
+// COMPARE MODE (iframe split-view)
+// ─────────────────────────────────────────────
+const _compareMode = new URLSearchParams(location.search).get('demoMode'); // 'free' | 'pro' | null
+if (_compareMode) {
+  // En mode comparaison : body sans marges, pas de scroll horizontal
+  document.documentElement.style.overflow = 'hidden';
+}
+
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
@@ -815,6 +828,31 @@ let USERS = {};
 let CURRENT_USER_ID = '';
 
 function initUsers() {
+  // ── Mode comparaison (iframe) : démarrage direct sans écran d'accueil ──
+  if (_compareMode) {
+    const isPro = _compareMode === 'pro';
+    USERS = { demo: { name: isPro ? '✨ Avec licence' : '🔓 Sans licence', color: isPro ? '#27ae60' : '#95a5a6', admin: false } };
+    CURRENT_USER_ID = 'demo';
+    DATA = _buildCompareDemoData();
+    // Masquer éléments inutiles dans les iframes
+    const hideIds = ['admin-banner','cloud-status','compare-overlay-btn'];
+    hideIds.forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
+    // Bannière mode colorée en haut
+    const banner = document.getElementById('compare-frame-banner');
+    if (banner) {
+      banner.textContent = isPro ? '✨ Avec licence — Toutes les fonctionnalités' : '🔓 Sans licence — Fonctionnalités gratuites';
+      banner.style.background = isPro ? '#1a4a2a' : '#3a3a4a';
+      banner.style.color = isPro ? '#7effa0' : '#aaa';
+      banner.style.display = 'block';
+    }
+    const ws = document.getElementById('welcome-screen');
+    if (ws) ws.style.display = 'none';
+    renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary(); updateUserDisplay();
+    const ly = getYears().slice(-1)[0];
+    if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
+    return;
+  }
+
   try { USERS = JSON.parse(localStorage.getItem('budget_users') || '{}'); } catch(e) { USERS = {}; }
   if (!Object.keys(USERS).length) {
     USERS['pascal'] = { name: 'Pascal', color: '#1a6fc4', admin: true };
@@ -2222,7 +2260,7 @@ async function cloudPull() {
 let _saveTimer;
 function dSave() { clearTimeout(_saveTimer); _saveTimer=setTimeout(saveData,1500); }
 function saveData() {
-  if (_isAdminMode) { showToast('⚠️ Mode admin — sauvegarde désactivée'); return; }
+  if (_compareMode || _isAdminMode) return; // pas de sauvegarde en mode démo/admin
   const json = JSON.stringify(DATA);
   localStorage.setItem(dataKey(), json);
   const now = new Date();
@@ -2565,7 +2603,11 @@ const STRIPE_LINK = 'https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00';
 const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
-function isLicensed()  { return !!localStorage.getItem('mbudget-license'); }
+function isLicensed()  {
+  if (_compareMode === 'pro')  return true;
+  if (_compareMode === 'free') return false;
+  return !!localStorage.getItem('mbudget-license');
+}
 function getLicenseKey(){ return localStorage.getItem('mbudget-license') || null; }
 
 function showUpgrade(reason) {
@@ -2877,6 +2919,9 @@ async function enterAdminMode() {
     DATA = d;
     if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
     closeAdminPanel();
+    const cBtn2 = document.getElementById('compare-overlay-btn');
+    if (cBtn2) cBtn2.style.display = 'none';
+    closeCompareView();
     document.getElementById('admin-banner').style.display = 'flex';
     document.getElementById('admin-banner-key').textContent = 'Client : ' + key.slice(0,12) + '…';
     document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
@@ -2892,6 +2937,9 @@ function exitAdminMode() {
   DATA = JSON.parse(_adminSavedData);
   _isAdminMode = false;
   _adminLabel = '';
+  const cBtn = document.getElementById('compare-overlay-btn');
+  if (cBtn) cBtn.style.display = 'none';
+  closeCompareView();
   document.getElementById('admin-banner').style.display = 'none';
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
   renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary(); updateUserDisplay();
@@ -2901,8 +2949,7 @@ function exitAdminMode() {
 }
 
 // ── DEMO DATA ──
-function loadDemoData() {
-  closeAdminPanel();
+function _buildCompareDemoData() {
   let _did = 50000;
   const tx = (month,amount,comment,method='carte') => ({id:_did++,month,amount,date:null,comment,method});
   const p12 = (...vals) => { const a=[...vals]; while(a.length<12) a.push(false); return a.slice(0,12); };
@@ -2932,10 +2979,7 @@ function loadDemoData() {
     {label:'📉 Livret — retrait vers compte',cat:'livret_out',v:[0,0,0,0,0,0,0,0,0,0,0,0],                        paid:t12()}
   ];
 
-  if (!_isAdminMode) _adminSavedData = JSON.stringify(DATA);
-  _isAdminMode = true;
-  _adminLabel = '🎭 Démo';
-  DATA = {
+  return {
     methods: [{key:'carte',label:'Carte bancaire'},{key:'virement',label:'Virement'},{key:'liquide',label:'Liquide'}],
     varCats: [{key:'courses',label:'Courses',icon:'🛒'},{key:'carburant',label:'Carburant',icon:'⛽'},{key:'divers',label:'Divers',icon:'📦'},{key:'sante',label:'Santé',icon:'💊'}],
     "2025": mkYear(
@@ -3013,14 +3057,81 @@ function loadDemoData() {
       }
     )
   };
+}
+
+function loadDemoData() {
+  closeAdminPanel();
+  if (!_isAdminMode) _adminSavedData = JSON.stringify(DATA);
+  _isAdminMode = true;
+  _adminLabel = '🎭 Démo';
+  DATA = _buildCompareDemoData();
   document.getElementById('admin-banner').style.display = 'flex';
   document.getElementById('admin-banner-key').textContent = 'DÉMO';
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
   renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary(); updateUserDisplay();
   const ly = getYears().slice(-1)[0];
   if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
+  // Afficher le bouton Comparer
+  const btn = document.getElementById('compare-overlay-btn');
+  if (btn) btn.style.display = 'inline-flex';
   showToast('🎭 Données de démo chargées — 2025 + 2026');
 }
+
+// ── COMPARE OVERLAY ──
+function openCompareView() {
+  const base = location.href.split('?')[0].split('#')[0];
+  document.getElementById('iframe-free').src = base + '?demoMode=free';
+  document.getElementById('iframe-pro').src  = base + '?demoMode=pro';
+  document.getElementById('compare-overlay').style.display = 'flex';
+}
+function closeCompareView() {
+  document.getElementById('compare-overlay').style.display = 'none';
+  // Vider les iframes pour libérer la mémoire
+  document.getElementById('iframe-free').src = 'about:blank';
+  document.getElementById('iframe-pro').src  = 'about:blank';
+}
 </script>
+
+<!-- ── COMPARE OVERLAY ── -->
+<div id="compare-overlay" style="display:none;position:fixed;inset:0;background:#0d0f1a;z-index:9998;flex-direction:column;font-family:Inter,sans-serif">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#1A1D2E;border-bottom:1px solid rgba(255,255,255,.12);flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">🔍</span>
+      <div>
+        <div style="color:#fff;font-weight:700;font-size:14px">Comparaison des versions</div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px">Faites défiler dans chaque fenêtre pour explorer l'application</div>
+      </div>
+    </div>
+    <button onclick="closeCompareView()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 16px;font-size:13px;font-weight:600;cursor:pointer">✕ Fermer</button>
+  </div>
+  <!-- Labels colonnes -->
+  <div style="display:flex;flex-shrink:0;gap:2px;background:#0d0f1a">
+    <div style="flex:1;padding:8px 16px;background:#2a2a3e;display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">🔓</span>
+      <div>
+        <div style="color:#aaa;font-weight:700;font-size:13px">Sans licence</div>
+        <div style="color:rgba(255,255,255,.35);font-size:11px">Fonctionnalités gratuites — 1 utilisateur, 1 an, pas de sync</div>
+      </div>
+    </div>
+    <div style="flex:1;padding:8px 16px;background:#1a3a2a;display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">✨</span>
+      <div>
+        <div style="color:#7effa0;font-weight:700;font-size:13px">Avec licence</div>
+        <div style="color:rgba(126,255,160,.5);font-size:11px">Toutes les fonctionnalités — multi-utilisateurs, historique illimité, sync cloud</div>
+      </div>
+    </div>
+  </div>
+  <!-- Iframes -->
+  <div style="display:flex;flex:1;gap:2px;overflow:hidden;background:#0d0f1a">
+    <iframe id="iframe-free" src="about:blank"
+      style="flex:1;border:0;background:#fff"
+      sandbox="allow-scripts allow-same-origin"></iframe>
+    <div style="width:2px;background:#0d0f1a;flex-shrink:0"></div>
+    <iframe id="iframe-pro" src="about:blank"
+      style="flex:1;border:0;background:#fff"
+      sandbox="allow-scripts allow-same-origin"></iframe>
+  </div>
+</div>
 </body>
 </html>
