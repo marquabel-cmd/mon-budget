@@ -2930,7 +2930,7 @@ function loadDemoData() {
     {label:'📉 Livret — retrait vers compte',cat:'livret_out',v:[0,0,0,0,0,0,0,0,0,0,0,0],                        paid:t12()}
   ];
 
-  _adminSavedData = JSON.stringify(DATA);
+  if (!_isAdminMode) _adminSavedData = JSON.stringify(DATA);
   _isAdminMode = true;
   DATA = {
     methods: [{key:'carte',label:'Carte bancaire'},{key:'virement',label:'Virement'},{key:'liquide',label:'Liquide'}],
