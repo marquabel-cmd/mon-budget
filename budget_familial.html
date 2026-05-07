@@ -587,6 +587,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
     </div>
     <div class="header-btns">
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
+      <span id="last-save-info" style="font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;align-self:center"></span>
       <button class="btn btn-save" onclick="saveData()">💾 <span class="btn-label">Sauvegarder</span></button>
       <button class="btn btn-csv"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
       <button class="btn" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
@@ -1360,6 +1361,7 @@ function switchUser(userId) {
   getYears().forEach(y => renderYear(y));
   renderSummary();
   updateUserDisplay();
+  updateLastSaveDisplay();
   document.getElementById('user-menu')?.classList.remove('open');
   const years = getYears();
   const lastYear = years[years.length - 1];
@@ -2426,13 +2428,31 @@ async function cloudPull() {
 let _saveTimer;
 function dSave() { clearTimeout(_saveTimer); _saveTimer=setTimeout(saveData,1500); }
 function saveData() {
-  if (_compareMode || _isAdminMode) return; // pas de sauvegarde en mode démo/admin
+  if (_compareMode || _isAdminMode) return;
   const json = JSON.stringify(DATA);
   localStorage.setItem(dataKey(), json);
   const now = new Date();
-  localStorage.setItem(bakPrefix() + `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`, json);
+  const dateKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  localStorage.setItem(bakPrefix() + dateKey, json);
+  const isoNow = now.toISOString();
+  localStorage.setItem('budget_lastsave_' + CURRENT_USER_ID, isoNow);
+  // Garder les 20 derniers backups
+  const allBaks = Object.keys(localStorage).filter(k=>k.startsWith(bakPrefix())).sort();
+  if (allBaks.length > 20) allBaks.slice(0, allBaks.length - 20).forEach(k => localStorage.removeItem(k));
   showToast('✅ Sauvegardé');
+  updateLastSaveDisplay();
   cloudPush();
+}
+
+function updateLastSaveDisplay() {
+  const el = document.getElementById('last-save-info');
+  if (!el) return;
+  const iso = localStorage.getItem('budget_lastsave_' + CURRENT_USER_ID);
+  if (!iso) { el.textContent = ''; return; }
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2,'0');
+  el.textContent = `💾 ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 // ── THÈME JOUR / NUIT ──
@@ -2460,12 +2480,34 @@ function openBackups() {
   const keys = Object.keys(localStorage).filter(k=>k.startsWith(pfx)).sort().reverse();
   const MOIS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
   const list = document.getElementById('backup-list');
-  if (!keys.length) { list.innerHTML = '<p class="no-backup">Aucune sauvegarde disponible.</p>'; }
-  else {
-    list.innerHTML = keys.map(k => {
+  const lastSave = localStorage.getItem('budget_lastsave_' + CURRENT_USER_ID);
+  let header = '';
+  if (lastSave) {
+    const d = new Date(lastSave);
+    const pad = n => String(n).padStart(2,'0');
+    header = `<div style="background:var(--green-light);color:var(--green);font-weight:700;font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:10px">
+      ✅ Dernière sauvegarde : ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} à ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}
+    </div>`;
+  }
+  if (!keys.length) {
+    list.innerHTML = header + '<p class="no-backup">Aucune sauvegarde disponible.</p>';
+  } else {
+    list.innerHTML = header + keys.map(k => {
       const parts = k.replace(pfx,'').split('-');
-      const label = `${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}${parts[2]?' — '+parts[2]:''}`;
-      return `<div class="backup-item"><span class="bk-date">📅 ${label}</span><button class="bk-restore" onclick="restoreBackup('${k}')">Restaurer</button></div>`;
+      let label;
+      if (parts.length >= 3) {
+        // Format YYYY-MM-DD
+        label = `${parts[2]} ${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}`;
+      } else {
+        // Ancien format YYYY-MM
+        label = `${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}`;
+      }
+      // Taille du backup
+      const size = Math.round(localStorage.getItem(k).length / 1024);
+      return `<div class="backup-item">
+        <span class="bk-date">📅 ${label} <span style="color:var(--gray);font-size:10px">(${size} ko)</span></span>
+        <button class="bk-restore" onclick="restoreBackup('${k}')">Restaurer</button>
+      </div>`;
     }).join('');
   }
   document.getElementById('backup-modal').classList.add('open');
