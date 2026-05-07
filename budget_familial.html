@@ -744,22 +744,52 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 
 <!-- ADMIN MODAL -->
 <div id="admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#1A1D2E;border-radius:16px;padding:28px;width:340px;max-width:90vw;color:#fff">
-    <h3 style="margin:0 0 20px;font-size:16px">🔐 Mode Admin</h3>
-    <div style="margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:6px">Mot de passe admin</div>
-      <input type="password" id="admin-password-input" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')enterAdminMode()">
+  <div style="background:#1A1D2E;border-radius:16px;padding:24px;width:min(420px,95vw);max-height:90vh;overflow-y:auto;color:#fff">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h3 style="margin:0;font-size:16px">🔐 Mode Admin</h3>
+      <button onclick="closeAdminPanel()" style="background:none;border:none;font-size:20px;cursor:pointer;color:rgba(255,255,255,.5)">✕</button>
     </div>
-    <div style="margin-bottom:20px">
-      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:6px">Clé de licence client</div>
-      <input type="text" id="admin-license-input" placeholder="-OrSgJYUP..." style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')enterAdminMode()">
-      <div style="margin-top:8px">
-        <button onclick="loadDemoData()" style="width:100%;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px dashed rgba(255,255,255,.3);border-radius:8px;padding:8px;font-size:12px;cursor:pointer">🎭 Charger données de démo</button>
+    <!-- Password row (always visible) -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">Mot de passe admin</div>
+      <input type="password" id="admin-password-input" placeholder="••••••••" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')adminUnlock()">
+    </div>
+    <div id="admin-locked-msg" style="color:rgba(255,200,0,.8);font-size:12px;margin-bottom:12px;display:none">⚠️ Entrez le mot de passe admin pour accéder aux fonctions ci-dessous.</div>
+    <!-- Tabs (shown after unlock) -->
+    <div id="admin-tabs-wrap" style="display:none">
+      <div style="display:flex;gap:3px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px;margin-bottom:16px">
+        <button id="admin-tab-btn-view"    onclick="adminSwitchTab('view')"    style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Données client</button>
+        <button id="admin-tab-btn-license" onclick="adminSwitchTab('license')" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licences</button>
+      </div>
+
+      <!-- TAB: View client data -->
+      <div id="admin-tab-view">
+        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">UID ou clé de licence client</div>
+        <input type="text" id="admin-license-input" placeholder="-OrSgJYUP… ou UID Firebase" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:8px" onkeydown="if(event.key==='Enter')enterAdminMode()">
+        <button onclick="loadDemoData()" style="width:100%;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px dashed rgba(255,255,255,.3);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;margin-bottom:10px">🎭 Charger données de démo</button>
+        <button onclick="enterAdminMode()" style="width:100%;background:#F5A623;color:#1A1D2E;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">👁️ Voir les données</button>
+      </div>
+
+      <!-- TAB: Manage licences -->
+      <div id="admin-tab-license" style="display:none">
+        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">Firebase UID de l'utilisateur</div>
+        <input type="text" id="admin-uid-input" placeholder="uid Firebase (ex: abc123xyz…)" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:8px">
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button onclick="adminCheckPremium()" style="flex:1;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer">🔍 Vérifier</button>
+          <button onclick="adminGrantPremium()" style="flex:1;background:#00C896;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">⭐ Accorder</button>
+          <button onclick="adminRevokePremium()" style="flex:1;background:#F04F5B;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">✕ Révoquer</button>
+        </div>
+        <div id="admin-license-result" style="font-size:12px;min-height:36px;padding:8px;background:rgba(255,255,255,.05);border-radius:6px;color:rgba(255,255,255,.8)">Entrez un UID pour commencer.</div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1);font-size:10px;color:rgba(255,255,255,.4)">
+          💡 L'UID Firebase se trouve dans Firebase Console → Authentication → Users.<br>
+          Pour écrire dans /users/{uid}/, votre compte admin doit être listé dans /admins/ dans la Realtime Database.
+        </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px">
-      <button onclick="closeAdminPanel()" style="flex:1;background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;cursor:pointer">Annuler</button>
-      <button onclick="enterAdminMode()" style="flex:2;background:#F5A623;color:#1A1D2E;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">👁️ Voir les données</button>
+
+    <div style="margin-top:14px">
+      <button onclick="closeAdminPanel()" style="width:100%;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:none;border-radius:8px;padding:9px;font-size:12px;cursor:pointer">Fermer</button>
     </div>
   </div>
 </div>
@@ -2923,8 +2953,14 @@ function uploadUserPhoto(userId) {
 // ── CLOUD SYNC ──
 let _lastSyncError = '';
 function cloudApiUrl() {
+  if (!isLicensed()) return null;
+  // Authenticated users: use UID-based path (secured by Firebase rules)
+  if (_fbUser?.uid) {
+    return LICENSE_DB.replace(/\/+$/,'') + '/userdata/' + _fbUser.uid + '/budget.json';
+  }
+  // Legacy fallback: license key path
   const key = getLicenseKey();
-  if (!key || !isLicensed()) return null;
+  if (!key) return null;
   return LICENSE_DB.replace(/\/+$/,'') + '/user-data/' + key + '/budget.json';
 }
 function setCloudStatus(s, errMsg) {
@@ -2941,9 +2977,11 @@ function setCloudStatus(s, errMsg) {
 async function cloudPush() {
   const url = cloudApiUrl();
   if (!url || !DATA) return;
+  const token = await fbGetToken();
+  const authUrl = token ? url + '?auth=' + token : url;
   setCloudStatus('syncing');
   try {
-    const r = await fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(DATA)});
+    const r = await fetch(authUrl, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(DATA)});
     if (r.ok) { setCloudStatus('ok'); _lastSyncError = ''; }
     else { setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); }
   } catch(e) { setCloudStatus('error', e.message || 'Réseau inaccessible'); }
@@ -2951,11 +2989,13 @@ async function cloudPush() {
 async function cloudPull() {
   const url = cloudApiUrl();
   if (!url) return null;
+  const token = await fbGetToken();
+  const authUrl = token ? url + '?auth=' + token : url;
   try {
-    const r = await fetch(url);
+    const r = await fetch(authUrl);
     if (!r.ok) { _lastSyncError = `HTTP ${r.status} — vérifiez les règles Firebase`; return null; }
     const d = await r.json();
-    if (!d || Array.isArray(d)) return null; // Pas de données encore (Firebase retourne null)
+    if (!d || Array.isArray(d)) return null;
     if (typeof d !== 'object') { _lastSyncError = 'Format de données invalide'; return null; }
     return d;
   } catch(e) { _lastSyncError = e.message || 'Réseau inaccessible'; return null; }
@@ -3520,6 +3560,8 @@ const STRIPE_LINK = 'https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00';
 const FB_API_KEY  = 'AIzaSyBB0h8ENURTDyndoVBtsu1i94l_mVZZ23o';
 const FB_AUTH     = 'https://identitytoolkit.googleapis.com/v1/accounts';
 const FB_TOKEN    = 'https://securetoken.googleapis.com/v1/token';
+// Google OAuth Client ID — Firebase Console → Authentication → Sign-in method → Google → Web SDK configuration → Web client ID
+const GOOGLE_CLIENT_ID = ''; // TODO: fill in from Firebase Console
 
 // ── FIREBASE AUTH STATE ──────────────────────────────────────────────────
 let _fbUser = null; // { uid, email, idToken, refreshToken, expiresAt }
@@ -3645,6 +3687,74 @@ async function fbInitAuth() {
   if (_fbUser) {
     fbCheckPremium(_fbUser.uid, _fbUser.idToken).then(() => renderConfigTab());
   }
+}
+
+// ── GOOGLE SIGN-IN ──
+async function _fbSignInWithIdp(idToken) {
+  const requestUri = window.location.origin + window.location.pathname;
+  const r = await fetch(`${FB_AUTH}:signInWithIdp?key=${FB_API_KEY}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      requestUri, returnSecureToken:true,
+      postBody: `id_token=${idToken}&providerId=google.com`
+    })
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(_fbErrMsg(d.error?.message));
+  const u = { uid:d.localId, email:d.email, idToken:d.idToken,
+    refreshToken:d.refreshToken, expiresAt:Date.now()+parseInt(d.expiresIn)*1000 };
+  _fbSave(u); return u;
+}
+
+function signInWithGoogle() {
+  if (!GOOGLE_CLIENT_ID) { showToast('❌ Client ID Google non configuré'); return; }
+  const nonce = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  sessionStorage.setItem('google_nonce', nonce);
+  const redirectUri = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: 'id_token',
+    scope: 'email profile openid',
+    nonce,
+    prompt: 'select_account'
+  });
+  const popup = window.open('https://accounts.google.com/o/oauth2/v2/auth?' + params, 'google-signin', 'width=500,height=620,left=100,top=100');
+  if (!popup) { showToast('⚠️ Popups bloquées — autorisez-les pour ce site'); return; }
+  const check = setInterval(async () => {
+    try {
+      if (popup.closed) { clearInterval(check); return; }
+      const hash = popup.location.hash;
+      if (hash && popup.location.origin === window.location.origin) {
+        clearInterval(check);
+        const params2 = new URLSearchParams(hash.slice(1));
+        const token = params2.get('id_token');
+        popup.close();
+        if (!token) { showToast('❌ Erreur Google Sign-In'); return; }
+        try {
+          const u = await _fbSignInWithIdp(token);
+          await fbCheckPremium(u.uid, u.idToken);
+          closeAuthModal();
+          renderConfigTab();
+          showToast('✅ Connecté avec Google — ' + u.email);
+        } catch(e) {
+          const errEl = document.getElementById('auth-login-err') || document.getElementById('auth-reg-err');
+          if (errEl) errEl.textContent = e.message;
+          showToast('❌ ' + e.message);
+        }
+      }
+    } catch(e2) { /* cross-origin — popup not yet on our domain */ }
+  }, 500);
+}
+
+// Called on page load to handle Google OAuth popup callback
+function _handleGoogleCallback() {
+  if (!window.opener) return;
+  const hash = window.location.hash;
+  if (!hash.includes('id_token') && !hash.includes('error')) return;
+  // We're inside the popup — notify parent and close
+  try { window.opener.postMessage({ type:'google-auth-cb', hash }, window.location.origin); } catch(e) {}
+  setTimeout(() => window.close(), 100);
 }
 
 // ── AUTH MODAL FUNCTIONS ─────────────────────────────────────────────────
@@ -3998,6 +4108,25 @@ function applyUpdate() {
   }
 }
 
+// Handle Google OAuth popup callback
+_handleGoogleCallback();
+// Also listen for postMessage from Google popup
+window.addEventListener('message', async (e) => {
+  if (e.origin !== window.location.origin) return;
+  if (e.data?.type !== 'google-auth-cb') return;
+  const hash = e.data.hash || '';
+  const params = new URLSearchParams(hash.slice(1));
+  const token = params.get('id_token');
+  if (!token) return;
+  try {
+    const u = await _fbSignInWithIdp(token);
+    await fbCheckPremium(u.uid, u.idToken);
+    closeAuthModal();
+    renderConfigTab();
+    showToast('✅ Connecté avec Google — ' + u.email);
+  } catch(er) { showToast('❌ ' + er.message); }
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').then(reg => {
@@ -4029,6 +4158,7 @@ if ('serviceWorker' in navigator) {
 const ADMIN_SECRET = 'marquabel2026';
 let _adminClickCount = 0, _adminClickTimer = null;
 let _adminSavedData = null, _isAdminMode = false, _adminLabel = '';
+let _adminUnlocked = false;
 
 function adminTitleClick() {
   _adminClickCount++;
@@ -4039,30 +4169,64 @@ function adminTitleClick() {
 function openAdminPanel() {
   document.getElementById('admin-modal').style.display = 'flex';
   document.getElementById('admin-license-input').value = '';
-  // En mode admin, le mot de passe est déjà validé — on le pré-remplit
-  if (_isAdminMode) {
+  if (_adminUnlocked) {
+    document.getElementById('admin-tabs-wrap').style.display = '';
+    document.getElementById('admin-locked-msg').style.display = 'none';
     document.getElementById('admin-password-input').value = ADMIN_SECRET;
     setTimeout(() => document.getElementById('admin-license-input').focus(), 100);
   } else {
+    document.getElementById('admin-tabs-wrap').style.display = 'none';
+    document.getElementById('admin-locked-msg').style.display = 'none';
     document.getElementById('admin-password-input').value = '';
     setTimeout(() => document.getElementById('admin-password-input').focus(), 100);
   }
 }
 function closeAdminPanel() { document.getElementById('admin-modal').style.display = 'none'; }
 
-async function enterAdminMode() {
+function adminUnlock() {
   const pwd = document.getElementById('admin-password-input').value.trim();
+  if (pwd !== ADMIN_SECRET) {
+    document.getElementById('admin-locked-msg').style.display = '';
+    document.getElementById('admin-locked-msg').textContent = '❌ Mot de passe incorrect';
+    return;
+  }
+  _adminUnlocked = true;
+  document.getElementById('admin-tabs-wrap').style.display = '';
+  document.getElementById('admin-locked-msg').style.display = 'none';
+  adminSwitchTab('view');
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const pwdInput = document.getElementById('admin-password-input');
+  if (pwdInput) pwdInput.addEventListener('keydown', e => { if(e.key==='Enter') adminUnlock(); });
+});
+
+function adminSwitchTab(tab) {
+  document.getElementById('admin-tab-view').style.display    = tab === 'view'    ? '' : 'none';
+  document.getElementById('admin-tab-license').style.display = tab === 'license' ? '' : 'none';
+  const active = 'background:rgba(255,255,255,.2);color:#fff';
+  const idle   = 'background:transparent;color:rgba(255,255,255,.5)';
+  document.getElementById('admin-tab-btn-view').style.cssText    = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='view'    ? active : idle);
+  document.getElementById('admin-tab-btn-license').style.cssText = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='license' ? active : idle);
+}
+
+async function enterAdminMode() {
+  if (!_adminUnlocked) { adminUnlock(); return; }
   const key = document.getElementById('admin-license-input').value.trim().replace(/[^A-Za-z0-9_-]/g,'');
-  if (pwd !== ADMIN_SECRET) { showToast('❌ Mot de passe incorrect'); return; }
-  if (!key) { showToast('⚠️ Entrez une clé de licence'); return; }
+  if (!key) { showToast('⚠️ Entrez une clé ou UID'); return; }
   showToast('🔄 Chargement…');
   try {
-    const url = LICENSE_DB.replace(/\/+$/,'') + '/user-data/' + key + '/budget.json';
-    const r = await fetch(url);
-    if (!r.ok) { showToast('❌ Erreur Firebase ' + r.status); return; }
-    const d = await r.json();
+    // Try UID-based path first, then legacy key path
+    const token = await fbGetToken();
+    let url = LICENSE_DB.replace(/\/+$/,'') + '/userdata/' + key + '/budget.json';
+    let r = await fetch(token ? url + '?auth=' + token : url);
+    let d = r.ok ? await r.json() : null;
+    if (!d || typeof d !== 'object' || Array.isArray(d)) {
+      url = LICENSE_DB.replace(/\/+$/,'') + '/user-data/' + key + '/budget.json';
+      r = await fetch(url);
+      if (!r.ok) { showToast('❌ Erreur Firebase ' + r.status); return; }
+      d = await r.json();
+    }
     if (!d || typeof d !== 'object' || Array.isArray(d)) { showToast('⚠️ Aucune donnée pour cette clé'); return; }
-    // Conserver les données originales (pas écraser si déjà en admin)
     if (!_isAdminMode) _adminSavedData = JSON.stringify(DATA);
     _isAdminMode = true;
     _adminLabel = 'Client ' + key.slice(0,8) + '…';
@@ -4096,6 +4260,59 @@ function exitAdminMode() {
   const ly = getYears().slice(-1)[0];
   if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
   showToast('✅ Retour à vos données');
+}
+
+async function adminCheckPremium() {
+  const uid = document.getElementById('admin-uid-input').value.trim();
+  const res = document.getElementById('admin-license-result');
+  if (!uid) { res.textContent = '⚠️ Entrez un UID Firebase'; return; }
+  res.textContent = '🔄 Vérification…';
+  try {
+    const token = await fbGetToken();
+    const url = `${LICENSE_DB}/users/${uid}/premium.json` + (token ? `?auth=${token}` : '');
+    const r = await fetch(url);
+    const val = await r.json();
+    if (val === true) {
+      res.innerHTML = `<span style="color:#00C896;font-weight:700">⭐ Premium actif</span><br><small style="color:rgba(255,255,255,.5)">UID: ${uid}</small>`;
+    } else {
+      res.innerHTML = `<span style="color:#F04F5B;font-weight:700">✕ Pas premium</span><br><small style="color:rgba(255,255,255,.5)">UID: ${uid}</small>`;
+    }
+  } catch(e) { res.textContent = '❌ Erreur : ' + e.message; }
+}
+
+async function adminGrantPremium() {
+  const uid = document.getElementById('admin-uid-input').value.trim();
+  const res = document.getElementById('admin-license-result');
+  if (!uid) { res.textContent = '⚠️ Entrez un UID Firebase'; return; }
+  res.textContent = '🔄 Activation…';
+  try {
+    const token = await fbGetToken();
+    if (!token) throw new Error('Non connecté — connectez-vous avec votre compte admin d\'abord');
+    const r = await fetch(`${LICENSE_DB}/users/${uid}/premium.json?auth=${token}`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:'true'
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status} — vérifiez les règles Firebase (admins/)`);
+    res.innerHTML = `<span style="color:#00C896;font-weight:700">✅ Premium accordé !</span><br><small style="color:rgba(255,255,255,.5)">UID: ${uid}</small>`;
+    showToast('⭐ Premium accordé à ' + uid.slice(0,12) + '…');
+  } catch(e) { res.innerHTML = `<span style="color:#F04F5B">❌ ${e.message}</span>`; }
+}
+
+async function adminRevokePremium() {
+  const uid = document.getElementById('admin-uid-input').value.trim();
+  const res = document.getElementById('admin-license-result');
+  if (!uid) { res.textContent = '⚠️ Entrez un UID Firebase'; return; }
+  if (!confirm(`Révoquer le premium de\n${uid} ?`)) return;
+  res.textContent = '🔄 Révocation…';
+  try {
+    const token = await fbGetToken();
+    if (!token) throw new Error('Non connecté — connectez-vous avec votre compte admin d\'abord');
+    const r = await fetch(`${LICENSE_DB}/users/${uid}/premium.json?auth=${token}`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:'false'
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status} — vérifiez les règles Firebase`);
+    res.innerHTML = `<span style="color:#F5A623;font-weight:700">✕ Premium révoqué</span><br><small style="color:rgba(255,255,255,.5)">UID: ${uid}</small>`;
+    showToast('✕ Premium révoqué pour ' + uid.slice(0,12) + '…');
+  } catch(e) { res.innerHTML = `<span style="color:#F04F5B">❌ ${e.message}</span>`; }
 }
 
 // ── TOUR GUIDÉ ──
@@ -4781,6 +4998,15 @@ function closeCompareView() {
       </div>
       <div id="auth-login-err" style="color:var(--red);font-size:12px;margin-bottom:10px;min-height:16px"></div>
       <button onclick="authDoLogin()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">Se connecter</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:11px;color:var(--gray)">ou</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <button onclick="signInWithGoogle()" style="width:100%;background:#fff;color:#3c4043;border:1px solid var(--border);border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.02 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.52-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+        Continuer avec Google
+      </button>
       <button onclick="closeAuthModal()" style="width:100%;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;padding:6px">Continuer sans compte (version gratuite)</button>
     </div>
     <!-- Inscription -->
@@ -4807,6 +5033,15 @@ function closeCompareView() {
       </div>
       <div id="auth-reg-err" style="color:var(--red);font-size:12px;margin-bottom:10px;min-height:16px"></div>
       <button onclick="authDoRegister()" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">Créer mon compte</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:11px;color:var(--gray)">ou</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <button onclick="signInWithGoogle()" style="width:100%;background:#fff;color:#3c4043;border:1px solid var(--border);border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.02 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.52-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+        S'inscrire avec Google
+      </button>
       <button onclick="closeAuthModal()" style="width:100%;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;padding:6px">Continuer sans compte (version gratuite)</button>
     </div>
     <!-- Mot de passe oublié -->
