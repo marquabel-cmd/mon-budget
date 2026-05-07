@@ -2527,7 +2527,8 @@ function renderVarCat(year, cat) {
     const mTxs = txs.filter(t=>t.month===m);
     const mTot = sum(mTxs.map(t=>t.amount));
     summaryRows += `
-    <tr id="vsumrow-${year}-${cat.key}-${m}">
+    <tr id="vsumrow-${year}-${cat.key}-${m}" style="cursor:pointer"
+        onclick="if(!event.target.closest('button'))toggleMonthDetail('${year}','${cat.key}',${m},document.getElementById('vexp-btn-${year}-${cat.key}-${m}'))">
       <td style="font-weight:600;padding-left:10px">${MONTHS[m]}</td>
       <td id="vsum-n-${year}-${cat.key}-${m}" style="color:var(--gray);text-align:center">${mTxs.length} tx</td>
       <td id="vsum-t-${year}-${cat.key}-${m}" style="font-weight:700;text-align:right">${fmtN(mTot)} €</td>
