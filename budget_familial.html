@@ -2124,15 +2124,17 @@ function renderSoldes(year) {
 }
 function renderMethodPaymentSummary(year) {
   const excluded = DATA[year].excludeCalcMethods || [];
+  const _isDark = document.documentElement.dataset.theme === 'dark';
   const pills = getMethods().map(mo => {
     const tot = sum(varTotalByMethod(year, mo.key));
     const incl = !excluded.includes(mo.key);
-    return `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;background:${mo.bg};border:2px solid ${mo.color};margin:3px;font-size:12px;font-weight:600">
+    const pillBg = _isDark ? 'var(--surface-alt)' : mo.bg;
+    return `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;background:${pillBg};border:2px solid ${mo.color};margin:3px;font-size:12px;font-weight:600;color:var(--text)">
       <input type="checkbox" ${incl?'checked':''}
         onchange="toggleMethodCalc('${year}','${mo.key}',this.checked)" onclick="event.stopPropagation()"
-        style="width:13px;height:13px;accent-color:${mo.color};cursor:pointer">
-      <span style="color:${mo.color}">${mo.label}</span>
-      <span style="color:#444">${tot>0?fmtN(tot)+' €':'—'}</span>
+        style="width:13px;height:13px;accent-color:${mo.color};cursor:pointer;flex-shrink:0">
+      <span style="font-weight:700">${mo.label}</span>
+      <span style="opacity:.8">${tot>0?fmtN(tot)+' €':'—'}</span>
     </span>`;
   }).join('');
   return `<div style="padding:8px 14px 12px;border-top:1px solid var(--border);margin-top:4px">
@@ -2553,7 +2555,9 @@ function buildMonthTxRows(year, catKey, m) {
 function txRow(year, catKey, tx) {
   const m = getMethodObj(tx.method);
   const opts = getMethods().map(mo=>`<option value="${mo.key}"${tx.method===mo.key?' selected':''}>${mo.label}</option>`).join('');
-  return `<tr id="vtr-${tx.id}" style="border-left:4px solid ${m.color};background:${m.bg}">
+  const _txDark = document.documentElement.dataset.theme === 'dark';
+  const _txBg = _txDark ? 'var(--surface)' : m.bg;
+  return `<tr id="vtr-${tx.id}" style="border-left:4px solid ${m.color};background:${_txBg}">
     <td><input class="var-input day" type="number" min="1" max="31" placeholder="—" value="${txDay(tx.date)}"
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
       oninput="updateTxField('${year}','${catKey}',${tx.id},'date',this.value?+this.value:'');dSave()"></td>
@@ -2563,7 +2567,7 @@ function txRow(year, catKey, tx) {
     <td><input class="var-input comment" type="text" value="${tx.comment||''}" placeholder="Commentaire…"
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
       oninput="updateTxField('${year}','${catKey}',${tx.id},'comment',this.value)"></td>
-    <td><select class="method-sel" style="background:${m.bg};border-color:${m.color}"
+    <td><select class="method-sel" style="background:${m.bg};border-color:${m.color};color:var(--text)"
       onchange="updateTxMethod('${year}','${catKey}',${tx.id},this)">${opts}</select></td>
     <td><button class="del-btn" onclick="delTx('${year}','${catKey}',${tx.id},${tx.month})">✕</button></td>
   </tr>`;
@@ -2677,9 +2681,11 @@ function updateTxMethod(year, catKey, id, sel) {
   const method = sel.value;
   updateTxField(year, catKey, id, 'method', method);
   const mo = getMethodObj(method);
-  sel.style.background = mo.bg; sel.style.borderColor = mo.color;
+  const _isDk = document.documentElement.dataset.theme === 'dark';
+  sel.style.background = _isDk ? 'var(--surface)' : mo.bg;
+  sel.style.borderColor = mo.color;
   const tr = document.getElementById(`vtr-${id}`);
-  if (tr) { tr.style.borderLeftColor = mo.color; tr.style.background = mo.bg; }
+  if (tr) { tr.style.borderLeftColor = mo.color; tr.style.background = _isDk ? 'var(--surface)' : mo.bg; }
 }
 function delTx(year, catKey, id, m) {
   confirmDelete('Supprimer cette transaction ?', () => {
