@@ -1946,10 +1946,13 @@ function updateCharge(year, ri, mi, input) {
   const v = parseFloat(input.value)||0;
   DATA[year].charges[ri].v[mi] = v;
   input.className = 'cell-amt' + (v<0?' neg':'');
-  if (v === 0 && !DATA[year].charges[ri].paid[mi]) {
-    DATA[year].charges[ri].paid[mi] = true;
+  const cat = DATA[year].charges[ri].cat;
+  const isLivret = cat === 'livret_in' || cat === 'livret_out';
+  // Auto-cocher payé si valeur non nulle dans une ligne livret, ou si valeur = 0
+  if ((isLivret && v !== 0) || (v === 0 && !DATA[year].charges[ri].paid[mi])) {
+    DATA[year].charges[ri].paid[mi] = isLivret ? (v !== 0) : true;
     const td = document.getElementById(`cc-${year}-${ri}-${mi}`);
-    if (td) td.className = 'is-paid';
+    if (td) td.className = DATA[year].charges[ri].paid[mi] ? 'is-paid' : '';
   }
   refreshChargeTotals(year);
   updateLivretDisplay(year);
