@@ -336,6 +336,26 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .welcome-create-btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
 @keyframes wPop{from{transform:scale(.4) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
 @keyframes spin { to { transform: rotate(360deg); } }
+/* ── ONBOARDING ── */
+#onboarding-screen{position:fixed;inset:0;z-index:2500;background:linear-gradient(160deg,#1A1D2E 0%,#2D3561 100%);display:none;align-items:center;justify-content:center;flex-direction:column}
+.ob-box{text-align:center;max-width:600px;width:100%;padding:50px 28px 40px}
+.ob-logo{font-size:64px;margin-bottom:12px;animation:wPop .5s cubic-bezier(.34,1.56,.64,1)}
+.ob-title{font-size:32px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:6px}
+.ob-sub{font-size:14px;color:rgba(255,255,255,.55);margin-bottom:44px}
+.ob-cards{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+.ob-card{background:rgba(255,255,255,.09);border:2px solid rgba(255,255,255,.18);border-radius:20px;padding:32px 28px;cursor:pointer;transition:all .22s;min-width:200px;max-width:240px;text-align:center;backdrop-filter:blur(10px)}
+.ob-card:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.55);transform:translateY(-5px);box-shadow:0 14px 36px rgba(0,0,0,.4)}
+.ob-card-icon{font-size:44px;margin-bottom:14px}
+.ob-card-title{font-size:17px;font-weight:800;color:#fff;margin-bottom:8px}
+.ob-card-desc{font-size:12px;color:rgba(255,255,255,.55);line-height:1.5}
+.ob-card.ob-demo{border-color:rgba(245,166,35,.4)}
+.ob-card.ob-demo:hover{border-color:#F5A623;background:rgba(245,166,35,.12)}
+.ob-card.ob-create{border-color:rgba(0,200,150,.4)}
+.ob-card.ob-create:hover{border-color:#00C896;background:rgba(0,200,150,.1)}
+.ob-help{font-size:12px;color:rgba(255,255,255,.35);cursor:pointer;text-decoration:underline;transition:color .15s}
+.ob-help:hover{color:rgba(255,255,255,.7)}
+/* ── DEMO BANNER ── */
+#demo-banner{display:none;background:linear-gradient(135deg,#F5A623,#e08800);color:#1A1D2E;padding:8px 16px;font-size:12px;font-weight:700;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:200}
 /* ── PIN OVERLAY ── */
 .pin-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .pin-box{background:#fff;border-radius:18px;padding:34px 38px;text-align:center;max-width:300px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -513,6 +533,28 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   </div>
 </div>
 
+<!-- ── ONBOARDING SCREEN ── -->
+<div id="onboarding-screen">
+  <div class="ob-box">
+    <div class="ob-logo">💰</div>
+    <div class="ob-title">Mon Budget</div>
+    <div class="ob-sub">Bienvenue ! Comment souhaitez-vous démarrer ?</div>
+    <div class="ob-cards">
+      <div class="ob-card ob-demo" onclick="startDemoModeFromOnboarding()">
+        <div class="ob-card-icon">🎮</div>
+        <div class="ob-card-title">Mode Démo</div>
+        <div class="ob-card-desc">Explorez l'application avec des données fictives. Aucune info personnelle requise.</div>
+      </div>
+      <div class="ob-card ob-create" onclick="goToCreateAccountFromOnboarding()">
+        <div class="ob-card-icon">➕</div>
+        <div class="ob-card-title">Créer mon compte</div>
+        <div class="ob-card-desc">Configurez votre profil et commencez à gérer votre budget réel.</div>
+      </div>
+    </div>
+    <div class="ob-help" onclick="window.open('aide.html','_blank')">❓ Aide &amp; documentation</div>
+  </div>
+</div>
+
 <!-- ── WELCOME SCREEN ── -->
 <div id="welcome-screen">
   <div class="welcome-box">
@@ -538,6 +580,15 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
     </div>
   </div>
   <button onclick="applyUpdate()" style="background:#fff;color:#1a6fc4;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">↻ Mettre à jour</button>
+</div>
+
+<!-- ── DEMO BANNER ── -->
+<div id="demo-banner">
+  <span>🎮 MODE DÉMO — Les données affichées sont fictives</span>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button onclick="window.open('aide.html','_blank')" style="background:rgba(0,0,0,.15);color:#1A1D2E;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">❓ Aide</button>
+    <button onclick="exitDemoMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ Quitter le mode démo</button>
+  </div>
 </div>
 
 <!-- ADMIN BANNER -->
@@ -592,6 +643,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
       <button class="btn btn-csv"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
       <button class="btn" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
+      <button class="btn" onclick="window.open('aide.html','_blank')" title="Aide" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
       <button class="btn" id="theme-toggle" onclick="toggleTheme()" title="Mode jour/nuit" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">🌙</button>
     </div>
   </div>
@@ -964,10 +1016,21 @@ function initUsers() {
     return;
   }
 
-  try { USERS = JSON.parse(localStorage.getItem('budget_users') || '{}'); } catch(e) { USERS = {}; }
+  const storedUsersRaw = localStorage.getItem('budget_users');
+  if (storedUsersRaw === null) {
+    // Toute première ouverture — afficher l'onboarding
+    showOnboardingScreen();
+    return;
+  }
+  try { USERS = JSON.parse(storedUsersRaw || '{}'); } catch(e) { USERS = {}; }
   if (!Object.keys(USERS).length) {
-    USERS['pascal'] = { name: 'Pascal', color: '#1a6fc4', admin: true };
-    saveUsers();
+    // budget_users existe mais vide — retour à l'onboarding
+    showOnboardingScreen();
+    return;
+  }
+  // Restaurer mode démo si actif
+  if (localStorage.getItem('budget_demo_active') === '1' && USERS['_demo']) {
+    document.getElementById('demo-banner').style.display = 'flex';
   }
   // Ensure at least one admin
   if (!Object.values(USERS).some(u => u.admin)) {
@@ -975,6 +1038,74 @@ function initUsers() {
     saveUsers();
   }
   renderWelcomeScreen();
+}
+
+function showOnboardingScreen() {
+  const ob = document.getElementById('onboarding-screen');
+  if (ob) ob.style.display = 'flex';
+  const ws = document.getElementById('welcome-screen');
+  if (ws) ws.style.display = 'none';
+}
+
+function startDemoModeFromOnboarding() {
+  document.getElementById('onboarding-screen').style.display = 'none';
+  USERS = { _demo: { name: 'Démo', color: '#F5A623', admin: true, isDemo: true } };
+  saveUsers();
+  localStorage.setItem('budget_demo_active', '1');
+  CURRENT_USER_ID = '_demo';
+  localStorage.setItem('budget_current_user', '_demo');
+  DATA = _buildCompareDemoData();
+  localStorage.setItem(dataKey(), JSON.stringify(DATA));
+  document.getElementById('demo-banner').style.display = 'flex';
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  updateUserDisplay(); renderTabs();
+  getYears().forEach(y => renderYear(y));
+  renderSummary();
+  const ly = getYears().slice(-1)[0];
+  if (ly) setTimeout(() => {
+    const tabs = document.querySelectorAll('#year-tabs .tab');
+    const tab = tabs[tabs.length-1];
+    if (tab) switchTab('y'+ly, tab);
+  }, 50);
+  showToast('🎮 Mode démo activé — explorez librement !');
+}
+
+function goToCreateAccountFromOnboarding() {
+  document.getElementById('onboarding-screen').style.display = 'none';
+  USERS = {};
+  saveUsers();
+  renderWelcomeScreen();
+  const ws = document.getElementById('welcome-screen');
+  if (ws) ws.style.display = 'flex';
+  // Ouvrir directement le panneau de création
+  setTimeout(() => {
+    const p = document.getElementById('welcome-add-panel');
+    if (p) {
+      _wiz = {step:1, name:'', color:'#e67e22', pin:'',
+        revs: JSON.parse(JSON.stringify(WIZARD_REVS)),
+        chgs: JSON.parse(JSON.stringify(WIZARD_CHGS))};
+      p.style.display = 'block';
+      renderWizard();
+    }
+  }, 100);
+}
+
+function exitDemoMode() {
+  if (!confirm('Quitter le mode démo et supprimer toutes les données fictives ?')) return;
+  // Supprimer toutes les données demo
+  Object.keys(localStorage).filter(k =>
+    k.includes('_demo') || k === 'budget_demo_active'
+  ).forEach(k => localStorage.removeItem(k));
+  USERS = {};
+  localStorage.removeItem('budget_users');
+  localStorage.removeItem('budget_current_user');
+  DATA = null;
+  CURRENT_USER_ID = '';
+  document.getElementById('demo-banner').style.display = 'none';
+  // Vider les onglets
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  showOnboardingScreen();
 }
 function _applyCompareHighlights() {
   if (!_compareMode) return;

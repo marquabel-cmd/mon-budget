@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aide — Mon Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,sans-serif;background:#F4F5FA;color:#1A1D2E;line-height:1.6}
+a{color:#5B6AF0;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Header */
+.top-bar{background:linear-gradient(135deg,#1A1D2E,#2D3561);color:#fff;padding:20px 32px;display:flex;align-items:center;gap:14px}
+.top-bar-icon{font-size:32px}
+.top-bar h1{font-size:22px;font-weight:800;letter-spacing:-.3px}
+.top-bar p{font-size:13px;color:rgba(255,255,255,.55);margin-top:2px}
+.top-bar-back{margin-left:auto;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none}
+.top-bar-back:hover{background:rgba(255,255,255,.25);text-decoration:none}
+
+/* Layout */
+.layout{display:flex;max-width:1100px;margin:32px auto;gap:24px;padding:0 24px 60px}
+
+/* Sidebar nav */
+.sidebar{width:220px;flex-shrink:0}
+.sidebar-nav{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:24px}
+.sidebar-nav h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#6B7394;margin-bottom:10px;padding:0 8px}
+.sidebar-nav a{display:block;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#1A1D2E;transition:all .15s}
+.sidebar-nav a:hover{background:#EEF0FD;color:#5B6AF0;text-decoration:none}
+.sidebar-nav a.active{background:#5B6AF0;color:#fff}
+
+/* Content */
+.content{flex:1;min-width:0}
+.section{background:#fff;border-radius:14px;padding:28px 32px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.section h2{font-size:19px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:10px;scroll-margin-top:24px}
+.section h2 span{font-size:22px}
+.section .lead{font-size:14px;color:#6B7394;margin-bottom:20px;border-bottom:1px solid #E8EAF2;padding-bottom:16px}
+.section h3{font-size:14px;font-weight:700;margin:20px 0 8px;color:#2D3561}
+.section p{font-size:13px;color:#3a3f5c;margin-bottom:10px}
+.section ul,.section ol{font-size:13px;color:#3a3f5c;padding-left:20px;margin-bottom:10px}
+.section li{margin-bottom:6px}
+
+/* Tips / callouts */
+.tip{background:#EEF0FD;border-left:3px solid #5B6AF0;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#2D3561;margin:12px 0}
+.tip b{color:#5B6AF0}
+.warn{background:#FEF6E6;border-left:3px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7a4f00;margin:12px 0}
+.demo-tip{background:#FEF9E7;border-left:3px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7a4f00;margin:12px 0}
+.demo-tip b{color:#F5A623}
+
+/* Screenshot placeholder */
+.screenshot{background:#F4F5FA;border:2px dashed #C8CADB;border-radius:10px;padding:36px 20px;text-align:center;margin:14px 0;color:#9DA3BC;font-size:12px}
+.screenshot-icon{font-size:28px;margin-bottom:6px}
+
+/* Keyboard shortcuts */
+.shortcuts{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:12px;margin:8px 0}
+kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:monospace;font-size:11px;font-weight:700}
+
+/* Feature grid */
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
+.feature-card{background:#F4F5FA;border-radius:10px;padding:14px;font-size:12px}
+.feature-card .fc-icon{font-size:22px;margin-bottom:6px}
+.feature-card .fc-title{font-weight:700;color:#1A1D2E;margin-bottom:4px}
+.feature-card .fc-desc{color:#6B7394;line-height:1.4}
+
+@media(max-width:700px){
+  .layout{flex-direction:column}
+  .sidebar{width:100%}
+  .sidebar-nav{position:static}
+  .section{padding:20px 16px}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-icon">💰</div>
+  <div>
+    <h1>Aide — Mon Budget</h1>
+    <p>Guide d'utilisation complet de l'application</p>
+  </div>
+  <a class="top-bar-back" href="budget_familial.html">← Retour à l'app</a>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <h4>Sommaire</h4>
+      <a href="#demarrage">🚀 Démarrage</a>
+      <a href="#demo">🎮 Mode démo</a>
+      <a href="#interface">🖥️ Interface</a>
+      <a href="#revenus">💼 Revenus</a>
+      <a href="#charges">🏠 Charges</a>
+      <a href="#variables">🛒 Dépenses variables</a>
+      <a href="#livret">💰 Livret d'épargne</a>
+      <a href="#resume">📊 Résumé mensuel</a>
+      <a href="#sauvegarde">💾 Sauvegarde</a>
+      <a href="#dark">🌙 Mode nuit</a>
+      <a href="#annee">📅 Nouvelle année</a>
+    </nav>
+  </aside>
+
+  <!-- Content -->
+  <main class="content">
+
+    <!-- Démarrage -->
+    <div class="section" id="demarrage">
+      <h2><span>🚀</span> Démarrage</h2>
+      <p class="lead">Mon Budget est une application web progressive (PWA). Elle fonctionne hors ligne et peut être installée sur votre appareil comme une vraie application.</p>
+
+      <h3>Première ouverture</h3>
+      <p>Lors de la première ouverture, vous avez le choix entre :</p>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="fc-icon">🎮</div>
+          <div class="fc-title">Mode Démo</div>
+          <div class="fc-desc">Explorez avec des données fictives sans rien configurer. Idéal pour découvrir.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">➕</div>
+          <div class="fc-title">Créer un compte</div>
+          <div class="fc-desc">Configurez votre profil, vos revenus et charges habituelles en 4 étapes.</div>
+        </div>
+      </div>
+
+      <h3>Création de compte (assistant en 4 étapes)</h3>
+      <ol>
+        <li><b>Profil</b> — Votre prénom et couleur d'avatar</li>
+        <li><b>Revenus</b> — Vos revenus mensuels habituels (salaires, allocations…)</li>
+        <li><b>Charges</b> — Vos charges fixes récurrentes (loyer, énergie, abonnements…)</li>
+        <li><b>PIN</b> — Code de sécurité facultatif pour protéger vos données</li>
+      </ol>
+
+      <h3>Installation sur mobile / bureau</h3>
+      <p>Sur mobile (Chrome/Safari), appuyez sur <b>« Ajouter à l'écran d'accueil »</b>. Sur PC (Chrome/Edge), cliquez sur l'icône d'installation dans la barre d'adresse. L'app fonctionne ensuite hors ligne.</p>
+    </div>
+
+    <!-- Mode démo -->
+    <div class="section" id="demo">
+      <h2><span>🎮</span> Mode Démo</h2>
+      <p class="lead">Le mode démo charge des données fictives pour vous permettre d'explorer toutes les fonctionnalités sans risque.</p>
+
+      <h3>Activer le mode démo</h3>
+      <p>Au premier lancement, cliquez sur la carte <b>Mode Démo</b>. L'application se charge avec des données d'exemple (Jean &amp; Marie, 2025–2026).</p>
+
+      <div class="demo-tip">
+        <b>Bannière orange</b> — Quand le mode démo est actif, une bannière jaune/orange s'affiche en haut de l'écran pour vous rappeler que les données sont fictives.
+      </div>
+
+      <h3>Quitter le mode démo</h3>
+      <p>Cliquez sur <b>✕ Quitter le mode démo</b> dans la bannière. Confirmez la suppression : toutes les données fictives sont effacées et vous revenez à l'écran de démarrage pour créer votre vrai compte.</p>
+
+      <div class="warn">
+        <b>⚠️ Attention</b> — Quitter le mode démo supprime définitivement les données fictives. Vos vraies données (si vous en avez) ne sont pas affectées.
+      </div>
+    </div>
+
+    <!-- Interface -->
+    <div class="section" id="interface">
+      <h2><span>🖥️</span> Interface générale</h2>
+      <p class="lead">L'application est organisée par années (onglets) et par mois (colonnes dans chaque tableau).</p>
+
+      <div class="screenshot">
+        <div class="screenshot-icon">📸</div>
+        Capture d'écran de l'interface principale
+      </div>
+
+      <h3>En-tête (header)</h3>
+      <ul>
+        <li><b>💾 Sauvegarder</b> — Enregistre toutes les modifications dans le navigateur</li>
+        <li><b>📥 Export CSV</b> — Exporte les données du mois actuel en CSV</li>
+        <li><b>📂 Import CSV</b> — Importe des données depuis un fichier CSV</li>
+        <li><b>📦 Backups</b> — Affiche la liste des sauvegardes automatiques (une par jour, 20 max)</li>
+        <li><b>❓ Aide</b> — Ouvre ce guide</li>
+        <li><b>🌙 / ☀️</b> — Bascule entre mode jour et mode nuit</li>
+      </ul>
+
+      <h3>Onglets d'années</h3>
+      <p>Chaque onglet représente une année. Cliquez sur <b>＋ Année</b> pour créer une nouvelle année (les revenus de l'année précédente sont proposés comme base).</p>
+
+      <h3>Colonnes de mois</h3>
+      <p>Chaque tableau a 12 colonnes (Jan–Déc). Saisissez directement les montants dans les cellules. Appuyez sur <b>Entrée</b> ou <b>Tab</b> pour passer à la cellule suivante.</p>
+    </div>
+
+    <!-- Revenus -->
+    <div class="section" id="revenus">
+      <h2><span>💼</span> Revenus</h2>
+      <p class="lead">Saisissez vos revenus mensuels (salaires, allocations, primes…) dans la section verte.</p>
+
+      <h3>Ajouter un revenu</h3>
+      <p>Cliquez sur <b>＋ Ajouter un revenu</b> en bas de la section. Saisissez le libellé et les montants mois par mois.</p>
+
+      <h3>Cocher « En calcul »</h3>
+      <p>La colonne <b>∑</b> (en calcul) détermine si ce revenu est pris en compte dans le résumé mensuel. Décochez pour exclure temporairement un revenu sans le supprimer.</p>
+
+      <h3>Supprimer une ligne</h3>
+      <p>Passez la souris sur le libellé d'une ligne pour faire apparaître le bouton <b>✕</b> rouge. Cliquez dessus pour supprimer (une confirmation est demandée).</p>
+
+      <div class="tip">
+        <b>Astuce</b> — Pour les revenus identiques chaque mois, saisissez la valeur dans janvier, puis faites un clic droit sur la cellule pour la dupliquer sur tous les mois.
+      </div>
+    </div>
+
+    <!-- Charges -->
+    <div class="section" id="charges">
+      <h2><span>🏠</span> Charges fixes</h2>
+      <p class="lead">Les charges sont les dépenses récurrentes : loyer, énergie, abonnements, assurances…</p>
+
+      <h3>Statut « Payé »</h3>
+      <p>Chaque cellule de charge a un indicateur de paiement. Cliquez sur la cellule pour basculer entre <b>payé</b> (vert) et <b>non payé</b> (gris). Seules les charges marquées payées sont incluses dans le calcul du solde réel.</p>
+
+      <h3>Types de charges</h3>
+      <ul>
+        <li><b>Fixe</b> — Montant identique chaque mois</li>
+        <li><b>Occasionnelle</b> — Montant variable selon le mois</li>
+        <li><b>Livret ↑</b> — Virement vers le livret d'épargne</li>
+        <li><b>Livret ↓</b> — Retrait du livret vers le compte courant</li>
+      </ul>
+
+      <h3>Reste à payer</h3>
+      <p>En bas de chaque tableau de résumé, une ligne <b>« Reste à payer »</b> affiche le total des charges non encore payées pour le mois.</p>
+    </div>
+
+    <!-- Dépenses variables -->
+    <div class="section" id="variables">
+      <h2><span>🛒</span> Dépenses variables</h2>
+      <p class="lead">Les dépenses variables (courses, carburant, divers, chien…) sont saisies sous forme de transactions individuelles.</p>
+
+      <h3>Ajouter une dépense</h3>
+      <p>Cliquez sur le bouton <b>＋</b> dans la colonne du bon mois. Une ligne s'ajoute avec le montant, un commentaire optionnel, la date et le mode de paiement.</p>
+
+      <h3>Modes de paiement</h3>
+      <ul>
+        <li><b>Carte</b> — Paiement par carte bancaire (par défaut)</li>
+        <li><b>Liquide</b> — Paiement en espèces</li>
+        <li><b>Repas</b> — Tickets restaurant / chèques repas</li>
+      </ul>
+
+      <h3>Couleurs des catégories</h3>
+      <div class="feature-grid">
+        <div class="feature-card" style="border-left:4px solid #5B9BD5">
+          <div class="fc-icon">⛽</div>
+          <div class="fc-title">Carburant</div>
+          <div class="fc-desc">Bleu clair</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #3CB371">
+          <div class="fc-icon">🛒</div>
+          <div class="fc-title">Courses</div>
+          <div class="fc-desc">Vert</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #9B59B6">
+          <div class="fc-icon">📦</div>
+          <div class="fc-title">Divers</div>
+          <div class="fc-desc">Violet</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #F0A500">
+          <div class="fc-icon">🐕</div>
+          <div class="fc-title">Chien / Animaux</div>
+          <div class="fc-desc">Jaune/Ambre</div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <b>Ajout rapide</b> — Utilisez le bouton <b>⚡ Ajout rapide</b> pour saisir plusieurs dépenses d'un coup depuis n'importe quelle vue.
+      </div>
+    </div>
+
+    <!-- Livret -->
+    <div class="section" id="livret">
+      <h2><span>💰</span> Livret d'épargne</h2>
+      <p class="lead">Le livret d'épargne est géré automatiquement à partir des lignes de charge spéciales.</p>
+
+      <h3>Lignes dédiées au livret</h3>
+      <ul>
+        <li><b>📈 Ordre permanent Livret</b> (cat: <code>livret_in</code>) — Virement mensuel automatique depuis le compte courant vers le livret. Augmente le solde livret, diminue le compte courant.</li>
+        <li><b>💰 Compte → Livret</b> (cat: <code>livret_in</code>) — Dépôt manuel. Même effet.</li>
+        <li><b>📉 Retrait Livret → compte</b> (cat: <code>livret_out</code>) — Retrait du livret vers le compte courant. Diminue le livret, augmente le compte courant.</li>
+      </ul>
+
+      <h3>Solde livret initial</h3>
+      <p>Pour la première année, saisissez le solde du livret au 1er janvier dans le champ <b>Livret initial (01/01)</b>.</p>
+      <p>Pour les années suivantes, ce champ est calculé <b>automatiquement</b> à partir du solde de fin de l'année précédente — vous n'avez rien à saisir.</p>
+
+      <h3>Saisie des montants</h3>
+      <p>Saisissez toujours des valeurs <b>positives</b>. L'application gère automatiquement le sens (ajout ou retrait) selon le type de ligne.</p>
+
+      <div class="tip">
+        <b>Statut payé automatique</b> — Dès qu'une valeur non nulle est saisie dans une ligne livret, le statut est automatiquement marqué comme payé.
+      </div>
+    </div>
+
+    <!-- Résumé -->
+    <div class="section" id="resume">
+      <h2><span>📊</span> Résumé mensuel</h2>
+      <p class="lead">Le tableau de résumé affiche pour chaque mois le bilan complet : revenus, charges, dépenses et soldes.</p>
+
+      <h3>Lignes du résumé</h3>
+      <ul>
+        <li><b>Revenus</b> — Total des revenus marqués « en calcul »</li>
+        <li><b>Charges payées</b> — Total des charges marquées payées</li>
+        <li><b>Dépenses variables</b> — Total des transactions saisies</li>
+        <li><b>🔴 Reste à payer</b> — Charges non encore payées</li>
+        <li><b>Disponible</b> — Revenus − charges payées − dépenses variables</li>
+        <li><b>SOLDE RÉEL</b> — Solde du compte courant calculé depuis le début de l'année</li>
+        <li><b>Livret</b> — Solde du livret d'épargne à la fin du mois</li>
+      </ul>
+
+      <h3>Soldes initiaux</h3>
+      <p>En haut de la page (section <b>Soldes de départ</b>), renseignez :</p>
+      <ul>
+        <li><b>Compte ING</b> — Solde du compte courant au 1er janvier</li>
+        <li><b>Livret initial</b> — Solde du livret au 1er janvier (auto-calculé pour les années suivantes)</li>
+      </ul>
+    </div>
+
+    <!-- Sauvegarde -->
+    <div class="section" id="sauvegarde">
+      <h2><span>💾</span> Sauvegarde et backups</h2>
+      <p class="lead">Toutes les données sont stockées localement dans votre navigateur (localStorage). Pensez à sauvegarder régulièrement.</p>
+
+      <h3>Sauvegarde manuelle</h3>
+      <p>Cliquez sur <b>💾 Sauvegarder</b> dans le header. Une notification verte confirme l'enregistrement. La date/heure de la dernière sauvegarde s'affiche à droite.</p>
+
+      <h3>Sauvegarde automatique quotidienne</h3>
+      <p>À chaque sauvegarde, une copie datée est créée automatiquement. L'application conserve les <b>20 derniers backups</b> (un par jour).</p>
+
+      <h3>Restaurer un backup</h3>
+      <p>Cliquez sur <b>📦 Backups</b> dans le header. La liste des sauvegardes apparaît avec leur date. Cliquez sur <b>Restaurer</b> pour revenir à un état antérieur.</p>
+
+      <div class="warn">
+        <b>⚠️ Attention</b> — Les données sont stockées dans votre navigateur. Effacer le cache ou changer de navigateur/appareil entraîne la perte des données. Exportez régulièrement en CSV comme sauvegarde externe.
+      </div>
+
+      <h3>Export CSV</h3>
+      <p>Cliquez sur <b>📥 Export CSV</b> pour télécharger vos données. Ce fichier peut être réimporté via <b>📂 Import CSV</b>.</p>
+    </div>
+
+    <!-- Dark mode -->
+    <div class="section" id="dark">
+      <h2><span>🌙</span> Mode nuit / jour</h2>
+      <p class="lead">Basculez entre le thème clair et le thème sombre à tout moment.</p>
+
+      <p>Cliquez sur le bouton <b>🌙</b> (mode nuit) ou <b>☀️</b> (mode jour) dans le coin supérieur droit du header. Le choix est mémorisé et persistera à la prochaine ouverture.</p>
+
+      <div class="tip">
+        <b>Astuce</b> — Le mode nuit est recommandé en soirée pour réduire la fatigue oculaire. Tous les tableaux, modales et bannières s'adaptent automatiquement.
+      </div>
+    </div>
+
+    <!-- Nouvelle année -->
+    <div class="section" id="annee">
+      <h2><span>📅</span> Créer une nouvelle année</h2>
+      <p class="lead">Chaque année est indépendante. Créez une nouvelle année pour commencer le suivi d'un nouvel exercice.</p>
+
+      <h3>Procédure</h3>
+      <ol>
+        <li>Cliquez sur <b>＋ Année</b> à droite des onglets d'années</li>
+        <li>Une fenêtre s'affiche avec vos revenus habituels (basés sur la moyenne de l'année précédente)</li>
+        <li>Ajustez les montants si nécessaire</li>
+        <li>Cliquez sur <b>✅ Créer l'année</b></li>
+      </ol>
+
+      <p>L'année est créée avec :</p>
+      <ul>
+        <li>Les revenus que vous avez confirmés</li>
+        <li>Les mêmes charges que l'année précédente</li>
+        <li>Le solde livret initial calculé automatiquement depuis la fin de l'année précédente</li>
+        <li>Aucune dépense variable (à saisir au fil de l'année)</li>
+      </ul>
+
+      <h3>Supprimer une année</h3>
+      <p>Survolez l'onglet de l'année → cliquez sur le <b>✕</b> qui apparaît. Une confirmation est demandée avec option de backup automatique.</p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.sidebar-nav a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.sidebar-nav a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
