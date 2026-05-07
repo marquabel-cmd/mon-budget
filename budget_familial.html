@@ -1696,11 +1696,13 @@ function renderRevSection(year) {
       return `<td id="rc-${year}-${ri}-${mi}" class="${paid?'is-paid':''}" onclick="toggleRevPaid('${year}',${ri},${mi})">
         <span class="paid-dot">${paid?'✓':'○'}</span>
         <input class="cell-amt${v<0?' neg':''}" type="number" step="0.01" value="${v}"
+          onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
           oninput="DATA['${year}'].revenus[${ri}].v[${mi}]=+this.value;refreshRevTotals('${year}');dSave()" onclick="event.stopPropagation()"></td>`;
     }).join('');
     return `<tr><td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check cal-check-compte" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','compte',${ri},this.checked)" onclick="event.stopPropagation()">
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500" type="text"
+          onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
           value="${r.label}" oninput="DATA['${year}'].revenus[${ri}].label=this.value">
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
