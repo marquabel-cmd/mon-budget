@@ -29,6 +29,8 @@ a:hover{text-decoration:underline}
 .sidebar-nav a{display:block;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#1A1D2E;transition:all .15s}
 .sidebar-nav a:hover{background:#EEF0FD;color:#5B6AF0;text-decoration:none}
 .sidebar-nav a.active{background:#5B6AF0;color:#fff}
+.sidebar-nav .nav-premium{background:linear-gradient(135deg,#FFF3CD,#FFF8E1);color:#7a4f00;font-weight:700;border:1px solid #F5A623}
+.sidebar-nav .nav-premium:hover{background:linear-gradient(135deg,#F5A623,#e08800);color:#fff}
 
 /* Content */
 .content{flex:1;min-width:0}
@@ -47,14 +49,11 @@ a:hover{text-decoration:underline}
 .warn{background:#FEF6E6;border-left:3px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7a4f00;margin:12px 0}
 .demo-tip{background:#FEF9E7;border-left:3px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7a4f00;margin:12px 0}
 .demo-tip b{color:#F5A623}
+.premium-tip{background:linear-gradient(135deg,#FFF8E1,#FFFBF0);border-left:3px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7a4f00;margin:12px 0}
 
 /* Screenshot placeholder */
 .screenshot{background:#F4F5FA;border:2px dashed #C8CADB;border-radius:10px;padding:36px 20px;text-align:center;margin:14px 0;color:#9DA3BC;font-size:12px}
 .screenshot-icon{font-size:28px;margin-bottom:6px}
-
-/* Keyboard shortcuts */
-.shortcuts{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:12px;margin:8px 0}
-kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:monospace;font-size:11px;font-weight:700}
 
 /* Feature grid */
 .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
@@ -63,11 +62,53 @@ kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:
 .feature-card .fc-title{font-weight:700;color:#1A1D2E;margin-bottom:4px}
 .feature-card .fc-desc{color:#6B7394;line-height:1.4}
 
+/* ── PREMIUM COMPARISON SECTION ── */
+.section.section-premium{background:linear-gradient(160deg,#1A1D2E 0%,#2D3561 100%);color:#fff}
+.section.section-premium h2{color:#fff}
+.section.section-premium .lead{color:rgba(255,255,255,.6);border-bottom-color:rgba(255,255,255,.15)}
+.section.section-premium h3{color:rgba(255,255,255,.85)}
+.section.section-premium p{color:rgba(255,255,255,.7)}
+
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.compare-col{border-radius:14px;padding:22px 20px}
+.compare-col.free{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15)}
+.compare-col.premium{background:linear-gradient(135deg,rgba(245,166,35,.18),rgba(91,106,240,.2));border:2px solid #F5A623;position:relative}
+.compare-col-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#F5A623;color:#1A1D2E;font-size:10px;font-weight:800;padding:3px 14px;border-radius:20px;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
+.compare-col-title{font-size:16px;font-weight:800;margin-bottom:4px;color:#fff}
+.compare-col.free .compare-col-title{color:rgba(255,255,255,.7)}
+.compare-col-price{font-size:13px;margin-bottom:16px}
+.compare-col.free .compare-col-price{color:rgba(255,255,255,.45)}
+.compare-col.premium .compare-col-price{color:#F5A623;font-weight:700}
+.compare-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}
+.compare-row:last-child{border-bottom:none}
+.compare-row .cr-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.compare-row .cr-text{line-height:1.4}
+.compare-row .cr-text b{display:block;color:#fff;font-weight:700}
+.compare-row .cr-text span{color:rgba(255,255,255,.5);font-size:11px}
+.compare-col.free .compare-row .cr-text b{color:rgba(255,255,255,.65)}
+.compare-col.premium .compare-row .cr-text b{color:#fff}
+.compare-lock{opacity:.45;text-decoration:line-through}
+
+.buy-btn{display:block;margin:20px auto 0;background:linear-gradient(135deg,#F5A623,#e08800);color:#1A1D2E;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:800;cursor:pointer;text-decoration:none;text-align:center;max-width:320px;box-shadow:0 6px 20px rgba(245,166,35,.4);transition:all .2s}
+.buy-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(245,166,35,.55);text-decoration:none;color:#1A1D2E}
+
+.limit-badge{display:inline-block;background:rgba(240,79,91,.2);color:#ff8080;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.free-badge{display:inline-block;background:rgba(100,100,130,.3);color:rgba(255,255,255,.6);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.pro-badge{display:inline-block;background:rgba(245,166,35,.3);color:#F5A623;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+
+/* ── ACTIVATE SECTION ── */
+.activate-box{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:18px 20px;margin-top:16px}
+.activate-box p{color:rgba(255,255,255,.65);font-size:13px;margin-bottom:10px}
+.activate-steps{list-style:none;padding:0;counter-reset:step}
+.activate-steps li{counter-increment:step;display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:13px;color:rgba(255,255,255,.75)}
+.activate-steps li::before{content:counter(step);min-width:22px;height:22px;background:#5B6AF0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+
 @media(max-width:700px){
   .layout{flex-direction:column}
   .sidebar{width:100%}
   .sidebar-nav{position:static}
   .section{padding:20px 16px}
+  .compare-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -89,6 +130,7 @@ kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:
     <nav class="sidebar-nav">
       <h4>Sommaire</h4>
       <a href="#demarrage">🚀 Démarrage</a>
+      <a href="#premium" class="nav-premium">⭐ Gratuit vs Premium</a>
       <a href="#demo">🎮 Mode démo</a>
       <a href="#interface">🖥️ Interface</a>
       <a href="#revenus">💼 Revenus</a>
@@ -137,6 +179,120 @@ kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:
       <p>Sur mobile (Chrome/Safari), appuyez sur <b>« Ajouter à l'écran d'accueil »</b>. Sur PC (Chrome/Edge), cliquez sur l'icône d'installation dans la barre d'adresse. L'app fonctionne ensuite hors ligne.</p>
     </div>
 
+    <!-- ══════════════════════════════════════════ -->
+    <!-- PREMIUM SECTION                           -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="section section-premium" id="premium">
+      <h2><span>⭐</span> Version Gratuite vs Premium</h2>
+      <p class="lead">Mon Budget est disponible en version gratuite avec des fonctionnalités essentielles, ou en version Premium pour un usage complet et sans limites.</p>
+
+      <div class="compare-grid">
+
+        <!-- FREE -->
+        <div class="compare-col free">
+          <div class="compare-col-title">🔓 Version Gratuite</div>
+          <div class="compare-col-price">Gratuit — pour toujours</div>
+
+          <div class="compare-row">
+            <div class="cr-icon">👤</div>
+            <div class="cr-text">
+              <b>1 seul utilisateur</b>
+              <span>Un seul profil par installation</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">📅</div>
+            <div class="cr-text">
+              <b>1 année d'historique</b>
+              <span>Impossible d'ajouter une 2ᵉ année</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">🛒</div>
+            <div class="cr-text">
+              <b>3 catégories de dépenses max</b>
+              <span>Courses, carburant, divers</span>
+            </div>
+          </div>
+          <div class="compare-row compare-lock">
+            <div class="cr-icon">☁️</div>
+            <div class="cr-text">
+              <b>Pas de sync cloud</b>
+              <span>Données uniquement en local</span>
+            </div>
+          </div>
+          <div class="compare-row compare-lock">
+            <div class="cr-icon">📱</div>
+            <div class="cr-text">
+              <b>Pas de multi-appareils</b>
+              <span>Impossible d'accéder depuis un autre appareil</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PREMIUM -->
+        <div class="compare-col premium">
+          <div class="compare-col-badge">⭐ RECOMMANDÉ</div>
+          <div class="compare-col-title">✨ Version Premium</div>
+          <div class="compare-col-price">14,90 € / an — paiement sécurisé Stripe</div>
+
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Utilisateurs illimités</b>
+              <span>Famille, couple, colocation…</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Historique multi-années illimité</b>
+              <span>Conservez toutes vos années sans restriction</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Catégories illimitées</b>
+              <span>Créez autant de catégories que vous voulez</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Synchronisation cloud Firebase</b>
+              <span>Données sauvegardées et accessibles partout</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Multi-appareils</b>
+              <span>PC, téléphone, tablette — toujours à jour</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a class="buy-btn" href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank">
+        💳 Passer à Premium — 14,90 € / an
+      </a>
+
+      <h3>Activer votre licence</h3>
+      <div class="activate-box">
+        <p>Après l'achat, vous recevez une clé de licence par e-mail. Voici comment l'activer :</p>
+        <ol class="activate-steps">
+          <li>Ouvrez l'application et allez dans l'onglet <b>⚙️ Paramètres</b></li>
+          <li>Descendez jusqu'à la section <b>🔑 Licence</b></li>
+          <li>Collez votre clé dans le champ prévu et cliquez sur <b>Activer</b></li>
+          <li>Le statut passe à <b>⭐ Licence active</b> et toutes les fonctionnalités se déverrouillent immédiatement</li>
+        </ol>
+      </div>
+
+      <h3>Ce que vous voyez selon votre version</h3>
+      <p style="color:rgba(255,255,255,.7)">Les fonctionnalités verrouillées en version gratuite affichent une fenêtre « Passez à Premium » quand vous tentez de les utiliser. Vous n'êtes jamais bloqué — vous savez toujours ce qui est disponible.</p>
+    </div>
+
     <!-- Mode démo -->
     <div class="section" id="demo">
       <h2><span>🎮</span> Mode Démo</h2>
@@ -178,7 +334,7 @@ kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:
       </ul>
 
       <h3>Onglets d'années</h3>
-      <p>Chaque onglet représente une année. Cliquez sur <b>＋ Année</b> pour créer une nouvelle année (les revenus de l'année précédente sont proposés comme base).</p>
+      <p>Chaque onglet représente une année. Cliquez sur <b>＋ Année</b> pour créer une nouvelle année.<span class="limit-badge">1 an max en gratuit</span> <span class="pro-badge">Illimité en Premium</span></p>
 
       <h3>Colonnes de mois</h3>
       <p>Chaque tableau a 12 colonnes (Jan–Déc). Saisissez directement les montants dans les cellules. Appuyez sur <b>Entrée</b> ou <b>Tab</b> pour passer à la cellule suivante.</p>
@@ -226,7 +382,10 @@ kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:
     <!-- Dépenses variables -->
     <div class="section" id="variables">
       <h2><span>🛒</span> Dépenses variables</h2>
-      <p class="lead">Les dépenses variables (courses, carburant, divers, chien…) sont saisies sous forme de transactions individuelles.</p>
+      <p class="lead">Les dépenses variables (courses, carburant, divers…) sont saisies sous forme de transactions individuelles.</p>
+
+      <h3>Catégories disponibles</h3>
+      <p>En version gratuite, vous disposez de <b>3 catégories</b> (courses, carburant, divers). En version Premium, créez-en autant que vous voulez depuis <b>⚙️ Paramètres → Catégories</b>.<span class="limit-badge">3 max en gratuit</span> <span class="pro-badge">Illimité en Premium</span></p>
 
       <h3>Ajouter une dépense</h3>
       <p>Cliquez sur le bouton <b>＋</b> dans la colonne du bon mois. Une ligne s'ajoute avec le montant, un commentaire optionnel, la date et le mode de paiement.</p>
@@ -333,6 +492,10 @@ kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:
         <b>⚠️ Attention</b> — Les données sont stockées dans votre navigateur. Effacer le cache ou changer de navigateur/appareil entraîne la perte des données. Exportez régulièrement en CSV comme sauvegarde externe.
       </div>
 
+      <div class="premium-tip">
+        <b>⭐ Avec la licence Premium</b> — La synchronisation cloud Firebase sauvegarde automatiquement vos données à chaque modification. Vos données sont accessibles depuis n'importe quel appareil, n'importe où.
+      </div>
+
       <h3>Export CSV</h3>
       <p>Cliquez sur <b>📥 Export CSV</b> pour télécharger vos données. Ce fichier peut être réimporté via <b>📂 Import CSV</b>.</p>
     </div>
@@ -352,7 +515,7 @@ kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:
     <!-- Nouvelle année -->
     <div class="section" id="annee">
       <h2><span>📅</span> Créer une nouvelle année</h2>
-      <p class="lead">Chaque année est indépendante. Créez une nouvelle année pour commencer le suivi d'un nouvel exercice.</p>
+      <p class="lead">Chaque année est indépendante. Créez une nouvelle année pour commencer le suivi d'un nouvel exercice.<span class="limit-badge">1 an max en gratuit</span> <span class="pro-badge">Illimité en Premium</span></p>
 
       <h3>Procédure</h3>
       <ol>
@@ -378,7 +541,6 @@ kbd{background:#1A1D2E;color:#fff;border-radius:5px;padding:2px 8px;font-family:
 </div>
 
 <script>
-// Highlight active nav link on scroll
 const sections = document.querySelectorAll('.section');
 const navLinks = document.querySelectorAll('.sidebar-nav a');
 const observer = new IntersectionObserver(entries => {
