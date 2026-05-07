@@ -2592,7 +2592,7 @@ function txRow(year, catKey, tx) {
     <td><input class="var-input comment" type="text" value="${tx.comment||''}" placeholder="Commentaire…"
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
       oninput="updateTxField('${year}','${catKey}',${tx.id},'comment',this.value)"></td>
-    <td><select class="method-sel" style="background:${m.bg};border-color:${m.color};color:var(--text)"
+    <td><select class="method-sel" style="background:${_txDark?'var(--surface)':m.bg};border-color:${m.color};color:var(--text)"
       onchange="updateTxMethod('${year}','${catKey}',${tx.id},this)">${opts}</select></td>
     <td><button class="del-btn" onclick="delTx('${year}','${catKey}',${tx.id},${tx.month})">✕</button></td>
   </tr>`;
@@ -4462,7 +4462,7 @@ function closeCompareView() {
       tr.classList.add('row-active');
       _sel = tr;
     }
-  }, false);
+  }, true);
   // Réinitialiser la sélection quand le tableau est reconstruit
   const _origRY = window.renderYear;
   const _origRS = window.renderSummary;
