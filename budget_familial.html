@@ -1434,14 +1434,17 @@ function loadData() {
 // ─────────────────────────────────────────────
 function computeLivret(year) {
   const d = DATA[year];
-  let bal = parseFloat(d.soldes.livretInitial) || 0;
+  const years = getYears().sort();
+  const prevIdx = years.indexOf(String(year)) - 1;
+  // Si année précédente existe → solde initial = solde final de l'année précédente
+  let bal = prevIdx >= 0 ? computeLivret(years[prevIdx]) : (parseFloat(d.soldes.livretInitial) || 0);
   d.charges.forEach(row => {
     if (row.inCalc === false) return;
     row.v.forEach((v,i) => {
       if (!row.paid[i]) return;
       const amt = Math.abs(parseFloat(v) || 0);
-      if (row.cat === 'livret_in')  bal += amt; // ordre permanent + versement → augmente livret
-      if (row.cat === 'livret_out') bal -= amt; // retrait → diminue livret
+      if (row.cat === 'livret_in')  bal += amt;
+      if (row.cat === 'livret_out') bal -= amt;
     });
   });
   return bal;
@@ -1675,6 +1678,10 @@ function renderYear(year) {
 // ── SOLDES ──
 function renderSoldes(year) {
   const s = DATA[year].soldes;
+  const years = getYears().sort();
+  const prevIdx = years.indexOf(String(year)) - 1;
+  const hasPrevYear = prevIdx >= 0;
+  const prevYear = hasPrevYear ? years[prevIdx] : null;
   const lv = computeLivret(year);
   return `<div class="soldes-grid">
     <div class="solde-card"><label>Compte (01/01)</label>
@@ -1684,9 +1691,12 @@ function renderSoldes(year) {
         <button class="calc-config-btn" data-type="compte" onclick="openCalcConfig('${year}','compte')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
       </label>
       <span class="computed-val" id="compte-calc-${year}">${fmtN(computeCompte(year))} €</span></div>
-    <div class="solde-card"><label>Livret initial (01/01)</label>
-      <input type="number" step="0.01" value="${s.livretInitial}"
-        oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()"></div>
+    <div class="solde-card ${hasPrevYear?'computed':''}"><label>Livret initial (01/01)${hasPrevYear?` <span style="font-size:10px;color:var(--gray)">(= fin ${prevYear})</span>`:''}</label>
+      ${hasPrevYear
+        ? `<span class="computed-val">${fmtN(computeLivret(prevYear))} €</span>`
+        : `<input type="number" step="0.01" value="${s.livretInitial}"
+            oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()">`
+      }</div>
     <div class="solde-card computed"><label>Livret actuel (calculé)
         <button class="calc-config-btn" data-type="livret" onclick="openCalcConfig('${year}','livret')" title="Choisir les lignes" style="margin-left:6px;background:none;border:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
       </label>
