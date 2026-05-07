@@ -773,18 +773,18 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 
       <!-- TAB: Manage licences -->
       <div id="admin-tab-license" style="display:none">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">Firebase UID de l'utilisateur</div>
+        <!-- Liste des clients -->
+        <button onclick="adminLoadUsers()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer;margin-bottom:8px">📋 Charger la liste des clients</button>
+        <div id="admin-users-list" style="display:none;max-height:200px;overflow-y:auto;border-radius:8px;border:1px solid rgba(255,255,255,.12);margin-bottom:12px"></div>
+        <!-- Gérer par UID -->
+        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">UID sélectionné / saisi manuellement</div>
         <input type="text" id="admin-uid-input" placeholder="uid Firebase (ex: abc123xyz…)" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:8px">
         <div style="display:flex;gap:8px;margin-bottom:10px">
           <button onclick="adminCheckPremium()" style="flex:1;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer">🔍 Vérifier</button>
           <button onclick="adminGrantPremium()" style="flex:1;background:#00C896;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">⭐ Accorder</button>
           <button onclick="adminRevokePremium()" style="flex:1;background:#F04F5B;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">✕ Révoquer</button>
         </div>
-        <div id="admin-license-result" style="font-size:12px;min-height:36px;padding:8px;background:rgba(255,255,255,.05);border-radius:6px;color:rgba(255,255,255,.8)">Entrez un UID pour commencer.</div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1);font-size:10px;color:rgba(255,255,255,.4)">
-          💡 L'UID Firebase se trouve dans Firebase Console → Authentication → Users.<br>
-          Pour écrire dans /users/{uid}/, votre compte admin doit être listé dans /admins/ dans la Realtime Database.
-        </div>
+        <div id="admin-license-result" style="font-size:12px;min-height:36px;padding:8px;background:rgba(255,255,255,.05);border-radius:6px;color:rgba(255,255,255,.8)">Sélectionne un client ou entre un UID.</div>
       </div>
     </div>
 
@@ -2977,6 +2977,7 @@ function setCloudStatus(s, errMsg) {
 async function cloudPush() {
   const url = cloudApiUrl();
   if (!url || !DATA) return;
+  if (!_deviceAllowed) { setCloudStatus('error', `Appareil non autorisé — ${MAX_DEVICES} appareils max`); return; }
   const token = await fbGetToken();
   const authUrl = token ? url + '?auth=' + token : url;
   setCloudStatus('syncing');
@@ -2989,6 +2990,7 @@ async function cloudPush() {
 async function cloudPull() {
   const url = cloudApiUrl();
   if (!url) return null;
+  if (!_deviceAllowed) return null;
   const token = await fbGetToken();
   const authUrl = token ? url + '?auth=' + token : url;
   try {
@@ -3656,6 +3658,8 @@ function fbLogout() {
   showToast('👋 Déconnecté');
 }
 async function fbCheckPremium(uid, idToken) {
+  // Enregistre l'appareil en arrière-plan (non-bloquant)
+  fbRegisterDevice(uid, _fbUser?.email || localStorage.getItem('mbudget-fb-email') || '', idToken).catch(()=>{});
   try {
     const r = await fetch(`${LICENSE_DB}/users/${uid}/premium.json?auth=${idToken}`);
     const val = await r.json();
@@ -3687,6 +3691,46 @@ async function fbInitAuth() {
   if (_fbUser) {
     fbCheckPremium(_fbUser.uid, _fbUser.idToken).then(() => renderConfigTab());
   }
+}
+
+// ── DEVICE TRACKING ──
+const MAX_DEVICES = 3;
+let _deviceAllowed = true;
+
+function _getDeviceId() {
+  let id = localStorage.getItem('mbudget-device-id');
+  if (!id) {
+    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
+    localStorage.setItem('mbudget-device-id', id);
+  }
+  return id;
+}
+
+async function fbRegisterDevice(uid, email, idToken) {
+  const deviceId = _getDeviceId();
+  const now = Date.now();
+  try {
+    // Lire les appareils existants
+    const r = await fetch(`${LICENSE_DB}/users/${uid}/devices.json?auth=${idToken}`);
+    const devices = (r.ok ? await r.json() : null) || {};
+    const isKnown = !!devices[deviceId];
+    const count = Object.keys(devices).length;
+    if (!isKnown && count >= MAX_DEVICES) {
+      _deviceAllowed = false;
+      showToast(`⚠️ ${MAX_DEVICES} appareils max atteints — synchronisation désactivée sur cet appareil`);
+    } else {
+      _deviceAllowed = true;
+      // Enregistrer/mettre à jour cet appareil
+      await fetch(`${LICENSE_DB}/users/${uid}/devices/${deviceId}.json?auth=${idToken}`, {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(now)
+      });
+    }
+    // Sauvegarder email + lastLogin sans écraser premium (PATCH)
+    await fetch(`${LICENSE_DB}/users/${uid}.json?auth=${idToken}`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, lastLogin: now })
+    });
+  } catch(e) { /* non-bloquant */ }
 }
 
 // ── GOOGLE SIGN-IN ──
@@ -4313,6 +4357,36 @@ async function adminRevokePremium() {
     res.innerHTML = `<span style="color:#F5A623;font-weight:700">✕ Premium révoqué</span><br><small style="color:rgba(255,255,255,.5)">UID: ${uid}</small>`;
     showToast('✕ Premium révoqué pour ' + uid.slice(0,12) + '…');
   } catch(e) { res.innerHTML = `<span style="color:#F04F5B">❌ ${e.message}</span>`; }
+}
+
+async function adminLoadUsers() {
+  const list = document.getElementById('admin-users-list');
+  list.style.display = '';
+  list.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:12px;padding:10px;text-align:center">🔄 Chargement…</div>';
+  try {
+    const token = await fbGetToken();
+    if (!token) throw new Error('Non connecté — connectez-vous avec votre compte admin');
+    const r = await fetch(`${LICENSE_DB}/users.json?auth=${token}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status} — mettez à jour les règles Firebase (voir instructions)`);
+    const data = await r.json();
+    if (!data) { list.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:12px;padding:10px">Aucun client enregistré.</div>'; return; }
+    const entries = Object.entries(data);
+    list.innerHTML = entries.map(([uid, info]) => {
+      const email    = info?.email || '—';
+      const premium  = info?.premium === true;
+      const devCount = Object.keys(info?.devices || {}).length;
+      const last     = info?.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
+      return `<div onclick="document.getElementById('admin-uid-input').value='${uid}';document.getElementById('admin-license-result').innerHTML='<span style=\\'color:rgba(255,255,255,.7)\\'>UID sélectionné : ${uid.slice(0,14)}…</span>'"
+        style="padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer"
+        onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background=''">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:12px;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${email}</span>
+          <span style="font-size:11px;font-weight:700;flex-shrink:0;${premium?'color:#00C896':'color:#aaa'}">${premium?'⭐ Premium':'Gratuit'}</span>
+        </div>
+        <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">📱 ${devCount}/${MAX_DEVICES} appareils &nbsp;·&nbsp; 🕐 ${last}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { list.innerHTML = `<div style="color:#F04F5B;font-size:12px;padding:10px">❌ ${e.message}</div>`; }
 }
 
 // ── TOUR GUIDÉ ──
