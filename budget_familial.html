@@ -270,8 +270,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .add-user-form{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .add-user-form input[type="text"]{flex:1;min-width:110px;border:1px solid var(--border);border-radius:5px;padding:5px 9px;font-size:12px}
 /* ── DELETE MODAL ── */
-.del-modal-msg{font-size:13px;color:#2c3e50;margin-bottom:14px;line-height:1.5}
-.del-modal-backup{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--orange-light);border-radius:6px;margin-bottom:16px;font-size:12px;font-weight:600;color:#b7610a;cursor:pointer}
+.del-modal-msg{font-size:13px;color:var(--text);margin-bottom:14px;line-height:1.5}
+.del-modal-backup{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--orange-light);border-radius:6px;margin-bottom:16px;font-size:12px;font-weight:600;color:var(--orange);cursor:pointer}
 .del-modal-backup input{width:15px;height:15px;cursor:pointer;accent-color:var(--orange)}
 .del-modal-btns{display:flex;gap:8px}
 .btn-del-confirm{flex:1;padding:9px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700}
@@ -279,9 +279,9 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .btn-del-cancel{flex:1;padding:9px;background:var(--gray-light);color:var(--gray);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
 /* ── REVENUE DIALOG ── */
 .rev-dialog-table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px}
-.rev-dialog-table th{background:#f0f2f5;font-size:10px;font-weight:700;text-transform:uppercase;padding:6px 10px;text-align:left;color:var(--gray);border-bottom:2px solid var(--border)}
-.rev-dialog-table td{padding:6px 10px;border-bottom:1px solid #f0f2f4}
-.rev-dialog-input{border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;width:90px;text-align:right}
+.rev-dialog-table th{background:var(--gray-light);font-size:10px;font-weight:700;text-transform:uppercase;padding:6px 10px;text-align:left;color:var(--gray);border-bottom:2px solid var(--border)}
+.rev-dialog-table td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.rev-dialog-input{border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;width:90px;text-align:right;background:var(--surface);color:var(--text)}
 .rev-dialog-input:focus{border-color:var(--blue);outline:none;background:var(--blue-light)}
 .rev-dialog-btns{display:flex;gap:8px;justify-content:flex-end}
 .btn-rev-confirm{padding:9px 20px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700}
@@ -293,16 +293,16 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .tab-del:hover{opacity:1 !important}
 
 /* ── BACKUP MODAL ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
-.modal-box{background:#fff;border-radius:12px;padding:24px;min-width:360px;max-width:520px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
-.modal-box h3{font-size:15px;font-weight:700;margin-bottom:14px;color:#1a3c6e}
-.backup-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:6px;margin-bottom:4px;background:#f4f5f7;font-size:12px}
+.modal-box{background:var(--surface);border-radius:12px;padding:24px;min-width:360px;max-width:520px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.modal-box h3{font-size:15px;font-weight:700;margin-bottom:14px;color:var(--text)}
+.backup-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:6px;margin-bottom:4px;background:var(--surface-alt);font-size:12px;border:1px solid var(--border)}
 .backup-item:hover{background:var(--blue-light)}
-.backup-item .bk-date{font-weight:600;color:#2c3e50}
+.backup-item .bk-date{font-weight:600;color:var(--text)}
 .backup-item .bk-restore{background:var(--blue);color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:600}
 .backup-item .bk-restore:hover{background:#145da0}
-.modal-close{margin-top:14px;width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:var(--gray)}
+.modal-close{margin-top:14px;width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--gray);cursor:pointer;font-size:12px;font-weight:600}
 .modal-close:hover{background:var(--gray-light)}
 .no-backup{color:var(--gray);font-size:12px;text-align:center;padding:16px 0}
 
