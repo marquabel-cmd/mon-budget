@@ -56,16 +56,17 @@
 [data-theme="dark"] .charge-table thead th{background:var(--surface-alt);color:var(--gray);border-bottom-color:var(--border)}
 [data-theme="dark"] .charge-table thead th.lbl-col{background:var(--surface-alt)}
 [data-theme="dark"] .charge-table thead th.tot-col{background:#263050;color:#90caf9 !important}
-[data-theme="dark"] .charge-table tbody tr:hover td{background:var(--blue-light)}
+[data-theme="dark"] .charge-table tbody tr:hover td{background:#252c6a}
 [data-theme="dark"] .charge-table tbody td{border-bottom-color:var(--border);color:var(--text)}
 [data-theme="dark"] .charge-table tbody td.lbl-col{background:var(--surface)}
-[data-theme="dark"] .charge-table tbody tr:hover td.lbl-col{background:var(--blue-light)}
+[data-theme="dark"] .charge-table tbody tr:hover td.lbl-col{background:#252c6a}
 [data-theme="dark"] .cell-amt{color:var(--text)}
 [data-theme="dark"] .sep-row td{background:#1a3566}
 [data-theme="dark"] .occ-row td{background:#2a2810}
 [data-theme="dark"] .var-table thead th{background:var(--surface-alt);color:var(--gray);border-bottom-color:var(--border)}
 [data-theme="dark"] .var-table tbody td{color:var(--text)}
 [data-theme="dark"] .var-table tbody tr{border-bottom-color:var(--border)}
+[data-theme="dark"] .var-table tbody tr:hover td{background:#252c6a}
 [data-theme="dark"] .var-month-row td{background:#1a2035;color:#90caf9}
 [data-theme="dark"] .var-subtotal td{background:var(--surface-alt);color:var(--gray)}
 [data-theme="dark"] .summary-table thead th{background:#1e2540;color:var(--gray);border-bottom-color:var(--border)}
@@ -85,6 +86,8 @@
 [data-theme="dark"] .summary-table tbody td{color:var(--text)}
 [data-theme="dark"] .summary-table .neg{color:#ff6b7a}
 [data-theme="dark"] .summary-table .pos{color:#4ecdc4}
+[data-theme="dark"] .summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td{background:#252c6a}
+[data-theme="dark"] .summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td.lbl-col{background:#252c6a}
 [data-theme="dark"] input,select{color-scheme:dark}
 /* ── CSS VARS ROWS ── */
 :root{
@@ -166,10 +169,10 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .charge-table thead th{background:var(--surface-alt);font-size:11px;font-weight:600;text-transform:uppercase;padding:10px 6px;text-align:center;border-bottom:2px solid var(--border);color:var(--gray);min-width:82px;letter-spacing:0.04em}
 .charge-table thead th.lbl-col{text-align:left;min-width:205px;padding-left:16px;position:sticky;left:0;z-index:3;background:var(--surface-alt)}
 .charge-table thead th.tot-col{background:var(--text);color:#fff !important;min-width:95px;border-left:3px solid rgba(255,255,255,0.1)}
-.charge-table tbody tr:hover td{background:var(--blue-light)}
+.charge-table tbody tr:hover td{background:#c8d2ff}
 .charge-table tbody td{padding:3px 3px;border-bottom:1px solid #d8dce6;text-align:center;min-width:82px;vertical-align:middle}
 .charge-table tbody td.lbl-col{text-align:left;padding-left:14px;font-weight:500;min-width:205px;position:sticky;left:0;z-index:2;background:var(--bg);box-shadow:2px 0 4px rgba(0,0,0,.06)}
-.charge-table tbody tr:hover td.lbl-col{background:var(--blue-light)}
+.charge-table tbody tr:hover td.lbl-col{background:#c8d2ff}
 .charge-table tbody td.tot-col{font-weight:800;background:#dde3eb;min-width:95px;font-size:13px;border-left:3px solid #b0bec5;color:#1a252f}
 /* separator row */
 .sep-row td{background:#1a3c6e;color:#fff;font-weight:700;padding:6px 14px;font-size:11px;letter-spacing:.5px}
@@ -207,7 +210,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .var-table{width:100%;border-collapse:collapse;font-size:12px}
 .var-table thead th{background:#f0f2f5;font-size:10px;font-weight:700;text-transform:uppercase;padding:6px 8px;text-align:left;border-bottom:2px solid var(--border);color:var(--gray)}
 .var-table tbody tr{border-bottom:1px solid #f0f2f4}
-.var-table tbody tr:hover{background:rgba(0,0,0,.02)}
+.var-table tbody tr:hover td{background:#c8d2ff}
 .var-table td{padding:4px 6px;vertical-align:middle}
 /* method colors */
 /* method styles now applied via inline styles */
@@ -236,6 +239,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 [data-theme="dark"] .summary-table thead th.lbl-col{background:#1e2540}
 [data-theme="dark"] .summary-table tbody td.lbl-col{background:var(--surface)}
 .summary-table tbody td.lbl-col{text-align:left;padding-left:24px;font-weight:500}
+.summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td{background:#c8d2ff}
+.summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td.lbl-col{background:#c8d2ff}
 .summary-table tr.yr-hdr td{background:var(--blue);color:#fff;font-weight:700;padding:8px 14px;font-size:12px;letter-spacing:0.05em;text-transform:uppercase}
 .summary-table tr.tot-row td{background:#e4e9ef;font-weight:700;font-size:12px}
 .summary-table tr.bal-row td{background:var(--blue-light);font-weight:800;font-size:13px;color:var(--blue)}
