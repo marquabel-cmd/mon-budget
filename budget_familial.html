@@ -80,7 +80,17 @@
 [data-theme="dark"] .summary-table .neg{color:#ff6b7a}
 [data-theme="dark"] .summary-table .pos{color:#4ecdc4}
 [data-theme="dark"] input,select{color-scheme:dark}
-/* ── COULEURS PASTELS PAR CATÉGORIE ── */
+/* ── CSS VARS ROWS ── */
+:root{
+  --row-neutral:#f0f2f5;--row-warn:#fff8e1;--row-info:#e8f5f9;--row-success:#e8f5e9;
+}
+[data-theme="dark"]{
+  --row-neutral:#1a2035;--row-warn:#2a2410;--row-info:#0d2030;--row-success:#0d2820;
+}
+/* ── LEGEND DARK ── */
+[data-theme="dark"] .legend{background:var(--surface-alt);color:var(--text)}
+[data-theme="dark"] .mth-mini-cell{background:var(--surface-alt) !important}
+/* ── COULEURS PASTELS — CATÉGORIES VARIABLES ── */
 .section-card[data-cat="carburant"]>.section-header{background:#EBF4FB;border-left:4px solid #5B9BD5}
 .section-card[data-cat="courses"]>.section-header  {background:#EDF7F0;border-left:4px solid #3CB371}
 .section-card[data-cat="divers"]>.section-header   {background:#F3EEF9;border-left:4px solid #9B59B6}
@@ -89,6 +99,15 @@
 [data-theme="dark"] .section-card[data-cat="courses"]>.section-header  {background:#0D2218;border-left-color:#3CB371}
 [data-theme="dark"] .section-card[data-cat="divers"]>.section-header   {background:#1A1228;border-left-color:#9B59B6}
 [data-theme="dark"] .section-card[data-cat="chien"]>.section-header    {background:#231E0C;border-left-color:#F0A500}
+/* ── COULEURS PASTELS — SECTIONS PRINCIPALES ── */
+.section-card[data-section="revenus"]>.section-header   {background:#EDF7F0;border-left:4px solid #2ECC71}
+.section-card[data-section="charges"]>.section-header   {background:#FEF0F1;border-left:4px solid #F04F5B}
+.section-card[data-section="variables"]>.section-header {background:#FEF6E6;border-left:4px solid #F5A623}
+.section-card[data-section="resume"]>.section-header    {background:#EEF0FD;border-left:4px solid #5B6AF0}
+[data-theme="dark"] .section-card[data-section="revenus"]>.section-header   {background:#0D2218;border-left-color:#2ECC71}
+[data-theme="dark"] .section-card[data-section="charges"]>.section-header   {background:#2A1018;border-left-color:#F04F5B}
+[data-theme="dark"] .section-card[data-section="variables"]>.section-header {background:#281B08;border-left-color:#F5A623}
+[data-theme="dark"] .section-card[data-section="resume"]>.section-header    {background:#1A2050;border-left-color:#5B6AF0}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;font-size:14px;line-height:1.5}
 
@@ -1733,7 +1752,7 @@ function toggleMethodCalc(year, key, checked) {
 function fmtK(v){return Math.round(v).toLocaleString('fr-FR');}
 function mthMiniRow(arr, auto) {
   return `<div class="mth-mini-row" onclick="event.stopPropagation()">
-    ${MONTHS.map((m,i)=>{const v=arr[i]||0;const c=auto?(v>=0?'var(--green)':'var(--red)'):'var(--gray)';const bg=auto?(v>=0?'var(--green-light)':'#fff5f5'):'var(--gray-light)';return`<div class="mth-mini-cell" style="background:${bg}"><div class="mth-mini-label">${m}</div><div class="mth-mini-val" style="color:${c}">${fmtK(v)}</div></div>`;}).join('')}
+    ${MONTHS.map((m,i)=>{const v=arr[i]||0;const c=auto?(v>=0?'var(--green)':'var(--red)'):'var(--gray)';const bg=auto?(v>=0?'var(--green-light)':'var(--red-light)'):'var(--gray-light)';return`<div class="mth-mini-cell" style="background:${bg}"><div class="mth-mini-label">${m}</div><div class="mth-mini-val" style="color:${c}">${fmtK(v)}</div></div>`;}).join('')}
   </div>`;
 }
 
@@ -1768,7 +1787,7 @@ function renderRevSection(year) {
 
   const totRow = Array(12).fill(0).map((_,i)=>`<td class="${monthTots[i]<0?'neg':'pos'}" id="revmth-${year}-${i}">${fmtN(monthTots[i])}</td>`).join('');
 
-  return `<div class="section-card collapsed">
+  return `<div class="section-card collapsed" data-section="revenus">
     <div class="section-header" onclick="toggleSection(this)">
       <div style="flex:1;min-width:0"><span class="section-title">💹 Revenus <span class="badge badge-g" id="rev-badge-${year}">${fmtN(grandTot)} €</span></span>${mthMiniRow(monthTots,false)}</div>
       <span class="chevron">▾</span>
@@ -1781,7 +1800,7 @@ function renderRevSection(year) {
       </tr></thead>
       <tbody>${tbody}
         <tr class="sep-row"><td colspan="15" style="background:#2d6a4f;font-size:10px">TOTAL REVENUS</td></tr>
-        <tr style="background:#e8f5e9;font-weight:700">
+        <tr style="background:var(--row-success);font-weight:700">
           <td class="lbl-col">REVENU TOTAL</td>${totRow}
           <td class="tot-col pos" id="revtot-${year}">${fmtN(grandTot)}</td><td></td>
         </tr>
@@ -1877,7 +1896,7 @@ function renderChargeSection(year) {
   const totRow = mths.map((v,i)=>`<td style="font-weight:700" id="chmth-${year}-${i}">${fmtN(v)}</td>`).join('');
   const gt = sum(mths);
 
-  return `<div class="section-card collapsed">
+  return `<div class="section-card collapsed" data-section="charges">
     <div class="section-header" onclick="toggleSection(this)">
       <div style="flex:1;min-width:0"><span class="section-title">🏠 Charges &amp; Dépenses fixes <span class="badge badge-r" id="chg-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(mths,false)}</div>
       <span class="chevron">▾</span>
@@ -1991,7 +2010,7 @@ function renderMethodTotals(year) {
 function renderVarSection(year) {
   const varMths = allVarTotal(year);
   const gt = sum(varMths);
-  return `<div class="section-card" id="var-section-${year}">
+  return `<div class="section-card" id="var-section-${year}" data-section="variables">
     <div class="section-header" onclick="toggleSection(this)">
       <div style="flex:1;min-width:0"><span class="section-title">🛒 Dépenses variables <span class="badge badge-o" id="var-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(varMths,false)}</div>
       <span class="chevron">▾</span>
@@ -2225,7 +2244,7 @@ function renderMonthSummary(year) {
   const bal=rv.map((v,i)=>v-dep[i]);
   const rap=resteAPayer(year);
 
-  const row=(lbl,vec,cls,bg='#f0f2f5')=>
+  const row=(lbl,vec,cls,bg='var(--row-neutral)')=>
     `<tr style="font-weight:700;background:${bg}">
       <td class="lbl-col">${lbl}</td>
       ${vec.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-${cls}-${i}">${fmtN(v)}</td>`).join('')}
@@ -2236,7 +2255,7 @@ function renderMonthSummary(year) {
   const balRow=bal.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bal-${i}">${fmtN(v)}</td>`).join('');
   const balTot=sum(bal);
 
-  return `<div class="section-card">
+  return `<div class="section-card" data-section="resume">
     <div class="section-header" onclick="toggleSection(this)">
       <div style="flex:1;min-width:0"><span class="section-title">📊 Résumé mensuel <span class="badge ${balTot<0?'badge-r':'badge-g'}" id="bal-badge-${year}">${fmtN(balTot)} €</span></span>${mthMiniRow(bal,true)}</div>
       <span class="chevron">▾</span>
@@ -2250,9 +2269,9 @@ function renderMonthSummary(year) {
       ${row('🏠 Charges récurrentes & occasionnelles',ch,'chg')}
       ${row('🛒 Dépenses variables',vr,'var')}
       ${row('📉 Dépenses totales',dep,'dep')}
-      ${row('🔴 Reste à payer (charges non payées)',rap,'rap','#fff8e1')}
-      ${(()=>{const bud=rv.map((v,i)=>v-ch[i]);const bt=sum(bud);return`<tr style="background:#e8f5f9;font-weight:800;font-size:13px"><td class="lbl-col">💰 Disponible avant dépenses</td>${bud.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bud-${i}">${fmtN(v)}</td>`).join('')}<td class="tot-col ${bt<0?'neg':'pos'}" id="sm-${year}-bud-tot">${fmtN(bt)}</td><td></td></tr>`;})()}
-      <tr style="background:#e8f5e9;font-weight:800;font-size:13px">
+      ${row('🔴 Reste à payer (charges non payées)',rap,'rap','var(--row-warn)')}
+      ${(()=>{const bud=rv.map((v,i)=>v-ch[i]);const bt=sum(bud);return`<tr style="background:var(--row-info);font-weight:800;font-size:13px"><td class="lbl-col">💰 Disponible avant dépenses</td>${bud.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bud-${i}">${fmtN(v)}</td>`).join('')}<td class="tot-col ${bt<0?'neg':'pos'}" id="sm-${year}-bud-tot">${fmtN(bt)}</td><td></td></tr>`;})()}
+      <tr style="background:var(--row-success);font-weight:800;font-size:13px">
         <td class="lbl-col">✅ SOLDE RÉEL DU MOIS</td>
         ${balRow}
         <td class="tot-col ${balTot<0?'neg':'pos'}" id="sm-${year}-bal-tot">${fmtN(balTot)}</td>
