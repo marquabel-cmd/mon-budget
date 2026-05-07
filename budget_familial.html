@@ -336,6 +336,15 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .welcome-create-btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
 @keyframes wPop{from{transform:scale(.4) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
 @keyframes spin { to { transform: rotate(360deg); } }
+/* ── TOUR GUIDÉ ── */
+#tour-overlay{display:none;position:fixed;inset:0;z-index:4000;pointer-events:none}
+#tour-spotlight{position:fixed;border-radius:10px;transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:4001;box-shadow:0 0 0 9999px rgba(0,0,0,.7);border:2px solid #5B6AF0}
+#tour-tooltip{position:fixed;z-index:4002;width:310px;background:var(--surface);border-radius:16px;padding:22px 22px 16px;box-shadow:0 16px 48px rgba(0,0,0,.45);pointer-events:all;border:1px solid var(--border);transition:top .35s cubic-bezier(.4,0,.2,1),left .35s cubic-bezier(.4,0,.2,1)}
+.tour-dot{height:7px;border-radius:4px;transition:all .3s;flex-shrink:0}
+#tour-help-dropdown{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:600;min-width:175px;overflow:hidden}
+#tour-help-dropdown.open{display:block}
+.tour-help-item{display:flex;align-items:center;gap:9px;padding:11px 14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:background .15s}
+.tour-help-item:hover{background:var(--blue-light)}
 /* ── ONBOARDING ── */
 #onboarding-screen{position:fixed;inset:0;z-index:2500;background:linear-gradient(160deg,#1A1D2E 0%,#2D3561 100%);display:none;align-items:center;justify-content:center;flex-direction:column}
 .ob-box{text-align:center;max-width:600px;width:100%;padding:50px 28px 40px}
@@ -591,6 +600,25 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   </div>
 </div>
 
+<!-- ── TOUR GUIDÉ ── -->
+<div id="tour-overlay">
+  <div id="tour-spotlight"></div>
+  <div id="tour-tooltip">
+    <button onclick="endTour()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:11px;color:var(--gray);cursor:pointer;font-family:inherit;padding:2px 4px">Passer ✕</button>
+    <div id="tour-icon" style="font-size:30px;margin-bottom:8px;line-height:1"></div>
+    <div id="tour-title" style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:7px"></div>
+    <div id="tour-text" style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:12px"></div>
+    <a id="tour-link" href="#" target="_blank" style="display:none;font-size:11px;color:var(--blue);font-weight:700;text-decoration:none;margin-bottom:12px;display:none;align-items:center;gap:4px">📖 En savoir plus →</a>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+      <div id="tour-dots" style="display:flex;gap:4px;align-items:center"></div>
+      <div style="display:flex;gap:7px">
+        <button id="tour-prev-btn" onclick="tourPrev()" style="background:var(--gray-light);color:var(--gray);border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">← Préc.</button>
+        <button id="tour-next-btn" onclick="tourNext()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Suivant →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN BANNER -->
 <!-- Bannière dans les iframes compare (demoMode=free|pro) -->
 <div id="compare-frame-banner" style="display:none;padding:6px 14px;font-size:11px;font-weight:700;text-align:center;letter-spacing:.5px"></div>
@@ -643,7 +671,13 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
       <button class="btn btn-csv"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
       <button class="btn" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
-      <button class="btn" onclick="window.open('aide.html','_blank')" title="Aide" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
+      <div style="position:relative">
+        <button class="btn" onclick="toggleHelpDropdown(event)" title="Aide & Tour" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
+        <div id="tour-help-dropdown">
+          <div class="tour-help-item" onclick="startTour();closeHelpDropdown()">🗺️ Tour guidé</div>
+          <div class="tour-help-item" onclick="window.open('aide.html','_blank');closeHelpDropdown()">📖 Guide complet</div>
+        </div>
+      </div>
       <button class="btn" id="theme-toggle" onclick="toggleTheme()" title="Mode jour/nuit" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">🌙</button>
     </div>
   </div>
@@ -1252,6 +1286,10 @@ function doLogin(id) {
     const tab = tabs[tabs.length - 1];
     if (tab) switchTab('y'+lastYear, tab);
   }, 50);
+  // Tour guidé au premier login
+  if (!localStorage.getItem('budget_tour_done_' + id) && !_compareMode) {
+    setTimeout(startTour, 1000);
+  }
   // Cloud sync: pull latest data after local render
   if (isLicensed()) {
     setCloudStatus('syncing');
@@ -3348,6 +3386,131 @@ function exitAdminMode() {
   if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
   showToast('✅ Retour à vos données');
 }
+
+// ── TOUR GUIDÉ ──
+const TOUR_STEPS = [
+  { icon:'👋', title:'Bienvenue dans Mon Budget !',
+    text:'Voici un tour rapide (2 min) pour apprendre à utiliser l\'application. Utilisez les flèches ← → ou cliquez <b>Suivant</b>.',
+    target:null, link:null },
+  { icon:'📅', title:'Vos onglets d\'années',
+    text:'Chaque onglet = une année de budget. Cliquez sur <b>＋ Année</b> pour ajouter une nouvelle année. <small style="color:#F5A623">⚠️ 1 an max en version gratuite</small>',
+    target:'.tabs', link:'aide.html#annee' },
+  { icon:'💾', title:'Sauvegardez toujours !',
+    text:'Après <b>chaque modification</b>, cliquez sur ce bouton. Vos données sont stockées dans votre navigateur — sans sauvegarde, elles sont perdues.',
+    target:'.btn-save', link:'aide.html#sauvegarde' },
+  { icon:'📦', title:'Vos sauvegardes (Backups)',
+    text:'L\'app crée un backup automatique chaque jour et en conserve 20. En cas de problème, restaurez en un seul clic.',
+    target:'button[onclick="openBackups()"]', link:'aide.html#sauvegarde' },
+  { icon:'💼', title:'Vos Revenus',
+    text:'Saisissez ici vos <b>salaires, allocations et autres revenus</b> mois par mois. Le total annuel se calcule automatiquement.',
+    target:'.section-card[data-section="revenus"]', link:'aide.html#revenus' },
+  { icon:'🏠', title:'Vos Charges Fixes',
+    text:'Loyer, électricité, abonnements, assurances… Cliquez sur une cellule pour la marquer <b>✓ payée (vert)</b>. Seules les charges payées sont comptées dans le solde réel.',
+    target:'.section-card[data-section="charges"]', link:'aide.html#charges' },
+  { icon:'🛒', title:'Dépenses Variables',
+    text:'Courses, carburant, divers… Cliquez sur le <b>bouton ＋</b> dans la colonne du bon mois pour noter une dépense avec son commentaire et sa date.',
+    target:'.section-card[data-section="variables"]', link:'aide.html#variables' },
+  { icon:'📊', title:'Résumé Mensuel',
+    text:'Tout se calcule ici automatiquement : disponible par mois, <b>solde réel du compte courant</b>, solde du livret d\'épargne.',
+    target:'.section-card[data-section="resume"]', link:'aide.html#resume' },
+  { icon:'🎉', title:'Vous êtes prêt !',
+    text:'C\'est tout ! Retrouvez ce tour à tout moment via le bouton <b>❓</b> dans le header. Bonne gestion de budget !',
+    target:null, link:'aide.html' }
+];
+
+let _tourStep = 0, _tourActive = false;
+
+function startTour() {
+  _tourStep = 0;
+  _tourActive = true;
+  document.getElementById('tour-overlay').style.display = 'block';
+  _renderTourStep();
+}
+
+function endTour() {
+  _tourActive = false;
+  document.getElementById('tour-overlay').style.display = 'none';
+  const sp = document.getElementById('tour-spotlight');
+  sp.style.boxShadow = 'none'; sp.style.border = 'none';
+  if (CURRENT_USER_ID) localStorage.setItem('budget_tour_done_' + CURRENT_USER_ID, '1');
+}
+
+function tourNext() {
+  if (_tourStep < TOUR_STEPS.length - 1) { _tourStep++; _renderTourStep(); }
+  else endTour();
+}
+
+function tourPrev() {
+  if (_tourStep > 0) { _tourStep--; _renderTourStep(); }
+}
+
+function _renderTourStep() {
+  const step = TOUR_STEPS[_tourStep];
+  const isLast = _tourStep === TOUR_STEPS.length - 1;
+  const isFirst = _tourStep === 0;
+
+  document.getElementById('tour-icon').textContent = step.icon;
+  document.getElementById('tour-title').textContent = step.title;
+  document.getElementById('tour-text').innerHTML = step.text;
+
+  const lnk = document.getElementById('tour-link');
+  if (step.link) { lnk.href = step.link; lnk.style.display = 'flex'; }
+  else { lnk.style.display = 'none'; }
+
+  document.getElementById('tour-prev-btn').style.visibility = isFirst ? 'hidden' : 'visible';
+  const nb = document.getElementById('tour-next-btn');
+  nb.textContent = isLast ? '✅ Terminer' : 'Suivant →';
+  nb.style.background = isLast ? '#00C896' : 'var(--blue)';
+
+  const dots = document.getElementById('tour-dots');
+  dots.innerHTML = TOUR_STEPS.map((_, i) =>
+    `<div class="tour-dot" style="width:${i===_tourStep?18:7}px;background:${i===_tourStep?'var(--blue)':'var(--border)'}"></div>`
+  ).join('');
+
+  if (step.target) {
+    const el = document.querySelector(step.target);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => _positionOnEl(el), 420);
+      return;
+    }
+  }
+  _positionCentered();
+}
+
+function _positionOnEl(el) {
+  const pad = 10, r = el.getBoundingClientRect();
+  const sp = document.getElementById('tour-spotlight');
+  sp.style.cssText = `position:fixed;left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.7);border:2px solid var(--blue);transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:4001`;
+  const tt = document.getElementById('tour-tooltip'), tw = 316, th = 220;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const tx = Math.max(10, Math.min(r.left + r.width/2 - tw/2, vw - tw - 10));
+  const ty = r.bottom + pad + 12 + th < vh ? r.bottom + pad + 12 : Math.max(10, r.top - th - 12);
+  tt.style.left = tx + 'px'; tt.style.top = ty + 'px'; tt.style.transform = '';
+}
+
+function _positionCentered() {
+  const sp = document.getElementById('tour-spotlight');
+  sp.style.cssText = 'position:fixed;width:0;height:0;box-shadow:0 0 0 9999px rgba(0,0,0,.7);border:none;z-index:4001;pointer-events:none';
+  const tt = document.getElementById('tour-tooltip');
+  tt.style.left = '50%'; tt.style.top = '50%'; tt.style.transform = 'translate(-50%,-50%)';
+}
+
+document.addEventListener('keydown', e => {
+  if (!_tourActive) return;
+  if (e.key === 'ArrowRight' || e.key === 'Enter') tourNext();
+  else if (e.key === 'ArrowLeft') tourPrev();
+  else if (e.key === 'Escape') endTour();
+});
+
+function toggleHelpDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('tour-help-dropdown').classList.toggle('open');
+}
+function closeHelpDropdown() {
+  document.getElementById('tour-help-dropdown').classList.remove('open');
+}
+document.addEventListener('click', () => closeHelpDropdown());
 
 // ── DEMO DATA ──
 function _buildCompareDemoData() {

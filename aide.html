@@ -92,9 +92,21 @@ a:hover{text-decoration:underline}
 .buy-btn{display:block;margin:20px auto 0;background:linear-gradient(135deg,#F5A623,#e08800);color:#1A1D2E;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:800;cursor:pointer;text-decoration:none;text-align:center;max-width:320px;box-shadow:0 6px 20px rgba(245,166,35,.4);transition:all .2s}
 .buy-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(245,166,35,.55);text-decoration:none;color:#1A1D2E}
 
-.limit-badge{display:inline-block;background:rgba(240,79,91,.2);color:#ff8080;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
-.free-badge{display:inline-block;background:rgba(100,100,130,.3);color:rgba(255,255,255,.6);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
-.pro-badge{display:inline-block;background:rgba(245,166,35,.3);color:#F5A623;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.limit-badge{display:inline-block;background:rgba(240,79,91,.2);color:#F04F5B;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.free-badge{display:inline-block;background:rgba(100,100,130,.15);color:#6B7394;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.pro-badge{display:inline-block;background:#FEF6E6;color:#e08800;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+
+/* ── GUIDE D'INSTALLATION ── */
+.install-step{display:flex;gap:18px;margin-bottom:28px;align-items:flex-start}
+.install-step:last-child{margin-bottom:0}
+.step-num{width:36px;height:36px;border-radius:50%;background:#5B6AF0;color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;box-shadow:0 4px 12px rgba(91,106,240,.35)}
+.step-body{flex:1;min-width:0}
+.step-body h4{font-size:14px;font-weight:800;color:#1A1D2E;margin-bottom:5px}
+.step-body p{font-size:13px;color:#3a3f5c;margin-bottom:8px;line-height:1.5}
+.step-img{width:100%;border-radius:10px;border:2px solid #E8EAF2;box-shadow:0 4px 14px rgba(0,0,0,.08);margin-top:8px;display:block}
+.step-img-caption{font-size:11px;color:#9DA3BC;margin-top:5px;text-align:center;font-style:italic}
+.step-body .step-tip{background:#EEF0FD;border-radius:8px;padding:8px 12px;font-size:12px;color:#2D3561;margin-top:8px;border-left:3px solid #5B6AF0}
+.step-body .step-warn{background:#FEF0F1;border-radius:8px;padding:8px 12px;font-size:12px;color:#a0272f;margin-top:8px;border-left:3px solid #F04F5B}
 
 /* ── ACTIVATE SECTION ── */
 .activate-box{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:18px 20px;margin-top:16px}
@@ -129,6 +141,7 @@ a:hover{text-decoration:underline}
   <aside class="sidebar">
     <nav class="sidebar-nav">
       <h4>Sommaire</h4>
+      <a href="#guide" style="background:#EEF0FD;color:#5B6AF0;font-weight:700">📋 Guide d'installation</a>
       <a href="#demarrage">🚀 Démarrage</a>
       <a href="#premium" class="nav-premium">⭐ Gratuit vs Premium</a>
       <a href="#demo">🎮 Mode démo</a>
@@ -146,6 +159,154 @@ a:hover{text-decoration:underline}
 
   <!-- Content -->
   <main class="content">
+
+    <!-- ══════════════════════════════════════════ -->
+    <!-- GUIDE D'INSTALLATION                      -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="section" id="guide" style="border-top:4px solid #5B6AF0">
+      <h2><span>📋</span> Guide d'installation pas à pas</h2>
+      <p class="lead">Suivez ces étapes dans l'ordre. Chaque étape est illustrée d'une capture d'écran réelle. Même un enfant peut le faire ! 😊</p>
+
+      <!-- ÉTAPE 1 -->
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Ouvre l'application dans ton navigateur</h4>
+          <p>Va sur l'adresse de l'application (ou ouvre le fichier <b>budget_familial.html</b>). L'écran de démarrage apparaît avec deux choix.</p>
+          <img class="step-img" src="screenshots/01_welcome.png" alt="Écran de bienvenue">
+          <div class="step-img-caption">L'écran de bienvenue avec les profils utilisateurs</div>
+          <div class="step-tip">💡 Si c'est la toute première fois, tu verras d'abord l'écran d'onboarding avec deux grandes cartes : <b>Mode Démo</b> et <b>Créer mon compte</b>.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 -->
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Clique sur ton nom pour te connecter</h4>
+          <p>Clique sur la carte avec ton prénom. Si tu as mis un code PIN, il te sera demandé. Une fois connecté, l'application s'ouvre directement.</p>
+          <img class="step-img" src="screenshots/10_tour.png" alt="Tour guidé au premier lancement">
+          <div class="step-img-caption">Au premier lancement, le tour guidé démarre automatiquement 🎉</div>
+          <div class="step-tip">💡 Le tour guidé te présente chaque partie de l'application en 9 étapes. Tu peux naviguer avec les flèches ← → de ton clavier.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 3 -->
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Découvre les boutons du haut (header)</h4>
+          <p>En haut de la page se trouvent tous les boutons importants :</p>
+          <img class="step-img" src="screenshots/03_header.png" alt="Header de l'application">
+          <div class="step-img-caption">La barre du haut avec tous les boutons de contrôle</div>
+          <ul style="margin-top:10px">
+            <li>🔵 <b>Ton prénom</b> — clique pour changer d'utilisateur</li>
+            <li>💾 <b>Sauvegarder</b> — <span style="color:#F04F5B;font-weight:700">TRÈS IMPORTANT</span> : clique ici après chaque modification !</li>
+            <li>📥 <b>Export CSV</b> — exporte tes données dans un fichier Excel</li>
+            <li>📦 <b>Backups</b> — retrouve tes sauvegardes automatiques</li>
+            <li>❓ <b>Aide</b> — relance le tour guidé ou ouvre ce guide</li>
+            <li>🌙 <b>Mode nuit</b> — change le thème clair/sombre</li>
+          </ul>
+          <div class="step-warn">⚠️ <b>N'oublie jamais de cliquer sur 💾 Sauvegarder</b> après avoir saisi des données ! Sinon tout sera perdu si tu fermes la page.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 4 -->
+      <div class="install-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Navigue entre les années avec les onglets</h4>
+          <p>En dessous du header, tu vois les onglets d'années. Clique sur une année pour l'afficher. Utilise <b>＋ Année</b> pour créer une nouvelle année.</p>
+          <img class="step-img" src="screenshots/04_tabs.png" alt="Onglets d'années">
+          <div class="step-img-caption">Les onglets : Résumé global, 2025, 2026, + Année, Graphiques, Config</div>
+          <div class="step-tip">💡 <b>En version gratuite</b>, tu peux avoir <b>1 seule année</b>. Avec la licence Premium tu en as autant que tu veux.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 5 -->
+      <div class="install-step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>Renseigne les soldes de départ</h4>
+          <p>En haut de chaque année, il y a 4 cases importantes que tu dois remplir une seule fois :</p>
+          <img class="step-img" src="screenshots/05_soldes.png" alt="Section soldes">
+          <div class="step-img-caption">Les 4 indicateurs de solde en haut de chaque année</div>
+          <ul style="margin-top:10px">
+            <li><b>Compte (01/01)</b> — Ton solde de compte courant au 1er janvier</li>
+            <li><b>Compte actuel</b> — Se calcule tout seul ✨</li>
+            <li><b>Livret initial</b> — Ton solde de livret d'épargne au 1er janvier</li>
+            <li><b>Livret actuel</b> — Se calcule tout seul ✨</li>
+          </ul>
+          <div class="step-tip">💡 Pour les années suivantes, le livret initial est rempli automatiquement avec le solde de fin de l'année précédente.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 6 -->
+      <div class="install-step">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <h4>Saisis tes revenus mensuels</h4>
+          <p>Dans la section verte <b>💼 Revenus</b>, clique sur chaque case pour saisir le montant de chaque mois. Tu peux avoir plusieurs lignes de revenus (salaire, allocations, etc.).</p>
+          <img class="step-img" src="screenshots/06_revenus.png" alt="Section revenus">
+          <div class="step-img-caption">Section Revenus avec les montants mois par mois — ici 4 500 €/mois</div>
+          <div class="step-tip">💡 Si ton salaire est le même tous les mois, clique droit sur la cellule de janvier pour copier la valeur sur toute la ligne.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 7 -->
+      <div class="install-step">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <h4>Renseigne tes charges fixes et coche quand c'est payé</h4>
+          <p>Dans la section rose <b>🏠 Charges &amp; Dépenses fixes</b>, saisis tes charges régulières (loyer, électricité, abonnements…). Chaque mois, <b>clique sur la case pour la cocher en vert</b> quand tu as payé.</p>
+          <img class="step-img" src="screenshots/07_charges.png" alt="Section charges">
+          <div class="step-img-caption">Section Charges — clique sur une cellule pour la marquer "payée" (vert)</div>
+          <div class="step-warn">⚠️ Seules les charges cochées (payées) sont comptées dans le calcul de ton solde réel. N'oublie pas de cocher !</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 8 -->
+      <div class="install-step">
+        <div class="step-num">8</div>
+        <div class="step-body">
+          <h4>Note tes dépenses variables au fil du mois</h4>
+          <p>Dans la section jaune <b>🛒 Dépenses variables</b>, clique sur le <b>petit ＋</b> dans la colonne du bon mois pour ajouter une dépense (courses, carburant, divers…).</p>
+          <img class="step-img" src="screenshots/08_variables.png" alt="Section dépenses variables">
+          <div class="step-img-caption">Section Dépenses variables avec les catégories colorées</div>
+          <div class="step-tip">💡 Tu peux indiquer le commentaire (ex: "Lidl"), la date du jour et le mode de paiement (carte, liquide, chèque repas).</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 9 -->
+      <div class="install-step">
+        <div class="step-num">9</div>
+        <div class="step-body">
+          <h4>Consulte le résumé mensuel automatique</h4>
+          <p>La section bleue <b>📊 Résumé mensuel</b> calcule tout automatiquement pour chaque mois de l'année.</p>
+          <img class="step-img" src="screenshots/09_resume.png" alt="Section résumé mensuel">
+          <div class="step-img-caption">Le résumé mensuel — tout se calcule automatiquement !</div>
+          <ul style="margin-top:10px">
+            <li>🟢 <b>Revenus</b> — total des salaires du mois</li>
+            <li>🔴 <b>Charges payées</b> — total des charges cochées</li>
+            <li>🟡 <b>Dépenses variables</b> — total des dépenses saisies</li>
+            <li>🔵 <b>Solde réel</b> — ton solde bancaire réel calculé</li>
+            <li>💰 <b>Livret</b> — ton solde d'épargne calculé</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 10 -->
+      <div class="install-step">
+        <div class="step-num">10</div>
+        <div class="step-body">
+          <h4>Sauvegarde et c'est terminé ! 🎉</h4>
+          <p>Clique sur le bouton <b>💾 Sauvegarder</b> dans le header. L'application affiche "Sauvegardé ✅" et la date/heure du dernier enregistrement.</p>
+          <div class="step-tip">💡 L'application crée automatiquement une sauvegarde de sécurité chaque jour. Tu peux retrouver jusqu'à 20 jours d'historique dans <b>📦 Backups</b>.</div>
+          <div class="step-tip" style="margin-top:8px;background:#E6FAF5;border-left-color:#00C896">🎯 <b>Conseil :</b> installe l'application sur ton téléphone ou tablette ! Sur Chrome/Edge, clique sur l'icône d'installation dans la barre d'adresse. Elle fonctionnera même sans internet. <a href="#demarrage" style="color:#5B6AF0">→ En savoir plus</a></div>
+        </div>
+      </div>
+
+    </div>
 
     <!-- Démarrage -->
     <div class="section" id="demarrage">
