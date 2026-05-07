@@ -216,6 +216,11 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 /* hover sur lignes de transaction via JS (classe row-hov, mouseenter/mouseleave) */
 .var-tx-table tr.row-hov td{background:#c8d2ff!important}
 .var-table td{padding:4px 6px;vertical-align:middle}
+/* Table détail : tout sur une ligne, scroll horizontal si besoin */
+.var-tx-table{white-space:nowrap}
+.var-tx-table td{white-space:nowrap;vertical-align:middle}
+.var-tx-table .var-input.comment{width:140px}
+.vdetrow-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 /* method colors */
 /* method styles now applied via inline styles */
 /* method select */
@@ -2538,6 +2543,7 @@ function renderVarCat(year, cat) {
     </tr>
     <tr id="vdetrow-${year}-${cat.key}-${m}" style="display:none">
       <td colspan="5" style="padding:0">
+        <div class="vdetrow-wrap">
         <table class="var-table var-tx-table" style="margin:0">
           <thead><tr>
             <th style="width:55px">Jour</th>
@@ -2548,6 +2554,7 @@ function renderVarCat(year, cat) {
           </tr></thead>
           <tbody id="vbody-${year}-${cat.key}-${m}"></tbody>
         </table>
+        </div>
       </td>
     </tr>`;
   }
