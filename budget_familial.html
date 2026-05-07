@@ -708,7 +708,7 @@ const D = {
       {label:'07 Taxe poubelle',          cat:'fixed', v:[0,0,0,0,0,0,117.74,0,0,0,0,0],                                                       paid:F12()},
       {label:'10 Livret ordre permanent', cat:'livret_in', v:[0,0,0,300,300,300,300,300.12,300,300,300,300],                                    paid:F12()},
       {label:'10 Versement compte→Livret',cat:'livret_in', v:[0,0,0,0,5000,0,9000,0,0,0,0,0],                                                  paid:F12()},
-      {label:'11 Retrait Livret→compte',  cat:'livret_out',v:[0,0,0,0,0,-300,-200,-300,-4500,-1200,-1200,0],                                   paid:F12()},
+      {label:'11 Retrait Livret→compte',  cat:'livret_out',v:[0,0,0,0,0,300,200,300,4500,1200,1200,0],                                     paid:F12()},
       {label:'11 Eau',                    cat:'fixed', v:[14.63,18.10,18.10,104.14,0,23.05,23.05,23.05,23.05,23.05,23.05,23.05],               paid:F12()},
       {label:'11 Épargne pension',        cat:'fixed', v:[62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5],                       paid:F12()},
       {label:'11 Protection juridique',   cat:'fixed', v:[0,0,0,0,0,0,0,174.25,0,0,0,0],                                                       paid:F12()},
@@ -805,7 +805,7 @@ const D = {
       {label:'07 Taxe poubelle',          cat:'fixed',    v:[0,0,0,0,0,0,117.74,0,0,0,0,0],                                                         paid:F12()},
       {label:'10 Livret ordre permanent', cat:'livret_in',v:[300,300,300,300,300,300,300,300,300,300,300,300],                                        paid:F12()},
       {label:'10 Versement compte→Livret',cat:'livret_in',v:[0,0,0,0,0,0,0,0,0,0,0,0],                                                              paid:F12()},
-      {label:'11 Retrait Livret→compte',  cat:'livret_out',v:[-1994.91,-2000,0,0,0,0,0,0,0,0,0,0],                                                  paid:F12()},
+      {label:'11 Retrait Livret→compte',  cat:'livret_out',v:[1994.91,2000,0,0,0,0,0,0,0,0,0,0],                                                    paid:F12()},
       {label:'11 Eau',                    cat:'fixed',    v:[23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93,23.93],               paid:F12()},
       {label:'11 Épargne pension',        cat:'fixed',    v:[62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5,62.5],                         paid:F12()},
       {label:'11 Protection juridique',   cat:'fixed',    v:[0,0,0,0,0,0,0,174.25,0,0,0,0],                                                         paid:F12()},
@@ -1437,9 +1437,12 @@ function computeLivret(year) {
   let bal = parseFloat(d.soldes.livretInitial) || 0;
   d.charges.forEach(row => {
     if (row.inCalc === false) return;
-    if (row.cat === 'livret_in' || row.cat === 'livret_out') {
-      row.v.forEach((v,i) => { if (row.paid[i]) bal += parseFloat(v) || 0; });
-    }
+    row.v.forEach((v,i) => {
+      if (!row.paid[i]) return;
+      const amt = Math.abs(parseFloat(v) || 0);
+      if (row.cat === 'livret_in')  bal += amt; // ordre permanent + versement → augmente livret
+      if (row.cat === 'livret_out') bal -= amt; // retrait → diminue livret
+    });
   });
   return bal;
 }
@@ -1456,7 +1459,13 @@ function computeCompte(year) {
   });
   d.charges.forEach(r => {
     if (r.inCalc === false) return;
-    r.v.forEach((v,i) => { if (r.paid[i]) bal -= parseFloat(v)||0; });
+    r.v.forEach((v,i) => {
+      if (!r.paid[i]) return;
+      const amt = Math.abs(parseFloat(v) || 0);
+      if (r.cat === 'livret_out') bal += amt; // retrait livret → augmente compte
+      else if (r.cat === 'livret_in') bal -= amt; // versement vers livret → diminue compte
+      else bal -= parseFloat(v) || 0; // charges normales
+    });
   });
   const excMeth = d.excludeCalcMethods || [];
   Object.values(d.vars).forEach(txs => txs.forEach(tx => {
