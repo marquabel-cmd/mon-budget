@@ -365,6 +365,17 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .ob-help:hover{color:rgba(255,255,255,.7)}
 /* ── DEMO BANNER ── */
 #demo-banner{display:none;background:linear-gradient(135deg,#F5A623,#e08800);color:#1A1D2E;padding:8px 16px;font-size:12px;font-weight:700;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:200}
+/* ── EXPORT REMINDER BANNER ── */
+#export-reminder-banner{display:none;background:#fff8e1;border-bottom:2px solid #f9a825;color:#5a3e00;padding:7px 16px;font-size:12px;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:199}
+#export-reminder-banner button.er-action{background:#f9a825;color:#1a1a1a;border:none;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+#export-reminder-banner button.er-dismiss{background:none;border:none;color:#7a5800;cursor:pointer;font-size:14px;margin-left:auto;padding:0 4px;line-height:1}
+/* ── GIST STATUS ── */
+.gist-status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.gist-status-dot.ok{background:#27ae60}
+.gist-status-dot.error{background:#e74c3c}
+.gist-status-dot.syncing{background:#f39c12;animation:pulse .8s infinite alternate}
+.gist-status-dot.off{background:#bdc3c7}
+@keyframes pulse{from{opacity:.4}to{opacity:1}}
 /* ── PIN OVERLAY ── */
 .pin-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .pin-box{background:#fff;border-radius:18px;padding:34px 38px;text-align:center;max-width:300px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -598,6 +609,14 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
     <button onclick="window.open('aide.html','_blank')" style="background:rgba(0,0,0,.15);color:#1A1D2E;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">❓ Aide</button>
     <button onclick="exitDemoMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ Quitter le mode démo</button>
   </div>
+</div>
+
+<!-- ── EXPORT REMINDER BANNER ── -->
+<div id="export-reminder-banner">
+  <span>📥</span>
+  <span>Dernier export JSON : <b id="export-reminder-days">il y a plus de 7 jours</b> — Vos données ne sont pas sauvegardées hors du navigateur.</span>
+  <button class="er-action" onclick="exportDataJSON();dismissExportReminder()">⬇️ Exporter maintenant</button>
+  <button class="er-dismiss" onclick="dismissExportReminder()" title="Ignorer pour aujourd'hui">✕</button>
 </div>
 
 <!-- ── TOUR GUIDÉ ── -->
@@ -962,6 +981,30 @@ function getMethods()        { return (DATA && DATA.methods && DATA.methods.leng
 function getMethodObj(key)   { return getMethods().find(m=>m.key===key) || {key,label:key,color:'#b0bec5',bg:'#f5f5f5'}; }
 function getYears()          { return Object.keys(DATA||{}).filter(k=>/^\d{4}$/.test(k)).sort(); }
 
+// ── ACCOUNT & LIVRET HELPERS ──
+function getAccountName() { return (DATA&&DATA.accounts&&DATA.accounts.length) ? DATA.accounts[0].name : ((DATA&&DATA._accountName)||'Compte principal'); }
+function getLivretName()  { return (DATA&&DATA.livrets&&DATA.livrets.length)   ? DATA.livrets[0].name  : ((DATA&&DATA._livretName)||'Livret A'); }
+function getAccounts() {
+  if (DATA && DATA.accounts && DATA.accounts.length) return DATA.accounts;
+  return [{id:'acc_main', name: getAccountName(), color:'#1a6fc4'}];
+}
+function getLivrets() {
+  if (DATA && DATA.livrets && DATA.livrets.length) return DATA.livrets;
+  return [{id:'liv_main', name: getLivretName(), linkedAccountId:'acc_main'}];
+}
+function ensureAccounts() {
+  if (!DATA.accounts || !DATA.accounts.length) DATA.accounts = [{id:'acc_main', name: getAccountName(), color:'#1a6fc4'}];
+  return DATA.accounts;
+}
+function ensureLivrets() {
+  if (!DATA.livrets || !DATA.livrets.length) DATA.livrets = [{id:'liv_main', name: getLivretName(), linkedAccountId: getAccounts()[0]?.id||'acc_main'}];
+  return DATA.livrets;
+}
+function _hexToRgba(hex, alpha) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 function loadUserConfig()    { try { return JSON.parse(localStorage.getItem(`budget_cfg_${CURRENT_USER_ID}`) || '{}'); } catch(e) { return {}; } }
 function saveUserConfig(cfg) { localStorage.setItem(`budget_cfg_${CURRENT_USER_ID}`, JSON.stringify(cfg)); }
 
@@ -1116,7 +1159,7 @@ function goToCreateAccountFromOnboarding() {
   setTimeout(() => {
     const p = document.getElementById('welcome-add-panel');
     if (p) {
-      _wiz = {step:1, name:'', color:'#e67e22', pin:'',
+      _wiz = {step:1, name:'', color:'#e67e22', pin:'', accountName:'', livretName:'',
         revs: JSON.parse(JSON.stringify(WIZARD_REVS)),
         chgs: JSON.parse(JSON.stringify(WIZARD_CHGS))};
       p.style.display = 'block';
@@ -1272,6 +1315,16 @@ function submitPin() {
 function doLogin(id) {
   CURRENT_USER_ID = id;
   localStorage.setItem('budget_current_user', id);
+  // Si localStorage vide → essayer OPFS d'abord (async), puis charger
+  const hasLocal = !!localStorage.getItem(dataKey());
+  if (!hasLocal && _opfsSupported) {
+    opfsRestoreIfNeeded().then(() => { _finishLogin(id); });
+  } else {
+    _finishLogin(id);
+  }
+}
+
+function _finishLogin(id) {
   loadData();
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
   updateUserDisplay(); renderTabs();
@@ -1290,11 +1343,13 @@ function doLogin(id) {
   if (!localStorage.getItem('budget_tour_done_' + id) && !_compareMode) {
     setTimeout(startTour, 1000);
   }
+  // Rappel export JSON
+  setTimeout(checkExportReminder, 1500);
   // Cloud sync: pull latest data after local render
   if (isLicensed()) {
     setCloudStatus('syncing');
     cloudPull().then(cloudData => {
-      if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; } // Pas encore de données cloud
+      if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; }
       if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
       DATA = cloudData;
       if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
@@ -1338,7 +1393,7 @@ const WIZARD_CHGS = [
   {label:'📈 Livret — versement exceptionnel', amount:0,   checked:false, cat:'livret_in'},
   {label:'📉 Livret — retrait vers compte',    amount:0,   checked:false, cat:'livret_out'},
 ];
-let _wiz = {step:1, name:'', color:'#e67e22', revs:[], chgs:[], pin:''};
+let _wiz = {step:1, name:'', color:'#e67e22', revs:[], chgs:[], pin:'', accountName:'', livretName:''};
 
 function toggleWelcomeAddPanel() {
   if (!isLicensed() && Object.keys(USERS).length >= 1) { showUpgrade('multi-utilisateurs'); return; }
@@ -1386,10 +1441,23 @@ function renderWizard() {
       <input type="text" id="wiz-name" class="welcome-field" placeholder="Ex : Marie…" value="${_wiz.name}"
         onkeydown="if(event.key==='Enter')wizardNext()" oninput="_wiz.name=this.value.trim()">
       <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:8px">Couleur de profil</label>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         ${swatches}
         <input type="color" id="wiz-color-inp" value="${_wiz.color}" style="width:30px;height:30px;border:1px solid rgba(255,255,255,.25);border-radius:50%;cursor:pointer;background:transparent;padding:1px" oninput="_wiz.color=this.value">
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div>
+          <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:5px">🏦 Nom du compte</label>
+          <input type="text" id="wiz-acc-name" class="welcome-field" placeholder="Compte principal" value="${_wiz.accountName||''}"
+            style="margin-bottom:0" oninput="_wiz.accountName=this.value.trim()">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:5px">📈 Nom du livret</label>
+          <input type="text" id="wiz-liv-name" class="welcome-field" placeholder="Livret A" value="${_wiz.livretName||''}"
+            style="margin-bottom:0" oninput="_wiz.livretName=this.value.trim()">
+        </div>
+      </div>
+      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:12px">Optionnel — vous pourrez renommer ces éléments plus tard dans les réglages.</div>
       <button class="welcome-create-btn" onclick="wizardNext()">Suivant — Revenus &rarr;</button>`;
   } else if (_wiz.step === 2) {
     const rows = _wiz.revs.map((r,i)=>`
@@ -1457,6 +1525,8 @@ function wizardNext() {
     if (!name) { document.getElementById('wiz-name')?.focus(); return; }
     _wiz.name = name;
     _wiz.color = document.getElementById('wiz-color-inp')?.value || '#e67e22';
+    _wiz.accountName = document.getElementById('wiz-acc-name')?.value.trim() || '';
+    _wiz.livretName  = document.getElementById('wiz-liv-name')?.value.trim()  || '';
   }
   _wiz.step = Math.min(4, _wiz.step + 1);
   renderWizard();
@@ -1491,6 +1561,9 @@ function wizardFinish() {
     tplChgs: _wiz.chgs.filter(c=>c.checked).map(c=>({label:c.label, amount:c.amount||0, cat:c.cat||'fixed'})),
   };
   saveUserConfig(cfg);
+  // Store chosen account/livret names — will be applied once DATA is loaded in selectUserFromWelcome
+  if (_wiz.accountName) localStorage.setItem('budget_pending_accName_'+id, _wiz.accountName);
+  if (_wiz.livretName)  localStorage.setItem('budget_pending_livName_'+id, _wiz.livretName);
   selectUserFromWelcome(id);
 }
 function saveUsers() { localStorage.setItem('budget_users', JSON.stringify(USERS)); }
@@ -1580,6 +1653,11 @@ function loadData() {
   const s = localStorage.getItem(dataKey()) || (CURRENT_USER_ID==='pascal' ? localStorage.getItem('budget_pascal_v6') : null);
   if (s) { try { DATA = JSON.parse(s); if (!DATA.methods) DATA.methods=[...DEFAULT_METHODS]; if (!DATA.varCats) DATA.varCats=JSON.parse(JSON.stringify(DEFAULT_VAR_CATS)); } catch(e){ DATA = null; } }
   if (!DATA) DATA = CURRENT_USER_ID==='pascal' ? buildDefaults() : buildDefaultsForNewUser();
+  // Apply pending account/livret names chosen during wizard
+  const pendingAcc = localStorage.getItem('budget_pending_accName_'+CURRENT_USER_ID);
+  const pendingLiv = localStorage.getItem('budget_pending_livName_'+CURRENT_USER_ID);
+  if (pendingAcc) { DATA._accountName = pendingAcc; localStorage.removeItem('budget_pending_accName_'+CURRENT_USER_ID); }
+  if (pendingLiv) { DATA._livretName = pendingLiv; localStorage.removeItem('budget_pending_livName_'+CURRENT_USER_ID); }
 
   // Migration: revenue paid = false by default, true only if amount = 0
   if (!localStorage.getItem('rev_paid_v2')) {
@@ -1601,14 +1679,23 @@ function loadData() {
 // ─────────────────────────────────────────────
 // LIVRET FORMULA
 // ─────────────────────────────────────────────
-function computeLivret(year) {
+function computeLivret(year, livId) {
   const d = DATA[year];
   const years = getYears().sort();
   const prevIdx = years.indexOf(String(year)) - 1;
-  // Si année précédente existe → solde initial = solde final de l'année précédente
-  let bal = prevIdx >= 0 ? computeLivret(years[prevIdx]) : (parseFloat(d.soldes.livretInitial) || 0);
+  let bal;
+  if (prevIdx >= 0) {
+    bal = computeLivret(years[prevIdx], livId);
+  } else if (livId && livId !== 'liv_main' && d.soldes.livrets_bal) {
+    bal = parseFloat(d.soldes.livrets_bal[livId]) || 0;
+  } else {
+    bal = parseFloat(d.soldes.livretInitial) || 0;
+  }
   d.charges.forEach(row => {
     if (row.inCalc === false) return;
+    // Filter by livretId when specified
+    if (livId && livId !== 'liv_main' && row.livretId !== livId) return;
+    if (livId && livId === 'liv_main' && row.livretId && row.livretId !== 'liv_main') return;
     row.v.forEach((v,i) => {
       if (!row.paid[i]) return;
       const amt = Math.abs(parseFloat(v) || 0);
@@ -1622,25 +1709,37 @@ function computeLivret(year) {
 // ─────────────────────────────────────────────
 // COMPTE FORMULA
 // ─────────────────────────────────────────────
-function computeCompte(year) {
+function computeCompte(year, accId) {
   const d = DATA[year];
-  let bal = parseFloat(d.soldes.compteIng) || 0;
+  let bal;
+  if (accId && accId !== 'acc_main' && d.soldes.comptes) {
+    bal = parseFloat(d.soldes.comptes[accId]) || 0;
+  } else {
+    bal = parseFloat(d.soldes.compteIng) || 0;
+  }
+  const isMain = !accId || accId === 'acc_main';
   d.revenus.forEach(r => {
     if (r.inCalc === false) return;
+    if (!isMain && r.accountId && r.accountId !== accId) return;
+    if (!isMain && !r.accountId) return; // untagged revs go to main
     r.v.forEach((v,i) => { if (!r.paid || r.paid[i]) bal += parseFloat(v)||0; });
   });
   d.charges.forEach(r => {
     if (r.inCalc === false) return;
+    if (!isMain && r.accountId && r.accountId !== accId) return;
+    if (!isMain && !r.accountId) return; // untagged charges go to main
     r.v.forEach((v,i) => {
       if (!r.paid[i]) return;
       const amt = Math.abs(parseFloat(v) || 0);
-      if (r.cat === 'livret_out') bal += amt; // retrait livret → augmente compte
-      else if (r.cat === 'livret_in') bal -= amt; // versement vers livret → diminue compte
-      else bal -= parseFloat(v) || 0; // charges normales
+      if (r.cat === 'livret_out') bal += amt;
+      else if (r.cat === 'livret_in') bal -= amt;
+      else bal -= parseFloat(v) || 0;
     });
   });
   const excMeth = d.excludeCalcMethods || [];
   Object.values(d.vars).forEach(txs => txs.forEach(tx => {
+    if (!isMain && tx.accountId && tx.accountId !== accId) return;
+    if (!isMain && !tx.accountId) return;
     if (!excMeth.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
   }));
   return bal;
@@ -1783,20 +1882,31 @@ function confirmRevDialog() {
   if (!_pendingNewYear) return;
   const { lastYear, newYear } = _pendingNewYear;
   const prev = DATA[lastYear];
-  const livretFinal = computeLivret(lastYear);
+  const livretFinal = computeLivret(lastYear, 'liv_main');
+  // Compute final balances for additional accounts/livrets
+  const addAccFinals = {};
+  getAccounts().slice(1).forEach(a => { addAccFinals[a.id] = computeCompte(lastYear, a.id); });
+  const addLivFinals = {};
+  getLivrets().slice(1).forEach(l => { addLivFinals[l.id] = computeLivret(lastYear, l.id); });
+
+  const newSoldes = { compteIng: 0, comptePro: 0, livretInitial: livretFinal, boite: 0 };
+  if (Object.keys(addAccFinals).length) newSoldes.comptes = Object.fromEntries(Object.entries(addAccFinals).map(([k,v]) => [k, 0]));
+  if (Object.keys(addLivFinals).length) newSoldes.livrets_bal = addLivFinals;
+
   DATA[newYear] = {
-    soldes: { compteIng: 0, comptePro: 0, livretInitial: livretFinal, boite: 0 },
+    soldes: newSoldes,
     excludeCalcMethods: [...(prev.excludeCalcMethods || [])],
     revenus: prev.revenus.map((r, i) => {
       const inp = document.getElementById(`rev-inp-${i}`);
       const val = parseFloat(inp?.value);
       const v = (!isNaN(val) && val >= 0) ? Array(12).fill(val) : [...r.v];
-      return { label: r.label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false };
+      return { label: r.label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false, ...(r.accountId ? {accountId: r.accountId} : {}) };
     }),
     charges: prev.charges.map(r => {
       const isLivret = r.cat === 'livret_in' || r.cat === 'livret_out';
       const v = isLivret ? Array(12).fill(0) : [...r.v];
-      return { label: r.label, cat: r.cat, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false };
+      return { label: r.label, cat: r.cat, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false,
+        ...(r.accountId ? {accountId: r.accountId} : {}), ...(r.livretId ? {livretId: r.livretId} : {}) };
     }),
     vars: Object.fromEntries(getVarCats().map(c => [c.key, []]))
   };
@@ -1851,26 +1961,66 @@ function renderSoldes(year) {
   const prevIdx = years.indexOf(String(year)) - 1;
   const hasPrevYear = prevIdx >= 0;
   const prevYear = hasPrevYear ? years[prevIdx] : null;
-  const lv = computeLivret(year);
-  return `<div class="soldes-grid">
-    <div class="solde-card"><label>Compte (01/01)</label>
+  const accs = getAccounts();
+  const livs = getLivrets();
+  const accName = accs[0].name;
+  const livName = livs[0].name;
+  const lv = computeLivret(year, 'liv_main');
+  // Ensure multi-account solde containers exist
+  if (!s.comptes) s.comptes = {};
+  if (!s.livrets_bal) s.livrets_bal = {};
+  accs.slice(1).forEach(a => { if (!(a.id in s.comptes)) s.comptes[a.id] = 0; });
+  livs.slice(1).forEach(l => { if (!(l.id in s.livrets_bal)) s.livrets_bal[l.id] = 0; });
+
+  let html = `<div class="soldes-grid">
+    <div class="solde-card"><label>${accName} (01/01)</label>
       <input type="number" step="0.01" value="${s.compteIng}"
         oninput="DATA['${year}'].soldes.compteIng=+this.value;updateCompteDisplay('${year}');dSave()"></div>
-    <div class="solde-card computed"><label>Compte actuel (calculé)
+    <div class="solde-card computed"><label>${accName} actuel (calculé)
         <button class="calc-config-btn" data-type="compte" onclick="openCalcConfig('${year}','compte')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
       </label>
       <span class="computed-val" id="compte-calc-${year}">${fmtN(computeCompte(year))} €</span></div>
-    <div class="solde-card ${hasPrevYear?'computed':''}"><label>Livret initial (01/01)${hasPrevYear?` <span style="font-size:10px;color:var(--gray)">(= fin ${prevYear})</span>`:''}</label>
+    <div class="solde-card ${hasPrevYear?'computed':''}"><label>${livName} (01/01)${hasPrevYear?` <span style="font-size:10px;color:var(--gray)">(= fin ${prevYear})</span>`:''}</label>
       ${hasPrevYear
-        ? `<span class="computed-val">${fmtN(computeLivret(prevYear))} €</span>`
+        ? `<span class="computed-val">${fmtN(computeLivret(prevYear,'liv_main'))} €</span>`
         : `<input type="number" step="0.01" value="${s.livretInitial}"
             oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()">`
       }</div>
-    <div class="solde-card computed"><label>Livret actuel (calculé)
-        <button class="calc-config-btn" data-type="livret" onclick="openCalcConfig('${year}','livret')" title="Choisir les lignes" style="margin-left:6px;background:none;border:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+    <div class="solde-card computed"><label>${livName} actuel (calculé)
+        <button class="calc-config-btn" data-type="livret" onclick="openCalcConfig('${year}','livret')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
       </label>
-      <span class="computed-val" id="livret-calc-${year}">${fmtN(lv)} €</span></div>
-  </div>
+      <span class="computed-val" id="livret-calc-${year}">${fmtN(lv)} €</span></div>`;
+
+  // Additional accounts (Premium)
+  if (isLicensed()) {
+    accs.slice(1).forEach(acc => {
+      const accId = acc.id;
+      const initBal = s.comptes[accId] || 0;
+      const calcBal = computeCompte(year, accId);
+      html += `
+    <div class="solde-card" style="border-color:${acc.color||'#5B6AF0'}22"><label style="color:${acc.color||'#5B6AF0'}">💳 ${acc.name} (01/01)</label>
+      <input type="number" step="0.01" value="${initBal}"
+        oninput="DATA['${year}'].soldes.comptes['${accId}']=+this.value;updateMultiDisplay('${year}','${accId}','compte');dSave()"></div>
+    <div class="solde-card computed" style="border-color:${acc.color||'#5B6AF0'}22"><label style="color:${acc.color||'#5B6AF0'}">💳 ${acc.name} actuel (calculé)</label>
+      <span class="computed-val" id="compte-calc-${year}-${accId}">${fmtN(calcBal)} €</span></div>`;
+    });
+    livs.slice(1).forEach(liv => {
+      const livId = liv.id;
+      const prevLivBal = hasPrevYear ? computeLivret(prevYear, livId) : (s.livrets_bal[livId] || 0);
+      const calcBal = computeLivret(year, livId);
+      html += `
+    <div class="solde-card ${hasPrevYear?'computed':''}" style="border-color:#27ae6022"><label style="color:#27ae60">📈 ${liv.name} (01/01)${hasPrevYear?` <span style="font-size:10px;color:var(--gray)">(= fin ${prevYear})</span>`:''}</label>
+      ${hasPrevYear
+        ? `<span class="computed-val">${fmtN(prevLivBal)} €</span>`
+        : `<input type="number" step="0.01" value="${s.livrets_bal[livId]||0}"
+            oninput="DATA['${year}'].soldes.livrets_bal['${livId}']=+this.value;updateMultiDisplay('${year}','${livId}','livret');dSave()">`
+      }</div>
+    <div class="solde-card computed" style="border-color:#27ae6022"><label style="color:#27ae60">📈 ${liv.name} actuel (calculé)</label>
+      <span class="computed-val" id="livret-calc-${year}-${livId}">${fmtN(calcBal)} €</span></div>`;
+    });
+  }
+
+  html += `</div>
   <div style="padding:10px 14px 4px;border-top:1px solid var(--border)">
     <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">💵 Budget disponible / mois <span style="font-weight:400;text-transform:none">(Revenus − Charges fixes)</span></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -1878,6 +2028,7 @@ function renderSoldes(year) {
     </div>
   </div>
   ${renderMethodPaymentSummary(year)}`;
+  return html;
 }
 function renderMethodPaymentSummary(year) {
   const excluded = DATA[year].excludeCalcMethods || [];
@@ -1902,11 +2053,30 @@ function renderMethodPaymentSummary(year) {
 }
 function updateLivretDisplay(year) {
   const el = document.getElementById('livret-calc-'+year);
-  if (el) el.textContent = fmtN(computeLivret(year)) + ' €';
+  if (el) el.textContent = fmtN(computeLivret(year,'liv_main')) + ' €';
+  // Also update additional livrets
+  getLivrets().slice(1).forEach(l => {
+    const el2 = document.getElementById(`livret-calc-${year}-${l.id}`);
+    if (el2) el2.textContent = fmtN(computeLivret(year, l.id)) + ' €';
+  });
 }
 function updateCompteDisplay(year) {
   const el = document.getElementById('compte-calc-'+year);
   if (el) el.textContent = fmtN(computeCompte(year)) + ' €';
+  // Also update additional accounts
+  getAccounts().slice(1).forEach(a => {
+    const el2 = document.getElementById(`compte-calc-${year}-${a.id}`);
+    if (el2) el2.textContent = fmtN(computeCompte(year, a.id)) + ' €';
+  });
+}
+function updateMultiDisplay(year, id, type) {
+  if (type === 'livret') {
+    const el = document.getElementById(`livret-calc-${year}-${id}`);
+    if (el) el.textContent = fmtN(computeLivret(year, id)) + ' €';
+  } else {
+    const el = document.getElementById(`compte-calc-${year}-${id}`);
+    if (el) el.textContent = fmtN(computeCompte(year, id)) + ' €';
+  }
 }
 let _calcCfg = {year:null, type:null};
 function openCalcConfig(year, type) {
@@ -2624,7 +2794,6 @@ function saveData() {
   localStorage.setItem(dataKey(), json);
   const now = new Date();
   const dateKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   localStorage.setItem(bakPrefix() + dateKey, json);
   const isoNow = now.toISOString();
   localStorage.setItem('budget_lastsave_' + CURRENT_USER_ID, isoNow);
@@ -2633,7 +2802,11 @@ function saveData() {
   if (allBaks.length > 20) allBaks.slice(0, allBaks.length - 20).forEach(k => localStorage.removeItem(k));
   showToast('✅ Sauvegardé');
   updateLastSaveDisplay();
-  cloudPush();
+  // ── Protections multi-couches ──
+  cloudPush();                          // Firebase (Premium)
+  opfsSave();                           // OPFS local persistant (tous)
+  gistPush();                           // GitHub Gist (si configuré)
+  checkExportReminder();                // Rappel export JSON
 }
 
 function updateLastSaveDisplay() {
@@ -2871,6 +3044,51 @@ function renderConfigTab() {
         </div>
         <div style="font-size:10px;color:var(--gray);margin-top:4px">Couleur bordure + couleur fond</div>
       </div>
+      ${(() => {
+        const accs = getAccounts();
+        const livs = getLivrets();
+        const accRows = accs.map((a,i) => `
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <span style="width:14px;height:14px;border-radius:50%;background:${a.color||'#1a6fc4'};flex-shrink:0;display:inline-block"></span>
+            <input type="text" value="${a.name}" style="flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;background:var(--surface);color:var(--text)"
+              onchange="renameAccount('${a.id}',this.value)" placeholder="Nom du compte">
+            ${i === 0 ? '' : isLicensed() ? `<button class="del-btn" onclick="removeAccount('${a.id}')" title="Supprimer">✕</button>` : ''}
+          </div>`).join('');
+        const livRows = livs.map((l,i) => `
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:13px">📈</span>
+            <input type="text" value="${l.name}" style="flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;background:var(--surface);color:var(--text)"
+              onchange="renameLivret('${l.id}',this.value)" placeholder="Nom du livret">
+            ${i === 0 ? '' : isLicensed() ? `<button class="del-btn" onclick="removeLivret('${l.id}')" title="Supprimer">✕</button>` : ''}
+          </div>`).join('');
+        const addAccForm = isLicensed() ? `
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:5px">➕ Ajouter un compte</div>
+            <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+              <input type="text" id="new-acc-name" placeholder="Nom du compte (ex: Compte B)" style="flex:2;min-width:120px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
+              <input type="color" id="new-acc-color" value="#5B6AF0" style="width:30px;height:30px;border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:2px">
+              <button class="btn btn-save" style="padding:5px 10px;font-size:12px" onclick="addAccount(document.getElementById('new-acc-name').value,document.getElementById('new-acc-color').value);document.getElementById('new-acc-name').value=''">＋</button>
+            </div>
+          </div>` : `<div style="font-size:11px;color:var(--gray);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">⭐ <a href="#" onclick="showUpgrade('multi-comptes');return false" style="color:var(--blue);text-decoration:none">Premium</a> — ajoutez jusqu'à 5 comptes</div>`;
+        const addLivForm = isLicensed() ? `
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:5px">➕ Ajouter un livret</div>
+            <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+              <input type="text" id="new-liv-name" placeholder="Nom du livret (ex: Livret B)" style="flex:2;min-width:120px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
+              <select id="new-liv-acc" style="flex:1;min-width:100px;border:1px solid var(--border);border-radius:4px;padding:5px 6px;font-size:12px;background:var(--surface);color:var(--text)">
+                ${accs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}
+              </select>
+              <button class="btn btn-save" style="padding:5px 10px;font-size:12px" onclick="addLivret(document.getElementById('new-liv-name').value,document.getElementById('new-liv-acc').value);document.getElementById('new-liv-name').value=''">＋</button>
+            </div>
+          </div>` : '';
+        return `<div class="config-card" style="margin-top:14px">
+          <h3>🏦 Comptes &amp; Livrets</h3>
+          <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Comptes bancaires</div>
+          ${accRows}${addAccForm}
+          <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 5px">Livrets d'épargne</div>
+          ${livRows}${addLivForm}
+        </div>`;
+      })()}
     </div>
     <div>
       <div class="config-card" style="margin-bottom:14px"><h3>🔑 Licence</h3>
@@ -2909,6 +3127,64 @@ function renderConfigTab() {
           </div>
         `}
       </div>
+      ${(()=>{
+        const opfsOk = _opfsSupported;
+        const token = getGistToken();
+        const gistId = getGistId();
+        const lastSync = localStorage.getItem(gistSyncKey());
+        const lastExport = localStorage.getItem('budget_last_export_' + CURRENT_USER_ID);
+        const daysSinceExport = lastExport ? Math.floor((Date.now()-parseInt(lastExport))/86400000) : null;
+        const exportLabel = daysSinceExport === null ? '⚠️ Jamais exporté' : daysSinceExport === 0 ? '✅ Exporté aujourd\'hui' : `il y a ${daysSinceExport} jour${daysSinceExport>1?'s':''}`;
+        const gistSection = token ? `
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <span class="gist-status-dot ok" id="gist-status-dot"></span>
+            <span id="gist-status-txt" style="font-size:11px;color:var(--gray)">Connecté${lastSync?' — dernier sync '+new Date(lastSync).toLocaleString('fr-BE'):''}</span>
+          </div>
+          ${gistId?`<div style="font-size:10px;color:var(--gray);margin-bottom:6px">Gist ID : <code style="background:var(--surface-alt);padding:1px 4px;border-radius:3px">${gistId.slice(0,12)}…</code></div>`:''}
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-save" style="flex:1;min-width:100px;font-size:11px" onclick="gistPush()">⬆️ Envoyer vers Gist</button>
+            <button class="btn" style="flex:1;min-width:100px;font-size:11px;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="gistPull()">⬇️ Récupérer depuis Gist</button>
+            <button class="btn" style="font-size:11px;background:var(--red-light);color:var(--red);border:1px solid var(--red)" onclick="gistDisconnect()">🔌 Déconnecter</button>
+          </div>` : `
+          <div style="font-size:11px;color:var(--gray);margin-bottom:8px;line-height:1.6">
+            Entrez un <b>Personal Access Token</b> GitHub (scope : <code>gist</code> uniquement).<br>
+            <a href="https://github.com/settings/tokens/new?scopes=gist&description=Mon+Budget" target="_blank" style="color:var(--blue)">→ Créer un token ici</a>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="password" id="gist-token-inp" placeholder="ghp_xxxxxxxxxxxx" style="flex:1;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:11px;background:var(--surface);color:var(--text);font-family:monospace">
+            <button class="btn btn-save" style="font-size:11px;white-space:nowrap" onclick="gistTest()">✅ Valider</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+            <span class="gist-status-dot off" id="gist-status-dot"></span>
+            <span id="gist-status-txt" style="font-size:11px;color:var(--gray)">Non configuré</span>
+          </div>`;
+        return `<div class="config-card" style="margin-top:14px">
+          <h3>🛡 Protection des données</h3>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="padding:8px 10px;border-radius:8px;background:var(--surface-alt);border:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">💾 OPFS — Sauvegarde locale persistante</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:16px">${opfsOk?'✅':'⚠️'}</span>
+                <span style="font-size:12px">${opfsOk?'Actif — résiste au vidage du cache':'Non disponible sur ce navigateur'}</span>
+              </div>
+              <div style="font-size:10px;color:var(--gray);margin-top:4px">Sauvegarde automatique à chaque enregistrement. Se restaure seule si le localStorage est vidé.</div>
+            </div>
+            <div style="padding:8px 10px;border-radius:8px;background:var(--surface-alt);border:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">📥 Export JSON manuel — ${exportLabel}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn btn-save" style="flex:1;min-width:110px;font-size:11px" onclick="exportDataJSON()">⬇️ Exporter JSON</button>
+                <button class="btn" style="flex:1;min-width:110px;font-size:11px;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="importDataJSON()">⬆️ Importer JSON</button>
+              </div>
+              <div style="font-size:10px;color:var(--gray);margin-top:4px">Télécharge un fichier .json contenant toutes vos données. Stockez-le hors du navigateur (cloud, clé USB…).</div>
+            </div>
+            <div style="padding:8px 10px;border-radius:8px;background:var(--surface-alt);border:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">🐙 GitHub Gist — Sync cloud gratuit</div>
+              ${gistSection}
+              <div style="font-size:10px;color:var(--gray);margin-top:6px">Sync automatique à chaque sauvegarde. Gratuit — nécessite un compte GitHub.</div>
+            </div>
+          </div>
+        </div>`;
+      })()}
       <div class="config-card" style="margin-top:14px"><h3>🗂 Catégories de dépenses</h3>
         <div style="margin-bottom:8px">
           ${getVarCats().map(c=>`
@@ -3511,6 +3787,365 @@ function closeHelpDropdown() {
   document.getElementById('tour-help-dropdown').classList.remove('open');
 }
 document.addEventListener('click', () => closeHelpDropdown());
+
+// ──────────────────────────────────────────────────────────────
+// OPFS — sauvegarde locale persistante (résiste au vidage cache)
+// ──────────────────────────────────────────────────────────────
+const _opfsSupported = ('storage' in navigator && 'getDirectory' in navigator.storage);
+
+async function opfsSave() {
+  if (!_opfsSupported || !DATA || !CURRENT_USER_ID) return;
+  try {
+    const root = await navigator.storage.getDirectory();
+    const fh = await root.getFileHandle(`budget_${CURRENT_USER_ID}.json`, { create: true });
+    const writable = await fh.createWritable();
+    await writable.write(JSON.stringify({ savedAt: new Date().toISOString(), data: DATA }));
+    await writable.close();
+  } catch(e) { /* OPFS indisponible */ }
+}
+
+async function opfsLoad(userId) {
+  if (!_opfsSupported) return null;
+  try {
+    const root = await navigator.storage.getDirectory();
+    const fh = await root.getFileHandle(`budget_${userId}.json`);
+    const file = await fh.getFile();
+    const backup = JSON.parse(await file.text());
+    return backup?.data || null;
+  } catch(e) { return null; }
+}
+
+async function opfsRestoreIfNeeded() {
+  if (!_opfsSupported) return false;
+  if (localStorage.getItem(dataKey())) return false; // localStorage OK
+  const data = await opfsLoad(CURRENT_USER_ID);
+  if (!data) return false;
+  localStorage.setItem(dataKey(), JSON.stringify(data));
+  showToast('🔄 Données restaurées depuis la sauvegarde OPFS locale !');
+  return true;
+}
+
+async function opfsListFiles() {
+  if (!_opfsSupported) return [];
+  try {
+    const root = await navigator.storage.getDirectory();
+    const files = [];
+    for await (const [name] of root.entries()) { if (name.startsWith('budget_')) files.push(name); }
+    return files;
+  } catch(e) { return []; }
+}
+
+// ──────────────────────────────────────────────────────────────
+// RAPPEL EXPORT JSON
+// ──────────────────────────────────────────────────────────────
+function checkExportReminder() {
+  if (_compareMode || _isAdminMode) return;
+  const key = 'budget_last_export_' + CURRENT_USER_ID;
+  const dismissed = 'budget_reminder_dismissed_' + CURRENT_USER_ID;
+  const lastExport = localStorage.getItem(key);
+  const lastDismiss = localStorage.getItem(dismissed);
+  const now = Date.now();
+  const DAY = 86400000;
+
+  // Si dismissé aujourd'hui → skip
+  if (lastDismiss && (now - parseInt(lastDismiss)) < DAY) return;
+
+  // Afficher si : jamais exporté OU export > 7 jours
+  let show = false;
+  let label = 'jamais exportées hors du navigateur';
+  if (!lastExport) {
+    // Afficher seulement si l'utilisateur a des données depuis > 3 jours
+    const firstSave = localStorage.getItem('budget_lastsave_' + CURRENT_USER_ID);
+    if (firstSave && (now - new Date(firstSave).getTime()) > 3 * DAY) show = true;
+  } else {
+    const days = Math.floor((now - parseInt(lastExport)) / DAY);
+    if (days >= 7) { show = true; label = `il y a ${days} jour${days>1?'s':''}`; }
+  }
+  if (!show) return;
+  const el = document.getElementById('export-reminder-banner');
+  const dEl = document.getElementById('export-reminder-days');
+  if (el) { if (dEl) dEl.textContent = label; el.style.display = 'flex'; }
+}
+
+function dismissExportReminder() {
+  localStorage.setItem('budget_reminder_dismissed_' + CURRENT_USER_ID, Date.now().toString());
+  const el = document.getElementById('export-reminder-banner');
+  if (el) el.style.display = 'none';
+}
+
+// ──────────────────────────────────────────────────────────────
+// GITHUB GIST SYNC — sauvegarde cloud gratuite
+// ──────────────────────────────────────────────────────────────
+let _gistSyncing = false;
+
+function gistTokenKey() { return 'budget_gist_token_' + CURRENT_USER_ID; }
+function gistIdKey()    { return 'budget_gist_id_'    + CURRENT_USER_ID; }
+function gistSyncKey()  { return 'budget_gist_sync_'  + CURRENT_USER_ID; }
+
+function getGistToken() { return localStorage.getItem(gistTokenKey()) || ''; }
+function getGistId()    { return localStorage.getItem(gistIdKey())    || ''; }
+
+function setGistStatus(s, msg) {
+  const dot = document.getElementById('gist-status-dot');
+  const txt = document.getElementById('gist-status-txt');
+  if (!dot || !txt) return;
+  dot.className = 'gist-status-dot ' + s;
+  const labels = { ok:'Synchronisé ✅', error:'Erreur ❌', syncing:'Synchronisation…', off:'Non configuré', testing:'Test…' };
+  txt.textContent = (msg || labels[s] || s);
+}
+
+async function gistPush() {
+  const token = getGistToken();
+  if (!token || _compareMode || _isAdminMode) return;
+  _gistSyncing = true;
+  setGistStatus('syncing');
+  try {
+    const content = JSON.stringify({ savedAt: new Date().toISOString(), userId: CURRENT_USER_ID, data: DATA }, null, 2);
+    const gistId = getGistId();
+    const headers = { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' };
+    let res;
+    if (gistId) {
+      res = await fetch(`https://api.github.com/gists/${gistId}`, {
+        method: 'PATCH', headers,
+        body: JSON.stringify({ files: { 'mon-budget.json': { content } } })
+      });
+    } else {
+      res = await fetch('https://api.github.com/gists', {
+        method: 'POST', headers,
+        body: JSON.stringify({
+          description: 'Mon Budget — sauvegarde automatique',
+          public: false,
+          files: { 'mon-budget.json': { content } }
+        })
+      });
+      if (res.ok) {
+        const gist = await res.json();
+        localStorage.setItem(gistIdKey(), gist.id);
+        renderConfigTab(); // Rafraîchir pour afficher le Gist ID
+      }
+    }
+    if (res && res.ok) {
+      localStorage.setItem(gistSyncKey(), new Date().toISOString());
+      setGistStatus('ok');
+    } else {
+      const err = await res?.json();
+      setGistStatus('error', 'Erreur ' + (res?.status||'?') + (err?.message ? ' — ' + err.message : ''));
+    }
+  } catch(e) {
+    setGistStatus('error', e.message || 'Réseau inaccessible');
+  } finally { _gistSyncing = false; }
+}
+
+async function gistPull() {
+  const token = getGistToken();
+  const gistId = getGistId();
+  if (!token || !gistId) { showToast('⚠️ Configurez d\'abord le token GitHub'); return; }
+  setGistStatus('syncing');
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { 'Authorization': `token ${token}` }
+    });
+    if (!res.ok) { setGistStatus('error', 'HTTP ' + res.status); return; }
+    const gist = await res.json();
+    const content = gist.files?.['mon-budget.json']?.content;
+    if (!content) { setGistStatus('error', 'Fichier vide dans le Gist'); return; }
+    const backup = JSON.parse(content);
+    if (!backup?.data) { setGistStatus('error', 'Format invalide'); return; }
+    if (!confirm(`Restaurer les données depuis GitHub Gist ?\n\nSauvegarde du : ${new Date(backup.savedAt).toLocaleString('fr-BE')}\n\nCela remplacera vos données actuelles.`)) { setGistStatus('ok'); return; }
+    DATA = backup.data;
+    dSave();
+    document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+    renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+    setGistStatus('ok');
+    showToast('✅ Données restaurées depuis GitHub Gist');
+  } catch(e) {
+    setGistStatus('error', e.message || 'Erreur réseau');
+  }
+}
+
+async function gistTest() {
+  const token = document.getElementById('gist-token-inp')?.value.trim();
+  if (!token) { showToast('⚠️ Entrez un token GitHub'); return; }
+  setGistStatus('testing', 'Test du token…');
+  try {
+    const res = await fetch('https://api.github.com/user', {
+      headers: { 'Authorization': `token ${token}` }
+    });
+    if (res.ok) {
+      const user = await res.json();
+      localStorage.setItem(gistTokenKey(), token);
+      setGistStatus('ok', `Connecté en tant que @${user.login} ✅`);
+      renderConfigTab();
+      showToast(`✅ Token valide — @${user.login}`);
+    } else {
+      setGistStatus('error', 'Token invalide (HTTP ' + res.status + ')');
+    }
+  } catch(e) {
+    setGistStatus('error', 'Réseau inaccessible');
+  }
+}
+
+function gistDisconnect() {
+  if (!confirm('Déconnecter GitHub Gist ? Le Gist existant ne sera pas supprimé.')) return;
+  localStorage.removeItem(gistTokenKey());
+  localStorage.removeItem(gistIdKey());
+  renderConfigTab();
+  showToast('🔌 GitHub Gist déconnecté');
+}
+
+// ── ACCOUNT MANAGEMENT ──
+function addAccount(name, color) {
+  if (!isLicensed()) { showUpgrade('gestion multi-comptes'); return; }
+  if (!name.trim()) { showToast('⚠️ Nom du compte requis'); return; }
+  ensureAccounts();
+  const id = 'acc_' + Date.now();
+  const col = color || '#5B6AF0';
+  DATA.accounts.push({id, name: name.trim(), color: col});
+  // Auto-add payment method for this account
+  DATA.methods = getMethods().slice();
+  const methodKey = 'carte_' + id.slice(-6);
+  if (!DATA.methods.find(m => m.key === methodKey)) {
+    DATA.methods.push({key: methodKey, label: 'Carte ' + name.trim(), color: col, bg: _hexToRgba(col, 0.12)});
+  }
+  // Init balance in all years
+  getYears().forEach(y => {
+    if (!DATA[y].soldes.comptes) DATA[y].soldes.comptes = {};
+    DATA[y].soldes.comptes[id] = 0;
+  });
+  dSave(); renderConfigTab();
+  getYears().forEach(y => renderYear(y));
+  showToast(`✅ Compte "${name}" ajouté — carte "${name}" créée`);
+}
+
+function removeAccount(id) {
+  if (!DATA.accounts) return;
+  const acc = DATA.accounts.find(a => a.id === id);
+  if (!acc) return;
+  confirmDelete(`Supprimer le compte "${acc.name}" et sa carte associée ?`, () => {
+    DATA.accounts = DATA.accounts.filter(a => a.id !== id);
+    if (!DATA.accounts.length) delete DATA.accounts;
+    // Remove associated payment method
+    if (DATA.methods) DATA.methods = DATA.methods.filter(m => m.key !== 'carte_' + id.slice(-6));
+    getYears().forEach(y => { if (DATA[y].soldes.comptes) delete DATA[y].soldes.comptes[id]; });
+    dSave(); renderConfigTab();
+    getYears().forEach(y => renderYear(y));
+    showToast(`🗑 Compte "${acc.name}" supprimé`);
+  });
+}
+
+function renameAccount(id, name) {
+  if (!name.trim()) return;
+  ensureAccounts();
+  const acc = DATA.accounts.find(a => a.id === id);
+  if (!acc) { if (id === 'acc_main') { DATA._accountName = name.trim(); dSave(); getYears().forEach(y=>renderYear(y)); renderConfigTab(); showToast(`✅ Compte renommé`); } return; }
+  acc.name = name.trim();
+  if (id === 'acc_main') DATA._accountName = name.trim();
+  dSave(); getYears().forEach(y => renderYear(y)); renderConfigTab();
+  showToast(`✅ Compte renommé en "${name}"`);
+}
+
+// ── LIVRET MANAGEMENT ──
+function addLivret(name, linkedAccId) {
+  if (!isLicensed()) { showUpgrade('gestion multi-livrets'); return; }
+  if (!name.trim()) { showToast('⚠️ Nom du livret requis'); return; }
+  ensureLivrets();
+  const id = 'liv_' + Date.now();
+  const accId = linkedAccId || getAccounts()[0]?.id || 'acc_main';
+  const accName = getAccounts().find(a => a.id === accId)?.name || 'Compte';
+  DATA.livrets.push({id, name: name.trim(), linkedAccountId: accId});
+  // Add 3 charge rows + init balance in all years
+  getYears().forEach(y => {
+    if (!DATA[y].soldes.livrets_bal) DATA[y].soldes.livrets_bal = {};
+    DATA[y].soldes.livrets_bal[id] = 0;
+    DATA[y].charges.push({label:`📈 Ordre permanent → ${name.trim()}`,     cat:'livret_in',  v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true, livretId:id});
+    DATA[y].charges.push({label:`📈 Virement ${accName} → ${name.trim()}`, cat:'livret_in',  v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true, livretId:id});
+    DATA[y].charges.push({label:`📉 Retrait ${name.trim()} → ${accName}`,  cat:'livret_out', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true, livretId:id});
+  });
+  dSave(); renderConfigTab();
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+  showToast(`✅ Livret "${name}" ajouté avec ses 3 lignes de charges`);
+}
+
+function removeLivret(id) {
+  if (!DATA.livrets) return;
+  const liv = DATA.livrets.find(l => l.id === id);
+  if (!liv) return;
+  confirmDelete(`Supprimer le livret "${liv.name}" et ses ${getYears().length * 3} lignes de charges ?`, () => {
+    DATA.livrets = DATA.livrets.filter(l => l.id !== id);
+    if (!DATA.livrets.length) delete DATA.livrets;
+    getYears().forEach(y => {
+      if (DATA[y].soldes.livrets_bal) delete DATA[y].soldes.livrets_bal[id];
+      DATA[y].charges = DATA[y].charges.filter(r => r.livretId !== id);
+    });
+    dSave(); renderConfigTab();
+    document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+    renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+    showToast(`🗑 Livret "${liv.name}" supprimé`);
+  });
+}
+
+function renameLivret(id, name) {
+  if (!name.trim()) return;
+  ensureLivrets();
+  const liv = DATA.livrets.find(l => l.id === id);
+  if (!liv) { if (id === 'liv_main') { DATA._livretName = name.trim(); dSave(); getYears().forEach(y=>renderYear(y)); renderConfigTab(); showToast(`✅ Livret renommé`); } return; }
+  liv.name = name.trim();
+  if (id === 'liv_main') DATA._livretName = name.trim();
+  dSave(); getYears().forEach(y => renderYear(y)); renderConfigTab();
+  showToast(`✅ Livret renommé en "${name}"`);
+}
+
+// ── JSON EXPORT / IMPORT ──
+function exportDataJSON() {
+  const blob = new Blob([JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    userId: CURRENT_USER_ID,
+    user: USERS[CURRENT_USER_ID],
+    data: DATA
+  }, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `budget_backup_${CURRENT_USER_ID}_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  // Tracker la date d'export pour le rappel
+  localStorage.setItem('budget_last_export_' + CURRENT_USER_ID, Date.now().toString());
+  localStorage.removeItem('budget_reminder_dismissed_' + CURRENT_USER_ID);
+  const el = document.getElementById('export-reminder-banner');
+  if (el) el.style.display = 'none';
+  showToast('✅ Sauvegarde JSON exportée');
+}
+
+function importDataJSON() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const backup = JSON.parse(ev.target.result);
+        if (!backup.data) throw new Error('Format invalide — clé "data" introuvable');
+        const years = Object.keys(backup.data).filter(k => /^\d{4}$/.test(k));
+        if (!years.length) throw new Error('Aucune année trouvée dans le fichier');
+        if (!confirm(`Importer ${years.length} année(s) de données depuis ce fichier ?\n\nCela remplacera toutes vos données actuelles.`)) return;
+        DATA = backup.data;
+        dSave();
+        document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+        renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+        renderConfigTab();
+        showToast(`✅ ${years.length} année(s) importée(s)`);
+      } catch(err) {
+        showToast('❌ ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
 
 // ── DEMO DATA ──
 function _buildCompareDemoData() {

@@ -376,6 +376,20 @@ a:hover{text-decoration:underline}
             </div>
           </div>
           <div class="compare-row compare-lock">
+            <div class="cr-icon">🏦</div>
+            <div class="cr-text">
+              <b>1 seul compte bancaire</b>
+              <span>Pas de gestion multi-comptes</span>
+            </div>
+          </div>
+          <div class="compare-row compare-lock">
+            <div class="cr-icon">📈</div>
+            <div class="cr-text">
+              <b>1 seul livret d'épargne</b>
+              <span>Pas de gestion multi-livrets</span>
+            </div>
+          </div>
+          <div class="compare-row compare-lock">
             <div class="cr-icon">☁️</div>
             <div class="cr-text">
               <b>Pas de sync cloud</b>
@@ -416,6 +430,13 @@ a:hover{text-decoration:underline}
             <div class="cr-text">
               <b>Catégories illimitées</b>
               <span>Créez autant de catégories que vous voulez</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Multi-comptes bancaires + livrets</b>
+              <span>Gérez Compte A, Compte B, Livret B… chacun avec sa carte et ses lignes dédiées</span>
             </div>
           </div>
           <div class="compare-row">
@@ -649,8 +670,20 @@ a:hover{text-decoration:underline}
       <h3>Restaurer un backup</h3>
       <p>Cliquez sur <b>📦 Backups</b> dans le header. La liste des sauvegardes apparaît avec leur date. Cliquez sur <b>Restaurer</b> pour revenir à un état antérieur.</p>
 
+      <h3>📥 Sauvegarde externe — Export / Import JSON</h3>
+      <p>Pour éviter tout risque de perte lors d'un vidage de cache, vous pouvez exporter vos données en fichier <b>JSON</b> :</p>
+      <ol style="margin:8px 0 12px 20px;line-height:1.8">
+        <li>Allez dans <b>⚙️ Réglages</b></li>
+        <li>Dans la section <b>📥 Sauvegarde externe</b>, cliquez sur <b>⬇️ Exporter JSON</b></li>
+        <li>Un fichier <code>budget_backup_XXXX.json</code> est téléchargé — conservez-le en lieu sûr (cloud, clé USB…)</li>
+        <li>Pour restaurer, cliquez sur <b>⬆️ Importer JSON</b> et sélectionnez le fichier</li>
+      </ol>
+      <div class="tip">
+        💡 <b>Bonne pratique :</b> exportez en JSON après chaque session importante. Le fichier contient toutes vos années, revenus, charges et dépenses variables.
+      </div>
+
       <div class="warn">
-        <b>⚠️ Attention</b> — Les données sont stockées dans votre navigateur. Effacer le cache ou changer de navigateur/appareil entraîne la perte des données. Exportez régulièrement en CSV comme sauvegarde externe.
+        <b>⚠️ Attention</b> — Les données sont stockées dans votre navigateur. Effacer le cache ou changer de navigateur/appareil entraîne la perte des données. Utilisez l'export JSON pour une sauvegarde externe garantie.
       </div>
 
       <div class="premium-tip">
@@ -658,7 +691,7 @@ a:hover{text-decoration:underline}
       </div>
 
       <h3>Export CSV</h3>
-      <p>Cliquez sur <b>📥 Export CSV</b> pour télécharger vos données. Ce fichier peut être réimporté via <b>📂 Import CSV</b>.</p>
+      <p>Cliquez sur <b>📥 Export CSV</b> pour télécharger vos données mensuelles en tableau. Ce fichier peut être réimporté via <b>📂 Import CSV</b>.</p>
     </div>
 
     <!-- Dark mode -->
