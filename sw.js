@@ -27,30 +27,31 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   // Ignorer tout ce qui n'est pas http/https (ex: chrome-extension://)
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
-  const isHtml = url.pathname.endsWith('.html') || url.pathname.endsWith('/') || url.pathname === '/';
+  if (url.protocol === 'http:' || url.protocol === 'https:') {
+    const isHtml = url.pathname.endsWith('.html') || url.pathname.endsWith('/') || url.pathname === '/';
 
-  if (isHtml) {
-    // Network-first pour le HTML : toujours la dernière version
-    e.respondWith(
-      fetch(e.request).then(res => {
-        if (res && res.status === 200) {
-          const resClone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, resClone));
-        }
-        return res;
-      }).catch(() => caches.match(e.request))
-    );
-  } else {
-    // Cache-first pour les assets statiques
-    e.respondWith(
-      caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-        if (res && res.status === 200 && res.type === 'basic') {
-          const resClone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, resClone));
-        }
-        return res;
-      }))
-    );
+    if (isHtml) {
+      // Network-first pour le HTML : toujours la dernière version
+      e.respondWith(
+        fetch(e.request).then(res => {
+          if (res && res.status === 200) {
+            const resClone = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, resClone));
+          }
+          return res;
+        }).catch(() => caches.match(e.request))
+      );
+    } else {
+      // Cache-first pour les assets statiques
+      e.respondWith(
+        caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+          if (res && res.status === 200 && res.type === 'basic') {
+            const resClone = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, resClone));
+          }
+          return res;
+        }))
+      );
+    }
   }
 });
