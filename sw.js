@@ -26,6 +26,8 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  // Ignorer tout ce qui n'est pas http/https (ex: chrome-extension://)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
   const isHtml = url.pathname.endsWith('.html') || url.pathname.endsWith('/') || url.pathname === '/';
 
   if (isHtml) {
