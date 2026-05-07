@@ -1403,7 +1403,9 @@ function doLogin(id) {
 }
 
 function _finishLogin(id) {
-  fbInitAuth(); // Restaurer session Firebase Auth
+  fbInitAuth().then(() => {
+    if (!_fbUser) setTimeout(() => openAuthModal('login'), 700);
+  });
   loadData();
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
   updateUserDisplay(); renderTabs();
@@ -4744,7 +4746,8 @@ function closeCompareView() {
         <button onclick="authShowTab('reset')" style="background:none;border:none;font-size:11px;color:var(--blue);cursor:pointer;padding:0">Mot de passe oublié ?</button>
       </div>
       <div id="auth-login-err" style="color:var(--red);font-size:12px;margin-bottom:10px;min-height:16px"></div>
-      <button onclick="authDoLogin()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">Se connecter</button>
+      <button onclick="authDoLogin()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">Se connecter</button>
+      <button onclick="closeAuthModal()" style="width:100%;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;padding:6px">Continuer sans compte (version gratuite)</button>
     </div>
     <!-- Inscription -->
     <div id="auth-tab-register" style="display:none">
@@ -4769,7 +4772,8 @@ function closeCompareView() {
           style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);box-sizing:border-box">
       </div>
       <div id="auth-reg-err" style="color:var(--red);font-size:12px;margin-bottom:10px;min-height:16px"></div>
-      <button onclick="authDoRegister()" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">Créer mon compte</button>
+      <button onclick="authDoRegister()" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">Créer mon compte</button>
+      <button onclick="closeAuthModal()" style="width:100%;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;padding:6px">Continuer sans compte (version gratuite)</button>
     </div>
     <!-- Mot de passe oublié -->
     <div id="auth-tab-reset" style="display:none">
