@@ -66,7 +66,8 @@
 [data-theme="dark"] .var-table thead th{background:var(--surface-alt);color:var(--gray);border-bottom-color:var(--border)}
 [data-theme="dark"] .var-table tbody td{color:var(--text)}
 [data-theme="dark"] .var-table tbody tr{border-bottom-color:var(--border)}
-[data-theme="dark"] .var-table tbody tr:hover td{background:#252c6a}
+[data-theme="dark"] .var-table:not(.var-tx-table) tbody tr:hover td{background:#252c6a}
+[data-theme="dark"] .var-tx-table tr.row-hov td{background:#252c6a!important}
 [data-theme="dark"] .var-month-row td{background:#1a2035;color:#90caf9}
 [data-theme="dark"] .var-subtotal td{background:var(--surface-alt);color:var(--gray)}
 [data-theme="dark"] .summary-table thead th{background:#1e2540;color:var(--gray);border-bottom-color:var(--border)}
@@ -210,10 +211,10 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .var-table{width:100%;border-collapse:collapse;font-size:12px}
 .var-table thead th{background:#f0f2f5;font-size:10px;font-weight:700;text-transform:uppercase;padding:6px 8px;text-align:left;border-bottom:2px solid var(--border);color:var(--gray)}
 .var-table tbody tr{border-bottom:1px solid #f0f2f4}
-.var-table tbody tr:hover td{background:#c8d2ff}
-/* Annuler le hover sur la ligne-conteneur du détail (évite que toutes les tx semblent surlignées) */
-.var-table tbody tr[id^="vdetrow"]:hover>td{background:transparent!important}
-[data-theme="dark"] .var-table tbody tr[id^="vdetrow"]:hover>td{background:transparent!important}
+/* hover uniquement sur la table des mois (pas sur la table détail imbriquée) */
+.var-table:not(.var-tx-table) tbody tr:hover td{background:#c8d2ff}
+/* hover sur lignes de transaction via JS (classe row-hov, mouseenter/mouseleave) */
+.var-tx-table tr.row-hov td{background:#c8d2ff!important}
 .var-table td{padding:4px 6px;vertical-align:middle}
 /* method colors */
 /* method styles now applied via inline styles */
@@ -478,10 +479,10 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 /* Désactiver le hover CSS collant sur écrans tactiles */
 @media (hover:none){
   .charge-table tbody tr:hover td,.charge-table tbody tr:hover td.lbl-col,
-  .var-table tbody tr:hover td,
+  .var-table:not(.var-tx-table) tbody tr:hover td,
   .summary-table tbody tr:hover td,.summary-table tbody tr:hover td.lbl-col{background:transparent!important}
   [data-theme="dark"] .charge-table tbody tr:hover td,[data-theme="dark"] .charge-table tbody tr:hover td.lbl-col,
-  [data-theme="dark"] .var-table tbody tr:hover td,
+  [data-theme="dark"] .var-table:not(.var-tx-table) tbody tr:hover td,
   [data-theme="dark"] .summary-table tbody tr:hover td{background:transparent!important}
 }
 </style>
@@ -2537,7 +2538,7 @@ function renderVarCat(year, cat) {
     </tr>
     <tr id="vdetrow-${year}-${cat.key}-${m}" style="display:none">
       <td colspan="5" style="padding:0">
-        <table class="var-table" style="margin:0">
+        <table class="var-table var-tx-table" style="margin:0">
           <thead><tr>
             <th style="width:55px">Jour</th>
             <th style="width:90px">Montant €</th>
@@ -2586,7 +2587,7 @@ function txRow(year, catKey, tx) {
   const opts = getMethods().map(mo=>`<option value="${mo.key}"${tx.method===mo.key?' selected':''}>${mo.label}</option>`).join('');
   const _txDark = document.documentElement.dataset.theme === 'dark';
   const _txBg = _txDark ? 'var(--surface)' : m.bg;
-  return `<tr id="vtr-${tx.id}" style="border-left:4px solid ${m.color};background:${_txBg}">
+  return `<tr id="vtr-${tx.id}" style="border-left:4px solid ${m.color};background:${_txBg}" onmouseenter="this.classList.add('row-hov')" onmouseleave="this.classList.remove('row-hov')">
     <td><input class="var-input day" type="number" min="1" max="31" placeholder="—" value="${txDay(tx.date)}"
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
       oninput="updateTxField('${year}','${catKey}',${tx.id},'date',this.value?+this.value:'');dSave()"></td>
