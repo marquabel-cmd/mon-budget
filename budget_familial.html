@@ -392,12 +392,35 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   .mth-mini-val{font-size:10px}
 }
 @media(max-width:700px){
-  header{flex-wrap:wrap;gap:6px;padding:10px 12px}
-  .header-btns{gap:4px;flex-wrap:wrap}
-  .header-btns .btn{font-size:11px;padding:5px 9px}
+  /* ── HEADER 2 LIGNES ── */
+  header{
+    flex-direction:column;
+    align-items:stretch;
+    height:auto;
+    padding:8px 12px 6px;
+    gap:5px;
+  }
+  header>div:first-child{display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:14px}
+  .app-sub{display:none}
+  header>div:last-child{display:flex;align-items:center;gap:5px;width:100%}
+  .user-switcher{font-size:11px;padding:4px 8px;margin-right:0;flex-shrink:0}
+  .header-btns{
+    flex:1;
+    gap:4px;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    justify-content:flex-end;
+    padding-bottom:2px;
+  }
+  .header-btns::-webkit-scrollbar{display:none}
+  .header-btns .btn{font-size:13px;padding:5px 9px;flex-shrink:0}
   .btn-label{display:none}
-  .user-switcher{font-size:11px;padding:4px 8px;margin-right:0}
   #cloud-status{display:none}
+  #last-save-info{display:none}
+  /* ── RESTE ── */
   .tabs{padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab{font-size:11px;padding:8px 10px;white-space:nowrap;flex-shrink:0}
@@ -412,6 +435,12 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   .badge{font-size:10px;padding:2px 6px}
 }
 @media(max-width:480px){
+  /* ── TRÈS PETIT (360-480px) ── */
+  header{padding:7px 10px 5px}
+  header h1{font-size:13px}
+  .user-switcher{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Masquer Export CSV et Import CSV sur très petit écran */
+  .btn-hide-xs{display:none!important}
   .soldes-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .solde-card{min-width:0}
 }
@@ -676,7 +705,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 <header>
   <div>
     <h1 id="app-title" onclick="adminTitleClick()" style="cursor:default">💰 Mon Budget</h1>
-    <div class="sub">Gestion mensuelle des revenus et dépenses</div>
+    <div class="sub app-sub">Gestion mensuelle des revenus et dépenses</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <div class="user-switcher" id="user-switcher" onclick="_isAdminMode ? openAdminPanel() : goToWelcome()">
@@ -687,8 +716,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
       <span id="last-save-info" style="font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;align-self:center"></span>
       <button class="btn btn-save" onclick="saveData()">💾 <span class="btn-label">Sauvegarder</span></button>
-      <button class="btn btn-csv"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
-      <button class="btn" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
+      <button class="btn btn-csv btn-hide-xs"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
+      <button class="btn btn-hide-xs" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
       <div style="position:relative">
         <button class="btn" onclick="toggleHelpDropdown(event)" title="Aide & Tour" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
