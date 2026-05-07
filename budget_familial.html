@@ -469,6 +469,11 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   .soldes-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .solde-card{min-width:0}
 }
+/* ── FAB AJOUT RAPIDE ── */
+.fab{position:fixed;bottom:22px;right:22px;width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;border:none;font-size:26px;line-height:1;cursor:pointer;box-shadow:0 4px 20px rgba(0,200,150,.45);z-index:900;display:flex;align-items:center;justify-content:center;transition:transform .18s,box-shadow .18s}
+.fab:hover{transform:scale(1.12);box-shadow:0 6px 28px rgba(0,200,150,.6)}
+.fab:active{transform:scale(.96)}
+@media(max-width:700px){.fab{bottom:16px;right:16px;width:50px;height:50px;font-size:22px}}
 /* ── AUTH MODAL ── */
 .auth-tab-btn{transition:background .15s,color .15s;color:var(--gray)}
 .auth-tab-btn.active{background:var(--surface)!important;color:var(--text);box-shadow:var(--shadow-sm)}
@@ -595,21 +600,29 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 
 <!-- ── QUICK ADD OVERLAY ── -->
 <div id="quick-add-overlay" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center" onclick="closeQuickAdd(event)">
-  <div style="background:#fff;border-radius:16px;padding:22px 24px;width:min(360px,92%);box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
+  <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(360px,92%);box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <h3 style="margin:0;font-size:16px;color:var(--blue)">⚡ Ajout rapide</h3>
       <button onclick="closeQuickAdd()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray)">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div>
-          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Catégorie</label>
-          <select id="qa-cat" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
+          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Année</label>
+          <select id="qa-year" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
         </div>
         <div>
           <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Mois</label>
           <select id="qa-month" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
         </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Jour</label>
+          <input id="qa-day" type="number" min="1" max="31" placeholder="—" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Catégorie</label>
+        <select id="qa-cat" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
@@ -1413,6 +1426,8 @@ function _finishLogin(id) {
   renderSummary();
   const ws = document.getElementById('welcome-screen');
   if (ws) { ws.style.opacity='0'; setTimeout(()=>{ ws.style.display='none'; ws.style.opacity=''; },400); }
+  const fab = document.getElementById('main-fab');
+  if (fab) fab.style.display = 'flex';
   const years = getYears();
   const lastYear = years[years.length - 1];
   if (lastYear) setTimeout(() => {
@@ -2640,8 +2655,19 @@ function toggleMonthDetail(year, catKey, m, btn) {
 // ── QUICK ADD ──
 let _qaYear = null, _qaCat = null;
 function openQuickAdd(year, catKey) {
+  // Auto-detect year from active tab if not provided
+  if (!year) {
+    const activePanel = document.querySelector('[id^="tab-y"].tab-panel.active');
+    if (activePanel) year = activePanel.id.replace('tab-y','');
+    else { const yrs = getYears(); year = yrs.length ? yrs[yrs.length-1] : new Date().getFullYear(); }
+  }
   _qaYear = year; _qaCat = catKey;
   const overlay = document.getElementById('quick-add-overlay');
+  // Populate year selector
+  const yrSel = document.getElementById('qa-year');
+  const yrs = getYears();
+  if (!yrs.includes(+year)) yrs.push(+year);
+  yrSel.innerHTML = yrs.map(y=>`<option value="${y}"${y==year?' selected':''}>${y}</option>`).join('');
   // Populate category
   const catSel = document.getElementById('qa-cat');
   catSel.innerHTML = getVarCats().map(c=>`<option value="${c.key}"${c.key===catKey?' selected':''}>${c.icon} ${c.label}</option>`).join('');
@@ -2654,6 +2680,7 @@ function openQuickAdd(year, catKey) {
   methSel.innerHTML = getMethods().map(mo=>`<option value="${mo.key}">${mo.label}</option>`).join('');
   // Reset fields
   document.getElementById('qa-amount').value = '';
+  document.getElementById('qa-day').value = '';
   document.getElementById('qa-comment').value = '';
   document.getElementById('qa-error').textContent = '';
   overlay.style.display = 'flex';
@@ -2666,16 +2693,23 @@ function closeQuickAdd(e) {
 function submitQuickAdd() {
   const amount = parseFloat(document.getElementById('qa-amount').value);
   if (!amount || amount <= 0) { document.getElementById('qa-error').textContent = '⚠️ Entrez un montant valide'; return; }
+  const year   = document.getElementById('qa-year').value;
   const catKey = document.getElementById('qa-cat').value;
   const month  = +document.getElementById('qa-month').value;
   const method = document.getElementById('qa-method').value;
+  const dayVal = document.getElementById('qa-day').value.trim();
   const comment= document.getElementById('qa-comment').value.trim();
-  const newTx  = {id:_id++, month, amount, date:'', comment, method};
-  DATA[_qaYear].vars[catKey].push(newTx);
-  syncMonthSummary(_qaYear, catKey, month);
+  // Build date string from day if provided
+  const dateStr = dayVal ? `${String(+dayVal).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${year}` : '';
+  // Ensure year exists in DATA
+  if (!DATA[year]) { DATA[year] = {revenus:{},charges:{},vars:{}}; }
+  if (!DATA[year].vars[catKey]) DATA[year].vars[catKey] = [];
+  const newTx  = {id:_id++, month, amount, date:dateStr, comment, method};
+  DATA[year].vars[catKey].push(newTx);
+  syncMonthSummary(year, catKey, month);
   dSave();
   document.getElementById('quick-add-overlay').style.display = 'none';
-  showToast(`✅ ${fmtN(amount)} € ajouté en ${MONTHS[month]}`);
+  showToast(`✅ ${fmtN(amount)} € ajouté en ${MONTHS[month]} ${year}`);
 }
 
 function addTxForMonth(year, catKey, m) {
@@ -4828,5 +4862,9 @@ function closeCompareView() {
       sandbox="allow-scripts allow-same-origin"></iframe>
   </div>
 </div>
+
+<!-- ── FAB : Ajout rapide ── -->
+<button class="fab" id="main-fab" onclick="openQuickAdd()" title="Ajout rapide" style="display:none">➕</button>
+
 </body>
 </html>
