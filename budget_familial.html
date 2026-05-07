@@ -36,6 +36,59 @@
   --radius: 12px;
   --radius-lg: 16px;
 }
+/* ── DARK MODE ── */
+[data-theme="dark"] {
+  --bg: #12141F;
+  --surface: #1C1F30;
+  --surface-alt: #20243A;
+  --border: #2C3050;
+  --text: #E2E4F0;
+  --gray: #8892B0;
+  --gray-light: #1C1F30;
+  --shadow: 0 2px 12px rgba(0,0,0,0.45);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.3);
+  --blue-light: #1A2050;
+  --green-light: #0D281A;
+  --red-light: #2A1018;
+  --orange-light: #281B08;
+}
+[data-theme="dark"] .charge-table tbody td.tot-col{background:#1A2030;color:#90caf9;border-left-color:#3a4a6a}
+[data-theme="dark"] .charge-table thead th{background:var(--surface-alt);color:var(--gray);border-bottom-color:var(--border)}
+[data-theme="dark"] .charge-table thead th.tot-col{background:#263050;color:#90caf9 !important}
+[data-theme="dark"] .charge-table tbody tr:hover td{background:var(--blue-light)}
+[data-theme="dark"] .sep-row td{background:#1a3566}
+[data-theme="dark"] .occ-row td{background:#2a2810}
+[data-theme="dark"] .cell-amt{color:var(--text)}
+[data-theme="dark"] .var-table thead th{background:var(--surface-alt);color:var(--gray);border-bottom-color:var(--border)}
+[data-theme="dark"] .var-month-row td{background:#1a2035;color:#90caf9}
+[data-theme="dark"] .var-subtotal td{background:var(--surface-alt);color:var(--gray)}
+[data-theme="dark"] .summary-table thead th{background:#1e2540;color:var(--gray);border-bottom-color:var(--border)}
+[data-theme="dark"] .summary-table tr.yr-hdr td{background:#2a3570}
+[data-theme="dark"] .summary-table tr.tot-row td{background:#1a2035}
+[data-theme="dark"] .summary-table tr.bal-row td{background:#151B38}
+[data-theme="dark"] .solde-card input{color:var(--text)}
+[data-theme="dark"] .tabs{background:var(--surface);border-bottom-color:var(--border)}
+[data-theme="dark"] .method-sel,[data-theme="dark"] .month-sel{background:var(--surface);color:var(--text);border-color:var(--border)}
+[data-theme="dark"] .add-user-form input[type="text"]{background:var(--surface);color:var(--text);border-color:var(--border)}
+[data-theme="dark"] .user-menu{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .user-menu-item{color:var(--text)}
+[data-theme="dark"] .chart-card{background:var(--surface)}
+[data-theme="dark"] .config-card{background:var(--surface)}
+[data-theme="dark"] .var-input{color:var(--text);background:transparent}
+[data-theme="dark"] .var-input:focus{background:var(--surface-alt)}
+[data-theme="dark"] .summary-table tbody td{color:var(--text)}
+[data-theme="dark"] .summary-table .neg{color:#ff6b7a}
+[data-theme="dark"] .summary-table .pos{color:#4ecdc4}
+[data-theme="dark"] input,select{color-scheme:dark}
+/* ── COULEURS PASTELS PAR CATÉGORIE ── */
+.section-card[data-cat="carburant"]>.section-header{background:#EBF4FB;border-left:4px solid #5B9BD5}
+.section-card[data-cat="courses"]>.section-header  {background:#EDF7F0;border-left:4px solid #3CB371}
+.section-card[data-cat="divers"]>.section-header   {background:#F3EEF9;border-left:4px solid #9B59B6}
+.section-card[data-cat="chien"]>.section-header    {background:#FEF9E7;border-left:4px solid #F0A500}
+[data-theme="dark"] .section-card[data-cat="carburant"]>.section-header{background:#102030;border-left-color:#5B9BD5}
+[data-theme="dark"] .section-card[data-cat="courses"]>.section-header  {background:#0D2218;border-left-color:#3CB371}
+[data-theme="dark"] .section-card[data-cat="divers"]>.section-header   {background:#1A1228;border-left-color:#9B59B6}
+[data-theme="dark"] .section-card[data-cat="chien"]>.section-header    {background:#231E0C;border-left-color:#F0A500}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;font-size:14px;line-height:1.5}
 
@@ -519,6 +572,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
       <button class="btn btn-csv"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
       <button class="btn" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
+      <button class="btn" id="theme-toggle" onclick="toggleTheme()" title="Mode jour/nuit" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">🌙</button>
     </div>
   </div>
 </header>
@@ -1991,7 +2045,7 @@ function renderVarCat(year, cat) {
       </td>
     </tr>`;
   }
-  return `<div class="section-card collapsed" style="margin-bottom:10px;border-radius:8px">
+  return `<div class="section-card collapsed" data-cat="${cat.key}" style="margin-bottom:10px;border-radius:8px">
     <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')" style="padding:10px 14px">
       <span class="section-title" style="font-size:13px">
         ${cat.icon} ${cat.label}
@@ -2361,6 +2415,26 @@ function saveData() {
   showToast('✅ Sauvegardé');
   cloudPush();
 }
+
+// ── THÈME JOUR / NUIT ──
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('budget_theme', next);
+}
+(function initTheme() {
+  const saved = localStorage.getItem('budget_theme');
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('theme-toggle');
+      if (btn) btn.textContent = '☀️';
+    });
+  }
+})();
 
 function openBackups() {
   const pfx = bakPrefix();
