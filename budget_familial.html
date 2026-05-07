@@ -1393,7 +1393,7 @@ const WIZARD_CHGS = [
   {label:'📈 Livret — versement exceptionnel', amount:0,   checked:false, cat:'livret_in'},
   {label:'📉 Livret — retrait vers compte',    amount:0,   checked:false, cat:'livret_out'},
 ];
-let _wiz = {step:1, name:'', color:'#e67e22', revs:[], chgs:[], pin:'', accountName:'', livretName:''};
+let _wiz = {step:1, name:'', color:'#e67e22', revs:[], chgs:[], pin:'', accountName:'', livretName:'', gistToken:'', gistUser:''};
 
 function toggleWelcomeAddPanel() {
   if (!isLicensed() && Object.keys(USERS).length >= 1) { showUpgrade('multi-utilisateurs'); return; }
@@ -1401,7 +1401,7 @@ function toggleWelcomeAddPanel() {
   if (!p) return;
   const open = p.style.display === 'block';
   if (open) { p.style.display='none'; return; }
-  _wiz = {step:1, name:'', color:'#e67e22', pin:'',
+  _wiz = {step:1, name:'', color:'#e67e22', pin:'', accountName:'', livretName:'', gistToken:'', gistUser:'',
     revs: JSON.parse(JSON.stringify(WIZARD_REVS)),
     chgs: JSON.parse(JSON.stringify(WIZARD_CHGS))};
   p.style.display = 'block';
@@ -1415,14 +1415,14 @@ function toggleWelcomeAddPanel() {
 function renderWizard() {
   const c = document.getElementById('wizard-content');
   if (!c) return;
-  const stepLabels = ['Profil','Revenus','Charges','PIN'];
+  const stepLabels = ['Profil','Revenus','Charges','PIN','Cloud'];
   const indicator = `<div style="display:flex;align-items:flex-start;justify-content:center;gap:0;margin-bottom:22px">
     ${stepLabels.map((s,i)=>{
       const done = i+1 < _wiz.step, active = i+1 === _wiz.step;
       const circle = done ? '✓' : i+1;
       const bg = done||active ? '#27ae60' : 'rgba(255,255,255,.15)';
       const border = active ? '2px solid #fff' : '2px solid transparent';
-      const sep = i<3 ? `<div style="flex:1;height:2px;background:${i+1<_wiz.step?'#27ae60':'rgba(255,255,255,.18)'};margin:14px 4px 0"></div>` : '';
+      const sep = i<4 ? `<div style="flex:1;height:2px;background:${i+1<_wiz.step?'#27ae60':'rgba(255,255,255,.18)'};margin:14px 4px 0"></div>` : '';
       return `<div style="display:flex;flex-direction:column;align-items:center;gap:5px">
         <div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:${bg};color:#fff;border:${border}">${circle}</div>
         <div style="font-size:10px;color:${active?'#fff':'rgba(255,255,255,.5)'};font-weight:700;text-transform:uppercase;letter-spacing:.4px">${s}</div>
@@ -1507,7 +1507,36 @@ function renderWizard() {
     <div style="display:flex;gap:8px;margin-top:6px">
       <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
       <button onclick="wizardSkipPin()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">⏭ Passer</button>
-      <button onclick="wizardConfirmPin()" class="welcome-create-btn" style="flex:2">✅ Créer mon budget</button>
+      <button onclick="wizardConfirmPin()" class="welcome-create-btn" style="flex:2">Suivant &rarr;</button>
+    </div>`;
+  } else if (_wiz.step === 5) {
+    body = `<div style="text-align:center;padding:4px 0 8px">
+      <div style="font-size:36px;margin-bottom:6px">🐙</div>
+      <div style="display:inline-block;background:#27ae60;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px;margin-bottom:8px">100% GRATUIT</div>
+      <div style="font-size:14px;color:#fff;font-weight:700;margin-bottom:4px">Sauvegarde cloud avec GitHub</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:14px;line-height:1.6">Vos données seront automatiquement<br>sauvegardées en ligne à chaque enregistrement.<br><b style="color:#fff">Aucun abonnement. Aucune carte bancaire.</b></div>
+    </div>
+    <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:12px;font-size:11px;color:rgba(255,255,255,.85);line-height:1.9">
+      <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:12px">Comment faire ? (5 minutes)</div>
+      <div>1️⃣ Crée un compte sur <b>github.com</b> (gratuit)</div>
+      <div>2️⃣ Va dans <b>Settings → Developer settings → Personal access tokens → Tokens (classic)</b></div>
+      <div>3️⃣ Clique <b>Generate new token (classic)</b></div>
+      <div>4️⃣ Coche seulement <b>gist</b> ✅</div>
+      <div>5️⃣ Copie le token <b>ghp_…</b> et colle-le ci-dessous</div>
+      <div style="margin-top:6px;font-size:10px;color:rgba(255,255,255,.5)">📖 Guide détaillé disponible dans <b>Aide → Sauvegarde</b></div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+      <input type="text" id="wiz-gist-inp" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+        style="flex:1;border:1px solid rgba(255,255,255,.3);border-radius:7px;padding:8px 10px;font-size:12px;background:rgba(255,255,255,.1);color:#fff;font-family:monospace;outline:none"
+        onkeydown="if(event.key==='Enter')wizardGistSave()">
+      <button id="wiz-gist-btn" onclick="wizardGistSave()"
+        style="padding:8px 12px;background:#27ae60;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">✅ Valider & connecter</button>
+    </div>
+    <div id="wiz-gist-err" style="color:#ff8f8f;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
+      <button onclick="wizardFinish()" style="padding:10px 0;flex:2;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">⏭ Passer pour l'instant</button>
+      <button onclick="wizardGistSave()" class="welcome-create-btn" style="flex:2">✅ Créer mon budget</button>
     </div>`;
   }
   c.innerHTML = indicator + body;
@@ -1528,7 +1557,7 @@ function wizardNext() {
     _wiz.accountName = document.getElementById('wiz-acc-name')?.value.trim() || '';
     _wiz.livretName  = document.getElementById('wiz-liv-name')?.value.trim()  || '';
   }
-  _wiz.step = Math.min(4, _wiz.step + 1);
+  _wiz.step = Math.min(5, _wiz.step + 1);
   renderWizard();
 }
 function wizardBack() { _wiz.step = Math.max(1, _wiz.step - 1); renderWizard(); }
@@ -1544,11 +1573,33 @@ function wizPinKey(e, idx) {
     document.getElementById('wpin'+(idx-1)).focus();
   if (e.key==='Enter') wizardConfirmPin();
 }
-function wizardSkipPin() { _wiz.pin = ''; wizardFinish(); }
+function wizardSkipPin() { _wiz.pin = ''; _wiz.step = 5; renderWizard(); }
 function wizardConfirmPin() {
   const pin = [0,1,2,3].map(i=>document.getElementById('wpin'+i)?.value||'').join('');
   if (pin.length < 4) { document.getElementById('wiz-pin-err').textContent = '⚠️ Entrez 4 chiffres ou cliquez Passer'; return; }
-  _wiz.pin = pin; wizardFinish();
+  _wiz.pin = pin; _wiz.step = 5; renderWizard();
+}
+async function wizardGistSave() {
+  const val = document.getElementById('wiz-gist-inp')?.value.trim();
+  if (!val || !val.startsWith('ghp_')) {
+    const err = document.getElementById('wiz-gist-err');
+    if (err) err.textContent = '⚠️ Le token doit commencer par ghp_';
+    return;
+  }
+  const btn = document.getElementById('wiz-gist-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Vérification…'; }
+  try {
+    const r = await fetch('https://api.github.com/user', { headers: { Authorization: 'token ' + val } });
+    if (!r.ok) throw new Error('Token invalide (code ' + r.status + ')');
+    const u = await r.json();
+    _wiz.gistToken = val;
+    _wiz.gistUser = u.login || '';
+    wizardFinish();
+  } catch(e) {
+    const err = document.getElementById('wiz-gist-err');
+    if (err) err.textContent = '❌ ' + (e.message || 'Erreur réseau');
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Valider & connecter'; }
+  }
 }
 function wizardFinish() {
   if (!_wiz.name) { wizardBack(); wizardBack(); return; }
@@ -1564,6 +1615,7 @@ function wizardFinish() {
   // Store chosen account/livret names — will be applied once DATA is loaded in selectUserFromWelcome
   if (_wiz.accountName) localStorage.setItem('budget_pending_accName_'+id, _wiz.accountName);
   if (_wiz.livretName)  localStorage.setItem('budget_pending_livName_'+id, _wiz.livretName);
+  if (_wiz.gistToken)   localStorage.setItem('budget_gist_token_'+id, _wiz.gistToken);
   selectUserFromWelcome(id);
 }
 function saveUsers() { localStorage.setItem('budget_users', JSON.stringify(USERS)); }
@@ -3146,13 +3198,43 @@ function renderConfigTab() {
             <button class="btn" style="flex:1;min-width:100px;font-size:11px;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="gistPull()">⬇️ Récupérer depuis Gist</button>
             <button class="btn" style="font-size:11px;background:var(--red-light);color:var(--red);border:1px solid var(--red)" onclick="gistDisconnect()">🔌 Déconnecter</button>
           </div>` : `
-          <div style="font-size:11px;color:var(--gray);margin-bottom:8px;line-height:1.6">
-            Entrez un <b>Personal Access Token</b> GitHub (scope : <code>gist</code> uniquement).<br>
-            <a href="https://github.com/settings/tokens/new?scopes=gist&description=Mon+Budget" target="_blank" style="color:var(--blue)">→ Créer un token ici</a>
+          <div style="background:var(--green-light,#e8f8f0);border:1px solid var(--green,#27ae60);border-radius:7px;padding:8px 10px;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:20px">🆓</span>
+            <div>
+              <div style="font-size:12px;font-weight:800;color:var(--green,#27ae60)">100% GRATUIT — aucune carte bancaire</div>
+              <div style="font-size:10px;color:var(--gray)">Sync automatique à chaque sauvegarde via GitHub</div>
+            </div>
           </div>
+          <details style="margin-bottom:10px">
+            <summary style="font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;padding:6px 0;list-style:none;display:flex;align-items:center;gap:6px">
+              <span>📖</span> <span>Comment créer un compte GitHub et un token ? (guide pas à pas)</span>
+            </summary>
+            <div style="margin-top:8px;font-size:11px;color:var(--text);line-height:1.9;background:var(--surface-alt);border-radius:7px;padding:10px 12px">
+              <div style="font-weight:700;color:var(--text);margin-bottom:6px">Étape 1 — Créer un compte GitHub (si tu n'en as pas)</div>
+              <div>🌐 Va sur <a href="https://github.com/join" target="_blank" style="color:var(--blue);font-weight:600">github.com/join</a></div>
+              <div>✏️ Remplis : adresse e-mail, mot de passe, nom d'utilisateur</div>
+              <div>📧 Confirme ton adresse e-mail (vérifie ta boîte mail)</div>
+              <div style="color:var(--green,#27ae60);font-weight:600">→ C'est gratuit, aucune carte bancaire demandée !</div>
+              <div style="margin-top:10px;font-weight:700;color:var(--text);margin-bottom:6px">Étape 2 — Créer le token de sécurité</div>
+              <div>🔐 Connecte-toi sur GitHub puis clique sur ta <b>photo de profil</b> (en haut à droite)</div>
+              <div>⚙️ Clique sur <b>Settings</b> (Paramètres)</div>
+              <div>📜 Tout en bas du menu gauche : clique <b>Developer settings</b></div>
+              <div>🔑 Clique <b>Personal access tokens</b> → <b>Tokens (classic)</b></div>
+              <div>➕ Clique <b>Generate new token</b> → <b>Generate new token (classic)</b></div>
+              <div>📝 Dans <b>Note</b> : écris <code style="background:var(--surface);padding:1px 4px;border-radius:3px">Mon Budget</code></div>
+              <div>🗓️ <b>Expiration</b> : choisis <b>No expiration</b> (pas d'expiration)</div>
+              <div>☑️ Dans <b>Select scopes</b> : coche UNIQUEMENT <b>gist</b> ✅</div>
+              <div>💾 Clique le bouton vert <b>Generate token</b></div>
+              <div style="margin-top:8px;background:#fff3cd;border:1px solid #ffc107;border-radius:5px;padding:6px 8px;color:#856404">
+                ⚠️ <b>Important :</b> copie le token <b>ghp_…</b> immédiatement !<br>GitHub ne le montrera <b>qu'une seule fois</b>.
+              </div>
+              <div style="margin-top:8px;font-style:italic;color:var(--gray)">💡 Besoin d'images ? Consulte le <a href="aide.html#github-gist" target="_blank" style="color:var(--blue)">guide illustré dans l'Aide</a>.</div>
+            </div>
+          </details>
+          <div style="font-size:11px;color:var(--gray);margin-bottom:6px">Colle ton token <b>ghp_…</b> ici :</div>
           <div style="display:flex;gap:6px;align-items:center">
             <input type="password" id="gist-token-inp" placeholder="ghp_xxxxxxxxxxxx" style="flex:1;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:11px;background:var(--surface);color:var(--text);font-family:monospace">
-            <button class="btn btn-save" style="font-size:11px;white-space:nowrap" onclick="gistTest()">✅ Valider</button>
+            <button class="btn btn-save" style="font-size:11px;white-space:nowrap" onclick="gistTest()">✅ Connecter</button>
           </div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
             <span class="gist-status-dot off" id="gist-status-dot"></span>
@@ -3178,9 +3260,11 @@ function renderConfigTab() {
               <div style="font-size:10px;color:var(--gray);margin-top:4px">Télécharge un fichier .json contenant toutes vos données. Stockez-le hors du navigateur (cloud, clé USB…).</div>
             </div>
             <div style="padding:8px 10px;border-radius:8px;background:var(--surface-alt);border:1px solid var(--border)">
-              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">🐙 GitHub Gist — Sync cloud gratuit</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase">🐙 GitHub Gist — Sync cloud</span>
+                <span style="background:#27ae60;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;letter-spacing:.4px">GRATUIT</span>
+              </div>
               ${gistSection}
-              <div style="font-size:10px;color:var(--gray);margin-top:6px">Sync automatique à chaque sauvegarde. Gratuit — nécessite un compte GitHub.</div>
             </div>
           </div>
         </div>`;

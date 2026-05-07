@@ -152,6 +152,7 @@ a:hover{text-decoration:underline}
       <a href="#livret">💰 Livret d'épargne</a>
       <a href="#resume">📊 Résumé mensuel</a>
       <a href="#sauvegarde">💾 Sauvegarde</a>
+      <a href="#github-gist" style="background:#e8f8f0;color:#27ae60;border-color:#27ae60">🐙 GitHub Gist gratuit</a>
       <a href="#dark">🌙 Mode nuit</a>
       <a href="#annee">📅 Nouvelle année</a>
     </nav>
@@ -683,11 +684,87 @@ a:hover{text-decoration:underline}
       </div>
 
       <div class="warn">
-        <b>⚠️ Attention</b> — Les données sont stockées dans votre navigateur. Effacer le cache ou changer de navigateur/appareil entraîne la perte des données. Utilisez l'export JSON pour une sauvegarde externe garantie.
+        <b>⚠️ Attention</b> — Les données sont stockées dans votre navigateur. Effacer le cache ou changer de navigateur/appareil entraîne la perte des données. Utilisez l'export JSON ou la sync GitHub Gist pour une sauvegarde externe garantie.
       </div>
 
       <div class="premium-tip">
         <b>⭐ Avec la licence Premium</b> — La synchronisation cloud Firebase sauvegarde automatiquement vos données à chaque modification. Vos données sont accessibles depuis n'importe quel appareil, n'importe où.
+      </div>
+
+      <h3 id="github-gist">🐙 Sync cloud gratuit via GitHub Gist</h3>
+      <div style="background:#e8f8f0;border:2px solid #27ae60;border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px">
+        <span style="font-size:32px;line-height:1">🆓</span>
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#27ae60;margin-bottom:3px">100% GRATUIT — aucune carte bancaire, aucun abonnement</div>
+          <div style="font-size:13px;color:#2d6a4f;line-height:1.6">GitHub est une plateforme gratuite utilisée par des millions de développeurs. En créant un compte gratuit, vous pouvez sauvegarder vos données budgétaires automatiquement dans le cloud, accessibles partout.</div>
+        </div>
+      </div>
+      <p>La synchronisation GitHub Gist permet de sauvegarder vos données en ligne <b>automatiquement à chaque enregistrement</b>. Si vous videz votre cache ou changez d'appareil, vos données sont récupérables en un clic.</p>
+
+      <div style="background:var(--card,#fff);border:1px solid #ddd;border-radius:12px;overflow:hidden;margin:16px 0">
+
+        <div style="background:#24292f;color:#fff;padding:12px 16px;font-weight:700;font-size:14px">
+          📋 Étape 1 — Créer un compte GitHub gratuit
+        </div>
+        <div style="padding:14px 16px;line-height:2;font-size:13px">
+          <div>1. Ouvre ton navigateur et va sur <a href="https://github.com/join" target="_blank" style="color:#0969da;font-weight:600">https://github.com/join</a></div>
+          <div>2. Remplis le formulaire :</div>
+          <ul style="margin:4px 0 4px 24px;line-height:2">
+            <li><b>Username</b> : choisis un pseudo (ex: <code>pascal-budget</code>)</li>
+            <li><b>Email address</b> : ton adresse e-mail</li>
+            <li><b>Password</b> : un mot de passe sécurisé</li>
+          </ul>
+          <div>3. Clique le bouton vert <b>"Continue"</b></div>
+          <div>4. Résous le petit puzzle de vérification (cliquer sur des images)</div>
+          <div>5. Ouvre ta boîte mail → tu as reçu un e-mail de GitHub → clique <b>"Verify email address"</b></div>
+          <div>6. Tu es connecté ! GitHub te demande quelques préférences → clique <b>"Skip personalization"</b> (tout en bas)</div>
+          <div style="background:#d1ecf1;border:1px solid #bee5eb;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#0c5460">
+            ✅ <b>C'est fait !</b> Ton compte GitHub est créé. Tu peux maintenant passer à l'étape 2.
+          </div>
+        </div>
+
+        <div style="background:#24292f;color:#fff;padding:12px 16px;font-weight:700;font-size:14px;border-top:1px solid #444">
+          🔑 Étape 2 — Créer le token de sécurité (Personal Access Token)
+        </div>
+        <div style="padding:14px 16px;line-height:2;font-size:13px">
+          <p style="margin:0 0 8px">Un "token" est comme un mot de passe spécial que tu donnes à Mon Budget pour qu'il puisse sauvegarder tes données. Il n'a accès qu'aux Gists (notes privées), rien d'autre.</p>
+          <div>1. Sur GitHub, clique sur ta <b>photo de profil</b> en haut à droite</div>
+          <div>2. Dans le menu déroulant, clique sur <b>Settings</b> (⚙️ Paramètres)</div>
+          <div>3. Fais défiler tout le menu gauche jusqu'en bas → clique <b>Developer settings</b> (Paramètres développeur)</div>
+          <div>4. Clique sur <b>Personal access tokens</b></div>
+          <div>5. Clique sur <b>Tokens (classic)</b></div>
+          <div>6. Clique le bouton <b>Generate new token</b> → puis <b>Generate new token (classic)</b></div>
+          <div>7. Dans le champ <b>Note</b>, écris : <code style="background:#f6f8fa;padding:2px 6px;border-radius:4px;border:1px solid #ddd">Mon Budget</code></div>
+          <div>8. Dans <b>Expiration</b>, sélectionne <b>No expiration</b> (pas de date d'expiration)</div>
+          <div>9. Dans la liste <b>Select scopes</b>, coche UNIQUEMENT la case <b>gist</b> ☑️</div>
+          <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 10px;margin:6px 0;font-size:12px;color:#856404">
+            ⚠️ Ne coche <b>aucune autre case</b> — cela limiterait les risques si le token était compromis.
+          </div>
+          <div>10. Clique le grand bouton vert <b>Generate token</b> tout en bas</div>
+          <div style="background:#f8d7da;border:1px solid #f5c6cb;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#721c24">
+            🚨 <b>ATTENTION :</b> GitHub affiche le token <b>une seule fois</b> ! Il ressemble à <code>ghp_AbCdEf123456...</code><br>
+            <b>Copie-le immédiatement</b> (Ctrl+C) avant de quitter la page !
+          </div>
+        </div>
+
+        <div style="background:#24292f;color:#fff;padding:12px 16px;font-weight:700;font-size:14px;border-top:1px solid #444">
+          ✅ Étape 3 — Connecter Mon Budget à GitHub
+        </div>
+        <div style="padding:14px 16px;line-height:2;font-size:13px">
+          <div>1. Dans Mon Budget, va dans <b>⚙️ Réglages</b></div>
+          <div>2. Section <b>🛡 Protection des données</b></div>
+          <div>3. Dans le bloc <b>🐙 GitHub Gist</b>, colle ton token dans le champ (Ctrl+V)</div>
+          <div>4. Clique <b>✅ Connecter</b></div>
+          <div>5. Un point vert 🟢 apparaît → <b>Connecté !</b></div>
+          <div>6. Dès maintenant, chaque fois que tu cliques <b>💾 Sauvegarder</b>, tes données sont aussi envoyées sur GitHub.</div>
+          <div style="background:#d4edda;border:1px solid #c3e6cb;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#155724">
+            🎉 <b>C'est configuré !</b> Pour récupérer tes données sur un autre appareil, connecte-toi à GitHub depuis ce nouvel appareil, crée un nouveau token, et clique <b>"⬇️ Récupérer depuis Gist"</b>.
+          </div>
+        </div>
+      </div>
+
+      <div class="tip">
+        💡 <b>Tu changes d'appareil ou de navigateur ?</b> Crée un nouveau token sur GitHub et colle-le dans Réglages → GitHub Gist. Puis clique "⬇️ Récupérer depuis Gist" pour restaurer toutes tes données.
       </div>
 
       <h3>Export CSV</h3>
