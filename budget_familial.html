@@ -469,6 +469,9 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   .soldes-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .solde-card{min-width:0}
 }
+/* ── AUTH MODAL ── */
+.auth-tab-btn{transition:background .15s,color .15s;color:var(--gray)}
+.auth-tab-btn.active{background:var(--surface)!important;color:var(--text);box-shadow:var(--shadow-sm)}
 /* ── ROW ACTIVE SELECTION (click / touch) ── */
 .charge-table tbody tr.row-active td,
 .summary-table tbody tr.row-active td{background:#c8d2ff!important}
@@ -1400,6 +1403,7 @@ function doLogin(id) {
 }
 
 function _finishLogin(id) {
+  fbInitAuth(); // Restaurer session Firebase Auth
   loadData();
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
   updateUserDisplay(); renderTabs();
@@ -3227,24 +3231,38 @@ function renderConfigTab() {
       })()}
     </div>
     <div>
-      <div class="config-card" style="margin-bottom:14px"><h3>🔑 Licence</h3>
-        ${isLicensed() ? `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--green-light);border-radius:8px;margin-bottom:10px">
-            <span style="font-size:22px">⭐</span>
-            <div><div style="font-weight:700;color:var(--green);font-size:13px">Premium actif</div>
-            <div style="font-size:11px;color:var(--gray)">Clé : ${getLicenseKey()?.substring(0,8)}…</div></div>
+      <div class="config-card" style="margin-bottom:14px">
+        <h3>👤 Compte &amp; Licence</h3>
+        ${_fbUser ? `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface-alt);border-radius:8px;margin-bottom:10px;border:1px solid var(--border)">
+            <span style="font-size:20px">👤</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_fbUser.email}</div>
+              <div style="font-size:11px;color:var(--gray)">Connecté</div>
+            </div>
+            <button onclick="fbLogout()" style="font-size:11px;color:var(--red);background:none;border:1px solid var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap">Déconnexion</button>
           </div>
-          <button onclick="deactivateLicense()" style="font-size:11px;color:var(--gray);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer">Désactiver sur cet appareil</button>
+          ${isLicensed() ? `
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--green-light);border-radius:8px;margin-bottom:10px">
+              <span style="font-size:22px">⭐</span>
+              <div><div style="font-weight:700;color:var(--green);font-size:13px">Premium actif</div></div>
+            </div>
+            <button onclick="deactivateLicense()" style="font-size:11px;color:var(--gray);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer">Révoquer la licence</button>
+          ` : `
+            <div style="font-size:12px;color:var(--gray);margin-bottom:12px;line-height:1.6">Version gratuite · 1 an · ${FREE_MAX_CATS} catégories</div>
+            <a href="${STRIPE_LINK}" target="_blank" style="display:block;background:var(--blue);color:#fff;border-radius:8px;padding:10px;font-size:13px;font-weight:700;text-decoration:none;text-align:center;margin-bottom:12px">⭐ Passer à Premium — 14,90 €</a>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:6px">Déjà une clé de licence ?</div>
+            <div style="display:flex;gap:6px">
+              <input id="cfg-license-input" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;letter-spacing:1px">
+              <button onclick="activateLicense(document.getElementById('cfg-license-input').value)" style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">Activer</button>
+            </div>
+          `}
         ` : `
           <div style="font-size:12px;color:var(--gray);margin-bottom:12px;line-height:1.6">
-            Version gratuite : 1 utilisateur · 1 année · ${FREE_MAX_CATS} catégories · local uniquement
+            Connectez-vous pour accéder à Premium et synchroniser vos données sur tous vos appareils.
           </div>
-          <a href="${STRIPE_LINK}" target="_blank" style="display:block;background:var(--blue);color:#fff;border-radius:8px;padding:10px;font-size:13px;font-weight:700;text-decoration:none;text-align:center;margin-bottom:12px">⭐ Passer à Premium — 14,90 €</a>
-          <div style="font-size:12px;color:var(--gray);margin-bottom:6px">Déjà une clé ?</div>
-          <div style="display:flex;gap:6px">
-            <input id="cfg-license-input" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;letter-spacing:1px">
-            <button onclick="activateLicense(document.getElementById('cfg-license-input').value)" style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">Activer</button>
-          </div>
+          <button onclick="openAuthModal('login')" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">🔐 Se connecter</button>
+          <button onclick="openAuthModal('register')" style="width:100%;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">✨ Créer un compte</button>
         `}
       </div>
       <div class="config-card"><h3>☁️ Synchronisation Cloud</h3>
@@ -3463,15 +3481,214 @@ function deleteTplChg(i) { const cfg=loadUserConfig(); cfg.tplChgs=(cfg.tplChgs|
 // ── LICENCE ──
 const LICENSE_DB  = 'https://mon-budget-licences-default-rtdb.europe-west1.firebasedatabase.app';
 const STRIPE_LINK = 'https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00';
+const FB_API_KEY  = 'AIzaSyBB0h8ENURTDyndoVBtsu1i94l_mVZZ23o';
+const FB_AUTH     = 'https://identitytoolkit.googleapis.com/v1/accounts';
+const FB_TOKEN    = 'https://securetoken.googleapis.com/v1/token';
+
+// ── FIREBASE AUTH STATE ──────────────────────────────────────────────────
+let _fbUser = null; // { uid, email, idToken, refreshToken, expiresAt }
+
+function _fbSave(u) {
+  _fbUser = u;
+  if (u) {
+    localStorage.setItem('mbudget-fb-uid',     u.uid);
+    localStorage.setItem('mbudget-fb-email',   u.email);
+    localStorage.setItem('mbudget-fb-token',   u.idToken);
+    localStorage.setItem('mbudget-fb-refresh', u.refreshToken);
+    localStorage.setItem('mbudget-fb-exp',     String(u.expiresAt || 0));
+  } else {
+    ['uid','email','token','refresh','exp'].forEach(k => localStorage.removeItem('mbudget-fb-' + k));
+  }
+}
+function _fbLoad() {
+  const uid = localStorage.getItem('mbudget-fb-uid');
+  if (!uid) return null;
+  return { uid, email: localStorage.getItem('mbudget-fb-email')||'',
+    idToken: localStorage.getItem('mbudget-fb-token')||'',
+    refreshToken: localStorage.getItem('mbudget-fb-refresh')||'',
+    expiresAt: parseInt(localStorage.getItem('mbudget-fb-exp')||'0') };
+}
+async function _fbRefreshToken() {
+  const s = _fbLoad();
+  if (!s?.refreshToken) return null;
+  try {
+    const r = await fetch(`${FB_TOKEN}?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ grant_type:'refresh_token', refresh_token: s.refreshToken })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error?.message);
+    const u = { uid: d.user_id, email: s.email, idToken: d.id_token,
+      refreshToken: d.refresh_token, expiresAt: Date.now() + parseInt(d.expires_in)*1000 };
+    _fbSave(u); return u;
+  } catch { _fbSave(null); return null; }
+}
+async function fbGetToken() {
+  let u = _fbUser || _fbLoad();
+  if (!u) return null;
+  if (Date.now() > u.expiresAt - 120000) u = await _fbRefreshToken();
+  return u?.idToken || null;
+}
+function _fbErrMsg(code='') {
+  return ({ EMAIL_EXISTS:'Email déjà utilisé', INVALID_EMAIL:'Email invalide',
+    WEAK_PASSWORD:'Mot de passe trop court (6 car. min)',
+    EMAIL_NOT_FOUND:'Aucun compte avec cet email',
+    INVALID_PASSWORD:'Mot de passe incorrect',
+    INVALID_LOGIN_CREDENTIALS:'Email ou mot de passe incorrect',
+    USER_DISABLED:'Compte désactivé',
+    TOO_MANY_ATTEMPTS_TRY_LATER:'Trop de tentatives, réessayez plus tard'
+  })[code.split(' :')[0]] || code || 'Erreur inconnue';
+}
+async function fbRegister(email, password) {
+  const r = await fetch(`${FB_AUTH}:signUp?key=${FB_API_KEY}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ email, password, returnSecureToken:true })
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(_fbErrMsg(d.error?.message));
+  const u = { uid:d.localId, email:d.email, idToken:d.idToken,
+    refreshToken:d.refreshToken, expiresAt:Date.now()+parseInt(d.expiresIn)*1000 };
+  _fbSave(u); return u;
+}
+async function fbLogin(email, password) {
+  const r = await fetch(`${FB_AUTH}:signInWithPassword?key=${FB_API_KEY}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ email, password, returnSecureToken:true })
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(_fbErrMsg(d.error?.message));
+  const u = { uid:d.localId, email:d.email, idToken:d.idToken,
+    refreshToken:d.refreshToken, expiresAt:Date.now()+parseInt(d.expiresIn)*1000 };
+  _fbSave(u); return u;
+}
+async function fbResetPassword(email) {
+  const r = await fetch(`${FB_AUTH}:sendOobCode?key=${FB_API_KEY}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ requestType:'PASSWORD_RESET', email })
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(_fbErrMsg(d.error?.message));
+}
+function fbLogout() {
+  const uid = _fbUser?.uid || localStorage.getItem('mbudget-fb-uid');
+  if (uid) localStorage.removeItem('mbudget-premium-' + uid);
+  _fbSave(null);
+  localStorage.removeItem('mbudget-license');
+  renderConfigTab();
+  showToast('👋 Déconnecté');
+}
+async function fbCheckPremium(uid, idToken) {
+  try {
+    const r = await fetch(`${LICENSE_DB}/users/${uid}/premium.json?auth=${idToken}`);
+    const val = await r.json();
+    if (val === true) { localStorage.setItem('mbudget-premium-'+uid,'1'); return true; }
+  } catch {}
+  // Rétro-compat : ancienne clé de licence → migration automatique
+  const oldKey = localStorage.getItem('mbudget-license');
+  if (oldKey) {
+    try {
+      const r = await fetch(`${LICENSE_DB}/licenses/${oldKey}.json`);
+      const data = await r.json();
+      if (data?.active === true && (!data.uid || data.uid === uid)) {
+        await fetch(`${LICENSE_DB}/licenses/${oldKey}/uid.json`, {
+          method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(uid) });
+        await fetch(`${LICENSE_DB}/users/${uid}/premium.json?auth=${idToken}`, {
+          method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) });
+        localStorage.setItem('mbudget-premium-'+uid,'1');
+        return true;
+      }
+    } catch {}
+  }
+  localStorage.removeItem('mbudget-premium-'+uid); return false;
+}
+async function fbInitAuth() {
+  const stored = _fbLoad();
+  if (!stored) return;
+  _fbUser = stored;
+  if (Date.now() > stored.expiresAt - 120000) _fbUser = await _fbRefreshToken();
+  if (_fbUser) {
+    fbCheckPremium(_fbUser.uid, _fbUser.idToken).then(() => renderConfigTab());
+  }
+}
+
+// ── AUTH MODAL FUNCTIONS ─────────────────────────────────────────────────
+function openAuthModal(tab='login') {
+  const el = document.getElementById('auth-overlay');
+  if (!el) return;
+  el.style.display = 'flex';
+  authShowTab(tab);
+}
+function closeAuthModal() {
+  const el = document.getElementById('auth-overlay');
+  if (el) el.style.display = 'none';
+}
+function authShowTab(tab) {
+  document.getElementById('auth-tab-login').style.display  = tab==='login'    ? '' : 'none';
+  document.getElementById('auth-tab-register').style.display = tab==='register' ? '' : 'none';
+  document.getElementById('auth-tab-reset').style.display  = tab==='reset'    ? '' : 'none';
+  document.querySelectorAll('.auth-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+}
+async function authDoLogin() {
+  const email = document.getElementById('auth-login-email').value.trim();
+  const pass  = document.getElementById('auth-login-pass').value;
+  const err   = document.getElementById('auth-login-err');
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'Remplissez tous les champs'; return; }
+  try {
+    const u = await fbLogin(email, pass);
+    await fbCheckPremium(u.uid, u.idToken);
+    closeAuthModal();
+    renderConfigTab();
+    showToast('✅ Connecté — ' + u.email);
+  } catch(e) { err.textContent = e.message; }
+}
+async function authDoRegister() {
+  const email = document.getElementById('auth-reg-email').value.trim();
+  const pass  = document.getElementById('auth-reg-pass').value;
+  const pass2 = document.getElementById('auth-reg-pass2').value;
+  const key   = document.getElementById('auth-reg-key').value.trim();
+  const err   = document.getElementById('auth-reg-err');
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'Remplissez tous les champs'; return; }
+  if (pass !== pass2)  { err.textContent = 'Les mots de passe ne correspondent pas'; return; }
+  try {
+    const u = await fbRegister(email, pass);
+    if (key) {
+      localStorage.setItem('mbudget-license', key.replace(/[^A-Za-z0-9_-]/g,''));
+    }
+    await fbCheckPremium(u.uid, u.idToken);
+    closeAuthModal();
+    renderConfigTab();
+    showToast('🎉 Compte créé — bienvenue !');
+  } catch(e) { err.textContent = e.message; }
+}
+async function authDoReset() {
+  const email = document.getElementById('auth-reset-email').value.trim();
+  const err   = document.getElementById('auth-reset-err');
+  err.textContent = '';
+  if (!email) { err.textContent = 'Entrez votre email'; return; }
+  try {
+    await fbResetPassword(email);
+    err.style.color = 'var(--green)';
+    err.textContent = '✅ Email de réinitialisation envoyé';
+  } catch(e) { err.style.color='var(--red)'; err.textContent = e.message; }
+}
 const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 function isLicensed()  {
   if (_compareMode === 'pro')  return true;
   if (_compareMode === 'free') return false;
-  return !!localStorage.getItem('mbudget-license');
+  const uid = _fbUser?.uid || localStorage.getItem('mbudget-fb-uid');
+  if (uid && localStorage.getItem('mbudget-premium-'+uid) === '1') return true;
+  return !!localStorage.getItem('mbudget-license'); // rétro-compat
 }
-function getLicenseKey(){ return localStorage.getItem('mbudget-license') || null; }
+function getLicenseKey(){
+  // Préférer UID Firebase (chemin des données cloud)
+  const uid = _fbUser?.uid || localStorage.getItem('mbudget-fb-uid');
+  if (uid && localStorage.getItem('mbudget-premium-'+uid) === '1') return uid;
+  return localStorage.getItem('mbudget-license') || null;
+}
 
 function showUpgrade(reason) {
   document.getElementById('upgrade-reason').textContent = 'Fonctionnalité Premium requise : ' + reason + '.';
@@ -3484,25 +3701,39 @@ function closeUpgrade() { document.getElementById('upgrade-overlay').style.displ
 async function activateLicense(key) {
   key = (key||'').trim().replace(/[^A-Za-z0-9_-]/g,'');
   if (!key) { showToast('⚠️ Clé vide'); return false; }
+  if (!_fbUser) { showToast('⚠️ Connectez-vous d\'abord à votre compte'); openAuthModal('login'); return false; }
   try {
     const res  = await fetch(`${LICENSE_DB}/licenses/${key}.json`);
     const data = await res.json();
     if (!data || data.active !== true) { showToast('❌ Clé invalide ou expirée'); return false; }
+    if (data.uid && data.uid !== _fbUser.uid) { showToast('❌ Cette clé est déjà utilisée par un autre compte'); return false; }
+    // Lier la clé à ce compte
+    const tok = await fbGetToken();
+    await fetch(`${LICENSE_DB}/licenses/${key}/uid.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(_fbUser.uid) });
+    await fetch(`${LICENSE_DB}/users/${_fbUser.uid}/premium.json?auth=${tok}`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) });
+    localStorage.setItem('mbudget-premium-'+_fbUser.uid, '1');
     localStorage.setItem('mbudget-license', key);
     showToast('🎉 Licence activée — bienvenue en Premium !');
-    closeUpgrade();
-    renderConfigTab();
-    return true;
+    closeUpgrade(); renderConfigTab(); return true;
   } catch { showToast('❌ Impossible de vérifier (réseau ?)'); return false; }
 }
 function activateLicenseFromOverlay() {
   activateLicense(document.getElementById('upgrade-key-input').value);
 }
-function deactivateLicense() {
+async function deactivateLicense() {
   if (!confirm('Désactiver la licence Premium sur cet appareil ?')) return;
+  if (_fbUser) {
+    const tok = await fbGetToken();
+    try {
+      await fetch(`${LICENSE_DB}/users/${_fbUser.uid}/premium.json?auth=${tok}`, {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(false) });
+    } catch {}
+    localStorage.removeItem('mbudget-premium-'+_fbUser.uid);
+  }
   localStorage.removeItem('mbudget-license');
-  renderConfigTab();
-  showToast('Licence désactivée');
+  renderConfigTab(); showToast('Licence désactivée');
 }
 
 // ── CSV IMPORT ──
@@ -4483,6 +4714,74 @@ function closeCompareView() {
   if (_origRS) window.renderSummary = function(){ _sel = null; return _origRS(); };
 })();
 </script>
+
+<!-- ── AUTH MODAL ── -->
+<div id="auth-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;font-family:Inter,sans-serif" onclick="if(event.target===this)closeAuthModal()">
+  <div style="background:var(--surface);border-radius:16px;width:min(420px,95%);padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:20px;font-weight:800">🔐 Mon Budget</div>
+      <button onclick="closeAuthModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray)">✕</button>
+    </div>
+    <!-- Onglets -->
+    <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg);border-radius:8px;padding:3px">
+      <button class="auth-tab-btn active" data-tab="login"    onclick="authShowTab('login')"    style="flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:var(--surface)">Connexion</button>
+      <button class="auth-tab-btn"        data-tab="register" onclick="authShowTab('register')" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:transparent">Créer un compte</button>
+    </div>
+    <!-- Connexion -->
+    <div id="auth-tab-login">
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:600;color:var(--gray);display:block;margin-bottom:4px">EMAIL</label>
+        <input id="auth-login-email" type="email" placeholder="votre@email.com" autocomplete="email"
+          style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:6px">
+        <label style="font-size:11px;font-weight:600;color:var(--gray);display:block;margin-bottom:4px">MOT DE PASSE</label>
+        <input id="auth-login-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')authDoLogin()"
+          style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);box-sizing:border-box">
+      </div>
+      <div style="text-align:right;margin-bottom:16px">
+        <button onclick="authShowTab('reset')" style="background:none;border:none;font-size:11px;color:var(--blue);cursor:pointer;padding:0">Mot de passe oublié ?</button>
+      </div>
+      <div id="auth-login-err" style="color:var(--red);font-size:12px;margin-bottom:10px;min-height:16px"></div>
+      <button onclick="authDoLogin()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">Se connecter</button>
+    </div>
+    <!-- Inscription -->
+    <div id="auth-tab-register" style="display:none">
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:600;color:var(--gray);display:block;margin-bottom:4px">EMAIL</label>
+        <input id="auth-reg-email" type="email" placeholder="votre@email.com" autocomplete="email"
+          style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:600;color:var(--gray);display:block;margin-bottom:4px">MOT DE PASSE</label>
+        <input id="auth-reg-pass" type="password" placeholder="6 caractères minimum" autocomplete="new-password"
+          style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:600;color:var(--gray);display:block;margin-bottom:4px">CONFIRMER LE MOT DE PASSE</label>
+        <input id="auth-reg-pass2" type="password" placeholder="••••••••" autocomplete="new-password"
+          style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;font-weight:600;color:var(--gray);display:block;margin-bottom:4px">CLÉ DE LICENCE (si vous en avez une)</label>
+        <input id="auth-reg-key" type="text" placeholder="XXXX-XXXX-XXXX (optionnel)"
+          style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);box-sizing:border-box">
+      </div>
+      <div id="auth-reg-err" style="color:var(--red);font-size:12px;margin-bottom:10px;min-height:16px"></div>
+      <button onclick="authDoRegister()" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">Créer mon compte</button>
+    </div>
+    <!-- Mot de passe oublié -->
+    <div id="auth-tab-reset" style="display:none">
+      <p style="font-size:13px;color:var(--gray);margin-bottom:16px">Entrez votre email pour recevoir un lien de réinitialisation.</p>
+      <input id="auth-reset-email" type="email" placeholder="votre@email.com"
+        style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);box-sizing:border-box;margin-bottom:12px">
+      <div id="auth-reset-err" style="font-size:12px;margin-bottom:10px;min-height:16px"></div>
+      <button onclick="authDoReset()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">Envoyer le lien</button>
+      <button onclick="authShowTab('login')" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;cursor:pointer;color:var(--gray)">← Retour</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── COMPARE OVERLAY ── -->
 <div id="compare-overlay" style="display:none;position:fixed;inset:0;background:#0d0f1a;z-index:9998;flex-direction:column;font-family:Inter,sans-serif">
