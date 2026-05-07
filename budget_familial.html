@@ -211,6 +211,9 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .var-table thead th{background:#f0f2f5;font-size:10px;font-weight:700;text-transform:uppercase;padding:6px 8px;text-align:left;border-bottom:2px solid var(--border);color:var(--gray)}
 .var-table tbody tr{border-bottom:1px solid #f0f2f4}
 .var-table tbody tr:hover td{background:#c8d2ff}
+/* Annuler le hover sur la ligne-conteneur du détail (évite que toutes les tx semblent surlignées) */
+.var-table tbody tr[id^="vdetrow"]:hover>td{background:transparent!important}
+[data-theme="dark"] .var-table tbody tr[id^="vdetrow"]:hover>td{background:transparent!important}
 .var-table td{padding:4px 6px;vertical-align:middle}
 /* method colors */
 /* method styles now applied via inline styles */
