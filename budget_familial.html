@@ -3564,7 +3564,7 @@ const FB_AUTH     = 'https://identitytoolkit.googleapis.com/v1/accounts';
 const FB_TOKEN    = 'https://securetoken.googleapis.com/v1/token';
 // Google OAuth Client ID — Firebase Console → Authentication → Sign-in method → Google → Web SDK configuration → Web client ID
 const GOOGLE_CLIENT_ID   = '76524188744-s6uc65fob4igrvgot581b0710npa90er.apps.googleusercontent.com';
-const FACEBOOK_APP_ID    = '1678940626635029';
+
 
 // ── FIREBASE AUTH STATE ──────────────────────────────────────────────────
 let _fbUser = null; // { uid, email, idToken, refreshToken, expiresAt }
@@ -3792,65 +3792,12 @@ function signInWithGoogle() {
   }, 500);
 }
 
-// ── FACEBOOK SIGN-IN ──
-async function _fbSignInWithFacebook(accessToken) {
-  const requestUri = window.location.origin + window.location.pathname;
-  const r = await fetch(`${FB_AUTH}:signInWithIdp?key=${FB_API_KEY}`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      requestUri, returnSecureToken:true,
-      postBody: `access_token=${accessToken}&providerId=facebook.com`
-    })
-  });
-  const d = await r.json();
-  if (!r.ok) throw new Error(_fbErrMsg(d.error?.message));
-  const u = { uid:d.localId, email:d.email||d.providerUserInfo?.[0]?.email||'', idToken:d.idToken,
-    refreshToken:d.refreshToken, expiresAt:Date.now()+parseInt(d.expiresIn)*1000 };
-  _fbSave(u); return u;
-}
 
-function signInWithFacebook() {
-  const redirectUri = window.location.origin + window.location.pathname;
-  const params = new URLSearchParams({
-    client_id: FACEBOOK_APP_ID,
-    redirect_uri: redirectUri,
-    response_type: 'token',
-    scope: 'email',
-    state: 'fb-' + Math.random().toString(36).slice(2)
-  });
-  const popup = window.open('https://www.facebook.com/v18.0/dialog/oauth?' + params, 'facebook-signin', 'width=500,height=620,left=100,top=100');
-  if (!popup) { showToast('⚠️ Popups bloquées — autorisez-les pour ce site'); return; }
-  const check = setInterval(async () => {
-    try {
-      if (popup.closed) { clearInterval(check); return; }
-      const hash = popup.location.hash;
-      if (hash && popup.location.origin === window.location.origin) {
-        clearInterval(check);
-        const params2 = new URLSearchParams(hash.slice(1));
-        const token = params2.get('access_token');
-        popup.close();
-        if (!token) { showToast('❌ Erreur Facebook Sign-In'); return; }
-        try {
-          const u = await _fbSignInWithFacebook(token);
-          await fbCheckPremium(u.uid, u.idToken);
-          closeAuthModal();
-          renderConfigTab();
-          showToast('✅ Connecté avec Facebook — ' + u.email);
-        } catch(e) {
-          const errEl = document.getElementById('auth-login-err') || document.getElementById('auth-reg-err');
-          if (errEl) errEl.textContent = e.message;
-          showToast('❌ ' + e.message);
-        }
-      }
-    } catch(e2) { /* cross-origin */ }
-  }, 500);
-}
-
-// Called on page load to handle OAuth popup callbacks (Google + Facebook)
+// Called on page load to handle OAuth popup callback (Google)
 function _handleGoogleCallback() {
   if (!window.opener) return;
   const hash = window.location.hash;
-  if (!hash.includes('id_token') && !hash.includes('access_token') && !hash.includes('error')) return;
+  if (!hash.includes('id_token') && !hash.includes('error')) return;
   try { window.opener.postMessage({ type:'google-auth-cb', hash }, window.location.origin); } catch(e) {}
   setTimeout(() => window.close(), 100);
 }
@@ -4208,23 +4155,17 @@ function applyUpdate() {
 
 // Handle Google OAuth popup callback
 _handleGoogleCallback();
-// Listen for postMessage from Google or Facebook popup
+// Listen for postMessage from Google popup
 window.addEventListener('message', async (e) => {
   if (e.origin !== window.location.origin) return;
   if (e.data?.type !== 'google-auth-cb') return;
   const hash = e.data.hash || '';
   const params = new URLSearchParams(hash.slice(1));
   const googleToken = params.get('id_token');
-  const fbToken     = params.get('access_token');
+  if (!googleToken) return;
   try {
-    let u;
-    if (googleToken) {
-      u = await _fbSignInWithIdp(googleToken);
-      showToast('✅ Connecté avec Google — ' + u.email);
-    } else if (fbToken) {
-      u = await _fbSignInWithFacebook(fbToken);
-      showToast('✅ Connecté avec Facebook — ' + u.email);
-    } else return;
+    const u = await _fbSignInWithIdp(googleToken);
+    showToast('✅ Connecté avec Google — ' + u.email);
     await fbCheckPremium(u.uid, u.idToken);
     closeAuthModal();
     renderConfigTab();
@@ -5141,10 +5082,6 @@ function closeCompareView() {
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.02 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.52-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
         Continuer avec Google
       </button>
-      <button onclick="signInWithFacebook()" style="width:100%;background:#1877F2;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.791-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
-        Continuer avec Facebook
-      </button>
       <button onclick="closeAuthModal()" style="width:100%;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;padding:6px">Continuer sans compte (version gratuite)</button>
     </div>
     <!-- Inscription -->
@@ -5179,10 +5116,6 @@ function closeCompareView() {
       <button onclick="signInWithGoogle()" style="width:100%;background:#fff;color:#3c4043;border:1px solid var(--border);border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.02 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.52-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
         S'inscrire avec Google
-      </button>
-      <button onclick="signInWithFacebook()" style="width:100%;background:#1877F2;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.791-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
-        S'inscrire avec Facebook
       </button>
       <button onclick="closeAuthModal()" style="width:100%;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;padding:6px">Continuer sans compte (version gratuite)</button>
     </div>
