@@ -462,15 +462,16 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 }
 /* ── ROW ACTIVE SELECTION (click / touch) ── */
 .charge-table tbody tr.row-active td,
-.var-table tbody tr.row-active td,
 .summary-table tbody tr.row-active td{background:#c8d2ff!important}
 .charge-table tbody tr.row-active td.lbl-col,
 .summary-table tbody tr.row-active td.lbl-col{background:#c8d2ff!important}
+/* var-table : couleur plus vive pour se distinguer des fonds de mode de paiement */
+.var-table tbody tr.row-active td{background:#7b8fff!important;color:#fff!important}
 [data-theme="dark"] .charge-table tbody tr.row-active td,
-[data-theme="dark"] .var-table tbody tr.row-active td,
 [data-theme="dark"] .summary-table tbody tr.row-active td{background:#252c6a!important}
 [data-theme="dark"] .charge-table tbody tr.row-active td.lbl-col,
 [data-theme="dark"] .summary-table tbody tr.row-active td.lbl-col{background:#252c6a!important}
+[data-theme="dark"] .var-table tbody tr.row-active td{background:#3a4aaa!important;color:var(--text)!important}
 /* Désactiver le hover CSS collant sur écrans tactiles */
 @media (hover:none){
   .charge-table tbody tr:hover td,.charge-table tbody tr:hover td.lbl-col,
@@ -2581,7 +2582,8 @@ function txRow(year, catKey, tx) {
   const m = getMethodObj(tx.method);
   const opts = getMethods().map(mo=>`<option value="${mo.key}"${tx.method===mo.key?' selected':''}>${mo.label}</option>`).join('');
   const _txDark = document.documentElement.dataset.theme === 'dark';
-  return `<tr id="vtr-${tx.id}" style="border-left:4px solid ${m.color}">
+  const _txBg = _txDark ? 'var(--surface)' : m.bg;
+  return `<tr id="vtr-${tx.id}" style="border-left:4px solid ${m.color};background:${_txBg}">
     <td><input class="var-input day" type="number" min="1" max="31" placeholder="—" value="${txDay(tx.date)}"
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
       oninput="updateTxField('${year}','${catKey}',${tx.id},'date',this.value?+this.value:'');dSave()"></td>
@@ -2709,7 +2711,7 @@ function updateTxMethod(year, catKey, id, sel) {
   sel.style.background = _isDk ? 'var(--surface)' : mo.bg;
   sel.style.borderColor = mo.color;
   const tr = document.getElementById(`vtr-${id}`);
-  if (tr) { tr.style.borderLeftColor = mo.color; }
+  if (tr) { tr.style.borderLeftColor = mo.color; tr.style.background = _isDk ? 'var(--surface)' : mo.bg; }
 }
 function delTx(year, catKey, id, m) {
   confirmDelete('Supprimer cette transaction ?', () => {
