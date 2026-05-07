@@ -57,14 +57,15 @@
 [data-theme="dark"] .charge-table thead th.lbl-col{background:var(--surface-alt)}
 [data-theme="dark"] .charge-table thead th.tot-col{background:#263050;color:#90caf9 !important}
 [data-theme="dark"] .charge-table tbody tr:hover td{background:var(--blue-light)}
+[data-theme="dark"] .charge-table tbody td{border-bottom-color:var(--border);color:var(--text)}
 [data-theme="dark"] .charge-table tbody td.lbl-col{background:var(--surface)}
 [data-theme="dark"] .charge-table tbody tr:hover td.lbl-col{background:var(--blue-light)}
-[data-theme="dark"] .charge-table tbody td{border-bottom-color:var(--border)}
-[data-theme="dark"] .cell-amt{color:#c8d0e0}
+[data-theme="dark"] .cell-amt{color:var(--text)}
 [data-theme="dark"] .sep-row td{background:#1a3566}
 [data-theme="dark"] .occ-row td{background:#2a2810}
-[data-theme="dark"] .cell-amt{color:var(--text)}
 [data-theme="dark"] .var-table thead th{background:var(--surface-alt);color:var(--gray);border-bottom-color:var(--border)}
+[data-theme="dark"] .var-table tbody td{color:var(--text)}
+[data-theme="dark"] .var-table tbody tr{border-bottom-color:var(--border)}
 [data-theme="dark"] .var-month-row td{background:#1a2035;color:#90caf9}
 [data-theme="dark"] .var-subtotal td{background:var(--surface-alt);color:var(--gray)}
 [data-theme="dark"] .summary-table thead th{background:#1e2540;color:var(--gray);border-bottom-color:var(--border)}
@@ -79,7 +80,7 @@
 [data-theme="dark"] .user-menu-item{color:var(--text)}
 [data-theme="dark"] .chart-card{background:var(--surface)}
 [data-theme="dark"] .config-card{background:var(--surface)}
-[data-theme="dark"] .var-input{color:var(--text);background:transparent}
+[data-theme="dark"] .var-input{color:var(--text)!important;background:transparent}
 [data-theme="dark"] .var-input:focus{background:var(--surface-alt)}
 [data-theme="dark"] .summary-table tbody td{color:var(--text)}
 [data-theme="dark"] .summary-table .neg{color:#ff6b7a}
@@ -178,15 +179,15 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 
 /* Cell with paid toggle */
 .cell-wrap{display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 0}
-.cell-amt{width:100%;border:none;background:transparent;text-align:right;font-size:12px;font-family:Arial,sans-serif;color:#2c3e50;outline:none;padding:1px 4px;border-radius:3px}
+.cell-amt{width:100%;border:none;background:transparent;text-align:right;font-size:12px;font-family:Arial,sans-serif;color:var(--text);outline:none;padding:1px 4px;border-radius:3px}
 .cell-amt:focus{background:var(--blue-light);box-shadow:0 0 0 2px var(--blue)}
 .cell-amt.neg{color:var(--red)}
-.paid-dot{font-size:10px;color:#a0a8b8;cursor:pointer;display:block;text-align:right;padding-right:3px;user-select:none;transition:color .15s;line-height:1;margin-top:1px}
-.charge-table tbody td:hover .paid-dot{color:rgba(0,150,0,.6)}
+.paid-dot{font-size:10px;color:#7a8299;cursor:pointer;display:block;text-align:right;padding-right:3px;user-select:none;transition:color .15s;line-height:1;margin-top:1px}
+.charge-table tbody td:hover .paid-dot{color:rgba(0,150,0,.7)}
 td.is-paid{background:var(--green-light) !important;cursor:pointer}
 td.is-paid .paid-dot{color:var(--green) !important;font-weight:700;font-size:11px}
 td.is-paid .cell-amt{color:var(--green);font-weight:600}
-.del-btn{background:none;border:none;color:#b0b8c8;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px}
+.del-btn{background:none;border:none;color:#8a93a8;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px}
 .del-btn:hover{color:var(--red)}
 .cal-check{display:none;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--blue)}
 .cfg-compte .cal-check-compte{display:inline-block}
@@ -216,8 +217,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 /* month selector */
 .month-sel{border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:11px;background:#fff}
 /* inputs in var table */
-.var-input{width:100%;border:1px solid transparent;border-radius:3px;padding:3px 5px;font-size:12px;background:transparent;font-family:Arial,sans-serif}
-.var-input:focus{border-color:var(--blue);background:#fff;outline:none}
+.var-input{width:100%;border:1px solid transparent;border-radius:3px;padding:3px 5px;font-size:12px;background:transparent;font-family:Arial,sans-serif;color:var(--text)}
+.var-input:focus{border-color:var(--blue);background:var(--surface);outline:none}
 .var-input.amt{width:80px;text-align:right}
 .var-input.date{width:110px}
 .var-input.comment{width:200px}
