@@ -54,8 +54,13 @@
 }
 [data-theme="dark"] .charge-table tbody td.tot-col{background:#1A2030;color:#90caf9;border-left-color:#3a4a6a}
 [data-theme="dark"] .charge-table thead th{background:var(--surface-alt);color:var(--gray);border-bottom-color:var(--border)}
+[data-theme="dark"] .charge-table thead th.lbl-col{background:var(--surface-alt)}
 [data-theme="dark"] .charge-table thead th.tot-col{background:#263050;color:#90caf9 !important}
 [data-theme="dark"] .charge-table tbody tr:hover td{background:var(--blue-light)}
+[data-theme="dark"] .charge-table tbody td.lbl-col{background:var(--surface)}
+[data-theme="dark"] .charge-table tbody tr:hover td.lbl-col{background:var(--blue-light)}
+[data-theme="dark"] .charge-table tbody td{border-bottom-color:var(--border)}
+[data-theme="dark"] .cell-amt{color:#c8d0e0}
 [data-theme="dark"] .sep-row td{background:#1a3566}
 [data-theme="dark"] .occ-row td{background:#2a2810}
 [data-theme="dark"] .cell-amt{color:var(--text)}
@@ -153,16 +158,17 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .badge-o{background:var(--orange-light);color:var(--orange)}
 .chevron{font-size:14px;color:var(--gray);transition:transform .25s}
 .collapsed .chevron{transform:rotate(-90deg)}
-.section-body{overflow:auto}.collapsed .section-body{display:none}
+.section-body{overflow-x:auto;-webkit-overflow-scrolling:touch}.collapsed .section-body{display:none}
 
 /* ── CHARGE TABLE ── */
 .charge-table{width:100%;border-collapse:collapse;min-width:1100px}
 .charge-table thead th{background:var(--surface-alt);font-size:11px;font-weight:600;text-transform:uppercase;padding:10px 6px;text-align:center;border-bottom:2px solid var(--border);color:var(--gray);min-width:82px;letter-spacing:0.04em}
-.charge-table thead th.lbl-col{text-align:left;min-width:205px;padding-left:16px}
+.charge-table thead th.lbl-col{text-align:left;min-width:205px;padding-left:16px;position:sticky;left:0;z-index:3;background:var(--surface-alt)}
 .charge-table thead th.tot-col{background:var(--text);color:#fff !important;min-width:95px;border-left:3px solid rgba(255,255,255,0.1)}
 .charge-table tbody tr:hover td{background:var(--blue-light)}
-.charge-table tbody td{padding:3px 3px;border-bottom:1px solid #f0f2f4;text-align:center;min-width:82px;vertical-align:middle}
-.charge-table tbody td.lbl-col{text-align:left;padding-left:14px;font-weight:500;min-width:205px}
+.charge-table tbody td{padding:3px 3px;border-bottom:1px solid #d8dce6;text-align:center;min-width:82px;vertical-align:middle}
+.charge-table tbody td.lbl-col{text-align:left;padding-left:14px;font-weight:500;min-width:205px;position:sticky;left:0;z-index:2;background:var(--bg);box-shadow:2px 0 4px rgba(0,0,0,.06)}
+.charge-table tbody tr:hover td.lbl-col{background:var(--blue-light)}
 .charge-table tbody td.tot-col{font-weight:800;background:#dde3eb;min-width:95px;font-size:13px;border-left:3px solid #b0bec5;color:#1a252f}
 /* separator row */
 .sep-row td{background:#1a3c6e;color:#fff;font-weight:700;padding:6px 14px;font-size:11px;letter-spacing:.5px}
@@ -175,12 +181,13 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .cell-amt{width:100%;border:none;background:transparent;text-align:right;font-size:12px;font-family:Arial,sans-serif;color:#2c3e50;outline:none;padding:1px 4px;border-radius:3px}
 .cell-amt:focus{background:var(--blue-light);box-shadow:0 0 0 2px var(--blue)}
 .cell-amt.neg{color:var(--red)}
-.paid-dot{font-size:9px;color:#ccc;cursor:pointer;display:block;text-align:right;padding-right:3px;user-select:none;transition:color .15s;line-height:1;margin-top:1px}
-.charge-table tbody td:hover .paid-dot{color:rgba(0,150,0,.5)}
+.paid-dot{font-size:10px;color:#a0a8b8;cursor:pointer;display:block;text-align:right;padding-right:3px;user-select:none;transition:color .15s;line-height:1;margin-top:1px}
+.charge-table tbody td:hover .paid-dot{color:rgba(0,150,0,.6)}
 td.is-paid{background:var(--green-light) !important;cursor:pointer}
-td.is-paid .paid-dot{color:var(--green) !important;font-weight:700;font-size:10px}
+td.is-paid .paid-dot{color:var(--green) !important;font-weight:700;font-size:11px}
 td.is-paid .cell-amt{color:var(--green);font-weight:600}
-.del-btn{background:none;border:none;color:#ddd;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px}
+.del-btn{background:none;border:none;color:#b0b8c8;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px}
+.del-btn:hover{color:var(--red)}
 .cal-check{display:none;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--blue)}
 .cfg-compte .cal-check-compte{display:inline-block}
 .cfg-livret .cal-check-livret{display:inline-block}
@@ -219,11 +226,14 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .var-subtotal td{background:#f5f7fa;font-weight:700;font-size:11px;color:var(--gray);text-align:right;padding:4px 8px}
 
 /* ── RÉSUMÉ ── */
-.summary-wrap{overflow:auto}
+.summary-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .summary-table{width:100%;border-collapse:collapse;min-width:1100px}
 .summary-table thead th{background:#dce3ec;font-size:10px;font-weight:700;text-transform:uppercase;padding:8px 6px;text-align:center;border-bottom:2px solid var(--border);color:var(--gray);min-width:82px}
-.summary-table thead th.lbl-col{text-align:left;min-width:205px;padding-left:14px}
-.summary-table tbody td{padding:5px 6px;border-bottom:1px solid #eef0f3;text-align:center;min-width:82px}
+.summary-table thead th.lbl-col{text-align:left;min-width:205px;padding-left:14px;position:sticky;left:0;z-index:3;background:#dce3ec}
+.summary-table tbody td{padding:5px 6px;border-bottom:1px solid #d8dce6;text-align:center;min-width:82px}
+.summary-table tbody td.lbl-col{position:sticky;left:0;z-index:2;background:var(--bg);box-shadow:2px 0 4px rgba(0,0,0,.06)}
+[data-theme="dark"] .summary-table thead th.lbl-col{background:#1e2540}
+[data-theme="dark"] .summary-table tbody td.lbl-col{background:var(--surface)}
 .summary-table tbody td.lbl-col{text-align:left;padding-left:24px;font-weight:500}
 .summary-table tr.yr-hdr td{background:var(--blue);color:#fff;font-weight:700;padding:8px 14px;font-size:12px;letter-spacing:0.05em;text-transform:uppercase}
 .summary-table tr.tot-row td{background:#e4e9ef;font-weight:700;font-size:12px}
