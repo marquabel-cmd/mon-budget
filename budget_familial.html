@@ -4293,6 +4293,13 @@ function applyUpdate() {
 
 // Handle Google OAuth popup callback
 _handleGoogleCallback();
+
+// Handle PWA shortcuts (manifest shortcuts)
+(function() {
+  const p = new URLSearchParams(window.location.search).get('action');
+  if (p === 'quickadd') window.addEventListener('load', () => setTimeout(() => openQuickAdd(), 1200));
+  if (p === 'save')     window.addEventListener('load', () => setTimeout(() => saveData(), 1200));
+})();
 // Listen for postMessage from Google popup
 window.addEventListener('message', async (e) => {
   if (e.origin !== window.location.origin) return;

@@ -1,13 +1,20 @@
 {
+  "id": "com.marquabel.monbudget",
   "name": "Mon Budget",
   "short_name": "Budget",
-  "description": "Gestion mensuelle des revenus et dépenses",
+  "description": "Gestion mensuelle des revenus et dépenses — suivi budgétaire personnel et familial",
+  "lang": "fr",
+  "dir": "ltr",
   "start_url": "./budget_familial.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "any",
   "background_color": "#1A1D2E",
   "theme_color": "#1A1D2E",
+  "categories": ["finance", "productivity", "utilities"],
+  "iarc_rating_id": "",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "icon-192.png",
@@ -27,5 +34,40 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/screen-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Tableau de bord Mon Budget"
+    },
+    {
+      "src": "screenshots/screen-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mon Budget sur mobile"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ajout rapide",
+      "short_name": "Ajouter",
+      "description": "Ajouter une dépense rapidement",
+      "url": "./budget_familial.html?action=quickadd",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Sauvegarder",
+      "short_name": "Sauver",
+      "description": "Sauvegarder les données",
+      "url": "./budget_familial.html?action=save",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }
