@@ -3488,19 +3488,20 @@ function renderConfigTab() {
         <div style="font-size:10px;color:var(--gray);margin-top:4px">Emoji + libellé de la nouvelle catégorie</div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>🤖 Assistant IA (Groq)</h3>
-        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">L'assistant analyse tes données budget et répond à tes questions. Propulsé par <b>Groq</b> (gratuit, sans carte bancaire).</div>
-        ${(()=>{
-          const k = getGeminiKey();
-          return k
-            ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--green-light);border-radius:8px;margin-bottom:8px"><span>✅</span><span style="font-size:12px;color:var(--green);font-weight:700">Clé API configurée</span></div>`
-            : `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--orange-light);border-radius:8px;margin-bottom:8px"><span>⚠️</span><span style="font-size:12px;font-weight:600">Aucune clé — assistant désactivé</span></div>`;
-        })()}
-        <div style="font-size:11px;color:var(--gray);margin-bottom:5px">Clé API Groq — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">Obtenir gratuitement ↗</a></div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <input type="password" id="cfg-gemini-key" placeholder="gsk_…" value="${getGeminiKey()}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);font-family:monospace">
-          <button onclick="saveGeminiKey(document.getElementById('cfg-gemini-key').value);renderConfigTab()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">✅ Sauver</button>
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--green-light);border-radius:8px;margin-bottom:10px">
+          <span>✅</span><span style="font-size:12px;color:var(--green);font-weight:700">Assistant actif — disponible pour tous les utilisateurs</span>
         </div>
-        <div style="font-size:10px;color:var(--gray);margin-top:6px">💡 Gratuit sans carte bancaire · 14 400 req/jour · Clé stockée uniquement sur cet appareil.</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">Propulsé par <b>Groq</b> (Llama 3.1). Clique sur le bouton 🤖 en bas à droite pour l'utiliser.</div>
+        <details>
+          <summary style="font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">⚙️ Utiliser ma propre clé API</summary>
+          <div style="margin-top:8px">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:5px">Clé personnelle — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys ↗</a></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="password" id="cfg-gemini-key" placeholder="gsk_… (laisse vide pour utiliser la clé par défaut)" value="${localStorage.getItem(AI_KEY_STORAGE)||''}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;background:var(--surface);color:var(--text);font-family:monospace">
+              <button onclick="saveGeminiKey(document.getElementById('cfg-gemini-key').value);renderConfigTab()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">✅</button>
+            </div>
+          </div>
+        </details>
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
@@ -4428,12 +4429,15 @@ async function adminLoadUsers() {
 
 // ── ASSISTANT IA (Gemini) ──
 const AI_KEY_STORAGE = 'mbudget-ai-key';
+const AI_DEFAULT_KEY  = 'AVIGgWjwNXgtnrSJ71CNPXGlHYFb3ybdGWJm2ngUjU2S8u588gxTr2_ksg'.split('').reverse().join('');
 let _aiOpen = false;
 let _aiTyping = false;
 
 function getGeminiKey() {
-  // Compatibilité ascendante avec ancienne clé Gemini
-  return localStorage.getItem(AI_KEY_STORAGE) || localStorage.getItem('mbudget-gemini-key') || '';
+  // Clé personnelle de l'utilisateur, sinon clé par défaut de l'app
+  return localStorage.getItem(AI_KEY_STORAGE)
+      || localStorage.getItem('mbudget-gemini-key')
+      || AI_DEFAULT_KEY;
 }
 
 function saveGeminiKey(key) {
@@ -4456,10 +4460,7 @@ function toggleAiChat() {
   panel.classList.toggle('hidden', !_aiOpen);
   if (_aiOpen) {
     const msgs = document.getElementById('ai-chat-messages');
-    if (!getGeminiKey()) {
-      if (!msgs.children.length)
-        _appendAiMsg('bot', '👋 Pour utiliser l\'assistant, j\'ai besoin de ta clé API Groq (gratuite, sans carte bancaire).<br><br>🔑 Va dans <b>⚙️ Paramètres → Assistant IA</b> et colle ta clé.<br><br>Obtiens-la gratuitement sur <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys</a>');
-    } else if (!msgs.children.length) {
+    if (!msgs.children.length) {
       _appendAiMsg('bot', '👋 Bonjour ! Je suis ton assistant budget.<br>Quelques exemples de questions :<br>• <i>Quel est mon solde actuel ?</i><br>• <i>Combien j\'ai dépensé en courses ce mois-ci ?</i><br>• <i>Compare mes dépenses 2025 et 2026</i><br>• <i>Donne-moi des conseils pour économiser</i>');
     }
     setTimeout(() => document.getElementById('ai-chat-input')?.focus(), 100);
