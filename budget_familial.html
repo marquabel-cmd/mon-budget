@@ -3145,11 +3145,28 @@ function goToWelcome() {
 function resetData() {
   const bk = bakPrefix() + 'pre-reset_' + new Date().toISOString().slice(0,10);
   localStorage.setItem(bk, JSON.stringify(DATA));
-  if (!confirm('⚠️ ATTENTION\n\nRéinitialiser TOUTES les données de cet utilisateur ?\n\nUne sauvegarde automatique vient d\'être créée (visible dans Backups).\nCette action est irréversible.')) return;
-  localStorage.removeItem(dataKey());
-  DATA = CURRENT_USER_ID==='pascal' ? buildDefaults() : buildDefaultsForNewUser();
-  renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
-  showToast('↺ Réinitialisé — backup créé');
+  const years = getYears();
+  const nbAns = years.length;
+  const nbTx = years.reduce((s,y) => s + getVarCats().reduce((ss,c) => ss + (DATA[y]?.vars?.[c.key]?.length||0), 0), 0);
+  _showDangerConfirm({
+    title: 'Réinitialiser toutes les données',
+    subtitle: `Compte : ${USERS[CURRENT_USER_ID]?.name || CURRENT_USER_ID}`,
+    items: [
+      `<b>${nbAns} année${nbAns>1?'s':''}</b> de budget (${years.join(', ')})`,
+      `<b>${nbTx} dépense${nbTx>1?'s variable':' variable'}${nbTx>1?'s':''}</b> enregistrée${nbTx>1?'s':''}`,
+      'Tous les revenus et charges saisis',
+      'Tous les soldes de départ',
+      '<span style="color:var(--green)">✅ Un backup sera créé automatiquement avant la suppression</span>'
+    ],
+    confirmWord: 'SUPPRIMER',
+    buttonLabel: '🗑 Tout supprimer',
+    onConfirm: () => {
+      localStorage.removeItem(dataKey());
+      DATA = CURRENT_USER_ID==='pascal' ? buildDefaults() : buildDefaultsForNewUser();
+      renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
+      showToast('↺ Réinitialisé — backup créé dans Backups');
+    }
+  });
 }
 function exportCSV() {
   const activeYear = getYears().find(y => document.getElementById('tab-y'+y)?.classList.contains('active')) || '2025';
@@ -3507,12 +3524,12 @@ function renderConfigTab() {
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Forcer sauvegarde</button>
           <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">📦 Voir les backups</button>
-          <button class="btn" style="background:#fff;color:var(--red);border:2px solid var(--red);font-weight:700" onclick="resetData()">⚠️ Réinitialiser les données…</button>
+          <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="resetData()">🚨 Réinitialiser les données — SUPPRESSION TOTALE</button>
         </div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>⚙️ Application</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn" style="background:#fff3e0;color:#e65100;border:2px solid #e65100;font-weight:700" onclick="uninstallApp()">🗑 Désinstaller l'application…</button>
+          <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="uninstallApp()">🚨 Désinstaller l'application — EFFACE TOUT</button>
         </div>
       </div>
     </div>
@@ -4146,6 +4163,55 @@ if (sessionStorage.getItem('app-updated')) {
 }
 initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
 
+// ── MODALE DE CONFIRMATION DANGER ──
+let _dangerCb = null;
+function _showDangerConfirm({ title, subtitle, items, confirmWord, buttonLabel, onConfirm }) {
+  _dangerCb = onConfirm;
+  const old = document.getElementById('_danger-overlay');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.id = '_danger-overlay';
+  el.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .15s ease';
+  el.innerHTML = `
+    <div style="background:var(--surface);border-radius:16px;max-width:440px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.6);border:2px solid #F04F5B;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#c0392b,#F04F5B);padding:22px 24px;text-align:center">
+        <div style="font-size:44px;margin-bottom:8px">🚨</div>
+        <div style="color:#fff;font-weight:800;font-size:17px;margin-bottom:4px">${title}</div>
+        <div style="color:rgba(255,255,255,.8);font-size:12px">${subtitle}</div>
+      </div>
+      <div style="padding:22px 24px">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">⚠️ Ce qui sera définitivement supprimé :</div>
+        <ul style="font-size:13px;color:var(--gray);padding-left:18px;margin-bottom:16px;line-height:2">
+          ${items.map(i=>`<li>${i}</li>`).join('')}
+        </ul>
+        <div style="background:#FEF0F1;border:2px solid #F04F5B;border-radius:10px;padding:12px 14px;margin-bottom:18px;text-align:center">
+          <div style="font-size:13px;font-weight:800;color:#c0392b">⛔ ACTION IRRÉVERSIBLE</div>
+          <div style="font-size:12px;color:#c0392b;margin-top:3px">Il sera impossible de récupérer ces données ensuite.</div>
+        </div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:7px">Pour confirmer, tapez exactement <b style="color:#F04F5B;letter-spacing:1px">${confirmWord}</b> ci-dessous :</div>
+        <input id="_danger-inp" type="text" placeholder="Tapez ${confirmWord}…" autocomplete="off" spellcheck="false"
+          style="width:100%;border:2px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:700;letter-spacing:1px;box-sizing:border-box;margin-bottom:14px;background:var(--surface);color:var(--text);outline:none;text-transform:uppercase"
+          oninput="const b=document.getElementById('_danger-btn');const ok=this.value.toUpperCase()==='${confirmWord}';b.disabled=!ok;b.style.opacity=ok?'1':'.4';b.style.cursor=ok?'pointer':'not-allowed'">
+        <div style="display:flex;gap:10px">
+          <button onclick="document.getElementById('_danger-overlay').remove()"
+            style="flex:1;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">
+            ✕ Annuler
+          </button>
+          <button id="_danger-btn" disabled onclick="_confirmDanger()"
+            style="flex:1;background:#F04F5B;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:not-allowed;opacity:.4;transition:opacity .15s">
+            ${buttonLabel}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  setTimeout(() => document.getElementById('_danger-inp')?.focus(), 100);
+}
+function _confirmDanger() {
+  document.getElementById('_danger-overlay')?.remove();
+  if (_dangerCb) { _dangerCb(); _dangerCb = null; }
+}
+
 // ── FORCE UPDATE & UNINSTALL ──
 async function forceUpdate() {
   showToast('🔄 Recherche de mise à jour…');
@@ -4162,21 +4228,35 @@ async function forceUpdate() {
 }
 
 async function uninstallApp() {
-  if (!confirm('Désinstaller l\'application ?\n\n⚠️ Toutes vos données locales seront supprimées.\nCette action est irréversible.')) return;
-  try {
-    if ('serviceWorker' in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (const r of regs) await r.unregister();
+  _showDangerConfirm({
+    title: 'Désinstaller l\'application',
+    subtitle: 'Suppression complète de toutes les données',
+    items: [
+      '<b>Tous les comptes utilisateurs</b> et leurs données',
+      '<b>Toutes les années</b> de budget de tous les utilisateurs',
+      '<b>Tous les backups</b> automatiques sauvegardés',
+      'La synchronisation cloud (données cloud non affectées)',
+      '<b style="color:var(--red)">⛔ Aucun backup ne sera créé — récupération impossible</b>'
+    ],
+    confirmWord: 'DESINSTALLER',
+    buttonLabel: '🗑 Désinstaller définitivement',
+    onConfirm: async () => {
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) await r.unregister();
+        }
+        const keys = await caches.keys();
+        for (const k of keys) await caches.delete(k);
+        localStorage.clear();
+        document.body.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:Inter,sans-serif;text-align:center;padding:20px;background:#F4F5FA">
+          <div style="font-size:48px;margin-bottom:16px">✅</div>
+          <h2 style="margin:0 0 8px;color:#1A1D2E">Application désinstallée</h2>
+          <p style="color:#6b7280;font-size:14px">Vos données ont été effacées.<br>Vous pouvez maintenant supprimer l'icône de votre écran d'accueil.</p>
+        </div>`;
+      } catch(e) { localStorage.clear(); window.location.reload(true); }
     }
-    const keys = await caches.keys();
-    for (const k of keys) await caches.delete(k);
-    localStorage.clear();
-    document.body.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:Inter,sans-serif;text-align:center;padding:20px;background:#F4F5FA">
-      <div style="font-size:48px;margin-bottom:16px">✅</div>
-      <h2 style="margin:0 0 8px;color:#1A1D2E">Application désinstallée</h2>
-      <p style="color:#6b7280;font-size:14px">Vos données ont été effacées.<br>Vous pouvez maintenant supprimer l'icône de votre écran d'accueil.</p>
-    </div>`;
-  } catch(e) { localStorage.clear(); window.location.reload(true); }
+  });
 }
 
 // ── PWA SERVICE WORKER ──
