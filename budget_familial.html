@@ -366,10 +366,26 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 #tour-spotlight{position:fixed;border-radius:10px;transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:4001;box-shadow:0 0 0 9999px rgba(0,0,0,.7);border:2px solid #5B6AF0}
 #tour-tooltip{position:fixed;z-index:4002;width:310px;background:var(--surface);border-radius:16px;padding:22px 22px 16px;box-shadow:0 16px 48px rgba(0,0,0,.45);pointer-events:all;border:1px solid var(--border);transition:top .35s cubic-bezier(.4,0,.2,1),left .35s cubic-bezier(.4,0,.2,1)}
 .tour-dot{height:7px;border-radius:4px;transition:all .3s;flex-shrink:0}
-#tour-help-dropdown{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:600;min-width:175px;overflow:hidden}
+#tour-help-dropdown{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:600;min-width:185px;overflow:hidden}
 #tour-help-dropdown.open{display:block}
 .tour-help-item{display:flex;align-items:center;gap:9px;padding:11px 14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:background .15s}
 .tour-help-item:hover{background:var(--blue-light)}
+/* ── INSTALL MODAL ── */
+.install-modal-overlay{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+.install-modal{background:var(--surface);border-radius:20px;max-width:480px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.4);overflow:hidden;max-height:90vh;display:flex;flex-direction:column}
+.install-modal-header{background:linear-gradient(135deg,#1A1D2E,#2D3561);padding:24px;text-align:center;color:#fff;flex-shrink:0}
+.install-modal-body{padding:22px 24px;overflow-y:auto;flex:1}
+.install-platform-btn{display:flex;align-items:center;gap:14px;padding:14px 16px;border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:all .15s;background:var(--surface);margin-bottom:10px;text-align:left;width:100%}
+.install-platform-btn:hover{border-color:var(--blue);background:var(--blue-light)}
+.install-platform-btn.active{border-color:var(--blue);background:var(--blue-light)}
+.install-step-list{list-style:none;padding:0;margin:0}
+.install-step-list li{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5}
+.install-step-list li:last-child{border-bottom:none}
+.install-step-num{width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.install-cta{display:block;width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;text-align:center;margin-top:16px;transition:background .15s}
+.install-cta:hover{background:var(--blue-dark)}
+.install-cta.green{background:var(--green)}
+.install-cta.green:hover{background:#00a87c}
 /* ── ONBOARDING ── */
 #onboarding-screen{position:fixed;inset:0;z-index:2500;background:linear-gradient(160deg,#1A1D2E 0%,#2D3561 100%);display:none;align-items:center;justify-content:center;flex-direction:column}
 .ob-box{text-align:center;max-width:600px;width:100%;padding:50px 28px 40px}
@@ -837,6 +853,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
       <div style="position:relative">
         <button class="btn" onclick="toggleHelpDropdown(event)" title="Aide & Tour" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
         <div id="tour-help-dropdown">
+          <div class="tour-help-item" onclick="openInstallModal();closeHelpDropdown()">📲 Installer l'application</div>
           <div class="tour-help-item" onclick="startTour();closeHelpDropdown()">🗺️ Tour guidé</div>
           <div class="tour-help-item" onclick="window.open('aide.html','_blank');closeHelpDropdown()">📖 Guide complet</div>
         </div>
@@ -4654,6 +4671,132 @@ async function sendAiMessage() {
   }
 }
 
+// ── INSTALLATION PWA ──
+let _deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstall = e;
+});
+window.addEventListener('appinstalled', () => {
+  _deferredInstall = null;
+  showToast('✅ Application installée avec succès !');
+});
+
+function _detectPlatform() {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isAndroid = /Android/.test(ua);
+  const isMac = /Macintosh/.test(ua) && navigator.maxTouchPoints === 0;
+  const isWindows = /Windows/.test(ua);
+  const isInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  return { isIOS, isAndroid, isMac, isWindows, isInstalled };
+}
+
+function openInstallModal() {
+  document.getElementById('install-modal-overlay').style.display = 'flex';
+  const { isIOS, isAndroid, isMac, isWindows } = _detectPlatform();
+  const plat = isAndroid ? 'android' : isIOS ? 'ios' : isWindows ? 'windows' : isMac ? 'mac' : 'android';
+  showInstallPlatform(plat);
+}
+
+function closeInstallModal() {
+  document.getElementById('install-modal-overlay').style.display = 'none';
+}
+
+function showInstallPlatform(plat) {
+  // Highlight active button
+  ['android','ios','windows','mac'].forEach(p => {
+    document.getElementById('plat-'+p)?.classList.toggle('active', p === plat);
+  });
+  const appUrl = window.location.href.split('?')[0];
+  const instructions = {
+    android: {
+      title: '🤖 Installation sur Android',
+      canInstall: !!_deferredInstall,
+      steps: [
+        'Ouvrez <b>Chrome</b> sur votre téléphone Android',
+        'Accédez à <b>' + appUrl + '</b>',
+        'Appuyez sur le menu <b>⋮</b> (3 points) en haut à droite',
+        'Appuyez sur <b>"Ajouter à l\'écran d\'accueil"</b>',
+        'Confirmez en appuyant sur <b>Ajouter</b> — l\'icône apparaît sur votre écran !'
+      ],
+      extra: `<div style="margin-top:16px;padding:12px 14px;background:var(--blue-light);border-radius:10px;border:1px solid var(--blue)">
+        <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px">📦 Distribuer un vrai APK Android</div>
+        <div style="font-size:12px;color:var(--gray);line-height:1.6">
+          Pour distribuer un fichier .apk à vos clients sans passer par le Play Store :<br>
+          1. Allez sur <a href="https://www.pwabuilder.com" target="_blank" style="color:var(--blue);font-weight:600">pwabuilder.com</a><br>
+          2. Entrez l'URL : <code style="background:var(--surface);padding:1px 4px;border-radius:3px;font-size:11px">${appUrl}</code><br>
+          3. Cliquez <b>Start</b> → sélectionnez <b>Android</b> → <b>Download</b><br>
+          4. Partagez le fichier .apk à vos clients (par email, WhatsApp…)
+        </div>
+      </div>`
+    },
+    ios: {
+      title: '🍎 Installation sur iPhone / iPad',
+      canInstall: false,
+      steps: [
+        'Ouvrez <b>Safari</b> (⚠️ pas Chrome ni Firefox — obligatoire sur iOS)',
+        'Accédez à <b>' + appUrl + '</b>',
+        'Appuyez sur l\'icône <b>Partager</b> 📤 en bas de l\'écran',
+        'Faites défiler la liste et appuyez sur <b>"Sur l\'écran d\'accueil"</b>',
+        'Appuyez sur <b>Ajouter</b> en haut à droite — c\'est installé !'
+      ],
+      extra: `<div style="margin-top:12px;padding:10px 12px;background:#FEF6E6;border-radius:8px;border:1px solid #F5A623;font-size:12px;color:#7a4f00">
+        💡 <b>Astuce :</b> sur iPhone, l'application fonctionne hors-ligne après l'installation. Elle apparaît comme une vraie app dans votre écran d'accueil.
+      </div>`
+    },
+    windows: {
+      title: '🪟 Installation sur Windows',
+      canInstall: !!_deferredInstall,
+      steps: [
+        'Ouvrez <b>Chrome</b> ou <b>Edge</b> sur votre PC',
+        'Accédez à <b>' + appUrl + '</b>',
+        'Repérez l\'icône <b>⊕</b> (install) dans la barre d\'adresse à droite',
+        'Cliquez sur l\'icône → cliquez <b>"Installer"</b>',
+        'L\'application s\'ouvre dans sa propre fenêtre et apparaît dans le menu Démarrer !'
+      ],
+      extra: `<div style="margin-top:12px;padding:10px 12px;background:var(--blue-light);border-radius:8px;border:1px solid var(--blue);font-size:12px;color:var(--blue)">
+        💡 <b>Tip :</b> sur Edge, vous pouvez aussi aller dans <b>Menu ⋯ → Applications → Installer ce site en tant qu'application</b>.
+      </div>`
+    },
+    mac: {
+      title: '🍏 Installation sur Mac',
+      canInstall: !!_deferredInstall,
+      steps: [
+        'Ouvrez <b>Chrome</b> ou <b>Safari</b> sur votre Mac',
+        'Accédez à <b>' + appUrl + '</b>',
+        '<b>Chrome :</b> cliquez l\'icône <b>⊕</b> dans la barre d\'adresse → <b>Installer</b>',
+        '<b>Safari (macOS Sonoma+) :</b> menu <b>Fichier → Ajouter à l\'Dock</b>',
+        'L\'application apparaît dans votre Dock et le Launchpad !'
+      ],
+      extra: ''
+    }
+  };
+  const info = instructions[plat];
+  const stepsHtml = info.steps.map((s, i) => `
+    <li>
+      <span class="install-step-num">${i+1}</span>
+      <span>${s}</span>
+    </li>`).join('');
+  let ctaHtml = '';
+  if (info.canInstall) {
+    ctaHtml = `<button class="install-cta green" onclick="triggerInstall()">⚡ Installer maintenant</button>`;
+  }
+  document.getElementById('install-instructions').innerHTML = `
+    <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:14px">${info.title}</div>
+    <ul class="install-step-list">${stepsHtml}</ul>
+    ${ctaHtml}
+    ${info.extra}
+  `;
+}
+
+async function triggerInstall() {
+  if (!_deferredInstall) { showToast('Utilisez le bouton ⊕ dans la barre d\'adresse de votre navigateur'); return; }
+  _deferredInstall.prompt();
+  const { outcome } = await _deferredInstall.userChoice;
+  if (outcome === 'accepted') { closeInstallModal(); _deferredInstall = null; }
+}
+
 // ── SAISIE VOCALE ──
 let _speechRec = null;
 let _voiceListening = false;
@@ -5543,6 +5686,42 @@ function closeCompareView() {
 
 <!-- ── FAB : Ajout rapide ── -->
 <button class="fab" id="main-fab" onclick="openQuickAdd()" title="Ajout rapide" style="display:none">➕</button>
+
+<!-- ── INSTALL MODAL ── -->
+<div class="install-modal-overlay" id="install-modal-overlay" style="display:none" onclick="if(event.target===this)closeInstallModal()">
+  <div class="install-modal">
+    <div class="install-modal-header">
+      <div style="font-size:48px;margin-bottom:10px">📲</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:4px">Installer Mon Budget</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.65)">Disponible sur tous vos appareils — gratuitement</div>
+    </div>
+    <div class="install-modal-body">
+      <!-- Sélecteur de plateforme -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
+        <button class="install-platform-btn" id="plat-android" onclick="showInstallPlatform('android')">
+          <span style="font-size:28px">🤖</span>
+          <div><div style="font-weight:700;font-size:13px">Android</div><div style="font-size:11px;color:var(--gray)">Chrome / Samsung</div></div>
+        </button>
+        <button class="install-platform-btn" id="plat-ios" onclick="showInstallPlatform('ios')">
+          <span style="font-size:28px">🍎</span>
+          <div><div style="font-weight:700;font-size:13px">iPhone / iPad</div><div style="font-size:11px;color:var(--gray)">iOS / iPadOS</div></div>
+        </button>
+        <button class="install-platform-btn" id="plat-windows" onclick="showInstallPlatform('windows')">
+          <span style="font-size:28px">🪟</span>
+          <div><div style="font-weight:700;font-size:13px">Windows</div><div style="font-size:11px;color:var(--gray)">PC / Tablette</div></div>
+        </button>
+        <button class="install-platform-btn" id="plat-mac" onclick="showInstallPlatform('mac')">
+          <span style="font-size:28px">🍏</span>
+          <div><div style="font-weight:700;font-size:13px">Mac</div><div style="font-size:11px;color:var(--gray)">macOS</div></div>
+        </button>
+      </div>
+      <!-- Instructions par plateforme -->
+      <div id="install-instructions"></div>
+      <!-- Fermer -->
+      <button onclick="closeInstallModal()" style="width:100%;background:var(--surface-alt);color:var(--gray);border:1px solid var(--border);border-radius:10px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── AI CHAT ── -->
 <button class="ai-fab" id="ai-chat-fab" onclick="toggleAiChat()" title="Assistant IA" style="display:none">🤖</button>
