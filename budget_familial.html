@@ -3487,20 +3487,20 @@ function renderConfigTab() {
         </div>
         <div style="font-size:10px;color:var(--gray);margin-top:4px">Emoji + libellé de la nouvelle catégorie</div>
       </div>
-      <div class="config-card" style="margin-top:14px"><h3>🤖 Assistant IA (Gemini)</h3>
-        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">L'assistant analyse tes données budget et répond à tes questions en langage naturel.</div>
+      <div class="config-card" style="margin-top:14px"><h3>🤖 Assistant IA (Groq)</h3>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">L'assistant analyse tes données budget et répond à tes questions. Propulsé par <b>Groq</b> (gratuit, sans carte bancaire).</div>
         ${(()=>{
           const k = getGeminiKey();
           return k
             ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--green-light);border-radius:8px;margin-bottom:8px"><span>✅</span><span style="font-size:12px;color:var(--green);font-weight:700">Clé API configurée</span></div>`
             : `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--orange-light);border-radius:8px;margin-bottom:8px"><span>⚠️</span><span style="font-size:12px;font-weight:600">Aucune clé — assistant désactivé</span></div>`;
         })()}
-        <div style="font-size:11px;color:var(--gray);margin-bottom:5px">Clé API Gemini — <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue)">Obtenir gratuitement ↗</a></div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:5px">Clé API Groq — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">Obtenir gratuitement ↗</a></div>
         <div style="display:flex;gap:6px;align-items:center">
-          <input type="password" id="cfg-gemini-key" placeholder="AIzaSy…" value="${getGeminiKey()}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);font-family:monospace">
+          <input type="password" id="cfg-gemini-key" placeholder="gsk_…" value="${getGeminiKey()}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);font-family:monospace">
           <button onclick="saveGeminiKey(document.getElementById('cfg-gemini-key').value);renderConfigTab()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">✅ Sauver</button>
         </div>
-        <div style="font-size:10px;color:var(--gray);margin-top:6px">💡 Tier gratuit : 15 requêtes/min, 1 500/jour. Clé stockée uniquement sur cet appareil.</div>
+        <div style="font-size:10px;color:var(--gray);margin-top:6px">💡 Gratuit sans carte bancaire · 14 400 req/jour · Clé stockée uniquement sur cet appareil.</div>
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
@@ -4427,22 +4427,25 @@ async function adminLoadUsers() {
 }
 
 // ── ASSISTANT IA (Gemini) ──
-const AI_KEY_STORAGE = 'mbudget-gemini-key';
+const AI_KEY_STORAGE = 'mbudget-ai-key';
 let _aiOpen = false;
 let _aiTyping = false;
 
 function getGeminiKey() {
-  return localStorage.getItem(AI_KEY_STORAGE) || '';
+  // Compatibilité ascendante avec ancienne clé Gemini
+  return localStorage.getItem(AI_KEY_STORAGE) || localStorage.getItem('mbudget-gemini-key') || '';
 }
 
 function saveGeminiKey(key) {
   key = (key || '').trim();
   if (key) {
     localStorage.setItem(AI_KEY_STORAGE, key);
-    showToast('✅ Clé API Gemini sauvegardée');
+    localStorage.removeItem('mbudget-gemini-key'); // nettoyage ancienne clé
+    showToast('✅ Clé API sauvegardée');
   } else {
     localStorage.removeItem(AI_KEY_STORAGE);
-    showToast('Clé API Gemini supprimée');
+    localStorage.removeItem('mbudget-gemini-key');
+    showToast('Clé API supprimée');
   }
 }
 
@@ -4455,7 +4458,7 @@ function toggleAiChat() {
     const msgs = document.getElementById('ai-chat-messages');
     if (!getGeminiKey()) {
       if (!msgs.children.length)
-        _appendAiMsg('bot', '👋 Pour utiliser l\'assistant, j\'ai besoin de ta clé API Gemini (gratuite).<br><br>🔑 Va dans <b>⚙️ Paramètres → Assistant IA</b> et colle ta clé.<br><br>Tu peux l\'obtenir gratuitement sur <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue)">aistudio.google.com</a>');
+        _appendAiMsg('bot', '👋 Pour utiliser l\'assistant, j\'ai besoin de ta clé API Groq (gratuite, sans carte bancaire).<br><br>🔑 Va dans <b>⚙️ Paramètres → Assistant IA</b> et colle ta clé.<br><br>Obtiens-la gratuitement sur <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys</a>');
     } else if (!msgs.children.length) {
       _appendAiMsg('bot', '👋 Bonjour ! Je suis ton assistant budget.<br>Quelques exemples de questions :<br>• <i>Quel est mon solde actuel ?</i><br>• <i>Combien j\'ai dépensé en courses ce mois-ci ?</i><br>• <i>Compare mes dépenses 2025 et 2026</i><br>• <i>Donne-moi des conseils pour économiser</i>');
     }
@@ -4542,7 +4545,7 @@ async function sendAiMessage() {
   if (!text) return;
   const key = getGeminiKey();
   if (!key) {
-    _appendAiMsg('bot', '⚠️ Clé API Gemini manquante. Va dans <b>⚙️ Paramètres → Assistant IA</b> pour la configurer.');
+    _appendAiMsg('bot', '⚠️ Clé API manquante. Va dans <b>⚙️ Paramètres → Assistant IA</b> pour la configurer.');
     return;
   }
   input.value = '';
@@ -4567,40 +4570,37 @@ async function sendAiMessage() {
 }
 
 async function _callGemini(apiKey, systemContext, userMessage) {
-  // Liste des modèles à essayer dans l'ordre
-  const MODELS = [
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-    'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent',
-  ];
-  const body = JSON.stringify({
-    systemInstruction: {parts:[{text: systemContext}]},
-    contents: [{role:'user', parts:[{text: userMessage}]}],
-    generationConfig: {temperature:0.7, maxOutputTokens:800}
+  // API Groq — gratuite, sans carte bancaire, très rapide
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        { role: 'system', content: systemContext },
+        { role: 'user',   content: userMessage }
+      ],
+      temperature: 0.7,
+      max_tokens: 800
+    })
   });
-  let lastErr = '';
-  for (const base of MODELS) {
-    const res = await fetch(`${base}?key=${apiKey}`, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text
-        .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
-        .replace(/\*(.*?)\*/g,'<i>$1</i>')
-        .replace(/\n/g,'<br>');
-    }
-    const err = await res.json().catch(()=>({}));
-    lastErr = err.error?.message || `HTTP ${res.status}`;
-    // Si quota dépassé ou billing manquant, inutile d'essayer le suivant
-    if (res.status === 429 && lastErr.includes('limit: 0')) break;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = err.error?.message || `Erreur HTTP ${res.status}`;
+    if (res.status === 401) throw new Error('Clé API Groq invalide. Vérifie-la dans ⚙️ Paramètres → Assistant IA.');
+    if (res.status === 429) throw new Error('Limite de requêtes atteinte. Réessaie dans quelques secondes.');
+    throw new Error(msg);
   }
-  // Message d'erreur lisible
-  if (lastErr.includes('limit: 0') || lastErr.includes('quota')) {
-    throw new Error('Quota API dépassé. Active la facturation sur console.cloud.google.com (gratuit dans les limites du free tier), ou réessaie demain.');
-  }
-  throw new Error(lastErr);
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error('Réponse vide de Groq');
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+    .replace(/\*(.*?)\*/g, '<i>$1</i>')
+    .replace(/\n/g, '<br>');
 }
 
 // ── TOUR GUIDÉ ──

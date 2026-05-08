@@ -881,21 +881,21 @@ a:hover{text-decoration:underline}
 
     <!-- Assistant IA -->
     <div class="section" id="assistant-ia">
-      <h2><span>🤖</span> Assistant IA (Gemini)</h2>
-      <p class="lead">L'assistant IA analyse vos données budget en temps réel et répond à vos questions financières en langage naturel.</p>
+      <h2><span>🤖</span> Assistant IA (Groq)</h2>
+      <p class="lead">L'assistant IA analyse vos données budget en temps réel et répond à vos questions financières en langage naturel. Propulsé par <b>Groq</b> — gratuit, sans carte bancaire.</p>
 
       <h3>Activer l'assistant (2 minutes)</h3>
       <ol>
-        <li>Allez dans <b>⚙️ Paramètres → Assistant IA (Gemini)</b></li>
-        <li>Cliquez sur le lien <b>Obtenir gratuitement ↗</b> — cela ouvre <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a></li>
-        <li>Connectez-vous avec votre compte Google</li>
-        <li>Cliquez sur <b>Create API key</b> (bouton bleu)</li>
-        <li>Copiez la clé générée (commence par <code>AIzaSy…</code>)</li>
-        <li>Dans l'application, collez la clé dans le champ et cliquez <b>✅ Sauver</b></li>
+        <li>Allez sur <a href="https://console.groq.com/keys" target="_blank"><b>console.groq.com/keys</b></a></li>
+        <li>Créez un compte gratuit (email + mot de passe, aucune carte bancaire)</li>
+        <li>Cliquez sur <b>Create API Key</b></li>
+        <li>Donnez un nom (ex : "Mon Budget") et copiez la clé générée (commence par <code>gsk_…</code>)</li>
+        <li>Dans l'application, allez dans <b>⚙️ Paramètres → Assistant IA</b></li>
+        <li>Collez la clé dans le champ et cliquez <b>✅ Sauver</b></li>
       </ol>
 
       <div class="tip">
-        <b>💡 Entièrement gratuit</b> — Google Gemini offre un tier gratuit généreux : 15 requêtes/minute et 1 500 requêtes/jour. Largement suffisant pour un usage budgétaire personnel.
+        <b>💡 Entièrement gratuit, sans carte bancaire</b> — Groq offre 14 400 requêtes/jour sur le modèle Llama 3.1. Largement suffisant pour un usage quotidien.
       </div>
 
       <h3>Utiliser le chat</h3>
@@ -931,7 +931,7 @@ a:hover{text-decoration:underline}
       </div>
 
       <h3>Confidentialité</h3>
-      <p>Vos données budget sont envoyées à l'API Gemini 2.0 Flash de Google <b>uniquement au moment où vous posez une question</b>. Elles ne sont ni stockées ni utilisées pour l'entraînement (API stateless). La clé API est stockée uniquement dans votre navigateur, jamais sur nos serveurs.</p>
+      <p>Vos données budget sont envoyées à l'API Groq <b>uniquement au moment où vous posez une question</b>. Groq utilise le modèle Llama 3.1 (open-source). La clé API est stockée uniquement dans votre navigateur, jamais sur nos serveurs.</p>
 
       <div class="warn">
         <b>⚠️ Ne partagez pas votre clé API</b> — Si vous partagez l'accès à votre navigateur, supprimez la clé dans Paramètres → Assistant IA.
