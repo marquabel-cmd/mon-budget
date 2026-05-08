@@ -474,6 +474,25 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .fab:hover{transform:scale(1.12);box-shadow:0 6px 28px rgba(0,200,150,.6)}
 .fab:active{transform:scale(.96)}
 @media(max-width:700px){.fab{bottom:16px;right:16px;width:50px;height:50px;font-size:22px}}
+/* ── AI CHAT ── */
+.ai-fab{position:fixed;bottom:88px;right:22px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(91,106,240,.5);z-index:900;display:flex;align-items:center;justify-content:center;transition:transform .18s,box-shadow .18s}
+.ai-fab:hover{transform:scale(1.1);box-shadow:0 6px 22px rgba(91,106,240,.65)}
+.ai-fab:active{transform:scale(.96)}
+@media(max-width:700px){.ai-fab{bottom:76px;right:16px;width:44px;height:44px;font-size:20px}}
+.ai-chat-panel{position:fixed;bottom:152px;right:18px;width:340px;height:480px;background:var(--surface);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.25);border:1px solid var(--border);display:flex;flex-direction:column;z-index:950;transition:opacity .2s,transform .2s;transform-origin:bottom right}
+.ai-chat-panel.hidden{opacity:0;transform:scale(.92);pointer-events:none}
+.ai-chat-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ai-chat-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.ai-msg{max-width:86%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.ai-msg-user{background:var(--blue);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.ai-msg-bot{background:var(--surface-alt);color:var(--text);align-self:flex-start;border:1px solid var(--border);border-bottom-left-radius:3px}
+.ai-msg-typing{opacity:.65;font-style:italic}
+.ai-chat-input-area{padding:10px;border-top:1px solid var(--border);display:flex;gap:6px;flex-shrink:0}
+.ai-chat-input-area input{flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;background:var(--surface);color:var(--text);font-family:inherit;outline:none}
+.ai-chat-input-area input:focus{border-color:var(--blue)}
+.ai-chat-send{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:700;white-space:nowrap}
+.ai-chat-send:disabled{opacity:.5;cursor:default}
+@media(max-width:500px){.ai-chat-panel{right:8px;left:8px;width:auto;bottom:124px}}
 /* ── AUTH MODAL ── */
 .auth-tab-btn{transition:background .15s,color .15s;color:var(--gray)}
 .auth-tab-btn.active{background:var(--surface)!important;color:var(--text);box-shadow:var(--shadow-sm)}
@@ -1458,6 +1477,8 @@ function _finishLogin(id) {
   if (ws) { ws.style.opacity='0'; setTimeout(()=>{ ws.style.display='none'; ws.style.opacity=''; },400); }
   const fab = document.getElementById('main-fab');
   if (fab) fab.style.display = 'flex';
+  const aiFab = document.getElementById('ai-chat-fab');
+  if (aiFab) aiFab.style.display = 'flex';
   const years = getYears();
   const lastYear = years[years.length - 1];
   if (lastYear) setTimeout(() => {
@@ -3466,6 +3487,21 @@ function renderConfigTab() {
         </div>
         <div style="font-size:10px;color:var(--gray);margin-top:4px">Emoji + libellé de la nouvelle catégorie</div>
       </div>
+      <div class="config-card" style="margin-top:14px"><h3>🤖 Assistant IA (Gemini)</h3>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">L'assistant analyse tes données budget et répond à tes questions en langage naturel.</div>
+        ${(()=>{
+          const k = getGeminiKey();
+          return k
+            ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--green-light);border-radius:8px;margin-bottom:8px"><span>✅</span><span style="font-size:12px;color:var(--green);font-weight:700">Clé API configurée</span></div>`
+            : `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--orange-light);border-radius:8px;margin-bottom:8px"><span>⚠️</span><span style="font-size:12px;font-weight:600">Aucune clé — assistant désactivé</span></div>`;
+        })()}
+        <div style="font-size:11px;color:var(--gray);margin-bottom:5px">Clé API Gemini — <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue)">Obtenir gratuitement ↗</a></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="password" id="cfg-gemini-key" placeholder="AIzaSy…" value="${getGeminiKey()}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);font-family:monospace">
+          <button onclick="saveGeminiKey(document.getElementById('cfg-gemini-key').value);renderConfigTab()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">✅ Sauver</button>
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:6px">💡 Tier gratuit : 15 requêtes/min, 1 500/jour. Clé stockée uniquement sur cet appareil.</div>
+      </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Forcer sauvegarde</button>
@@ -4390,10 +4426,174 @@ async function adminLoadUsers() {
   } catch(e) { list.innerHTML = `<div style="color:#F04F5B;font-size:12px;padding:10px">❌ ${e.message}</div>`; }
 }
 
+// ── ASSISTANT IA (Gemini) ──
+const AI_KEY_STORAGE = 'mbudget-gemini-key';
+let _aiOpen = false;
+let _aiTyping = false;
+
+function getGeminiKey() {
+  return localStorage.getItem(AI_KEY_STORAGE) || '';
+}
+
+function saveGeminiKey(key) {
+  key = (key || '').trim();
+  if (key) {
+    localStorage.setItem(AI_KEY_STORAGE, key);
+    showToast('✅ Clé API Gemini sauvegardée');
+  } else {
+    localStorage.removeItem(AI_KEY_STORAGE);
+    showToast('Clé API Gemini supprimée');
+  }
+}
+
+function toggleAiChat() {
+  const panel = document.getElementById('ai-chat-panel');
+  if (!panel) return;
+  _aiOpen = !_aiOpen;
+  panel.classList.toggle('hidden', !_aiOpen);
+  if (_aiOpen) {
+    const msgs = document.getElementById('ai-chat-messages');
+    if (!getGeminiKey()) {
+      if (!msgs.children.length)
+        _appendAiMsg('bot', '👋 Pour utiliser l\'assistant, j\'ai besoin de ta clé API Gemini (gratuite).<br><br>🔑 Va dans <b>⚙️ Paramètres → Assistant IA</b> et colle ta clé.<br><br>Tu peux l\'obtenir gratuitement sur <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue)">aistudio.google.com</a>');
+    } else if (!msgs.children.length) {
+      _appendAiMsg('bot', '👋 Bonjour ! Je suis ton assistant budget.<br>Quelques exemples de questions :<br>• <i>Quel est mon solde actuel ?</i><br>• <i>Combien j\'ai dépensé en courses ce mois-ci ?</i><br>• <i>Compare mes dépenses 2025 et 2026</i><br>• <i>Donne-moi des conseils pour économiser</i>');
+    }
+    setTimeout(() => document.getElementById('ai-chat-input')?.focus(), 100);
+  }
+}
+
+function clearAiChat() {
+  const msgs = document.getElementById('ai-chat-messages');
+  if (msgs) msgs.innerHTML = '';
+  _appendAiMsg('bot', 'Conversation effacée. Pose-moi une nouvelle question ! 😊');
+}
+
+function _appendAiMsg(role, html) {
+  const msgs = document.getElementById('ai-chat-messages');
+  if (!msgs) return null;
+  const div = document.createElement('div');
+  div.className = `ai-msg ai-msg-${role}`;
+  div.innerHTML = html;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function _buildBudgetContext() {
+  const years = getYears();
+  if (!years.length) return 'Aucune donnée disponible.';
+  const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
+  let ctx = 'Tu es un assistant budgétaire personnel expert. Réponds en français, de façon concise et bienveillante. Tutoie l\'utilisateur. Utilise les données ci-dessous :\n\n';
+  years.forEach(year => {
+    const d = DATA[year];
+    if (!d) return;
+    ctx += `═══ ANNÉE ${year} ═══\n`;
+    // Revenus
+    const revEntries = Object.entries(d.revenus || {});
+    if (revEntries.length) {
+      ctx += '💼 REVENUS :\n';
+      revEntries.forEach(([label, months]) => {
+        const arr = Array.isArray(months) ? months : Array.from({length:12}, (_,i) => months[i]||0);
+        const total = arr.reduce((s,v) => s+(parseFloat(v)||0), 0);
+        ctx += `  ${label}: ${total.toFixed(0)}€/an\n`;
+      });
+    }
+    // Charges
+    const chargeEntries = Object.entries(d.charges || {});
+    if (chargeEntries.length) {
+      ctx += '🏠 CHARGES FIXES :\n';
+      chargeEntries.forEach(([label, data]) => {
+        let total = 0;
+        if (data?.amounts) {
+          total = Object.values(data.amounts).reduce((s,v)=>s+(parseFloat(v)||0),0);
+        } else if (Array.isArray(data)) {
+          total = data.reduce((s,v)=>s+(parseFloat(v)||0),0);
+        }
+        ctx += `  ${label}: ${total.toFixed(0)}€/an\n`;
+      });
+    }
+    // Variables
+    const varCats = getVarCats();
+    const varsSection = varCats.map(cat => {
+      const entries = d.vars?.[cat.key] || [];
+      if (!entries.length) return '';
+      const total = entries.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+      const byMonth = {};
+      entries.forEach(e => { if (e.month!=null) byMonth[e.month]=(byMonth[e.month]||0)+(parseFloat(e.amount)||0); });
+      const mStr = Object.entries(byMonth).map(([m,v])=>`${MONTHS[m]}:${v.toFixed(0)}€`).join(', ');
+      return `  ${cat.icon} ${cat.label}: ${total.toFixed(0)}€ total (${mStr})`;
+    }).filter(Boolean).join('\n');
+    if (varsSection) ctx += `🛒 DÉPENSES VARIABLES :\n${varsSection}\n`;
+    // Soldes initiaux
+    const initC = parseFloat(d.solde_initial)||0;
+    const initL = parseFloat(d.livret_initial)||0;
+    if (initC||initL) ctx += `💰 SOLDES INITIAUX : compte=${initC.toFixed(0)}€, livret=${initL.toFixed(0)}€\n`;
+    ctx += '\n';
+  });
+  return ctx;
+}
+
+async function sendAiMessage() {
+  const input = document.getElementById('ai-chat-input');
+  const sendBtn = document.getElementById('ai-chat-send');
+  if (!input || _aiTyping) return;
+  const text = input.value.trim();
+  if (!text) return;
+  const key = getGeminiKey();
+  if (!key) {
+    _appendAiMsg('bot', '⚠️ Clé API Gemini manquante. Va dans <b>⚙️ Paramètres → Assistant IA</b> pour la configurer.');
+    return;
+  }
+  input.value = '';
+  _appendAiMsg('user', text);
+  _aiTyping = true;
+  if (sendBtn) sendBtn.disabled = true;
+  const typingDiv = _appendAiMsg('bot', '⏳ <i>Analyse de tes données…</i>');
+  if (typingDiv) typingDiv.classList.add('ai-msg-typing');
+  try {
+    const context = _buildBudgetContext();
+    const answer = await _callGemini(key, context, text);
+    if (typingDiv) typingDiv.remove();
+    _appendAiMsg('bot', answer);
+  } catch(e) {
+    if (typingDiv) typingDiv.remove();
+    _appendAiMsg('bot', `❌ Erreur : ${e.message}`);
+  } finally {
+    _aiTyping = false;
+    if (sendBtn) sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+async function _callGemini(apiKey, systemContext, userMessage) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      systemInstruction: {parts:[{text: systemContext}]},
+      contents: [{role:'user', parts:[{text: userMessage}]}],
+      generationConfig: {temperature:0.7, maxOutputTokens:800}
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.error?.message || `Erreur HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Réponse vide de Gemini');
+  return text
+    .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+    .replace(/\*(.*?)\*/g,'<i>$1</i>')
+    .replace(/\n/g,'<br>');
+}
+
 // ── TOUR GUIDÉ ──
 const TOUR_STEPS = [
   { icon:'👋', title:'Bienvenue dans Mon Budget !',
-    text:'Voici un tour rapide (2 min) pour apprendre à utiliser l\'application. Utilisez les flèches ← → ou cliquez <b>Suivant</b>.',
+    text:'Voici un tour rapide (3 min) pour apprendre à utiliser l\'application. Utilisez les flèches ← → ou cliquez <b>Suivant</b>.',
     target:null, link:null },
   { icon:'📅', title:'Vos onglets d\'années',
     text:'Chaque onglet = une année de budget. Cliquez sur <b>＋ Année</b> pour ajouter une nouvelle année. <small style="color:#F5A623">⚠️ 1 an max en version gratuite</small>',
@@ -4413,9 +4613,18 @@ const TOUR_STEPS = [
   { icon:'🛒', title:'Dépenses Variables',
     text:'Courses, carburant, divers… Cliquez sur le <b>bouton ＋</b> dans la colonne du bon mois pour noter une dépense avec son commentaire et sa date.',
     target:'.section-card[data-section="variables"]', link:'aide.html#variables' },
+  { icon:'➕', title:'Bouton Ajout Rapide',
+    text:'Le bouton <b>➕ vert</b> en bas à droite permet d\'ajouter une dépense depuis n\'importe quelle vue. L\'année et le mois sont pré-remplis automatiquement.',
+    target:'#main-fab', link:'aide.html#ajout-rapide' },
   { icon:'📊', title:'Résumé Mensuel',
     text:'Tout se calcule ici automatiquement : disponible par mois, <b>solde réel du compte courant</b>, solde du livret d\'épargne.',
     target:'.section-card[data-section="resume"]', link:'aide.html#resume' },
+  { icon:'🔐', title:'Connexion Google & Cloud',
+    text:'Connectez-vous avec Google pour activer la <b>synchronisation cloud Premium</b>. Vos données sont accessibles depuis tous vos appareils (3 max par compte).',
+    target:null, link:'aide.html#connexion' },
+  { icon:'🤖', title:'Assistant IA Gemini',
+    text:'Le bouton <b>🤖 violet</b> en bas à droite ouvre le chat IA. Posez des questions sur vos finances : <i>"Combien j\'ai dépensé ce mois ?"</i>, <i>"Compare 2025 et 2026"</i>…',
+    target:'#ai-chat-fab', link:'aide.html#assistant-ia' },
   { icon:'🎉', title:'Vous êtes prêt !',
     text:'C\'est tout ! Retrouvez ce tour à tout moment via le bouton <b>❓</b> dans le header. Bonne gestion de budget !',
     target:null, link:'aide.html' }
@@ -5175,6 +5384,25 @@ function closeCompareView() {
 
 <!-- ── FAB : Ajout rapide ── -->
 <button class="fab" id="main-fab" onclick="openQuickAdd()" title="Ajout rapide" style="display:none">➕</button>
+
+<!-- ── AI CHAT ── -->
+<button class="ai-fab" id="ai-chat-fab" onclick="toggleAiChat()" title="Assistant IA" style="display:none">🤖</button>
+<div class="ai-chat-panel hidden" id="ai-chat-panel">
+  <div class="ai-chat-header">
+    <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:13px">Assistant Budget IA</div>
+      <div style="font-size:10px;color:var(--gray)" id="ai-chat-status">Propulsé par Gemini</div>
+    </div>
+    <button onclick="clearAiChat()" title="Effacer la conversation" style="background:none;border:none;font-size:13px;color:var(--gray);cursor:pointer;padding:2px 6px">🗑</button>
+    <button onclick="toggleAiChat()" style="background:none;border:none;font-size:16px;color:var(--gray);cursor:pointer;padding:2px 6px">✕</button>
+  </div>
+  <div class="ai-chat-messages" id="ai-chat-messages"></div>
+  <div class="ai-chat-input-area">
+    <input type="text" id="ai-chat-input" placeholder="Posez votre question…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendAiMessage();event.preventDefault()}">
+    <button class="ai-chat-send" id="ai-chat-send" onclick="sendAiMessage()">Envoyer</button>
+  </div>
+</div>
 
 </body>
 </html>

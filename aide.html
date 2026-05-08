@@ -155,6 +155,9 @@ a:hover{text-decoration:underline}
       <a href="#github-gist" style="background:#e8f8f0;color:#27ae60;border-color:#27ae60">🐙 GitHub Gist gratuit</a>
       <a href="#dark">🌙 Mode nuit</a>
       <a href="#annee">📅 Nouvelle année</a>
+      <a href="#connexion">🔐 Connexion Google</a>
+      <a href="#ajout-rapide">➕ Ajout rapide</a>
+      <a href="#assistant-ia">🤖 Assistant IA</a>
     </nav>
   </aside>
 
@@ -188,7 +191,7 @@ a:hover{text-decoration:underline}
           <p>Clique sur la carte avec ton prénom. Si tu as mis un code PIN, il te sera demandé. Une fois connecté, l'application s'ouvre directement.</p>
           <img class="step-img" src="screenshots/10_tour.png" alt="Tour guidé au premier lancement">
           <div class="step-img-caption">Au premier lancement, le tour guidé démarre automatiquement 🎉</div>
-          <div class="step-tip">💡 Le tour guidé te présente chaque partie de l'application en 9 étapes. Tu peux naviguer avec les flèches ← → de ton clavier.</div>
+          <div class="step-tip">💡 Le tour guidé te présente chaque partie de l'application en <b>12 étapes</b> (y compris l'ajout rapide, la connexion Google et l'assistant IA). Tu peux naviguer avec les flèches ← → de ton clavier.</div>
         </div>
       </div>
 
@@ -512,8 +515,15 @@ a:hover{text-decoration:underline}
         <li><b>📥 Export CSV</b> — Exporte les données du mois actuel en CSV</li>
         <li><b>📂 Import CSV</b> — Importe des données depuis un fichier CSV</li>
         <li><b>📦 Backups</b> — Affiche la liste des sauvegardes automatiques (une par jour, 20 max)</li>
-        <li><b>❓ Aide</b> — Ouvre ce guide</li>
+        <li><b>🔐 Connexion</b> — Connexion avec Google pour la synchronisation cloud Premium</li>
+        <li><b>❓ Aide</b> — Relance le tour guidé ou ouvre ce guide</li>
         <li><b>🌙 / ☀️</b> — Bascule entre mode jour et mode nuit</li>
+      </ul>
+
+      <h3>Boutons flottants (bas à droite)</h3>
+      <ul>
+        <li><b>➕ Vert</b> — <a href="#ajout-rapide">Ajout rapide</a> d'une dépense variable</li>
+        <li><b>🤖 Violet</b> — <a href="#assistant-ia">Assistant IA</a> Gemini (chat)</li>
       </ul>
 
       <h3>Onglets d'années</h3>
@@ -806,6 +816,126 @@ a:hover{text-decoration:underline}
 
       <h3>Supprimer une année</h3>
       <p>Survolez l'onglet de l'année → cliquez sur le <b>✕</b> qui apparaît. Une confirmation est demandée avec option de backup automatique.</p>
+    </div>
+
+    <!-- Connexion Google -->
+    <div class="section" id="connexion">
+      <h2><span>🔐</span> Connexion Google &amp; Compte Cloud</h2>
+      <p class="lead">Connectez-vous avec votre compte Google pour accéder à la synchronisation cloud et au compte Premium.</p>
+
+      <h3>Pourquoi se connecter ?</h3>
+      <p>Sans connexion, vos données sont stockées uniquement dans votre navigateur. Avec un compte Google connecté :</p>
+      <ul>
+        <li>✅ Synchronisation automatique dans le cloud Firebase (Premium)</li>
+        <li>✅ Accès depuis plusieurs appareils (PC, téléphone, tablette)</li>
+        <li>✅ Vos données sont récupérables si vous changez de navigateur</li>
+      </ul>
+
+      <h3>Comment se connecter</h3>
+      <ol>
+        <li>Allez dans l'onglet <b>⚙️ Paramètres</b> et cliquez sur <b>🔐 Se connecter</b></li>
+        <li>Cliquez sur le bouton <b>Continuer avec Google</b></li>
+        <li>Une fenêtre popup Google s'ouvre — choisissez votre compte Gmail</li>
+        <li>La connexion est automatique — votre email apparaît dans Paramètres</li>
+      </ol>
+
+      <div class="tip">
+        <b>💡 Connexion persistante</b> — Une fois connecté, vous restez connecté sur cet appareil même après fermeture du navigateur.
+      </div>
+
+      <h3>Limite de 3 appareils</h3>
+      <p>Pour des raisons de sécurité, un compte Premium peut être utilisé sur <b>3 appareils maximum</b>. Si vous dépassez cette limite, la synchronisation est désactivée sur le nouvel appareil mais les données locales restent accessibles.</p>
+
+      <div class="warn">
+        <b>⚠️ Premium requis pour la sync</b> — La connexion Google est disponible à tous gratuitement, mais la synchronisation cloud automatique nécessite une licence Premium active.
+      </div>
+    </div>
+
+    <!-- Ajout rapide -->
+    <div class="section" id="ajout-rapide">
+      <h2><span>➕</span> Bouton Ajout Rapide</h2>
+      <p class="lead">Le bouton vert ➕ en bas à droite permet d'ajouter une dépense variable rapidement, depuis n'importe quelle vue.</p>
+
+      <h3>Comment l'utiliser</h3>
+      <ol>
+        <li>Cliquez sur le bouton <b>➕ vert</b> en bas à droite de l'écran</li>
+        <li>Un formulaire apparaît avec les champs : catégorie, montant, mois, commentaire, mode de paiement, jour</li>
+        <li>L'<b>année et le mois</b> sont pré-remplis selon l'onglet actif</li>
+        <li>Saisissez le montant et cliquez sur <b>✅ Ajouter</b></li>
+      </ol>
+
+      <div class="tip">
+        <b>💡 Astuce</b> — L'ajout rapide détecte automatiquement l'année en cours selon l'onglet affiché. Si vous êtes sur l'onglet 2026, la dépense sera ajoutée en 2026.
+      </div>
+
+      <h3>Champs disponibles</h3>
+      <ul>
+        <li><b>Catégorie</b> — Courses, carburant, divers, ou vos catégories personnalisées <span class="pro-badge">Premium</span></li>
+        <li><b>Montant</b> — La somme de la dépense en euros</li>
+        <li><b>Mois</b> — Le mois auquel rattacher la dépense</li>
+        <li><b>Commentaire</b> — Note optionnelle (ex : "Lidl", "Plein carburant")</li>
+        <li><b>Mode de paiement</b> — Carte, liquide, chèque repas…</li>
+        <li><b>Jour</b> — Le jour du mois (optionnel)</li>
+      </ul>
+    </div>
+
+    <!-- Assistant IA -->
+    <div class="section" id="assistant-ia">
+      <h2><span>🤖</span> Assistant IA (Gemini)</h2>
+      <p class="lead">L'assistant IA analyse vos données budget en temps réel et répond à vos questions financières en langage naturel.</p>
+
+      <h3>Activer l'assistant (2 minutes)</h3>
+      <ol>
+        <li>Allez dans <b>⚙️ Paramètres → Assistant IA (Gemini)</b></li>
+        <li>Cliquez sur le lien <b>Obtenir gratuitement ↗</b> — cela ouvre <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a></li>
+        <li>Connectez-vous avec votre compte Google</li>
+        <li>Cliquez sur <b>Create API key</b> (bouton bleu)</li>
+        <li>Copiez la clé générée (commence par <code>AIzaSy…</code>)</li>
+        <li>Dans l'application, collez la clé dans le champ et cliquez <b>✅ Sauver</b></li>
+      </ol>
+
+      <div class="tip">
+        <b>💡 Entièrement gratuit</b> — Google Gemini offre un tier gratuit généreux : 15 requêtes/minute et 1 500 requêtes/jour. Largement suffisant pour un usage budgétaire personnel.
+      </div>
+
+      <h3>Utiliser le chat</h3>
+      <ol>
+        <li>Cliquez sur le bouton <b>🤖 violet</b> en bas à droite</li>
+        <li>Le panneau de chat s'ouvre</li>
+        <li>Tapez votre question en français et appuyez sur <b>Entrée</b></li>
+        <li>L'assistant répond en se basant sur <b>vos vraies données</b></li>
+      </ol>
+
+      <h3>Exemples de questions</h3>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="fc-icon">💰</div>
+          <div class="fc-title">Soldes</div>
+          <div class="fc-desc">« Quel est mon solde actuel ? »<br>« Combien ai-je sur le livret ? »</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">📊</div>
+          <div class="fc-title">Analyse</div>
+          <div class="fc-desc">« Quel mois j'ai le plus dépensé ? »<br>« Compare 2025 et 2026 »</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🛒</div>
+          <div class="fc-title">Dépenses</div>
+          <div class="fc-desc">« Combien en courses ce mois ? »<br>« Total carburant 2026 ? »</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">💡</div>
+          <div class="fc-title">Conseils</div>
+          <div class="fc-desc">« Comment économiser ? »<br>« Où je dépense le plus ? »</div>
+        </div>
+      </div>
+
+      <h3>Confidentialité</h3>
+      <p>Vos données budget sont envoyées à l'API Gemini de Google <b>uniquement au moment où vous posez une question</b>. Elles ne sont ni stockées ni utilisées pour l'entraînement (API stateless). La clé API est stockée uniquement dans votre navigateur, jamais sur nos serveurs.</p>
+
+      <div class="warn">
+        <b>⚠️ Ne partagez pas votre clé API</b> — Si vous partagez l'accès à votre navigateur, supprimez la clé dans Paramètres → Assistant IA.
+      </div>
     </div>
 
   </main>
