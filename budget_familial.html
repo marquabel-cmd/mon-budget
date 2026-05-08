@@ -492,6 +492,10 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .ai-chat-input-area input:focus{border-color:var(--blue)}
 .ai-chat-send{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:700;white-space:nowrap}
 .ai-chat-send:disabled{opacity:.5;cursor:default}
+.ai-mic-btn{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:var(--surface-alt);color:var(--gray);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.ai-mic-btn:hover{border-color:var(--blue);color:var(--blue)}
+.ai-mic-btn.listening{background:#F04F5B;border-color:#F04F5B;color:#fff;animation:mic-pulse .8s ease-in-out infinite}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 rgba(240,79,91,.4)}50%{box-shadow:0 0 0 8px rgba(240,79,91,0)}}
 @media(max-width:500px){.ai-chat-panel{right:8px;left:8px;width:auto;bottom:124px}}
 /* ── AUTH MODAL ── */
 .auth-tab-btn{transition:background .15s,color .15s;color:var(--gray)}
@@ -4650,6 +4654,67 @@ async function sendAiMessage() {
   }
 }
 
+// ── SAISIE VOCALE ──
+let _speechRec = null;
+let _voiceListening = false;
+
+function toggleVoiceInput() {
+  if (_voiceListening) { _stopVoice(); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    _appendAiMsg('bot', '⚠️ La saisie vocale n\'est pas disponible sur ce navigateur. Utilisez Chrome ou Edge.');
+    return;
+  }
+  const rec = new SR();
+  rec.lang = 'fr-FR';
+  rec.continuous = false;
+  rec.interimResults = true;
+
+  const btn   = document.getElementById('ai-mic-btn');
+  const input = document.getElementById('ai-chat-input');
+  const status = document.getElementById('ai-chat-status');
+
+  rec.onstart = () => {
+    _voiceListening = true;
+    if (btn)    { btn.classList.add('listening'); btn.title = 'Cliquez pour arrêter'; btn.textContent = '⏹'; }
+    if (status) status.textContent = '🎤 Parlez maintenant…';
+  };
+
+  rec.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    if (input) input.value = transcript;
+    if (e.results[e.results.length - 1].isFinal) {
+      _stopVoice();
+      // Envoi automatique après transcription finale
+      setTimeout(() => sendAiMessage(), 400);
+    }
+  };
+
+  rec.onerror = (e) => {
+    _stopVoice();
+    if (e.error === 'not-allowed' || e.error === 'permission-denied')
+      _appendAiMsg('bot', '🎤 Accès au microphone refusé.<br>Autorisez le microphone dans les paramètres de votre navigateur et réessayez.');
+    else if (e.error === 'no-speech')
+      showToast('⚠️ Aucune voix détectée — réessayez');
+    else
+      showToast('⚠️ Erreur microphone : ' + e.error);
+  };
+
+  rec.onend = () => _stopVoice();
+
+  _speechRec = rec;
+  rec.start();
+}
+
+function _stopVoice() {
+  _voiceListening = false;
+  if (_speechRec) { try { _speechRec.stop(); } catch(e) {} _speechRec = null; }
+  const btn    = document.getElementById('ai-mic-btn');
+  const status = document.getElementById('ai-chat-status');
+  if (btn)    { btn.classList.remove('listening'); btn.title = 'Saisie vocale'; btn.textContent = '🎤'; }
+  if (status) status.textContent = 'Propulsé par Groq';
+}
+
 async function _callGemini(apiKey, systemContext, userMessage) {
   // API Groq — gratuite, sans carte bancaire, très rapide
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -5493,6 +5558,7 @@ function closeCompareView() {
   </div>
   <div class="ai-chat-messages" id="ai-chat-messages"></div>
   <div class="ai-chat-input-area">
+    <button class="ai-mic-btn" id="ai-mic-btn" onclick="toggleVoiceInput()" title="Saisie vocale (cliquez pour parler)">🎤</button>
     <input type="text" id="ai-chat-input" placeholder="Posez votre question…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendAiMessage();event.preventDefault()}">
     <button class="ai-chat-send" id="ai-chat-send" onclick="sendAiMessage()">Envoyer</button>
   </div>
