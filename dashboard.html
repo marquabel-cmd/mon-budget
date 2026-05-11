@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon Compte — Mon Budget</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1A1D2E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#12141F;color:#E2E4F0;min-height:100vh}
+a{color:#5B6AF0;text-decoration:none}
+button{cursor:pointer;font-family:'Inter',sans-serif}
+
+/* ── LAYOUT ── */
+.header{background:#1C1F30;border-bottom:1px solid #2C3050;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10}
+.logo{font-size:18px;font-weight:700}
+.header-right{display:flex;align-items:center;gap:10px}
+.btn{border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-ghost{background:rgba(255,255,255,.08);color:#E2E4F0}
+.btn-primary{background:#5B6AF0;color:#fff}
+.btn-green{background:#00C896;color:#fff}
+.btn-red{background:#F04F5B;color:#fff}
+.btn-orange{background:#F5A623;color:#1A1D2E}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-full{width:100%;padding:10px}
+
+.container{max-width:720px;margin:0 auto;padding:24px 20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:580px){.grid{grid-template-columns:1fr}}
+
+/* ── CARDS ── */
+.card{background:#1C1F30;border:1px solid #2C3050;border-radius:14px;padding:22px}
+.card-title{font-size:12px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.card-full{grid-column:1/-1}
+
+/* ── AUTH ── */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-card{background:#1C1F30;border:1px solid #2C3050;border-radius:16px;padding:36px;width:100%;max-width:380px;text-align:center}
+.auth-card h2{font-size:20px;margin-bottom:6px}
+.auth-card p{color:#8892B0;font-size:13px;margin-bottom:24px}
+.auth-input{width:100%;background:#20243A;border:1px solid #2C3050;border-radius:8px;padding:10px 14px;color:#E2E4F0;font-size:14px;margin-bottom:10px;outline:none;transition:border-color .2s}
+.auth-input:focus{border-color:#5B6AF0}
+.auth-error{color:#F04F5B;font-size:12px;margin-bottom:10px;min-height:18px}
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#8892B0;font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#2C3050}
+.google-btn{width:100%;background:#fff;color:#1A1D2E;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.google-btn:hover{background:#f0f0f0}
+.auth-tabs{display:flex;background:#20243A;border-radius:8px;padding:3px;margin-bottom:20px}
+.auth-tab{flex:1;padding:7px;border:none;background:transparent;color:#8892B0;font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;transition:.15s}
+.auth-tab.active{background:#1C1F30;color:#E2E4F0}
+
+/* ── ACCOUNT ── */
+.avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0}
+.account-row{display:flex;align-items:center;gap:14px}
+.account-info{flex:1;min-width:0}
+.account-email{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-uid{font-size:11px;color:#8892B0;margin-top:2px;font-family:monospace}
+
+/* ── SUBSCRIPTION ── */
+.sub-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:14px}
+.sub-premium{background:#00C89620;color:#00C896;border:1px solid #00C89640}
+.sub-free{background:#8892B020;color:#8892B0;border:1px solid #8892B040}
+.key-row{display:flex;gap:8px;margin-top:12px}
+.key-input{flex:1;background:#20243A;border:1px solid #2C3050;border-radius:8px;padding:8px 12px;color:#E2E4F0;font-size:13px;outline:none}
+.key-input:focus{border-color:#5B6AF0}
+
+/* ── DEVICES ── */
+.device-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #2C3050}
+.device-item:last-child{border-bottom:none}
+.device-name{font-size:13px;font-weight:500}
+.device-date{font-size:11px;color:#8892B0;margin-top:2px}
+.device-current{font-size:10px;background:#5B6AF020;color:#5B6AF0;padding:2px 7px;border-radius:10px;font-weight:700}
+
+/* ── DANGER ── */
+.danger-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #2C3050}
+.danger-item:last-child{border-bottom:none}
+.danger-label{font-size:13px}
+.danger-sub{font-size:11px;color:#8892B0;margin-top:2px}
+
+/* ── SYNC ── */
+.sync-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2C3050}
+.sync-row:last-child{border-bottom:none}
+.sync-label{font-size:13px;color:#8892B0}
+.sync-value{font-size:13px;font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.dot-green{background:#00C896}
+.dot-gray{background:#8892B0}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1C1F30;border:1px solid #2C3050;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;transition:transform .3s;z-index:9999;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH ── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div style="font-size:32px;margin-bottom:12px">💰</div>
+    <h2>Mon Compte</h2>
+    <p>Connectez-vous pour accéder à votre espace</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Connexion</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Inscription</button>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <input id="auth-email" class="auth-input" type="email" placeholder="Email" autocomplete="email">
+    <input id="auth-pass"  class="auth-input" type="password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()">
+    <input id="auth-pass2" class="auth-input" type="password" placeholder="Confirmer le mot de passe" style="display:none" onkeydown="if(event.key==='Enter')submitAuth()">
+    <button class="btn btn-primary btn-full" id="auth-submit-btn" onclick="submitAuth()">Se connecter</button>
+    <div style="margin-top:10px;text-align:center">
+      <button id="forgot-btn" onclick="forgotPassword()" style="background:none;border:none;color:#8892B0;font-size:12px;cursor:pointer">Mot de passe oublié ?</button>
+    </div>
+    <div class="divider">ou</div>
+    <button class="google-btn" onclick="signInGoogle()">
+      <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continuer avec Google
+    </button>
+    <div style="margin-top:16px;font-size:12px;color:#8892B0">
+      <a href="budget_familial.html">← Retour à l'application</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="dashboard" style="display:none">
+  <div class="header">
+    <span class="logo">💰 Mon Budget</span>
+    <div class="header-right">
+      <a href="budget_familial.html" class="btn btn-primary btn-sm">Ouvrir l'app →</a>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="grid">
+
+      <!-- Compte -->
+      <div class="card">
+        <div class="card-title">👤 Mon compte</div>
+        <div class="account-row">
+          <div class="avatar" id="avatar-initials">?</div>
+          <div class="account-info">
+            <div class="account-email" id="dash-email">—</div>
+            <div class="account-uid" id="dash-uid">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Abonnement -->
+      <div class="card">
+        <div class="card-title">⭐ Abonnement</div>
+        <div id="sub-status"><span class="sub-badge sub-free">🔓 Gratuit</span></div>
+        <div id="sub-details" style="font-size:12px;color:#8892B0;margin-bottom:10px">1 an d'historique · 3 catégories max</div>
+        <div id="premium-actions">
+          <a id="stripe-link" href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank" class="btn btn-orange btn-full" style="display:block;text-align:center;text-decoration:none">⭐ Passer Premium — 14,90 €</a>
+          <div class="key-row" style="margin-top:8px">
+            <input id="license-key" class="key-input" placeholder="Clé de licence" onkeydown="if(event.key==='Enter')activateKey()">
+            <button class="btn btn-green btn-sm" onclick="activateKey()">Activer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Synchronisation -->
+      <div class="card">
+        <div class="card-title">☁️ Synchronisation</div>
+        <div class="sync-row">
+          <span class="sync-label">Statut</span>
+          <span class="sync-value" id="sync-status"><span class="dot dot-gray"></span>Non connecté</span>
+        </div>
+        <div class="sync-row">
+          <span class="sync-label">Dernière synchro</span>
+          <span class="sync-value" id="sync-last">—</span>
+        </div>
+        <div class="sync-row">
+          <span class="sync-label">Appareils</span>
+          <span class="sync-value" id="sync-devices">—</span>
+        </div>
+      </div>
+
+      <!-- Appareils -->
+      <div class="card">
+        <div class="card-title">📱 Mes appareils</div>
+        <div id="devices-list"><div style="color:#8892B0;font-size:13px">🔄 Chargement…</div></div>
+      </div>
+
+      <!-- Actions rapides -->
+      <div class="card card-full">
+        <div class="card-title">⚡ Actions rapides</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <a href="budget_familial.html" class="btn btn-primary">📊 Ouvrir Mon Budget</a>
+          <button class="btn btn-ghost" onclick="exportData()">📥 Exporter mes données</button>
+          <a href="aide.html" class="btn btn-ghost">❓ Aide</a>
+        </div>
+      </div>
+
+      <!-- Zone danger -->
+      <div class="card card-full" style="border-color:#F04F5B44">
+        <div class="card-title" style="color:#F04F5B">⚠️ Zone de danger</div>
+        <div class="danger-item">
+          <div>
+            <div class="danger-label">Désactiver la licence Premium</div>
+            <div class="danger-sub">Désactive le Premium sur cet appareil uniquement</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="deactivateLicense()">Désactiver</button>
+        </div>
+        <div class="danger-item">
+          <div>
+            <div class="danger-label">Supprimer mes données cloud</div>
+            <div class="danger-sub">Efface la synchronisation — vos données locales sont conservées</div>
+          </div>
+          <button class="btn btn-red btn-sm" onclick="deleteCloudData()">Supprimer</button>
+        </div>
+        <div class="danger-item">
+          <div>
+            <div class="danger-label">Supprimer mon compte</div>
+            <div class="danger-sub">Supprime définitivement votre compte Firebase et vos données cloud</div>
+          </div>
+          <button class="btn btn-red btn-sm" onclick="deleteAccount()">Supprimer le compte</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const LICENSE_DB = 'https://mon-budget-licences-default-rtdb.europe-west1.firebasedatabase.app';
+const FB_API_KEY = 'AIzaSyBB0h8ENURTDyndoVBtsu1i94l_mVZZ23o';
+const FB_AUTH    = 'https://identitytoolkit.googleapis.com/v1/accounts';
+const FB_TOKEN   = 'https://securetoken.googleapis.com/v1/token';
+
+let _user = null;
+let _authMode = 'login';
+
+// ── AUTH ──────────────────────────────────────────────────────────────
+function switchTab(mode) {
+  _authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+  document.getElementById('auth-pass2').style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Se connecter' : 'Créer un compte';
+  document.getElementById('forgot-btn').style.display = mode === 'login' ? '' : 'none';
+  document.getElementById('auth-error').textContent = '';
+}
+function _saveUser(u) {
+  _user = u;
+  if (!u) { ['token','uid','email','refresh','expires'].forEach(k => localStorage.removeItem('mbudget-fb-'+k)); return; }
+  localStorage.setItem('mbudget-fb-token',   u.idToken);
+  localStorage.setItem('mbudget-fb-uid',     u.uid);
+  localStorage.setItem('mbudget-fb-email',   u.email);
+  localStorage.setItem('mbudget-fb-refresh', u.refreshToken);
+  localStorage.setItem('mbudget-fb-expires', u.expiresAt);
+}
+function _loadUser() {
+  const uid = localStorage.getItem('mbudget-fb-uid');
+  if (!uid) return null;
+  return { uid, email: localStorage.getItem('mbudget-fb-email')||'',
+    idToken: localStorage.getItem('mbudget-fb-token')||'',
+    refreshToken: localStorage.getItem('mbudget-fb-refresh')||'',
+    expiresAt: parseInt(localStorage.getItem('mbudget-fb-expires')||'0') };
+}
+async function _refreshToken() {
+  const u = _user || _loadUser();
+  if (!u?.refreshToken) return null;
+  try {
+    const r = await fetch(`${FB_TOKEN}?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ grant_type:'refresh_token', refresh_token: u.refreshToken })
+    });
+    const d = await r.json();
+    if (!d.id_token) return null;
+    const nu = { uid: d.user_id, email: u.email, idToken: d.id_token,
+      refreshToken: d.refresh_token, expiresAt: Date.now() + d.expires_in * 1000 };
+    _saveUser(nu); return nu;
+  } catch { return null; }
+}
+async function getToken() {
+  let u = _user || _loadUser();
+  if (!u) return null;
+  if (Date.now() > u.expiresAt - 120000) u = await _refreshToken();
+  return u?.idToken || null;
+}
+async function submitAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Remplissez tous les champs'; return; }
+  if (_authMode === 'register') {
+    const pass2 = document.getElementById('auth-pass2').value;
+    if (pass !== pass2) { errEl.textContent = 'Les mots de passe ne correspondent pas'; return; }
+  }
+  const endpoint = _authMode === 'login' ? ':signInWithPassword' : ':signUp';
+  try {
+    const r = await fetch(`${FB_AUTH}${endpoint}?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password: pass, returnSecureToken: true })
+    });
+    const d = await r.json();
+    if (d.error) { errEl.textContent = _fbError(d.error.message); return; }
+    const u = { uid: d.localId, email: d.email, idToken: d.idToken,
+      refreshToken: d.refreshToken, expiresAt: Date.now() + parseInt(d.expiresIn)*1000 };
+    _saveUser(u); showDashboard(u);
+  } catch { errEl.textContent = 'Erreur réseau — réessayez'; }
+}
+function _fbError(msg) {
+  if (!msg) return 'Erreur inconnue';
+  if (msg.includes('INVALID_LOGIN') || msg.includes('INVALID_PASSWORD')) return 'Email ou mot de passe incorrect';
+  if (msg.includes('EMAIL_EXISTS'))   return 'Cet email est déjà utilisé';
+  if (msg.includes('WEAK_PASSWORD'))  return 'Mot de passe trop court (6 caractères min)';
+  if (msg.includes('USER_NOT_FOUND')) return 'Aucun compte avec cet email';
+  return msg;
+}
+async function forgotPassword() {
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) { document.getElementById('auth-error').textContent = 'Entrez votre email d\'abord'; return; }
+  try {
+    await fetch(`${FB_AUTH}:sendOobCode?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ requestType:'PASSWORD_RESET', email })
+    });
+    showToast('📧 Email de réinitialisation envoyé');
+  } catch { showToast('❌ Erreur réseau'); }
+}
+function signInGoogle() {
+  showToast('💡 Connectez-vous via l\'app principale puis revenez ici');
+  setTimeout(() => { window.location.href = 'budget_familial.html'; }, 1500);
+}
+function logout() {
+  _saveUser(null);
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+// ── FIREBASE FETCH ────────────────────────────────────────────────────
+async function _fbFetch(url, options = {}, token = null) {
+  const headers = { ...(options.headers || {}) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────
+async function showDashboard(u) {
+  _user = u;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = '';
+  // Compte
+  document.getElementById('dash-email').textContent = u.email;
+  document.getElementById('dash-uid').textContent   = 'UID : ' + u.uid.slice(0,20) + '…';
+  const initials = (u.email||'?').slice(0,2).toUpperCase();
+  document.getElementById('avatar-initials').textContent = initials;
+  // Premium
+  await loadPremiumStatus(u);
+  // Appareils
+  await loadDevices(u);
+  // Synchro
+  loadSyncStatus(u);
+}
+
+async function loadPremiumStatus(u) {
+  const isPremium = localStorage.getItem('mbudget-premium-'+u.uid) === '1';
+  updateSubUI(isPremium);
+  // Vérifier aussi côté Firebase
+  try {
+    const token = await getToken();
+    const r = await _fbFetch(`${LICENSE_DB}/users/${u.uid}/premium.json`, {}, token);
+    if (r.ok) {
+      const val = await r.json();
+      if (val === true) { localStorage.setItem('mbudget-premium-'+u.uid,'1'); updateSubUI(true); }
+    }
+  } catch {}
+}
+
+function updateSubUI(isPremium) {
+  const status  = document.getElementById('sub-status');
+  const details = document.getElementById('sub-details');
+  const actions = document.getElementById('premium-actions');
+  if (isPremium) {
+    status.innerHTML  = '<span class="sub-badge sub-premium">⭐ Premium actif</span>';
+    details.textContent = 'Historique illimité · Sync cloud · Multi-appareils';
+    actions.innerHTML = '<p style="font-size:12px;color:#8892B0">Abonnement actif sur ce compte. Merci !</p>';
+  } else {
+    status.innerHTML  = '<span class="sub-badge sub-free">🔓 Gratuit</span>';
+    details.textContent = '1 an d\'historique · 3 catégories variables max';
+    actions.innerHTML = `
+      <a href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank" class="btn btn-orange btn-full" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">⭐ Passer Premium — 14,90 €</a>
+      <div class="key-row">
+        <input id="license-key" class="key-input" placeholder="Clé de licence" onkeydown="if(event.key==='Enter')activateKey()">
+        <button class="btn btn-green btn-sm" onclick="activateKey()">Activer</button>
+      </div>`;
+  }
+}
+
+async function activateKey() {
+  const input = document.getElementById('license-key');
+  if (!input) return;
+  const key = input.value.trim().replace(/[^A-Za-z0-9_-]/g,'');
+  if (!key) { showToast('⚠️ Clé vide'); return; }
+  showToast('🔄 Vérification…');
+  try {
+    const res = await fetch(`${LICENSE_DB}/licenses/${key}.json`);
+    const data = await res.json();
+    if (!data || data.active !== true) { showToast('❌ Clé invalide ou expirée'); return; }
+    if (data.uid && data.uid !== _user.uid) { showToast('❌ Clé déjà utilisée par un autre compte'); return; }
+    const token = await getToken();
+    await _fbFetch(`${LICENSE_DB}/licenses/${key}/uid.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(_user.uid)
+    }, token);
+    await _fbFetch(`${LICENSE_DB}/users/${_user.uid}/premium.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:'true'
+    }, token);
+    localStorage.setItem('mbudget-premium-'+_user.uid,'1');
+    updateSubUI(true);
+    showToast('🎉 Licence activée — bienvenue en Premium !');
+  } catch { showToast('❌ Erreur réseau'); }
+}
+
+async function loadDevices(u) {
+  const el = document.getElementById('devices-list');
+  try {
+    const token = await getToken();
+    const r = await _fbFetch(`${LICENSE_DB}/users/${u.uid}/devices.json`, {}, token);
+    const devices = r.ok ? await r.json() : null;
+    const currentId = localStorage.getItem('mbudget-device-id') || '';
+    if (!devices || !Object.keys(devices).length) {
+      el.innerHTML = '<div style="color:#8892B0;font-size:13px">Aucun appareil enregistré</div>';
+      document.getElementById('sync-devices').textContent = '0/3';
+      return;
+    }
+    const entries = Object.entries(devices).sort(([,a],[,b]) => b - a);
+    document.getElementById('sync-devices').textContent = entries.length + '/3';
+    el.innerHTML = entries.map(([id, ts]) => `
+      <div class="device-item">
+        <div>
+          <div class="device-name">📱 Appareil${id === currentId ? ' <span class="device-current">Cet appareil</span>' : ''}</div>
+          <div class="device-date">${ts ? new Date(ts).toLocaleDateString('fr-FR', {day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
+        </div>
+      </div>`).join('');
+  } catch {
+    el.innerHTML = '<div style="color:#8892B0;font-size:13px">Impossible de charger</div>';
+  }
+}
+
+function loadSyncStatus(u) {
+  const isPremium = localStorage.getItem('mbudget-premium-'+u.uid) === '1';
+  const lastSync  = localStorage.getItem('mbudget-last-sync') || null;
+  const syncEl    = document.getElementById('sync-status');
+  if (isPremium) {
+    syncEl.innerHTML = '<span class="dot dot-green"></span>Activée';
+  } else {
+    syncEl.innerHTML = '<span class="dot dot-gray"></span>Non disponible (Gratuit)';
+  }
+  document.getElementById('sync-last').textContent = lastSync
+    ? new Date(parseInt(lastSync)).toLocaleString('fr-FR', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
+    : '—';
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────
+function exportData() {
+  window.location.href = 'budget_familial.html';
+  showToast('💡 Utilisez Export CSV/JSON dans l\'application');
+}
+
+async function deactivateLicense() {
+  if (!confirm('Désactiver la licence Premium sur cet appareil ?')) return;
+  try {
+    const token = await getToken();
+    await _fbFetch(`${LICENSE_DB}/users/${_user.uid}/premium.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:'false'
+    }, token);
+    localStorage.removeItem('mbudget-premium-'+_user.uid);
+    localStorage.removeItem('mbudget-license');
+    updateSubUI(false);
+    showToast('Licence désactivée');
+  } catch { showToast('❌ Erreur réseau'); }
+}
+
+async function deleteCloudData() {
+  if (!confirm('Supprimer toutes vos données cloud ?\n\nVos données locales (navigateur) seront conservées.')) return;
+  try {
+    const token = await getToken();
+    await _fbFetch(`${LICENSE_DB}/userdata/${_user.uid}.json`, { method:'DELETE' }, token);
+    showToast('☁️ Données cloud supprimées');
+  } catch { showToast('❌ Erreur réseau'); }
+}
+
+async function deleteAccount() {
+  const confirm1 = confirm('Supprimer définitivement votre compte ?\n\nCette action est irréversible.');
+  if (!confirm1) return;
+  const word = prompt('Tapez "SUPPRIMER" pour confirmer :');
+  if (word !== 'SUPPRIMER') { showToast('Annulé'); return; }
+  try {
+    const token = await getToken();
+    // Supprimer données cloud
+    await _fbFetch(`${LICENSE_DB}/users/${_user.uid}.json`, { method:'DELETE' }, token).catch(()=>{});
+    await _fbFetch(`${LICENSE_DB}/userdata/${_user.uid}.json`, { method:'DELETE' }, token).catch(()=>{});
+    // Supprimer compte Firebase Auth
+    await fetch(`${FB_AUTH}:delete?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ idToken: token })
+    });
+    _saveUser(null);
+    showToast('Compte supprimé');
+    setTimeout(() => { window.location.href = 'budget_familial.html'; }, 1500);
+  } catch { showToast('❌ Erreur — réessayez'); }
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+(async () => {
+  const stored = _loadUser();
+  if (!stored) return;
+  let u = stored;
+  if (Date.now() > u.expiresAt - 120000) u = await _refreshToken();
+  if (u) showDashboard(u);
+})();
+</script>
+</body>
+</html>

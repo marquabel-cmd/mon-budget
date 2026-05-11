@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Mon Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#12141F;color:#E2E4F0;min-height:100vh}
+a{color:#5B6AF0;text-decoration:none}
+button{cursor:pointer;font-family:'Inter',sans-serif}
+
+/* ── LAYOUT ── */
+.header{background:#1C1F30;border-bottom:1px solid #2C3050;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:18px;font-weight:700;color:#E2E4F0}
+.admin-badge{background:#F5A623;color:#1A1D2E;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.header-right{display:flex;align-items:center;gap:10px}
+.btn{border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-ghost{background:rgba(255,255,255,.08);color:#E2E4F0}
+.btn-primary{background:#5B6AF0;color:#fff}
+.btn-green{background:#00C896;color:#fff}
+.btn-red{background:#F04F5B;color:#fff}
+.btn-orange{background:#F5A623;color:#1A1D2E}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+.container{max-width:1100px;margin:0 auto;padding:24px 20px}
+
+/* ── AUTH ── */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-card{background:#1C1F30;border:1px solid #2C3050;border-radius:16px;padding:36px;width:100%;max-width:380px;text-align:center}
+.auth-card h2{font-size:20px;margin-bottom:6px}
+.auth-card p{color:#8892B0;font-size:13px;margin-bottom:24px}
+.auth-input{width:100%;background:#20243A;border:1px solid #2C3050;border-radius:8px;padding:10px 14px;color:#E2E4F0;font-size:14px;margin-bottom:10px;outline:none;transition:border-color .2s}
+.auth-input:focus{border-color:#5B6AF0}
+.auth-error{color:#F04F5B;font-size:12px;margin-bottom:10px;display:none}
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#8892B0;font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#2C3050}
+.google-btn{width:100%;background:#fff;color:#1A1D2E;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+.google-btn:hover{background:#f0f0f0}
+
+/* ── ACCÈS REFUSÉ ── */
+#denied-screen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.denied-card{background:#1C1F30;border:1px solid #F04F5B44;border-radius:16px;padding:36px;text-align:center;max-width:380px}
+.denied-card h2{color:#F04F5B;font-size:20px;margin-bottom:8px}
+.denied-card p{color:#8892B0;font-size:13px;margin-bottom:20px}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:20px}
+.stat-label{font-size:11px;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:700;line-height:1}
+.stat-sub{font-size:12px;color:#8892B0;margin-top:4px}
+.stat-green{color:#00C896}
+.stat-blue{color:#5B6AF0}
+.stat-orange{color:#F5A623}
+.stat-purple{color:#8B5CF6}
+
+/* ── USERS TABLE ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.section-title{font-size:15px;font-weight:700}
+.search-input{background:#1C1F30;border:1px solid #2C3050;border-radius:8px;padding:8px 12px;color:#E2E4F0;font-size:13px;width:220px;outline:none}
+.search-input:focus{border-color:#5B6AF0}
+.table-wrap{background:#1C1F30;border:1px solid #2C3050;border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{background:#20243A;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px}
+tbody tr{border-top:1px solid #2C3050;transition:background .1s}
+tbody tr:hover{background:#20243A}
+tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-premium{background:#00C89620;color:#00C896}
+.badge-free{background:#8892B020;color:#8892B0}
+.actions{display:flex;gap:6px}
+.empty-row td{text-align:center;padding:40px;color:#8892B0}
+
+/* ── SELECTED USER PANEL ── */
+#user-panel{display:none;background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:20px;margin-bottom:24px}
+.user-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.user-panel-info{font-size:13px;color:#8892B0}
+.user-panel-info strong{color:#E2E4F0}
+.panel-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1C1F30;border:1px solid #2C3050;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;transition:transform .3s;z-index:9999;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .search-input{width:140px}
+  thead th:nth-child(3),thead th:nth-child(4),tbody td:nth-child(3),tbody td:nth-child(4){display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH ── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div style="font-size:32px;margin-bottom:12px">🔐</div>
+    <h2>Admin — Mon Budget</h2>
+    <p>Connectez-vous avec votre compte administrateur</p>
+    <div id="auth-error" class="auth-error"></div>
+    <input id="auth-email" class="auth-input" type="email" placeholder="Email" autocomplete="email">
+    <input id="auth-pass" class="auth-input" type="password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter')signIn()">
+    <button class="btn btn-primary" style="width:100%;padding:10px" onclick="signIn()">Se connecter</button>
+    <div class="divider">ou</div>
+    <button class="google-btn" onclick="signInGoogle()">
+      <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continuer avec Google
+    </button>
+  </div>
+</div>
+
+<!-- ── ACCÈS REFUSÉ ── -->
+<div id="denied-screen">
+  <div class="denied-card">
+    <div style="font-size:40px;margin-bottom:12px">🚫</div>
+    <h2>Accès refusé</h2>
+    <p>Ce compte n'a pas les droits administrateur.</p>
+    <button class="btn btn-ghost" onclick="logout()">Se déconnecter</button>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="dashboard" style="display:none">
+
+  <div class="header">
+    <div class="header-left">
+      <span class="logo">💰 Mon Budget</span>
+      <span class="admin-badge">Admin</span>
+    </div>
+    <div class="header-right">
+      <span id="admin-email" style="font-size:12px;color:#8892B0"></span>
+      <a href="budget_familial.html" class="btn btn-ghost btn-sm">← App</a>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-label">Utilisateurs</div><div class="stat-value stat-blue" id="s-total">—</div><div class="stat-sub">comptes enregistrés</div></div>
+      <div class="stat-card"><div class="stat-label">Premium</div><div class="stat-value stat-green" id="s-premium">—</div><div class="stat-sub">abonnements actifs</div></div>
+      <div class="stat-card"><div class="stat-label">Gratuit</div><div class="stat-value stat-orange" id="s-free">—</div><div class="stat-sub">comptes sans abonnement</div></div>
+      <div class="stat-card"><div class="stat-label">Revenus estimés</div><div class="stat-value stat-purple" id="s-revenue">—</div><div class="stat-sub">à 14,90 € / an</div></div>
+    </div>
+
+    <!-- User panel -->
+    <div id="user-panel">
+      <div class="user-panel-header">
+        <div>
+          <div style="font-weight:700;margin-bottom:4px" id="panel-email">—</div>
+          <div class="user-panel-info">UID : <strong id="panel-uid">—</strong> &nbsp;·&nbsp; Appareils : <strong id="panel-devices">—</strong> &nbsp;·&nbsp; Dernière connexion : <strong id="panel-last">—</strong></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closePanel()">✕</button>
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-green btn-sm" onclick="grantPremium()">⭐ Accorder Premium</button>
+        <button class="btn btn-red btn-sm" onclick="revokePremium()">✕ Révoquer Premium</button>
+        <button class="btn btn-ghost btn-sm" onclick="viewData()">👁️ Voir les données</button>
+      </div>
+      <div id="panel-result" style="margin-top:10px;font-size:12px;color:#8892B0"></div>
+    </div>
+
+    <!-- Users table -->
+    <div class="section-header">
+      <span class="section-title">👥 Clients (<span id="user-count">0</span>)</span>
+      <input class="search-input" id="search" placeholder="🔍 Rechercher…" oninput="filterUsers()">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Statut</th>
+            <th>Appareils</th>
+            <th>Dernière connexion</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr class="empty-row"><td colspan="5">🔄 Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const ADMIN_UID   = 'CmpMFxHYsdPzRQ3JpU48w8F9eIm1';
+const LICENSE_DB  = 'https://mon-budget-licences-default-rtdb.europe-west1.firebasedatabase.app';
+const FB_API_KEY  = 'AIzaSyBB0h8ENURTDyndoVBtsu1i94l_mVZZ23o';
+const FB_AUTH     = 'https://identitytoolkit.googleapis.com/v1/accounts';
+const FB_TOKEN    = 'https://securetoken.googleapis.com/v1/token';
+
+let _user = null;     // { uid, email, idToken, refreshToken, expiresAt }
+let _allUsers = {};   // données Firebase users
+let _selectedUid = null;
+
+// ── AUTH ──────────────────────────────────────────────────────────────
+function _saveUser(u) {
+  _user = u;
+  if (!u) { Object.keys(localStorage).filter(k=>k.startsWith('mbudget-fb-')).forEach(k=>localStorage.removeItem(k)); return; }
+  localStorage.setItem('mbudget-fb-token',   u.idToken);
+  localStorage.setItem('mbudget-fb-uid',     u.uid);
+  localStorage.setItem('mbudget-fb-email',   u.email);
+  localStorage.setItem('mbudget-fb-refresh', u.refreshToken);
+  localStorage.setItem('mbudget-fb-expires', u.expiresAt);
+}
+function _loadUser() {
+  const uid = localStorage.getItem('mbudget-fb-uid');
+  if (!uid) return null;
+  return { uid, email: localStorage.getItem('mbudget-fb-email')||'',
+           idToken: localStorage.getItem('mbudget-fb-token')||'',
+           refreshToken: localStorage.getItem('mbudget-fb-refresh')||'',
+           expiresAt: parseInt(localStorage.getItem('mbudget-fb-expires')||'0') };
+}
+async function _refreshToken() {
+  const u = _user || _loadUser();
+  if (!u?.refreshToken) return null;
+  try {
+    const r = await fetch(`${FB_TOKEN}?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ grant_type:'refresh_token', refresh_token: u.refreshToken })
+    });
+    const d = await r.json();
+    if (!d.id_token) return null;
+    const nu = { uid: d.user_id, email: u.email, idToken: d.id_token,
+                 refreshToken: d.refresh_token, expiresAt: Date.now() + d.expires_in * 1000 };
+    _saveUser(nu); return nu;
+  } catch { return null; }
+}
+async function getToken() {
+  let u = _user || _loadUser();
+  if (!u) return null;
+  if (Date.now() > u.expiresAt - 120000) u = await _refreshToken();
+  return u?.idToken || null;
+}
+async function signIn() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  setAuthError('');
+  try {
+    const r = await fetch(`${FB_AUTH}:signInWithPassword?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password: pass, returnSecureToken: true })
+    });
+    const d = await r.json();
+    if (d.error) { setAuthError(d.error.message === 'INVALID_PASSWORD' || d.error.message?.includes('INVALID_LOGIN') ? 'Email ou mot de passe incorrect' : d.error.message); return; }
+    const u = { uid: d.localId, email: d.email, idToken: d.idToken,
+                refreshToken: d.refreshToken, expiresAt: Date.now() + parseInt(d.expiresIn)*1000 };
+    _saveUser(u);
+    checkAccess(u);
+  } catch { setAuthError('Erreur réseau — réessayez'); }
+}
+async function signInGoogle() {
+  showToast('🔄 Ouverture Google…');
+  const provider = 'https://accounts.google.com/o/oauth2/auth';
+  const redirect  = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams({ client_id: '...', redirect_uri: redirect, response_type: 'token', scope: 'email profile' });
+  // Fallback : rediriger vers l'app principale pour se connecter
+  showToast('💡 Connectez-vous via l\'app principale puis revenez ici');
+}
+function setAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = msg ? '' : 'none';
+}
+function logout() {
+  _saveUser(null); _user = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('denied-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+function checkAccess(u) {
+  document.getElementById('auth-screen').style.display = 'none';
+  if (u.uid !== ADMIN_UID) {
+    document.getElementById('denied-screen').style.display = 'flex';
+    return;
+  }
+  _user = u;
+  document.getElementById('admin-email').textContent = u.email;
+  document.getElementById('dashboard').style.display = '';
+  loadUsers();
+}
+
+// ── FIREBASE FETCH ────────────────────────────────────────────────────
+async function _fbFetch(url, options = {}, token = null) {
+  const headers = { ...(options.headers || {}) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
+}
+
+// ── USERS ─────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const token = await getToken();
+  try {
+    const r = await _fbFetch(`${LICENSE_DB}/users.json`, {}, token);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    _allUsers = (await r.json()) || {};
+    renderStats();
+    renderUsers(Object.entries(_allUsers));
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+function renderStats() {
+  const entries = Object.entries(_allUsers);
+  const total   = entries.length;
+  const premium = entries.filter(([,v]) => v?.premium === true).length;
+  document.getElementById('s-total').textContent   = total;
+  document.getElementById('s-premium').textContent = premium;
+  document.getElementById('s-free').textContent    = total - premium;
+  document.getElementById('s-revenue').textContent = (premium * 14.90).toFixed(2) + ' €';
+}
+
+function renderUsers(entries) {
+  const tbody = document.getElementById('users-tbody');
+  document.getElementById('user-count').textContent = entries.length;
+  if (!entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Aucun client trouvé</td></tr>'; return; }
+  tbody.innerHTML = entries.map(([uid, info]) => {
+    const email    = _esc(info?.email || '—');
+    const premium  = info?.premium === true;
+    const devCount = Object.keys(info?.devices || {}).length;
+    const last     = info?.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
+    return `<tr>
+      <td style="font-weight:500">${email}</td>
+      <td><span class="badge ${premium ? 'badge-premium' : 'badge-free'}">${premium ? '⭐ Premium' : 'Gratuit'}</span></td>
+      <td>📱 ${devCount}/3</td>
+      <td style="color:#8892B0">${_esc(last)}</td>
+      <td><button class="btn btn-ghost btn-sm" data-uid="${_esc(uid)}" onclick="selectUser(this.dataset.uid)">Gérer</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const filtered = Object.entries(_allUsers).filter(([uid, info]) =>
+    (info?.email || '').toLowerCase().includes(q) || uid.toLowerCase().includes(q)
+  );
+  renderUsers(filtered);
+}
+
+// ── USER PANEL ────────────────────────────────────────────────────────
+function selectUser(uid) {
+  _selectedUid = uid;
+  const info = _allUsers[uid] || {};
+  document.getElementById('panel-email').textContent   = info.email || uid;
+  document.getElementById('panel-uid').textContent     = uid.slice(0,20) + '…';
+  document.getElementById('panel-devices').textContent = Object.keys(info.devices || {}).length + '/3';
+  document.getElementById('panel-last').textContent    = info.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
+  document.getElementById('panel-result').textContent  = '';
+  document.getElementById('user-panel').style.display  = '';
+  document.getElementById('user-panel').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function closePanel() { document.getElementById('user-panel').style.display = 'none'; _selectedUid = null; }
+
+async function grantPremium() {
+  if (!_selectedUid) return;
+  const res = document.getElementById('panel-result');
+  res.textContent = '🔄 Activation…';
+  try {
+    const token = await getToken();
+    const r = await _fbFetch(`${LICENSE_DB}/users/${_selectedUid}/premium.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:'true'
+    }, token);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: true };
+    res.textContent = '✅ Premium accordé !';
+    renderStats(); filterUsers(); showToast('⭐ Premium accordé');
+  } catch(e) { res.textContent = '❌ ' + e.message; }
+}
+async function revokePremium() {
+  if (!_selectedUid || !confirm('Révoquer le Premium ?')) return;
+  const res = document.getElementById('panel-result');
+  res.textContent = '🔄 Révocation…';
+  try {
+    const token = await getToken();
+    const r = await _fbFetch(`${LICENSE_DB}/users/${_selectedUid}/premium.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:'false'
+    }, token);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: false };
+    res.textContent = '✕ Premium révoqué';
+    renderStats(); filterUsers(); showToast('✕ Premium révoqué');
+  } catch(e) { res.textContent = '❌ ' + e.message; }
+}
+function viewData() {
+  if (!_selectedUid) return;
+  window.open(`budget_familial.html`, '_blank');
+  showToast('💡 Utilisez le panel Admin dans l\'app pour voir les données');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function _esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+let _toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+(async () => {
+  const stored = _loadUser();
+  if (!stored) return;
+  let u = stored;
+  if (Date.now() > u.expiresAt - 120000) u = await _refreshToken();
+  if (u) checkAccess(u);
+})();
+</script>
+</body>
+</html>
