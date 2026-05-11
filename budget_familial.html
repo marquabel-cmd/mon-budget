@@ -943,7 +943,10 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 // ─────────────────────────────────────────────
 // COMPARE MODE (iframe split-view)
 // ─────────────────────────────────────────────
-const _compareMode = new URLSearchParams(location.search).get('demoMode'); // 'free' | 'pro' | null
+// demoMode uniquement valide dans un iframe (mode comparaison), jamais sur l'app principale
+const _compareMode = (window !== window.parent)
+  ? new URLSearchParams(location.search).get('demoMode')
+  : null; // 'free' | 'pro' | null
 if (_compareMode) {
   // En mode comparaison : body sans marges, pas de scroll horizontal
   document.documentElement.style.overflow = 'hidden';
@@ -2200,7 +2203,7 @@ function renderYear(year) {
   } catch(e) {
     console.error('renderYear error', year, e);
     showToast('❌ Erreur rendu ' + year + ' : ' + e.message);
-    wrap.innerHTML = `<div style="padding:20px;color:var(--red)">❌ Erreur : ${e.message}</div>`;
+    wrap.innerHTML = `<div style="padding:20px;color:var(--red)">❌ Erreur : ${_esc(e.message)}</div>`;
   }
 }
 
@@ -3250,6 +3253,10 @@ function exportCSV() {
   a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
   a.download=`budget_${activeYear}.csv`;a.click();
 }
+function _esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function showToast(msg) {
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
@@ -3984,8 +3991,17 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '2.5';
+const APP_VERSION = '2.6';
 const CHANGELOG = {
+  '2.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔒', text: 'Correction : bypass de licence via paramètre URL neutralisé' },
+      { icon: '🔑', text: 'Mot de passe admin hashé (SHA-256) — plus jamais en clair dans le code' },
+      { icon: '🤖', text: 'Clé API Groq déplacée côté serveur (Cloudflare Worker proxy)' },
+      { icon: '🛡️', text: 'Protection XSS renforcée sur toutes les injections de données utilisateur' }
+    ]
+  },
   '2.5': {
     date: 'Mai 2026',
     items: [
@@ -4432,10 +4448,16 @@ if ('serviceWorker' in navigator) {
 }
 
 // ── ADMIN MODE ──
-const ADMIN_SECRET = 'marquabel2026';
+// Le mot de passe n'est jamais stocké en clair — uniquement son hash SHA-256.
+const ADMIN_SECRET_HASH = '6e7cb0d40d9926cedb472db259828d25cf4db1fe6c749dede0d8aee8c0a8474b';
 let _adminClickCount = 0, _adminClickTimer = null;
 let _adminSavedData = null, _isAdminMode = false, _adminLabel = '';
 let _adminUnlocked = false;
+
+async function _sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 function adminTitleClick() {
   _adminClickCount++;
@@ -4446,23 +4468,23 @@ function adminTitleClick() {
 function openAdminPanel() {
   document.getElementById('admin-modal').style.display = 'flex';
   document.getElementById('admin-license-input').value = '';
+  document.getElementById('admin-password-input').value = '';
   if (_adminUnlocked) {
     document.getElementById('admin-tabs-wrap').style.display = '';
     document.getElementById('admin-locked-msg').style.display = 'none';
-    document.getElementById('admin-password-input').value = ADMIN_SECRET;
     setTimeout(() => document.getElementById('admin-license-input').focus(), 100);
   } else {
     document.getElementById('admin-tabs-wrap').style.display = 'none';
     document.getElementById('admin-locked-msg').style.display = 'none';
-    document.getElementById('admin-password-input').value = '';
     setTimeout(() => document.getElementById('admin-password-input').focus(), 100);
   }
 }
 function closeAdminPanel() { document.getElementById('admin-modal').style.display = 'none'; }
 
-function adminUnlock() {
+async function adminUnlock() {
   const pwd = document.getElementById('admin-password-input').value.trim();
-  if (pwd !== ADMIN_SECRET) {
+  const hash = await _sha256(pwd);
+  if (hash !== ADMIN_SECRET_HASH) {
     document.getElementById('admin-locked-msg').style.display = '';
     document.getElementById('admin-locked-msg').textContent = '❌ Mot de passe incorrect';
     return;
@@ -4539,6 +4561,12 @@ function exitAdminMode() {
   showToast('✅ Retour à vos données');
 }
 
+function adminSelectUser(uid) {
+  document.getElementById('admin-uid-input').value = uid;
+  const res = document.getElementById('admin-license-result');
+  res.textContent = 'UID sélectionné : ' + uid.slice(0, 14) + '…';
+}
+
 async function adminCheckPremium() {
   const uid = document.getElementById('admin-uid-input').value.trim();
   const res = document.getElementById('admin-license-result');
@@ -4550,9 +4578,9 @@ async function adminCheckPremium() {
     const r = await fetch(url);
     const val = await r.json();
     if (val === true) {
-      res.innerHTML = `<span style="color:#00C896;font-weight:700">⭐ Premium actif</span><br><small style="color:rgba(255,255,255,.5)">UID: ${uid}</small>`;
+      res.innerHTML = `<span style="color:#00C896;font-weight:700">⭐ Premium actif</span><br><small style="color:rgba(255,255,255,.5)">UID: ${_esc(uid)}</small>`;
     } else {
-      res.innerHTML = `<span style="color:#F04F5B;font-weight:700">✕ Pas premium</span><br><small style="color:rgba(255,255,255,.5)">UID: ${uid}</small>`;
+      res.innerHTML = `<span style="color:#F04F5B;font-weight:700">✕ Pas premium</span><br><small style="color:rgba(255,255,255,.5)">UID: ${_esc(uid)}</small>`;
     }
   } catch(e) { res.textContent = '❌ Erreur : ' + e.message; }
 }
@@ -4569,9 +4597,9 @@ async function adminGrantPremium() {
       method:'PUT', headers:{'Content-Type':'application/json'}, body:'true'
     });
     if (!r.ok) throw new Error(`HTTP ${r.status} — vérifiez les règles Firebase (admins/)`);
-    res.innerHTML = `<span style="color:#00C896;font-weight:700">✅ Premium accordé !</span><br><small style="color:rgba(255,255,255,.5)">UID: ${uid}</small>`;
+    res.innerHTML = `<span style="color:#00C896;font-weight:700">✅ Premium accordé !</span><br><small style="color:rgba(255,255,255,.5)">UID: ${_esc(uid)}</small>`;
     showToast('⭐ Premium accordé à ' + uid.slice(0,12) + '…');
-  } catch(e) { res.innerHTML = `<span style="color:#F04F5B">❌ ${e.message}</span>`; }
+  } catch(e) { res.innerHTML = `<span style="color:#F04F5B">❌ ${_esc(e.message)}</span>`; }
 }
 
 async function adminRevokePremium() {
@@ -4587,9 +4615,9 @@ async function adminRevokePremium() {
       method:'PUT', headers:{'Content-Type':'application/json'}, body:'false'
     });
     if (!r.ok) throw new Error(`HTTP ${r.status} — vérifiez les règles Firebase`);
-    res.innerHTML = `<span style="color:#F5A623;font-weight:700">✕ Premium révoqué</span><br><small style="color:rgba(255,255,255,.5)">UID: ${uid}</small>`;
+    res.innerHTML = `<span style="color:#F5A623;font-weight:700">✕ Premium révoqué</span><br><small style="color:rgba(255,255,255,.5)">UID: ${_esc(uid)}</small>`;
     showToast('✕ Premium révoqué pour ' + uid.slice(0,12) + '…');
-  } catch(e) { res.innerHTML = `<span style="color:#F04F5B">❌ ${e.message}</span>`; }
+  } catch(e) { res.innerHTML = `<span style="color:#F04F5B">❌ ${_esc(e.message)}</span>`; }
 }
 
 async function adminLoadUsers() {
@@ -4609,30 +4637,33 @@ async function adminLoadUsers() {
       const premium  = info?.premium === true;
       const devCount = Object.keys(info?.devices || {}).length;
       const last     = info?.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
-      return `<div onclick="document.getElementById('admin-uid-input').value='${uid}';document.getElementById('admin-license-result').innerHTML='<span style=\\'color:rgba(255,255,255,.7)\\'>UID sélectionné : ${uid.slice(0,14)}…</span>'"
+      // uid et email passent par _esc() — uid dans data-uid évite toute injection onclick
+      return `<div data-uid="${_esc(uid)}" onclick="adminSelectUser(this.dataset.uid)"
         style="padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer"
         onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background=''">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
-          <span style="font-size:12px;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${email}</span>
+          <span style="font-size:12px;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(email)}</span>
           <span style="font-size:11px;font-weight:700;flex-shrink:0;${premium?'color:#00C896':'color:#aaa'}">${premium?'⭐ Premium':'Gratuit'}</span>
         </div>
-        <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">📱 ${devCount}/${MAX_DEVICES} appareils &nbsp;·&nbsp; 🕐 ${last}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">📱 ${devCount}/${MAX_DEVICES} appareils &nbsp;·&nbsp; 🕐 ${_esc(last)}</div>
       </div>`;
     }).join('');
-  } catch(e) { list.innerHTML = `<div style="color:#F04F5B;font-size:12px;padding:10px">❌ ${e.message}</div>`; }
+  } catch(e) { list.innerHTML = `<div style="color:#F04F5B;font-size:12px;padding:10px">❌ ${_esc(e.message)}</div>`; }
 }
 
-// ── ASSISTANT IA (Gemini) ──
+// ── ASSISTANT IA ──
 const AI_KEY_STORAGE = 'mbudget-ai-key';
-const AI_DEFAULT_KEY  = 'AVIGgWjwNXgtnrSJ71CNPXGlHYFb3ybdGWJm2ngUjU2S8u588gxTr2_ksg'.split('').reverse().join('');
+// Proxy Cloudflare Worker — la clé Groq est stockée côté serveur, jamais dans ce fichier.
+// Après déploiement du worker, remplacer l'URL ci-dessous par l'URL de ton Worker.
+const GROQ_PROXY_URL = 'https://cold-salad-fd46.marquabel.workers.dev';
 let _aiOpen = false;
 let _aiTyping = false;
 
 function getGeminiKey() {
-  // Clé personnelle de l'utilisateur, sinon clé par défaut de l'app
+  // Clé personnelle de l'utilisateur uniquement — null sinon (le proxy est utilisé)
   return localStorage.getItem(AI_KEY_STORAGE)
       || localStorage.getItem('mbudget-gemini-key')
-      || AI_DEFAULT_KEY;
+      || null;
 }
 
 function saveGeminiKey(key) {
@@ -4739,11 +4770,7 @@ async function sendAiMessage() {
   if (!input || _aiTyping) return;
   const text = input.value.trim();
   if (!text) return;
-  const key = getGeminiKey();
-  if (!key) {
-    _appendAiMsg('bot', '⚠️ Clé API manquante. Va dans <b>⚙️ Paramètres → Assistant IA</b> pour la configurer.');
-    return;
-  }
+  const key = getGeminiKey(); // null → le proxy sera utilisé
   input.value = '';
   _appendAiMsg('user', text);
   _aiTyping = true;
@@ -4953,13 +4980,18 @@ function _stopVoice() {
 }
 
 async function _callGemini(apiKey, systemContext, userMessage) {
-  // API Groq — gratuite, sans carte bancaire, très rapide
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  // Si l'utilisateur a sa propre clé → appel direct Groq
+  // Sinon → proxy Cloudflare Worker (clé cachée côté serveur)
+  const useProxy = !apiKey;
+  const endpoint = useProxy
+    ? GROQ_PROXY_URL
+    : 'https://api.groq.com/openai/v1/chat/completions';
+  const headers = { 'Content-Type': 'application/json' };
+  if (!useProxy) headers['Authorization'] = `Bearer ${apiKey}`;
+
+  const res = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
+    headers,
     body: JSON.stringify({
       model: 'llama-3.1-8b-instant',
       messages: [
