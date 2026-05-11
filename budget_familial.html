@@ -3025,6 +3025,13 @@ function uploadUserPhoto(userId) {
   input.click();
 }
 
+// Token Firebase dans le header Authorization plutôt qu'en query param (pas de token dans les URLs)
+async function _fbFetch(url, options = {}, token = null) {
+  const headers = { ...(options.headers || {}) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
+}
+
 // ── CLOUD SYNC ──
 let _lastSyncError = '';
 function cloudApiUrl() {
@@ -3065,10 +3072,9 @@ async function cloudPush() {
   if (!url || !DATA) return;
   if (!_deviceAllowed) { setCloudStatus('error', `Appareil non autorisé — ${MAX_DEVICES} appareils max`); return; }
   const token = await fbGetToken();
-  const authUrl = token ? url + '?auth=' + token : url;
   setCloudStatus('syncing');
   try {
-    const r = await fetch(authUrl, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(DATA)});
+    const r = await _fbFetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(DATA)}, token);
     if (r.ok) { setCloudStatus('ok'); _lastSyncError = ''; }
     else { setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); }
   } catch(e) { setCloudStatus('error', e.message || 'Réseau inaccessible'); }
@@ -3078,9 +3084,8 @@ async function cloudPull() {
   if (!url) return null;
   if (!_deviceAllowed) return null;
   const token = await fbGetToken();
-  const authUrl = token ? url + '?auth=' + token : url;
   try {
-    const r = await fetch(authUrl);
+    const r = await _fbFetch(url, {}, token);
     if (!r.ok) { _lastSyncError = `HTTP ${r.status} — vérifiez les règles Firebase`; return null; }
     const d = await r.json();
     if (!d || Array.isArray(d)) return null;
@@ -3785,7 +3790,7 @@ async function fbCheckPremium(uid, idToken) {
   // Enregistre l'appareil en arrière-plan (non-bloquant)
   fbRegisterDevice(uid, _fbUser?.email || localStorage.getItem('mbudget-fb-email') || '', idToken).catch(()=>{});
   try {
-    const r = await fetch(`${LICENSE_DB}/users/${uid}/premium.json?auth=${idToken}`);
+    const r = await _fbFetch(`${LICENSE_DB}/users/${uid}/premium.json`, {}, idToken);
     const val = await r.json();
     if (val === true) { localStorage.setItem('mbudget-premium-'+uid,'1'); return true; }
   } catch {}
@@ -3798,8 +3803,8 @@ async function fbCheckPremium(uid, idToken) {
       if (data?.active === true && (!data.uid || data.uid === uid)) {
         await fetch(`${LICENSE_DB}/licenses/${oldKey}/uid.json`, {
           method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(uid) });
-        await fetch(`${LICENSE_DB}/users/${uid}/premium.json?auth=${idToken}`, {
-          method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) });
+        await _fbFetch(`${LICENSE_DB}/users/${uid}/premium.json`, {
+          method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) }, idToken);
         localStorage.setItem('mbudget-premium-'+uid,'1');
         return true;
       }
@@ -3835,7 +3840,7 @@ async function fbRegisterDevice(uid, email, idToken) {
   const now = Date.now();
   try {
     // Lire les appareils existants
-    const r = await fetch(`${LICENSE_DB}/users/${uid}/devices.json?auth=${idToken}`);
+    const r = await _fbFetch(`${LICENSE_DB}/users/${uid}/devices.json`, {}, idToken);
     const devices = (r.ok ? await r.json() : null) || {};
     const isKnown = !!devices[deviceId];
     const count = Object.keys(devices).length;
@@ -3844,16 +3849,14 @@ async function fbRegisterDevice(uid, email, idToken) {
       showToast(`⚠️ ${MAX_DEVICES} appareils max atteints — synchronisation désactivée sur cet appareil`);
     } else {
       _deviceAllowed = true;
-      // Enregistrer/mettre à jour cet appareil
-      await fetch(`${LICENSE_DB}/users/${uid}/devices/${deviceId}.json?auth=${idToken}`, {
+      await _fbFetch(`${LICENSE_DB}/users/${uid}/devices/${deviceId}.json`, {
         method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(now)
-      });
+      }, idToken);
     }
-    // Sauvegarder email + lastLogin sans écraser premium (PATCH)
-    await fetch(`${LICENSE_DB}/users/${uid}.json?auth=${idToken}`, {
+    await _fbFetch(`${LICENSE_DB}/users/${uid}.json`, {
       method:'PATCH', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ email, lastLogin: now })
-    });
+    }, idToken);
   } catch(e) { /* non-bloquant */ }
 }
 
@@ -3991,8 +3994,16 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '2.6';
+const APP_VERSION = '2.7';
 const CHANGELOG = {
+  '2.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔒', text: 'Tokens Firebase déplacés dans les headers HTTP (plus jamais dans les URLs)' },
+      { icon: '🛡️', text: 'Règles Firebase Realtime Database renforcées par UID admin' },
+      { icon: '🌐', text: 'Domaines autorisés Firebase vérifiés et validés' }
+    ]
+  },
   '2.6': {
     date: 'Mai 2026',
     items: [
@@ -4050,8 +4061,8 @@ async function activateLicense(key) {
     const tok = await fbGetToken();
     await fetch(`${LICENSE_DB}/licenses/${key}/uid.json`, {
       method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(_fbUser.uid) });
-    await fetch(`${LICENSE_DB}/users/${_fbUser.uid}/premium.json?auth=${tok}`, {
-      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) });
+    await _fbFetch(`${LICENSE_DB}/users/${_fbUser.uid}/premium.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) }, tok);
     localStorage.setItem('mbudget-premium-'+_fbUser.uid, '1');
     localStorage.setItem('mbudget-license', key);
     showToast('🎉 Licence activée — bienvenue en Premium !');
@@ -4066,8 +4077,8 @@ async function deactivateLicense() {
   if (_fbUser) {
     const tok = await fbGetToken();
     try {
-      await fetch(`${LICENSE_DB}/users/${_fbUser.uid}/premium.json?auth=${tok}`, {
-        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(false) });
+      await _fbFetch(`${LICENSE_DB}/users/${_fbUser.uid}/premium.json`, {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(false) }, tok);
     } catch {}
     localStorage.removeItem('mbudget-premium-'+_fbUser.uid);
   }
@@ -4517,7 +4528,7 @@ async function enterAdminMode() {
     // Try UID-based path first, then legacy key path
     const token = await fbGetToken();
     let url = LICENSE_DB.replace(/\/+$/,'') + '/userdata/' + key + '/budget.json';
-    let r = await fetch(token ? url + '?auth=' + token : url);
+    let r = await _fbFetch(url, {}, token);
     let d = r.ok ? await r.json() : null;
     if (!d || typeof d !== 'object' || Array.isArray(d)) {
       url = LICENSE_DB.replace(/\/+$/,'') + '/user-data/' + key + '/budget.json';
@@ -4574,8 +4585,7 @@ async function adminCheckPremium() {
   res.textContent = '🔄 Vérification…';
   try {
     const token = await fbGetToken();
-    const url = `${LICENSE_DB}/users/${uid}/premium.json` + (token ? `?auth=${token}` : '');
-    const r = await fetch(url);
+    const r = await _fbFetch(`${LICENSE_DB}/users/${uid}/premium.json`, {}, token);
     const val = await r.json();
     if (val === true) {
       res.innerHTML = `<span style="color:#00C896;font-weight:700">⭐ Premium actif</span><br><small style="color:rgba(255,255,255,.5)">UID: ${_esc(uid)}</small>`;
@@ -4593,9 +4603,9 @@ async function adminGrantPremium() {
   try {
     const token = await fbGetToken();
     if (!token) throw new Error('Non connecté — connectez-vous avec votre compte admin d\'abord');
-    const r = await fetch(`${LICENSE_DB}/users/${uid}/premium.json?auth=${token}`, {
+    const r = await _fbFetch(`${LICENSE_DB}/users/${uid}/premium.json`, {
       method:'PUT', headers:{'Content-Type':'application/json'}, body:'true'
-    });
+    }, token);
     if (!r.ok) throw new Error(`HTTP ${r.status} — vérifiez les règles Firebase (admins/)`);
     res.innerHTML = `<span style="color:#00C896;font-weight:700">✅ Premium accordé !</span><br><small style="color:rgba(255,255,255,.5)">UID: ${_esc(uid)}</small>`;
     showToast('⭐ Premium accordé à ' + uid.slice(0,12) + '…');
@@ -4611,9 +4621,9 @@ async function adminRevokePremium() {
   try {
     const token = await fbGetToken();
     if (!token) throw new Error('Non connecté — connectez-vous avec votre compte admin d\'abord');
-    const r = await fetch(`${LICENSE_DB}/users/${uid}/premium.json?auth=${token}`, {
+    const r = await _fbFetch(`${LICENSE_DB}/users/${uid}/premium.json`, {
       method:'PUT', headers:{'Content-Type':'application/json'}, body:'false'
-    });
+    }, token);
     if (!r.ok) throw new Error(`HTTP ${r.status} — vérifiez les règles Firebase`);
     res.innerHTML = `<span style="color:#F5A623;font-weight:700">✕ Premium révoqué</span><br><small style="color:rgba(255,255,255,.5)">UID: ${_esc(uid)}</small>`;
     showToast('✕ Premium révoqué pour ' + uid.slice(0,12) + '…');
@@ -4627,7 +4637,7 @@ async function adminLoadUsers() {
   try {
     const token = await fbGetToken();
     if (!token) throw new Error('Non connecté — connectez-vous avec votre compte admin');
-    const r = await fetch(`${LICENSE_DB}/users.json?auth=${token}`);
+    const r = await _fbFetch(`${LICENSE_DB}/users.json`, {}, token);
     if (!r.ok) throw new Error(`HTTP ${r.status} — mettez à jour les règles Firebase (voir instructions)`);
     const data = await r.json();
     if (!data) { list.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:12px;padding:10px">Aucun client enregistré.</div>'; return; }
