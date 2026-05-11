@@ -734,7 +734,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 </div>
 
 <!-- ── CHANGELOG MODAL ── -->
-<div id="changelog-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeChangelog()">
+<div id="changelog-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeChangelog()">
   <div style="background:#1e2235;border-radius:18px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.08);overflow:hidden">
     <div style="background:linear-gradient(135deg,#5B6AF0,#8B5CF6);padding:22px 24px 18px;position:relative">
       <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px">🆕 Nouveautés</div>
@@ -3995,8 +3995,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '2.8';
+const APP_VERSION = '2.9';
 const CHANGELOG = {
+  '2.9': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🐛', text: 'Correction : le modal "Nouveautés" s\'affichait vide au chargement de la page' }
+    ]
+  },
   '2.8': {
     date: 'Mai 2026',
     items: [
