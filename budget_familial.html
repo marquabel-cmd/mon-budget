@@ -733,6 +733,20 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   <button onclick="applyUpdate()" style="background:#fff;color:#1a6fc4;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">↻ Mettre à jour</button>
 </div>
 
+<!-- ── CHANGELOG MODAL ── -->
+<div id="changelog-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeChangelog()">
+  <div style="background:#1e2235;border-radius:18px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.08);overflow:hidden">
+    <div style="background:linear-gradient(135deg,#5B6AF0,#8B5CF6);padding:22px 24px 18px;position:relative">
+      <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px">🆕 Nouveautés</div>
+      <div id="changelog-version" style="font-size:13px;color:rgba(255,255,255,.7)"></div>
+    </div>
+    <div id="changelog-items" style="padding:20px 24px;display:flex;flex-direction:column;gap:12px;max-height:340px;overflow-y:auto"></div>
+    <div style="padding:16px 24px;border-top:1px solid rgba(255,255,255,.07)">
+      <button onclick="closeChangelog()" style="width:100%;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer">✓ Super, merci !</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── DEMO BANNER ── -->
 <div id="demo-banner">
   <span>🎮 MODE DÉMO — Les données affichées sont fictives</span>
@@ -1523,6 +1537,9 @@ function _finishLogin(id) {
   // Tour guidé au premier login
   if (!localStorage.getItem('budget_tour_done_' + id) && !_compareMode) {
     setTimeout(startTour, 1000);
+  } else {
+    // Changelog nouveautés (uniquement si pas le premier login)
+    checkChangelog();
   }
   // Rappel export JSON
   setTimeout(checkExportReminder, 1500);
@@ -3966,6 +3983,22 @@ async function authDoReset() {
 const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
+// ── CHANGELOG ──
+const APP_VERSION = '2.5';
+const CHANGELOG = {
+  '2.5': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🕐', text: 'Horodatage de la dernière synchronisation cloud dans l\'en-tête' },
+      { icon: '🎙️', text: 'Saisie vocale dans l\'assistant IA' },
+      { icon: '⚠️', text: 'Confirmation renforcée pour les actions dangereuses (réinitialiser, désinstaller)' },
+      { icon: '📲', text: 'Guide d\'installation PWA intégré avec instructions par plateforme' },
+      { icon: '🤖', text: 'Assistant IA disponible pour tous (sans configuration nécessaire)' },
+      { icon: '🔧', text: 'Améliorations de stabilité et corrections diverses' }
+    ]
+  }
+};
+
 function isLicensed()  {
   if (_compareMode === 'pro')  return true;
   if (_compareMode === 'free') return false;
@@ -4312,6 +4345,36 @@ function applyUpdate() {
     _pendingSW.postMessage({ action: 'skipWaiting' });
   } else {
     window.location.reload();
+  }
+}
+
+// ── CHANGELOG MODAL ──
+function showChangelog() {
+  const log = CHANGELOG[APP_VERSION];
+  if (!log) return;
+  const overlay = document.getElementById('changelog-overlay');
+  if (!overlay) return;
+  document.getElementById('changelog-version').textContent = 'Version ' + APP_VERSION + ' — ' + log.date;
+  const container = document.getElementById('changelog-items');
+  container.innerHTML = log.items.map(it =>
+    `<div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,.05);border-radius:10px;padding:11px 14px">
+      <span style="font-size:20px;flex-shrink:0;margin-top:1px">${it.icon}</span>
+      <span style="font-size:13px;color:rgba(255,255,255,.85);line-height:1.5">${it.text}</span>
+    </div>`
+  ).join('');
+  overlay.style.display = 'flex';
+}
+function closeChangelog() {
+  const overlay = document.getElementById('changelog-overlay');
+  if (overlay) overlay.style.display = 'none';
+  localStorage.setItem('budget_app_version_seen', APP_VERSION);
+}
+function checkChangelog() {
+  const seen = localStorage.getItem('budget_app_version_seen');
+  const wasUpdated = sessionStorage.getItem('app-updated');
+  if (wasUpdated) sessionStorage.removeItem('app-updated');
+  if (seen !== APP_VERSION) {
+    setTimeout(showChangelog, 1200);
   }
 }
 
