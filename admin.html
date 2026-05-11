@@ -279,7 +279,9 @@ function logout() {
   document.getElementById('auth-screen').style.display = 'flex';
 }
 function checkAccess(u) {
-  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display  = 'none';
+  document.getElementById('denied-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display     = 'none';
   if (u.uid !== ADMIN_UID) {
     document.getElementById('denied-screen').style.display = 'flex';
     return;
