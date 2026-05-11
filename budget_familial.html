@@ -460,6 +460,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
   .header-btns .btn{font-size:13px;padding:5px 9px;flex-shrink:0}
   .btn-label{display:none}
   #cloud-status{display:none}
+  #last-sync-time{display:none!important}
   #last-save-info{display:none}
   /* ── RESTE ── */
   .tabs{padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -845,6 +846,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
     </div>
     <div class="header-btns">
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
+      <span id="last-sync-time" style="font-size:10px;color:rgba(255,255,255,0.4);white-space:nowrap;align-self:center;display:none"></span>
       <span id="last-save-info" style="font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;align-self:center"></span>
       <button class="btn btn-save" onclick="saveData()">💾 <span class="btn-label">Sauvegarder</span></button>
       <button class="btn btn-csv btn-hide-xs"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
@@ -1494,6 +1496,17 @@ function _finishLogin(id) {
   updateUserDisplay(); renderTabs();
   getYears().forEach(y => renderYear(y));
   renderSummary();
+  // Restore last sync timestamp
+  const _storedSync = localStorage.getItem('budget_last_sync_' + id);
+  if (_storedSync) {
+    const syncEl = document.getElementById('last-sync-time');
+    if (syncEl) {
+      const d = new Date(parseInt(_storedSync));
+      const fmt = d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'});
+      syncEl.textContent = '· ' + fmt;
+      syncEl.style.display = '';
+    }
+  }
   const ws = document.getElementById('welcome-screen');
   if (ws) { ws.style.opacity='0'; setTimeout(()=>{ ws.style.display='none'; ws.style.opacity=''; },400); }
   const fab = document.getElementById('main-fab');
@@ -3015,6 +3028,17 @@ function setCloudStatus(s, errMsg) {
   el.style.cursor = s === 'error' ? 'pointer' : 'default';
   el.title = s === 'error' ? (_lastSyncError || 'Erreur de synchronisation') : {off:'', syncing:'Synchronisation…', ok:'Synchronisé avec le cloud'}[s]||'';
   el.onclick = s === 'error' ? () => showToast('❌ Sync : ' + (_lastSyncError || 'Erreur inconnue')) : null;
+  if (s === 'ok') {
+    const now = Date.now();
+    localStorage.setItem('budget_last_sync_' + (CURRENT_USER_ID||''), now);
+    const syncEl = document.getElementById('last-sync-time');
+    if (syncEl) {
+      const d = new Date(now);
+      const fmt = d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'});
+      syncEl.textContent = '· ' + fmt;
+      syncEl.style.display = '';
+    }
+  }
 }
 async function cloudPush() {
   const url = cloudApiUrl();
