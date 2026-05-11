@@ -1,0 +1,19 @@
+# Fichier de contexte privé (ne pas pusher)
+CONTEXTE.md
+
+# Fichiers de travail locaux
+node_modules/
+.claude/
+*.xlsm
+*.zip
+Budget - Google Play package/
+extract2026_data.json
+gen_icon.js
+gen2026script.js
+extract2026.js
+insert_comments_2025.js
+notes_output.js
+screenshot*.js
+crop_screenshots.js
+package.json
+package-lock.json
