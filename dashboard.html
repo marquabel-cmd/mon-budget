@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -130,6 +130,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
   <div class="header">
     <span class="logo">💰 Mon Budget</span>
     <div class="header-right">
+      <a id="admin-link" href="admin.html" class="btn btn-orange btn-sm" style="display:none">⚙️ Admin</a>
       <a href="budget_familial.html" class="btn btn-primary btn-sm">Ouvrir l'app →</a>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Déconnexion</button>
     </div>
@@ -234,6 +235,7 @@ const LICENSE_DB = 'https://mon-budget-licences-default-rtdb.europe-west1.fireba
 const FB_API_KEY = 'AIzaSyBB0h8ENURTDyndoVBtsu1i94l_mVZZ23o';
 const FB_AUTH    = 'https://identitytoolkit.googleapis.com/v1/accounts';
 const FB_TOKEN   = 'https://securetoken.googleapis.com/v1/token';
+const ADMIN_UID  = 'CmpMFxHYsdPzRQ3JpU48w8F9eIm1';
 
 let _user = null;
 let _authMode = 'login';
@@ -350,6 +352,7 @@ async function showDashboard(u) {
   _user = u;
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = '';
+  document.getElementById('admin-link').style.display = u.uid === ADMIN_UID ? '' : 'none';
   // Compte
   document.getElementById('dash-email').textContent = u.email;
   document.getElementById('dash-uid').textContent   = 'UID : ' + u.uid.slice(0,20) + '…';
@@ -531,3 +534,4 @@ function showToast(msg) {
 </script>
 </body>
 </html>
+
