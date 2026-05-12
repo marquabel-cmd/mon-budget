@@ -622,7 +622,7 @@ async function loadBetaKeys() {
     const data = await r.json();
     if (!data || typeof data !== 'object') { _betaKeys = []; renderBetaKeys(); return; }
     _betaKeys = Object.entries(data)
-      .filter(([, val]) => val && (val.type === 'beta' || val.type === 'premium'))
+      .filter(([, val]) => val && (val.type === 'beta' || val.type === 'premium') && val.active !== false)
       .map(([key, val]) => ({ key, ...val }))
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     renderBetaKeys();
