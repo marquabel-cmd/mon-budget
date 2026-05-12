@@ -1612,6 +1612,7 @@ function _finishLogin(id) {
   }
   // Rappel export JSON
   setTimeout(checkExportReminder, 1500);
+  resetAutoLock();
 }
 
 // ── WIZARD SUGGESTIONS ──
@@ -3350,6 +3351,45 @@ async function cloudPullNow() {
   startRealtimeSync();
 }
 
+// ── AUTO-LOCK (10 min d'inactivité) ──
+const AUTO_LOCK_MS      = 10 * 60 * 1000;
+const AUTO_LOCK_WARN_MS =  9 * 60 * 1000;
+let _autoLockTimer = null, _autoLockWarnTimer = null;
+
+function resetAutoLock() {
+  if (!CURRENT_USER_ID || CURRENT_USER_ID === '_demo') return;
+  clearTimeout(_autoLockTimer);
+  clearTimeout(_autoLockWarnTimer);
+  _autoLockWarnTimer = setTimeout(() => showToast('⏳ Verrouillage dans 1 minute (inactivité)'), AUTO_LOCK_WARN_MS);
+  _autoLockTimer     = setTimeout(lockScreen, AUTO_LOCK_MS);
+}
+function stopAutoLock() {
+  clearTimeout(_autoLockTimer);
+  clearTimeout(_autoLockWarnTimer);
+  _autoLockTimer = _autoLockWarnTimer = null;
+}
+function lockScreen() {
+  stopAutoLock();
+  stopRealtimeSync();
+  saveData(); // Sauvegarder avant de verrouiller
+  CURRENT_USER_ID = '';
+  localStorage.removeItem('budget_current_user');
+  DATA = null;
+  document.getElementById('main-fab')   ?.style && (document.getElementById('main-fab').style.display    = 'none');
+  document.getElementById('ai-chat-fab')?.style && (document.getElementById('ai-chat-fab').style.display = 'none');
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  renderWelcomeScreen();
+  const ws = document.getElementById('welcome-screen');
+  if (ws) { ws.style.opacity = '0'; ws.style.display = 'flex'; requestAnimationFrame(() => { ws.style.transition = 'opacity .3s'; ws.style.opacity = '1'; }); }
+  showToast('🔒 Session verrouillée — inactivité de 10 min');
+}
+
+// Écouter toute activité utilisateur (throttle 10s pour ne pas surcharger)
+let _alThrottle = 0;
+['mousemove','mousedown','keydown','touchstart','scroll','click','pointerdown'].forEach(ev =>
+  document.addEventListener(ev, () => { const n = Date.now(); if (n - _alThrottle > 10000) { _alThrottle = n; resetAutoLock(); } }, { passive: true })
+);
+
 // ── SYNC TEMPS RÉEL (Firebase EventSource) ──
 let _realtimeSource = null;
 let _lastPushTime = 0;
@@ -4246,6 +4286,7 @@ async function fbResetPassword(email) {
   if (!r.ok) throw new Error(_fbErrMsg(d.error?.message));
 }
 function fbLogout() {
+  stopAutoLock();
   stopRealtimeSync();
   const uid = _fbUser?.uid || localStorage.getItem('mbudget-fb-uid');
   if (uid) localStorage.removeItem('mbudget-premium-' + uid);
@@ -4559,8 +4600,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '4.4';
+const APP_VERSION = '4.5';
 const CHANGELOG = {
+  '4.5': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔒', text: 'Verrouillage automatique après 10 minutes d\'inactivité — la session se ferme proprement avec avertissement 1 min avant' }
+    ]
+  },
   '4.4': {
     date: 'Mai 2026',
     items: [
