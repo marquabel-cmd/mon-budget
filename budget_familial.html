@@ -3289,8 +3289,19 @@ async function cloudPush() {
       if (u.isDemo) return;
       usersToSync[k] = { name: u.name, color: u.color, admin: !!u.admin };
     });
-    const gistToken = getGistToken();
-    const gistId = getGistId();
+    let gistToken = getGistToken();
+    let gistId    = getGistId();
+    // Si le token est absent localement, préserver la valeur existante dans Firebase
+    // pour éviter d'écraser le token enregistré depuis un autre appareil
+    if (!gistToken) {
+      try {
+        const existing = await _fbFetch(url, {}, token);
+        if (existing.ok) {
+          const ex = await existing.json();
+          if (ex?._gistToken) { gistToken = ex._gistToken; gistId = ex._gistId || gistId; }
+        }
+      } catch {}
+    }
     const payload = {
       ...DATA,
       _syncedUsers: usersToSync,
@@ -4600,8 +4611,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '4.5';
+const APP_VERSION = '4.6';
 const CHANGELOG = {
+  '4.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🐙', text: 'Clé GitHub Gist protégée : si absente sur un appareil, elle est préservée depuis Firebase au lieu d\'être écrasée' }
+    ]
+  },
   '4.5': {
     date: 'Mai 2026',
     items: [
