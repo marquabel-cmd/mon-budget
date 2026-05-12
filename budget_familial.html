@@ -1512,8 +1512,9 @@ function doLogin(id) {
 function _finishLogin(id) {
   fbInitAuth().then(() => {
     if (!_fbUser) { setTimeout(() => openAuthModal('login'), 700); return; }
-    // Cloud sync après fbInitAuth : isLicensed() est fiable ici (fbCheckPremium terminé)
-    if (isLicensed()) {
+    // Cloud sync uniquement si l'utilisateur actif est le compte Firebase (pas un autre profil local)
+    const fbLocalId = localStorage.getItem('mbudget-fb-localid');
+    if (isLicensed() && (!fbLocalId || id === fbLocalId)) {
       setCloudStatus('syncing');
       cloudPull().then(cloudData => {
         if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; }
@@ -3723,6 +3724,7 @@ function _fbSave(u) {
     if (u.displayName) localStorage.setItem('mbudget-fb-name', u.displayName);
   } else {
     ['uid','email','token','refresh','exp','name'].forEach(k => localStorage.removeItem('mbudget-fb-' + k));
+    localStorage.removeItem('mbudget-fb-localid');
   }
 }
 function _fbLoad() {
@@ -3854,6 +3856,7 @@ async function _autoRestoreFromFirebase() {
   saveUsers();
   CURRENT_USER_ID = id;
   localStorage.setItem('budget_current_user', id);
+  localStorage.setItem('mbudget-fb-localid', id);
   if (isPremium) {
     setCloudStatus('syncing');
     const cloudData = await cloudPull();
@@ -4107,8 +4110,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.4';
+const APP_VERSION = '3.5';
 const CHANGELOG = {
+  '3.5': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🐛', text: 'Fix : un nouvel utilisateur local ne charge plus les données cloud d\'un autre compte' }
+    ]
+  },
   '3.4': {
     date: 'Mai 2026',
     items: [
