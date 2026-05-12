@@ -393,7 +393,7 @@ async function revokePremium() {
 }
 function viewData() {
   if (!_selectedUid) return;
-  window.open(`budget_familial.html`, '_blank');
+  window.location.href = 'budget_familial.html';
   showToast('💡 Utilisez le panel Admin dans l\'app pour voir les données');
 }
 
