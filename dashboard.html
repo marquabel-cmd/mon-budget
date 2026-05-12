@@ -447,11 +447,18 @@ async function loadDevices(u) {
       const ts = d.lastSeen || 0;
       const icon = /iOS|iPhone|iPad/.test(label) ? '📱' : /Android/.test(label) ? '📱' : /macOS/.test(label) ? '💻' : '🖥️';
       const dateStr = ts ? new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      const online = ts && (Date.now() - ts < 5 * 60 * 1000);
+      const statusDot = online
+        ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#7effa0;margin-right:4px;vertical-align:middle"></span><span style="font-size:10px;color:#7effa0;vertical-align:middle">En ligne</span>'
+        : '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#555;margin-right:4px;vertical-align:middle"></span><span style="font-size:10px;color:#8892B0;vertical-align:middle">Hors ligne</span>';
       return `
       <div class="device-item">
         <div>
           <div class="device-name">${icon} ${label}${id === currentId ? ' <span class="device-current">Cet appareil</span>' : ''}</div>
-          <div class="device-date">${dateStr}</div>
+          <div class="device-date" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span>${dateStr}</span>
+            <span>${statusDot}</span>
+          </div>
         </div>
       </div>`;
     }).join('');

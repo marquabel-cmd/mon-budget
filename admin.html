@@ -484,12 +484,17 @@ function selectUser(uid) {
       const firstSeen = fmtDate(d.firstSeen);
       const ua        = d.ua ? `<div style="font-size:10px;color:#8892B0;margin-top:3px;word-break:break-all;max-width:400px">${_esc(d.ua.substring(0,120))}…</div>` : '';
       const icon = /iOS|iPhone|iPad/.test(label) ? '📱' : /Android/.test(label) ? '📱' : /macOS/.test(label) ? '💻' : '🖥️';
+      const online = d.lastSeen && (Date.now() - d.lastSeen < 5 * 60 * 1000);
+      const statusBadge = online
+        ? '<span style="font-size:10px;background:#1a3a2a;color:#7effa0;border-radius:4px;padding:1px 6px;font-weight:700">🟢 En ligne</span>'
+        : '<span style="font-size:10px;background:#2C3050;color:#8892B0;border-radius:4px;padding:1px 6px">⚫ Hors ligne</span>';
       return `
       <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:10px 12px;background:#20243A;border-radius:8px;margin-bottom:6px;gap:12px">
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap">
             <span style="font-size:13px;font-weight:600">${icon} ${_esc(label)}</span>
             <span style="font-size:10px;background:#2C3050;color:#8892B0;border-radius:4px;padding:1px 6px">Appareil ${i+1}</span>
+            ${statusBadge}
           </div>
           <div style="font-size:11px;color:#8892B0">1ère connexion : ${firstSeen} &nbsp;·&nbsp; Dernière : ${lastSeen}</div>
           <div style="font-size:10px;color:#8892B0;font-family:monospace;margin-top:2px">${_esc(devId)}</div>
