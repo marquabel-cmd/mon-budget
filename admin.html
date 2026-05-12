@@ -170,7 +170,10 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
     <!-- Licence keys -->
     <div class="section-header" style="margin-bottom:10px">
       <span class="section-title">🔑 Clés de licence</span>
-      <button class="btn btn-orange btn-sm" onclick="generateBetaKey()">+ Nouvelle clé</button>
+      <div style="display:flex;gap:8px">
+        <button id="btn-show-revoked" class="btn btn-ghost btn-sm" onclick="toggleRevoked()">Afficher révoquées</button>
+        <button class="btn btn-orange btn-sm" onclick="generateBetaKey()">+ Nouvelle clé</button>
+      </div>
     </div>
     <div id="beta-keys-list" style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:16px;margin-bottom:24px;font-size:13px;color:#8892B0">
       Aucune clé générée pour l'instant.
@@ -615,6 +618,14 @@ async function confirmGenerateBetaKey() {
   showToast('✅ Clé ' + (type === 'beta' ? 'bêta' : 'Premium') + ' créée pour ' + name);
 }
 
+let _showRevoked = false;
+
+function toggleRevoked() {
+  _showRevoked = !_showRevoked;
+  document.getElementById('btn-show-revoked').textContent = _showRevoked ? 'Masquer révoquées' : 'Afficher révoquées';
+  renderBetaKeys();
+}
+
 async function loadBetaKeys() {
   try {
     const token = await getToken();
@@ -622,7 +633,7 @@ async function loadBetaKeys() {
     const data = await r.json();
     if (!data || typeof data !== 'object') { _betaKeys = []; renderBetaKeys(); return; }
     _betaKeys = Object.entries(data)
-      .filter(([, val]) => val && (val.type === 'beta' || val.type === 'premium') && val.active !== false)
+      .filter(([, val]) => val && (val.type === 'beta' || val.type === 'premium'))
       .map(([key, val]) => ({ key, ...val }))
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     renderBetaKeys();
@@ -630,13 +641,36 @@ async function loadBetaKeys() {
 }
 
 async function revokeBetaKey(key) {
-  if (!confirm(`Supprimer définitivement la clé ${key} ?`)) return;
+  if (!confirm(`Révoquer la clé ${key} ?\nElle restera récupérable.`)) return;
+  const token = await getToken();
+  const r = await _fbFetch(`${LICENSE_DB}/licenses/${key}/active.json`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: 'false'
+  }, token);
+  if (!r.ok) { showToast('❌ Erreur'); return; }
+  _betaKeys = _betaKeys.map(k => k.key === key ? { ...k, active: false } : k);
+  renderBetaKeys();
+  showToast('✕ Clé révoquée');
+}
+
+async function reactivateBetaKey(key) {
+  const token = await getToken();
+  const r = await _fbFetch(`${LICENSE_DB}/licenses/${key}/active.json`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: 'true'
+  }, token);
+  if (!r.ok) { showToast('❌ Erreur'); return; }
+  _betaKeys = _betaKeys.map(k => k.key === key ? { ...k, active: true } : k);
+  renderBetaKeys();
+  showToast('✅ Clé réactivée');
+}
+
+async function deleteBetaKey(key) {
+  if (!confirm(`Supprimer définitivement la clé ${key} ?\nCette action est irréversible.`)) return;
   const token = await getToken();
   const r = await _fbFetch(`${LICENSE_DB}/licenses/${key}.json`, { method: 'DELETE' }, token);
   if (!r.ok) { showToast('❌ Erreur suppression'); return; }
   _betaKeys = _betaKeys.filter(k => k.key !== key);
   renderBetaKeys();
-  showToast('✕ Clé supprimée');
+  showToast('🗑️ Clé supprimée définitivement');
 }
 
 function copyKey(key) {
@@ -645,9 +679,13 @@ function copyKey(key) {
 
 function renderBetaKeys() {
   const el = document.getElementById('beta-keys-list');
-  if (!_betaKeys.length) { el.textContent = 'Aucune clé bêta générée.'; return; }
+  const visible = _showRevoked ? _betaKeys : _betaKeys.filter(k => k.active !== false);
+  if (!visible.length) {
+    el.textContent = _betaKeys.length ? 'Aucune clé active — cliquez "Afficher révoquées" pour les voir.' : 'Aucune clé générée.';
+    return;
+  }
   const now = Date.now();
-  el.innerHTML = _betaKeys.map(k => {
+  el.innerHTML = visible.map(k => {
     const revoked   = k.active === false;
     const expired   = k.expiresAt && k.expiresAt < now;
     const used      = !!k.uid;
@@ -656,7 +694,7 @@ function renderBetaKeys() {
       : 'À vie';
     const keyColor  = revoked ? '#8892B0' : expired ? '#F04F5B' : '#E2E4F0';
     return `
-    <div style="padding:12px 0;border-bottom:1px solid #2C3050">
+    <div style="padding:12px 0;border-bottom:1px solid #2C3050;opacity:${revoked?'.55':'1'}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
@@ -664,6 +702,7 @@ function renderBetaKeys() {
             ${k.type === 'premium'
               ? `<span style="font-size:10px;background:#00C89620;color:#00C896;border-radius:4px;padding:1px 6px">⭐ Premium</span>`
               : `<span style="font-size:10px;background:#8B5CF620;color:#8B5CF6;border-radius:4px;padding:1px 6px">🧪 Bêta</span>`}
+            ${revoked ? `<span style="font-size:10px;background:#F04F5B20;color:#F04F5B;border-radius:4px;padding:1px 6px">Révoquée</span>` : ''}
             ${used    ? `<span style="font-size:10px;background:#5B6AF020;color:#5B6AF0;border-radius:4px;padding:1px 6px">✓ Utilisée</span>` : ''}
             ${expired && !revoked ? `<span style="font-size:10px;background:#F04F5B20;color:#F04F5B;border-radius:4px;padding:1px 6px">Expirée</span>` : ''}
           </div>
@@ -674,9 +713,13 @@ function renderBetaKeys() {
             ${k.createdAt ? ` &nbsp;·&nbsp; Créée le ${new Date(k.createdAt).toLocaleDateString('fr-FR')}` : ''}
           </div>
         </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
+        <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
           ${!revoked ? `<button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key}')">📋 Copier</button>` : ''}
-          ${!revoked && !used ? `<button class="btn btn-red btn-sm" onclick="revokeBetaKey('${k.key}')">✕</button>` : ''}
+          ${revoked
+            ? `<button class="btn btn-green btn-sm" onclick="reactivateBetaKey('${k.key}')">🔄 Réactiver</button>
+               <button class="btn btn-red btn-sm" onclick="deleteBetaKey('${k.key}')">🗑️</button>`
+            : (!used ? `<button class="btn btn-red btn-sm" onclick="revokeBetaKey('${k.key}')">✕ Révoquer</button>` : '')
+          }
         </div>
       </div>
     </div>`;
