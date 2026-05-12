@@ -154,14 +154,19 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
       <div class="user-panel-header">
         <div>
           <div style="font-weight:700;margin-bottom:4px" id="panel-email">—</div>
-          <div class="user-panel-info">UID : <strong id="panel-uid">—</strong> &nbsp;·&nbsp; Appareils : <strong id="panel-devices">—</strong> &nbsp;·&nbsp; Dernière connexion : <strong id="panel-last">—</strong></div>
+          <div class="user-panel-info">UID : <strong id="panel-uid">—</strong> &nbsp;·&nbsp; Dernière connexion : <strong id="panel-last">—</strong></div>
+          <div class="user-panel-info" id="panel-expiry-line" style="display:none;margin-top:3px">Licence : <strong id="panel-expiry">—</strong></div>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="closePanel()">✕</button>
       </div>
       <div class="panel-actions">
-        <button class="btn btn-green btn-sm" onclick="grantPremium()">⭐ Accorder Premium</button>
-        <button class="btn btn-red btn-sm" onclick="revokePremium()">✕ Révoquer Premium</button>
-        <button class="btn btn-ghost btn-sm" onclick="viewData()">👁️ Voir les données</button>
+        <button class="btn btn-green btn-sm" onclick="grantPremium()">⭐ Accorder (1 an)</button>
+        <button class="btn btn-primary btn-sm" onclick="renewPremium()">🔄 Renouveler 1 an</button>
+        <button class="btn btn-red btn-sm" onclick="revokePremium()">✕ Révoquer</button>
+      </div>
+      <div style="margin-top:14px">
+        <div style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Appareils (<span id="panel-devices">0</span>/3)</div>
+        <div id="panel-devices-list"></div>
       </div>
       <div id="panel-result" style="margin-top:10px;font-size:12px;color:#8892B0"></div>
     </div>
@@ -320,10 +325,14 @@ async function loadUsers() {
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
+function _isPremiumActive(p) {
+  return p === true || (typeof p === 'number' && p > Date.now());
+}
+
 function renderStats() {
   const entries = Object.entries(_allUsers);
   const total   = entries.length;
-  const premium = entries.filter(([,v]) => v?.premium === true).length;
+  const premium = entries.filter(([,v]) => _isPremiumActive(v?.premium)).length;
   document.getElementById('s-total').textContent   = total;
   document.getElementById('s-premium').textContent = premium;
   document.getElementById('s-free').textContent    = total - premium;
@@ -334,14 +343,20 @@ function renderUsers(entries) {
   const tbody = document.getElementById('users-tbody');
   document.getElementById('user-count').textContent = entries.length;
   if (!entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Aucun client trouvé</td></tr>'; return; }
+  const now = Date.now();
   tbody.innerHTML = entries.map(([uid, info]) => {
     const email    = _esc(info?.email || '—');
-    const premium  = info?.premium === true;
+    const p        = info?.premium;
+    const active   = _isPremiumActive(p);
+    const expiring = typeof p === 'number' && p > now && p < now + 30*24*3600*1000;
     const devCount = Object.keys(info?.devices || {}).length;
     const last     = info?.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
+    const badge    = active
+      ? `<span class="badge badge-premium">⭐ Premium${expiring ? ' ⚠️' : ''}</span>`
+      : `<span class="badge badge-free">Gratuit</span>`;
     return `<tr>
       <td style="font-weight:500">${email}</td>
-      <td><span class="badge ${premium ? 'badge-premium' : 'badge-free'}">${premium ? '⭐ Premium' : 'Gratuit'}</span></td>
+      <td>${badge}</td>
       <td>📱 ${devCount}/3</td>
       <td style="color:#8892B0">${_esc(last)}</td>
       <td><button class="btn btn-ghost btn-sm" data-uid="${_esc(uid)}" onclick="selectUser(this.dataset.uid)">Gérer</button></td>
@@ -361,12 +376,48 @@ function filterUsers() {
 function selectUser(uid) {
   _selectedUid = uid;
   const info = _allUsers[uid] || {};
-  document.getElementById('panel-email').textContent   = info.email || uid;
-  document.getElementById('panel-uid').textContent     = uid.slice(0,20) + '…';
-  document.getElementById('panel-devices').textContent = Object.keys(info.devices || {}).length + '/3';
-  document.getElementById('panel-last').textContent    = info.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
-  document.getElementById('panel-result').textContent  = '';
-  document.getElementById('user-panel').style.display  = 'block';
+  document.getElementById('panel-email').textContent = info.email || uid;
+  document.getElementById('panel-uid').textContent   = uid.slice(0,20) + '…';
+  document.getElementById('panel-last').textContent  = info.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
+
+  // Expiration
+  const p = info.premium;
+  const expiryLine = document.getElementById('panel-expiry-line');
+  const expiryEl   = document.getElementById('panel-expiry');
+  if (p === true) {
+    expiryLine.style.display = '';
+    expiryEl.textContent = 'À vie (sans expiration)';
+    expiryEl.style.color = '#00C896';
+  } else if (typeof p === 'number') {
+    expiryLine.style.display = '';
+    const expired = p < Date.now();
+    expiryEl.textContent = (expired ? '⚠️ Expirée le ' : 'Expire le ') + new Date(p).toLocaleDateString('fr-FR');
+    expiryEl.style.color = expired ? '#F04F5B' : '#F5A623';
+  } else {
+    expiryLine.style.display = 'none';
+  }
+
+  // Appareils
+  const devices = info.devices || {};
+  const devEntries = Object.entries(devices);
+  document.getElementById('panel-devices').textContent = devEntries.length;
+  const devList = document.getElementById('panel-devices-list');
+  if (!devEntries.length) {
+    devList.innerHTML = '<div style="font-size:12px;color:#8892B0;padding:6px 0">Aucun appareil enregistré</div>';
+  } else {
+    devList.innerHTML = devEntries.map(([devId, lastSeen], i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#20243A;border-radius:8px;margin-bottom:6px;gap:12px">
+        <div>
+          <span style="font-size:13px;font-weight:600">📱 Appareil ${i+1}</span>
+          <span style="font-size:11px;color:#8892B0;margin-left:8px">${typeof lastSeen === 'number' ? 'vu le ' + new Date(lastSeen).toLocaleDateString('fr-FR') : ''}</span>
+          <div style="font-size:10px;color:#8892B0;font-family:monospace;margin-top:2px;word-break:break-all">${_esc(devId)}</div>
+        </div>
+        <button class="btn btn-red btn-sm" onclick="revokeDevice('${_esc(uid)}','${_esc(devId)}')">✕ Révoquer</button>
+      </div>`).join('');
+  }
+
+  document.getElementById('panel-result').textContent = '';
+  document.getElementById('user-panel').style.display = 'block';
   document.getElementById('user-panel').scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 function closePanel() { document.getElementById('user-panel').style.display = 'none'; _selectedUid = null; }
@@ -376,16 +427,37 @@ async function grantPremium() {
   const res = document.getElementById('panel-result');
   res.textContent = '🔄 Activation…';
   try {
-    const token = await getToken();
+    const token  = await getToken();
+    const expiry = Date.now() + 365 * 24 * 3600 * 1000;
     const r = await _fbFetch(`${LICENSE_DB}/users/${_selectedUid}/premium.json`, {
-      method:'PUT', headers:{'Content-Type':'application/json'}, body:'true'
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(expiry)
     }, token);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: true };
-    res.textContent = '✅ Premium accordé !';
-    renderStats(); filterUsers(); showToast('⭐ Premium accordé');
+    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: expiry };
+    res.textContent = '✅ Premium accordé — expire le ' + new Date(expiry).toLocaleDateString('fr-FR');
+    selectUser(_selectedUid); renderStats(); filterUsers(); showToast('⭐ Premium accordé (1 an)');
   } catch(e) { res.textContent = '❌ ' + e.message; }
 }
+
+async function renewPremium() {
+  if (!_selectedUid) return;
+  const res = document.getElementById('panel-result');
+  res.textContent = '🔄 Renouvellement…';
+  try {
+    const token   = await getToken();
+    const current = _allUsers[_selectedUid]?.premium;
+    const base    = (typeof current === 'number' && current > Date.now()) ? current : Date.now();
+    const expiry  = base + 365 * 24 * 3600 * 1000;
+    const r = await _fbFetch(`${LICENSE_DB}/users/${_selectedUid}/premium.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(expiry)
+    }, token);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: expiry };
+    res.textContent = '✅ Renouvelé — expire le ' + new Date(expiry).toLocaleDateString('fr-FR');
+    selectUser(_selectedUid); renderStats(); filterUsers(); showToast('🔄 Renouvelé (1 an)');
+  } catch(e) { res.textContent = '❌ ' + e.message; }
+}
+
 async function revokePremium() {
   if (!_selectedUid || !confirm('Révoquer le Premium ?')) return;
   const res = document.getElementById('panel-result');
@@ -398,8 +470,20 @@ async function revokePremium() {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: false };
     res.textContent = '✕ Premium révoqué';
-    renderStats(); filterUsers(); showToast('✕ Premium révoqué');
+    selectUser(_selectedUid); renderStats(); filterUsers(); showToast('✕ Premium révoqué');
   } catch(e) { res.textContent = '❌ ' + e.message; }
+}
+
+async function revokeDevice(uid, deviceId) {
+  if (!confirm('Révoquer cet appareil ?\n' + deviceId)) return;
+  try {
+    const token = await getToken();
+    const r = await _fbFetch(`${LICENSE_DB}/users/${uid}/devices/${deviceId}.json`, { method:'DELETE' }, token);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    if (_allUsers[uid]?.devices) delete _allUsers[uid].devices[deviceId];
+    selectUser(uid);
+    showToast('✕ Appareil révoqué');
+  } catch(e) { showToast('❌ ' + e.message); }
 }
 function viewData() {
   if (!_selectedUid) return;
@@ -417,16 +501,17 @@ function _randKey() {
 }
 
 async function generateBetaKey() {
-  const token = await getToken();
-  const key = _randKey();
-  const payload = { active: true, type: 'beta', createdAt: Date.now() };
+  const token   = await getToken();
+  const key     = _randKey();
+  const expiry  = Date.now() + 365 * 24 * 3600 * 1000;
+  const payload = { active: true, type: 'beta', createdAt: Date.now(), expiresAt: expiry };
   const r = await _fbFetch(`${LICENSE_DB}/licenses/${key}.json`, {
     method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
   }, token);
   if (!r.ok) { showToast('❌ Erreur création clé'); return; }
-  _betaKeys.unshift({ key, createdAt: Date.now() });
+  _betaKeys.unshift({ key, ...payload });
   renderBetaKeys();
-  showToast('✅ Clé bêta créée');
+  showToast('✅ Clé bêta créée (valable 1 an)');
 }
 
 async function loadBetaKeys() {
@@ -461,19 +546,29 @@ function copyKey(key) {
 function renderBetaKeys() {
   const el = document.getElementById('beta-keys-list');
   if (!_betaKeys.length) { el.textContent = 'Aucune clé bêta générée.'; return; }
-  el.innerHTML = _betaKeys.map(k => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2C3050;gap:12px;flex-wrap:wrap">
+  const now = Date.now();
+  el.innerHTML = _betaKeys.map(k => {
+    const revoked  = k.active === false;
+    const expired  = k.expiresAt && k.expiresAt < now;
+    const used     = !!k.uid;
+    const expiryTxt = k.expiresAt
+      ? (expired ? '⚠️ Expirée le ' : 'Expire le ') + new Date(k.expiresAt).toLocaleDateString('fr-FR')
+      : 'À vie';
+    const color = revoked ? '#8892B0' : expired ? '#F04F5B' : '#E2E4F0';
+    return `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #2C3050;gap:12px;flex-wrap:wrap">
       <div>
-        <span style="font-family:monospace;font-size:13px;color:${k.active===false?'#8892B0':'#E2E4F0'};text-decoration:${k.active===false?'line-through':'none'}">${k.key}</span>
-        ${k.uid ? `<span style="font-size:11px;color:#5B6AF0;margin-left:8px">✓ Utilisée</span>` : ''}
-        ${k.active===false ? `<span style="font-size:11px;color:#F04F5B;margin-left:8px">Révoquée</span>` : ''}
-        <div style="font-size:11px;color:#8892B0;margin-top:2px">${k.createdAt ? new Date(k.createdAt).toLocaleDateString('fr-FR') : ''}</div>
+        <span style="font-family:monospace;font-size:13px;color:${color};text-decoration:${revoked?'line-through':'none'}">${k.key}</span>
+        ${used  ? `<span style="font-size:11px;color:#5B6AF0;margin-left:8px">✓ Utilisée</span>` : ''}
+        ${revoked ? `<span style="font-size:11px;color:#F04F5B;margin-left:8px">Révoquée</span>` : ''}
+        <div style="font-size:11px;color:${expired?'#F04F5B':'#8892B0'};margin-top:3px">${expiryTxt}</div>
       </div>
       <div style="display:flex;gap:6px">
-        ${k.active!==false ? `<button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key}')">📋 Copier</button>` : ''}
-        ${k.active!==false && !k.uid ? `<button class="btn btn-red btn-sm" onclick="revokeBetaKey('${k.key}')">✕</button>` : ''}
+        ${!revoked ? `<button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key}')">📋 Copier</button>` : ''}
+        ${!revoked && !used ? `<button class="btn btn-red btn-sm" onclick="revokeBetaKey('${k.key}')">✕</button>` : ''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────

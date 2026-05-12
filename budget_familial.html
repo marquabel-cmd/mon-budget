@@ -3791,7 +3791,9 @@ async function fbCheckPremium(uid, idToken) {
   try {
     const r = await _fbFetch(`${LICENSE_DB}/users/${uid}/premium.json`, {}, idToken);
     const val = await r.json();
-    if (val === true) { localStorage.setItem('mbudget-premium-'+uid,'1'); return true; }
+    const valid = val === true || (typeof val === 'number' && val > Date.now());
+    if (valid) { localStorage.setItem('mbudget-premium-'+uid,'1'); return true; }
+    if (typeof val === 'number' && val <= Date.now()) { showToast('⚠️ Votre licence Premium a expiré'); }
   } catch {}
   // Rétro-compat : ancienne clé de licence → migration automatique
   const oldKey = localStorage.getItem('mbudget-license');
@@ -3799,14 +3801,17 @@ async function fbCheckPremium(uid, idToken) {
     try {
       const r = await fetch(`${LICENSE_DB}/licenses/${oldKey}.json`);
       const data = await r.json();
-      if (data?.active === true && (!data.uid || data.uid === uid)) {
+      const keyExpired = data.expiresAt && data.expiresAt < Date.now();
+      if (data?.active === true && !keyExpired && (!data.uid || data.uid === uid)) {
         await fetch(`${LICENSE_DB}/licenses/${oldKey}/uid.json`, {
           method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(uid) });
+        const premiumVal = data.expiresAt || true;
         await _fbFetch(`${LICENSE_DB}/users/${uid}/premium.json`, {
-          method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) }, idToken);
+          method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(premiumVal) }, idToken);
         localStorage.setItem('mbudget-premium-'+uid,'1');
         return true;
       }
+      if (keyExpired) showToast('⚠️ Votre clé de licence bêta a expiré');
     } catch {}
   }
   localStorage.removeItem('mbudget-premium-'+uid); return false;
