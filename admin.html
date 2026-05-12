@@ -306,7 +306,7 @@ async function getToken() {
   return u?.idToken || null;
 }
 const GOOGLE_CLIENT_ID = '76524188744-aod3mtsr6i4t7qsscehtbhnueip4sh5e.apps.googleusercontent.com';
-const REDIRECT_URI     = 'https://marquabel-cmd.github.io/mon-budget/budget_familial.html';
+const REDIRECT_URI     = 'https://budget.marquabel.be/budget_familial.html';
 
 async function _fbSignInWithIdp(idToken) {
   const r = await fetch(`${FB_AUTH}:signInWithIdp?key=${FB_API_KEY}`, {
