@@ -155,9 +155,16 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
         </div>
         <button class="btn btn-ghost btn-sm" onclick="closePanel()">✕</button>
       </div>
-      <div class="panel-actions">
-        <button class="btn btn-green btn-sm" onclick="grantPremium()">⭐ Accorder (1 an)</button>
-        <button class="btn btn-primary btn-sm" onclick="renewPremium()">🔄 Renouveler 1 an</button>
+      <div class="panel-actions" style="flex-wrap:wrap;gap:8px">
+        <select id="panel-duration" class="auth-input" style="margin:0;padding:5px 10px;font-size:12px;flex:1;min-width:130px">
+          <option value="30">1 mois</option>
+          <option value="90">3 mois</option>
+          <option value="180">6 mois</option>
+          <option value="365" selected>1 an</option>
+          <option value="0">À vie</option>
+        </select>
+        <button class="btn btn-green btn-sm" onclick="grantPremium()">⭐ Accorder</button>
+        <button class="btn btn-primary btn-sm" onclick="renewPremium()">🔄 Renouveler</button>
         <button class="btn btn-red btn-sm" onclick="revokePremium()">✕ Révoquer</button>
       </div>
       <div style="margin-top:14px">
@@ -498,20 +505,29 @@ function selectUser(uid) {
 }
 function closePanel() { document.getElementById('user-panel').style.display = 'none'; _selectedUid = null; }
 
+function _getPremiumValue() {
+  const days = parseInt(document.getElementById('panel-duration').value);
+  return days === 0 ? true : Date.now() + days * 24 * 3600 * 1000;
+}
+function _premiumLabel(val) {
+  if (val === true) return 'À vie';
+  return 'expire le ' + new Date(val).toLocaleDateString('fr-FR');
+}
+
 async function grantPremium() {
   if (!_selectedUid) return;
   const res = document.getElementById('panel-result');
   res.textContent = '🔄 Activation…';
   try {
-    const token  = await getToken();
-    const expiry = Date.now() + 365 * 24 * 3600 * 1000;
+    const token = await getToken();
+    const val   = _getPremiumValue();
     const r = await _fbFetch(`${LICENSE_DB}/users/${_selectedUid}/premium.json`, {
-      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(expiry)
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(val)
     }, token);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: expiry };
-    res.textContent = '✅ Premium accordé — expire le ' + new Date(expiry).toLocaleDateString('fr-FR');
-    selectUser(_selectedUid); renderStats(); filterUsers(); showToast('⭐ Premium accordé (1 an)');
+    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: val };
+    res.textContent = '✅ Premium accordé — ' + _premiumLabel(val);
+    selectUser(_selectedUid); renderStats(); filterUsers(); showToast('⭐ Premium accordé');
   } catch(e) { res.textContent = '❌ ' + e.message; }
 }
 
@@ -521,16 +537,22 @@ async function renewPremium() {
   res.textContent = '🔄 Renouvellement…';
   try {
     const token   = await getToken();
-    const current = _allUsers[_selectedUid]?.premium;
-    const base    = (typeof current === 'number' && current > Date.now()) ? current : Date.now();
-    const expiry  = base + 365 * 24 * 3600 * 1000;
+    const days    = parseInt(document.getElementById('panel-duration').value);
+    let val;
+    if (days === 0) {
+      val = true;
+    } else {
+      const current = _allUsers[_selectedUid]?.premium;
+      const base    = (typeof current === 'number' && current > Date.now()) ? current : Date.now();
+      val = base + days * 24 * 3600 * 1000;
+    }
     const r = await _fbFetch(`${LICENSE_DB}/users/${_selectedUid}/premium.json`, {
-      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(expiry)
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(val)
     }, token);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: expiry };
-    res.textContent = '✅ Renouvelé — expire le ' + new Date(expiry).toLocaleDateString('fr-FR');
-    selectUser(_selectedUid); renderStats(); filterUsers(); showToast('🔄 Renouvelé (1 an)');
+    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: val };
+    res.textContent = '✅ Renouvelé — ' + _premiumLabel(val);
+    selectUser(_selectedUid); renderStats(); filterUsers(); showToast('🔄 Renouvelé');
   } catch(e) { res.textContent = '❌ ' + e.message; }
 }
 
@@ -717,8 +739,11 @@ function renderBetaKeys() {
           ${!revoked ? `<button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key}')">📋 Copier</button>` : ''}
           ${revoked
             ? `<button class="btn btn-green btn-sm" onclick="reactivateBetaKey('${k.key}')">🔄 Réactiver</button>
-               <button class="btn btn-red btn-sm" onclick="deleteBetaKey('${k.key}')">🗑️</button>`
-            : (!used ? `<button class="btn btn-red btn-sm" onclick="revokeBetaKey('${k.key}')">✕ Révoquer</button>` : '')
+               <button class="btn btn-red btn-sm" onclick="deleteBetaKey('${k.key}')">🗑️ Supprimer</button>`
+            : (!used
+                ? `<button class="btn btn-ghost btn-sm" onclick="revokeBetaKey('${k.key}')">✕ Révoquer</button>
+                   <button class="btn btn-red btn-sm" onclick="deleteBetaKey('${k.key}')">🗑️ Supprimer</button>`
+                : `<button class="btn btn-red btn-sm" onclick="deleteBetaKey('${k.key}')">🗑️ Supprimer</button>`)
           }
         </div>
       </div>
