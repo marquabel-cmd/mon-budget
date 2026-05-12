@@ -432,11 +432,13 @@ async function generateBetaKey() {
 async function loadBetaKeys() {
   try {
     const token = await getToken();
-    const r = await _fbFetch(`${LICENSE_DB}/licenses.json?orderBy="type"&equalTo="beta"`, {}, token);
+    const r = await _fbFetch(`${LICENSE_DB}/licenses.json`, {}, token);
     const data = await r.json();
-    if (!data) { _betaKeys = []; renderBetaKeys(); return; }
-    _betaKeys = Object.entries(data).map(([key, val]) => ({ key, ...val }))
-      .sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    if (!data || typeof data !== 'object') { _betaKeys = []; renderBetaKeys(); return; }
+    _betaKeys = Object.entries(data)
+      .filter(([, val]) => val && val.type === 'beta')
+      .map(([key, val]) => ({ key, ...val }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     renderBetaKeys();
   } catch { _betaKeys = []; renderBetaKeys(); }
 }
