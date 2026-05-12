@@ -1431,7 +1431,7 @@ function renderWelcomeScreen() {
       : `<div class="welcome-avatar" style="background:${u.color}">${initials}</div>`;
     return `<div class="welcome-user-card" onclick="selectUserFromWelcome('${id}')">
       ${avatarHtml}
-      <div class="welcome-user-name">${u.name}</div>
+      <div class="welcome-user-name">${_esc(u.name)}</div>
     </div>`;
   }).join('');
 }
@@ -2140,7 +2140,7 @@ function addYear() {
   tbody.innerHTML = prev.revenus.map((r, i) => {
     const vals = r.v.filter(v=>v>0);
     const avg = vals.length ? Math.round(sum(vals)/vals.length*100)/100 : 0;
-    return `<tr><td style="font-weight:600">${r.label}</td>
+    return `<tr><td style="font-weight:600">${_esc(r.label)}</td>
       <td style="color:var(--gray)">${fmtN(avg)} €/mois</td>
       <td><input class="rev-dialog-input" type="number" step="0.01" id="rev-inp-${i}" placeholder="${fmtN(avg)}"></td></tr>`;
   }).join('');
@@ -2413,7 +2413,7 @@ function renderRevSection(year) {
         <input class="cal-check cal-check-compte" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','compte',${ri},this.checked)" onclick="event.stopPropagation()">
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500" type="text"
           onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
-          value="${r.label}" oninput="DATA['${year}'].revenus[${ri}].label=this.value">
+          value="${_esc(r.label)}" oninput="DATA['${year}'].revenus[${ri}].label=this.value">
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
       <td><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
@@ -2519,7 +2519,7 @@ function renderChargeSection(year) {
       <td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check ${chkClass}" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','${isLivretRow?'livret':'compte'}',${ri},this.checked,'charge')" onclick="event.stopPropagation()">
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500" type="text"
-          value="${r.label}" oninput="DATA['${year}'].charges[${ri}].label=this.value;dSave()">
+          value="${_esc(r.label)}" oninput="DATA['${year}'].charges[${ri}].label=this.value;dSave()">
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
       <td><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
@@ -2630,7 +2630,7 @@ function renderMethodTotals(year) {
     const t = varTotalByMethod(year, mo.key);
     const tot = sum(t);
     if (tot === 0) return '';
-    return `<tr><td class="lbl-col" style="padding-left:14px;border-left:3px solid ${mo.color}">${mo.label}</td>
+    return `<tr><td class="lbl-col" style="padding-left:14px;border-left:3px solid ${mo.color}">${_esc(mo.label)}</td>
       ${t.map(v=>`<td style="text-align:right;padding:4px 6px;font-size:12px">${v>0?fmtN(v)+' €':'-'}</td>`).join('')}
       <td class="tot-col" style="font-weight:700">${fmtN(tot)} €</td><td></td></tr>`;
   }).join('');
@@ -2655,7 +2655,7 @@ function renderVarSection(year) {
     <div class="section-body">
       <div class="legend">
         <span style="font-weight:700;margin-right:4px">Mode de paiement :</span>
-        ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${mo.label}</span>`).join('')}
+        ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${_esc(mo.label)}</span>`).join('')}
       </div>
       <div class="var-section">${getVarCats().map(c => renderVarCat(year, c)).join('')}</div>
       ${renderMethodTotals(year)}
@@ -2707,7 +2707,7 @@ function renderVarCat(year, cat) {
   return `<div class="section-card collapsed" data-cat="${cat.key}" style="margin-bottom:10px;border-radius:8px">
     <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')" style="padding:10px 14px">
       <span class="section-title" style="font-size:13px">
-        ${cat.icon} ${cat.label}
+        ${cat.icon} ${_esc(cat.label)}
         <span class="badge badge-o" id="vartot-${year}-${cat.key}">${fmtN(grand)} €</span>
       </span>
       <div style="display:flex;align-items:center;gap:8px">
@@ -2794,14 +2794,14 @@ function openQuickAdd(year, catKey) {
   yrSel.innerHTML = yrs.map(y=>`<option value="${y}"${y==year?' selected':''}>${y}</option>`).join('');
   // Populate category
   const catSel = document.getElementById('qa-cat');
-  catSel.innerHTML = getVarCats().map(c=>`<option value="${c.key}"${c.key===catKey?' selected':''}>${c.icon} ${c.label}</option>`).join('');
+  catSel.innerHTML = getVarCats().map(c=>`<option value="${c.key}"${c.key===catKey?' selected':''}>${c.icon} ${_esc(c.label)}</option>`).join('');
   // Populate months
   const mSel = document.getElementById('qa-month');
   const curM = new Date().getMonth();
   mSel.innerHTML = MONTHS.map((m,i)=>`<option value="${i}"${i===curM?' selected':''}>${m}</option>`).join('');
   // Populate payment methods
   const methSel = document.getElementById('qa-method');
-  methSel.innerHTML = getMethods().map(mo=>`<option value="${mo.key}">${mo.label}</option>`).join('');
+  methSel.innerHTML = getMethods().map(mo=>`<option value="${mo.key}">${_esc(mo.label)}</option>`).join('');
   // Reset fields
   document.getElementById('qa-amount').value = '';
   document.getElementById('qa-day').value = '';
@@ -3346,7 +3346,7 @@ function renderConfigTab() {
       ${u.photo
         ? `<img src="${u.photo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer;border:2px solid ${u.color}" onclick="uploadUserPhoto('${id}')" title="Changer la photo">`
         : `<span style="width:28px;height:28px;border-radius:50%;background:${u.color};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer" onclick="uploadUserPhoto('${id}')" title="Ajouter une photo">${u.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase()}</span>`}
-      <span class="user-card-name">${u.name}${u.admin?' <span style="font-size:10px;color:#e67e22;font-weight:700" title="Administrateur">👑</span>':''}${id===CURRENT_USER_ID?' <span style="font-size:10px;color:var(--green);font-weight:400">(actif)</span>':''}</span>
+      <span class="user-card-name">${_esc(u.name)}${u.admin?' <span style="font-size:10px;color:#e67e22;font-weight:700" title="Administrateur">👑</span>':''}${id===CURRENT_USER_ID?' <span style="font-size:10px;color:var(--green);font-weight:400">(actif)</span>':''}</span>
       <span style="font-size:10px;color:${u.pin?'var(--blue)':'#ccc'};margin-right:4px" title="${u.pin?'PIN activé':'Sans PIN'}">${u.pin?'🔒':'🔓'}</span>
       <div class="user-card-actions">
         <button class="btn-sm" style="background:#f0f4ff;color:var(--blue);border:1px solid var(--blue)" onclick="uploadUserPhoto('${id}')" title="Photo de profil">📷</button>
@@ -3587,7 +3587,7 @@ function renderConfigTab() {
           ${getVarCats().map(c=>`
           <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
             <span style="font-size:16px">${c.icon}</span>
-            <span style="flex:1;font-size:12px;font-weight:600">${c.label}</span>
+            <span style="flex:1;font-size:12px;font-weight:600">${_esc(c.label)}</span>
             <span style="font-size:10px;color:var(--gray);font-family:monospace">${c.key}</span>
             <button class="del-btn" onclick="removeVarCat('${c.key}')" title="Supprimer">✕</button>
           </div>`).join('')}
@@ -4115,8 +4115,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.6';
+const APP_VERSION = '3.7';
 const CHANGELOG = {
+  '3.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔒', text: 'Sécurité : protection XSS sur tous les labels et noms d\'utilisateur affichés' }
+    ]
+  },
   '3.6': {
     date: 'Mai 2026',
     items: [
@@ -4402,7 +4408,7 @@ function parseAndReview(text, filename) {
       <td style="padding:6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${row.label}">${row.label}</td>
       <td style="padding:6px;text-align:right;font-weight:700;color:var(--red);white-space:nowrap">${fmtN(row.amount)} €</td>
       <td style="padding:6px"><select style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;width:100%" onchange="csvSetCat(${i},this.value)">
-        ${cats.map(c=>`<option value="${c.key}"${c.key===row.catKey?' selected':''}>${c.icon} ${c.label}</option>`).join('')}
+        ${cats.map(c=>`<option value="${c.key}"${c.key===row.catKey?' selected':''}>${c.icon} ${_esc(c.label)}</option>`).join('')}
       </select></td>
     </tr>`).join('');
   document.getElementById('csv-step-1').style.display = 'none';
