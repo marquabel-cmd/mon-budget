@@ -2299,7 +2299,7 @@ function renderMethodPaymentSummary(year) {
       <input type="checkbox" ${incl?'checked':''}
         onchange="toggleMethodCalc('${year}','${mo.key}',this.checked)" onclick="event.stopPropagation()"
         style="width:13px;height:13px;accent-color:${mo.color};cursor:pointer;flex-shrink:0">
-      <span style="font-weight:700">${mo.label}</span>
+      <span style="font-weight:700">${mo.label || '(sans nom)'}</span>
       <span style="opacity:.8">${tot>0?fmtN(tot)+' €':'—'}</span>
     </span>`;
   }).join('');
@@ -3344,7 +3344,10 @@ function renderConfigTab() {
   const methodList = getMethods().map((mo,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
       <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${mo.bg};border:2px solid ${mo.color};flex-shrink:0"></span>
-      <span style="flex:1;font-size:12px;font-weight:600">${mo.label}</span>
+      <input type="text" value="${mo.label}" placeholder="(sans nom)" style="flex:1;font-size:12px;font-weight:600;border:1px solid transparent;border-radius:4px;padding:2px 5px;background:transparent;color:var(--text);min-width:80px"
+        onfocus="this.style.borderColor='var(--blue)';this.style.background='var(--surface-alt)'"
+        onblur="this.style.borderColor='transparent';this.style.background='transparent';updateMethodColor(${i},'label',this.value.trim()||'${mo.label}')"
+        onkeydown="if(event.key==='Enter'){this.blur()}">
       <span style="font-size:10px;color:var(--gray);font-family:monospace">${mo.key}</span>
       <input type="color" value="${mo.color}" style="width:28px;height:24px;border:none;border-radius:3px;cursor:pointer;padding:0"
         onchange="updateMethodColor(${i},'color',this.value)">
@@ -4090,8 +4093,15 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.1';
+const APP_VERSION = '3.2';
 const CHANGELOG = {
+  '3.2': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🐛', text: 'Fix : la ligne sélectionnée se désélectionne maintenant après avoir validé avec Entrée' },
+      { icon: '✏️', text: 'Mode de paiement : libellé éditable directement dans la config (cliquer sur le nom pour renommer)' }
+    ]
+  },
   '3.1': {
     date: 'Mai 2026',
     items: [
@@ -5794,6 +5804,9 @@ function closeCompareView() {
 (function(){
   const SKIP = new Set(['yr-hdr','tot-row','bal-row','sep-row','var-month-row','var-subtotal']);
   let _sel = null;
+  function _deselect() {
+    if (_sel) { _sel.classList.remove('row-active'); _sel = null; }
+  }
   document.addEventListener('click', function(e){
     const tr = e.target.closest('tr');
     if (!tr || tr.parentNode.tagName === 'THEAD') return;
@@ -5807,6 +5820,14 @@ function closeCompareView() {
       tr.classList.add('row-active');
       _sel = tr;
     }
+  }, true);
+  // Désélectionner la ligne quand Enter est pressé sur un input de la ligne
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter') return;
+    const inp = e.target.closest('input, textarea');
+    if (!inp) return;
+    const tr = inp.closest('tr.row-active');
+    if (tr) _deselect();
   }, true);
   // Réinitialiser la sélection quand le tableau est reconstruit
   const _origRY = window.renderYear;
