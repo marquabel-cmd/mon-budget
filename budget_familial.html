@@ -4107,8 +4107,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.3';
+const APP_VERSION = '3.4';
 const CHANGELOG = {
+  '3.4': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '👁️', text: 'Nouveau : suivi des visiteurs — chaque ouverture est enregistrée (appareil, date, compte connecté)' }
+    ]
+  },
   '3.3': {
     date: 'Mai 2026',
     items: [
@@ -4423,6 +4429,29 @@ if (sessionStorage.getItem('app-updated')) {
   setTimeout(() => showToast('✅ Application mise à jour !'), 800);
 }
 initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
+
+// ── TRACKING VISITEURS ──
+(async function trackVisit() {
+  try {
+    let vid = localStorage.getItem('mbudget-visitor-id');
+    if (!vid) {
+      vid = 'v_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+      localStorage.setItem('mbudget-visitor-id', vid);
+    }
+    const now = Date.now();
+    const base = LICENSE_DB + '/analytics/visitors/' + vid + '.json';
+    const ex = await fetch(base).then(r => r.ok ? r.json() : null).catch(() => null);
+    const data = {
+      lastSeen:  now,
+      firstSeen: ex?.firstSeen || now,
+      visits:    (ex?.visits  || 0) + 1,
+      label:     _parseDeviceLabel(),
+      uid:       localStorage.getItem('mbudget-fb-uid')   || null,
+      email:     localStorage.getItem('mbudget-fb-email') || null
+    };
+    await fetch(base, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  } catch { /* non-bloquant */ }
+})();
 
 // ── MODALE DE CONFIRMATION DANGER ──
 let _dangerCb = null;
