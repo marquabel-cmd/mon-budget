@@ -4611,8 +4611,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '4.6';
+const APP_VERSION = '4.7';
 const CHANGELOG = {
+  '4.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔄', text: 'Bouton "Mettre à jour" fiable : rechargement garanti même si le Service Worker était déjà actif' }
+    ]
+  },
   '4.6': {
     date: 'Mai 2026',
     items: [
@@ -5146,9 +5152,9 @@ let _pendingSW = null; // référence au nouveau SW en attente d'activation
 function applyUpdate() {
   if (_pendingSW) {
     _pendingSW.postMessage({ action: 'skipWaiting' });
-  } else {
-    window.location.reload();
   }
+  // Le SW appelle déjà skipWaiting() à l'install — rechargement garanti après 400ms
+  setTimeout(() => window.location.reload(), 400);
 }
 
 // ── CHANGELOG MODAL ──
