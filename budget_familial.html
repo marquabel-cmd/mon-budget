@@ -3684,9 +3684,10 @@ function _esc(str) {
 
 let _aideHistoryPushed = false;
 function openAide(anchor) {
+  showToast('⏳ Ouverture aide…');
   const modal = document.getElementById('aide-modal');
   const iframe = document.getElementById('aide-iframe');
-  if (!modal || !iframe) { window.location.href = 'aide.html'; return; }
+  if (!modal || !iframe) { showToast('❌ modal introuvable'); window.location.href = 'aide.html'; return; }
   iframe.src = 'aide.html' + (anchor ? '#' + anchor : '');
   modal.style.display = 'flex';
   history.pushState({ aideModal: true }, '');
@@ -4642,7 +4643,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '5.1';
+const APP_VERSION = '5.2';
 const CHANGELOG = {
   '5.1': {
     date: 'Mai 2026',
