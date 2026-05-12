@@ -435,15 +435,26 @@ async function loadDevices(u) {
       document.getElementById('sync-devices').textContent = '0/3';
       return;
     }
-    const entries = Object.entries(devices).sort(([,a],[,b]) => b - a);
+    const entries = Object.entries(devices).sort(([,a],[,b]) => {
+      const ta = (a && typeof a === 'object') ? (a.lastSeen||0) : (a||0);
+      const tb = (b && typeof b === 'object') ? (b.lastSeen||0) : (b||0);
+      return tb - ta;
+    });
     document.getElementById('sync-devices').textContent = entries.length + '/3';
-    el.innerHTML = entries.map(([id, ts]) => `
+    el.innerHTML = entries.map(([id, val]) => {
+      const d = (val && typeof val === 'object') ? val : { lastSeen: val };
+      const label = d.label || 'Appareil';
+      const ts = d.lastSeen || 0;
+      const icon = /iOS|iPhone|iPad/.test(label) ? '📱' : /Android/.test(label) ? '📱' : /macOS/.test(label) ? '💻' : '🖥️';
+      const dateStr = ts ? new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      return `
       <div class="device-item">
         <div>
-          <div class="device-name">📱 Appareil${id === currentId ? ' <span class="device-current">Cet appareil</span>' : ''}</div>
-          <div class="device-date">${ts ? new Date(ts).toLocaleDateString('fr-FR', {day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
+          <div class="device-name">${icon} ${label}${id === currentId ? ' <span class="device-current">Cet appareil</span>' : ''}</div>
+          <div class="device-date">${dateStr}</div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch {
     el.innerHTML = '<div style="color:#8892B0;font-size:13px">Impossible de charger</div>';
   }
