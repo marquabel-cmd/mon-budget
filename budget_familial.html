@@ -275,6 +275,19 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .user-menu-item{padding:10px 14px;font-size:12px;font-weight:600;color:#2c3e50;cursor:pointer;display:flex;align-items:center;gap:8px;border:none;background:none;width:100%;text-align:left}
 .user-menu-item:hover{background:var(--blue-light);color:var(--blue)}
 .user-menu-sep{border:none;border-top:1px solid var(--border);margin:4px 0}
+/* ── KPI CARDS ── */
+.kpi-cards{display:flex;gap:12px;margin:0 0 16px;flex-wrap:wrap}
+.kpi-card{flex:1;min-width:150px;background:var(--surface);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow-sm);border-top:3px solid var(--blue);text-align:center}
+.kpi-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.kpi-value{font-size:26px;font-weight:800;line-height:1.1;margin-bottom:4px}
+.kpi-sub{font-size:10px;color:var(--gray)}
+/* ── BUDGET BARS ── */
+.budget-bar-wrap{padding:6px 14px 10px;border-bottom:1px solid var(--border);background:var(--surface-alt)}
+.budget-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.budget-bar-lbl{font-size:11px;color:var(--gray);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.budget-bar-track{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.budget-bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.budget-bar-amt{font-size:11px;font-weight:700;white-space:nowrap}
 /* ── CHARTS ── */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:4px 0 18px}
 .chart-card{background:#fff;border-radius:10px;box-shadow:var(--shadow);padding:16px 20px}
@@ -1925,6 +1938,7 @@ function loadData() {
   const s = localStorage.getItem(dataKey()) || (CURRENT_USER_ID==='pascal' ? localStorage.getItem('budget_pascal_v6') : null);
   if (s) { try { DATA = JSON.parse(s); if (!DATA.methods) DATA.methods=[...DEFAULT_METHODS]; if (!DATA.varCats) DATA.varCats=JSON.parse(JSON.stringify(DEFAULT_VAR_CATS)); } catch(e){ DATA = null; } }
   if (!DATA) DATA = CURRENT_USER_ID==='pascal' ? buildDefaults() : buildDefaultsForNewUser();
+  if (!DATA.budgets) DATA.budgets = {};
   // Apply pending account/livret names chosen during wizard
   const pendingAcc = localStorage.getItem('budget_pending_accName_'+CURRENT_USER_ID);
   const pendingLiv = localStorage.getItem('budget_pending_livName_'+CURRENT_USER_ID);
@@ -2215,7 +2229,8 @@ function renderYear(year) {
   if (!DATA[year].vars) DATA[year].vars = {};
   getVarCats().forEach(c => { if (!DATA[year].vars[c.key]) DATA[year].vars[c.key] = []; });
   try {
-    wrap.innerHTML = renderSoldes(year) + renderRevSection(year) +
+    wrap.innerHTML = '<div class="container" style="padding-top:16px;padding-bottom:0">' + renderKpiCards(year) + '</div>' +
+      renderSoldes(year) + renderRevSection(year) +
       renderChargeSection(year) + renderVarSection(year) + renderMonthSummary(year);
     updateLivretDisplay(year);
     updateCompteDisplay(year);
@@ -2717,6 +2732,7 @@ function renderVarCat(year, cat) {
       </div>
     </div>
     <div class="section-body">
+      ${renderBudgetBar(year, cat)}
       <table class="var-table">
         <thead><tr>
           <th>Mois</th><th style="width:60px">Nb</th>
@@ -2900,6 +2916,74 @@ function delTx(year, catKey, id, m) {
   });
 }
 
+// ── KPI CARDS ──
+function renderKpiCards(year) {
+  const rv = revTotal(year), dep = depTotal(year), ch = chgTotal(year), bal = balance(year);
+  const pastMonths = rv.filter(v => v > 0).length || 1;
+  const totalRev = sum(rv), totalBal = sum(bal);
+  const taux = totalRev > 0 ? Math.round(totalBal / totalRev * 100) : 0;
+  const ratioChg = totalRev > 0 ? Math.round(sum(ch) / totalRev * 100) : 0;
+  const s = DATA[year].soldes;
+  const initSolde = (parseFloat(s.compteIng)||0) + (parseFloat(s.comptePro)||0) + (parseFloat(s.boite)||0);
+  const avgDep = sum(dep) / pastMonths;
+  const moisRes = avgDep > 0 ? Math.round(initSolde / avgDep * 10) / 10 : '—';
+  const proj = Math.round(totalBal / pastMonths * 12);
+  const cPos = (v,g,w) => v >= g ? '#00C896' : v >= w ? '#F5A623' : '#F04F5B';
+  const cNeg = (v,g,w) => v <= g ? '#00C896' : v <= w ? '#F5A623' : '#F04F5B';
+  return `<div class="kpi-cards">
+    <div class="kpi-card" style="border-top-color:${cPos(taux,20,10)}">
+      <div class="kpi-label">Taux d'épargne</div>
+      <div class="kpi-value" style="color:${cPos(taux,20,10)}">${taux>0?'+':''}${taux}%</div>
+      <div class="kpi-sub">${taux>=20?'✅ Excellent':taux>=10?'⚠️ Correct':'❌ Insuffisant'}</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:${cNeg(ratioChg,50,65)}">
+      <div class="kpi-label">Charges / Revenus</div>
+      <div class="kpi-value" style="color:${cNeg(ratioChg,50,65)}">${ratioChg}%</div>
+      <div class="kpi-sub">${ratioChg<=50?'✅ Maîtrisé':ratioChg<=65?'⚠️ Élevé':'❌ Critique'}</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:${typeof moisRes==='number'?cPos(moisRes,3,1):'#ccc'}">
+      <div class="kpi-label">Mois de réserve</div>
+      <div class="kpi-value" style="color:${typeof moisRes==='number'?cPos(moisRes,3,1):'var(--gray)'}">${moisRes}</div>
+      <div class="kpi-sub">${typeof moisRes==='number'?(moisRes>=3?'✅ Sécurisé':moisRes>=1?'⚠️ Fragile':'❌ Attention'):'Soldes non renseignés'}</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:#5B6AF0">
+      <div class="kpi-label">Projection épargne</div>
+      <div class="kpi-value" style="color:${proj>=0?'#5B6AF0':'#F04F5B'};font-size:20px">${proj>=0?'+':''}${fmtN(proj)} €</div>
+      <div class="kpi-sub">annuelle · base ${pastMonths} mois</div>
+    </div>
+  </div>`;
+}
+
+// ── BUDGET BARS ──
+function renderBudgetBarInner(year, key) {
+  const budget = DATA.budgets && DATA.budgets[key] ? parseFloat(DATA.budgets[key]) : 0;
+  if (!budget) return '';
+  const txs = DATA[year]?.vars[key] || [];
+  const spent = sum(txs.map(t => t.amount));
+  const pct = Math.min(100, Math.round(spent / budget * 100));
+  const color = spent > budget ? '#F04F5B' : pct > 80 ? '#F5A623' : '#00C896';
+  return `<div class="budget-bar-row">
+    <span class="budget-bar-lbl">Budget : ${fmtN(budget)} €/an</span>
+    <span class="budget-bar-amt" style="color:${color}">${fmtN(spent)} € · ${pct}%${spent>budget?' ⚠️':''}</span>
+  </div>
+  <div class="budget-bar-row">
+    <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+  </div>`;
+}
+function renderBudgetBar(year, cat) {
+  const hasBudget = !!(DATA.budgets && DATA.budgets[cat.key]);
+  return `<div id="budget-bar-${year}-${cat.key}"${hasBudget?' class="budget-bar-wrap"':''}>${renderBudgetBarInner(year, cat.key)}</div>`;
+}
+function setBudget(key, amount) {
+  if (!DATA.budgets) DATA.budgets = {};
+  if (amount > 0) DATA.budgets[key] = amount; else delete DATA.budgets[key];
+  dSave();
+  getYears().forEach(y => {
+    const el = document.getElementById(`budget-bar-${y}-${key}`);
+    if (el) { el.className = amount > 0 ? 'budget-bar-wrap' : ''; el.innerHTML = renderBudgetBarInner(y, key); }
+  });
+}
+
 // ── RÉSUMÉ MENSUEL ──
 function renderMonthSummary(year) {
   const rv=revTotal(year), ch=chgTotal(year), vr=allVarTotal(year);
@@ -2940,7 +3024,20 @@ function renderMonthSummary(year) {
         <td class="tot-col ${balTot<0?'neg':'pos'}" id="sm-${year}-bal-tot">${fmtN(balTot)}</td>
         <td></td>
       </tr>
-    </tbody></table></div>
+    </tbody></table>
+    ${(()=>{
+      const completedM = rv.filter(v=>v>0).length;
+      if (completedM < 1 || completedM >= 12) return '';
+      const avgBal = balTot / completedM;
+      const proj = Math.round(avgBal * 12);
+      const color = proj >= 0 ? '#5B6AF0' : '#F04F5B';
+      return `<div style="margin:10px 0 4px;padding:8px 14px;background:var(--surface-alt);border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--gray)">
+        🔮 <strong style="color:var(--text)">Projection ${year}</strong> : à ce rythme, épargne annuelle estimée à
+        <strong style="color:${color}">${proj>=0?'+':''}${fmtN(proj)} €</strong>
+        <span style="font-size:11px">(moy. ${fmtN(avgBal)} €/mois · ${completedM} mois de données)</span>
+      </div>`;
+    })()}
+    </div>
   </div>`;
 }
 function refreshMonthSummary(year) {
@@ -3296,20 +3393,24 @@ function renderCharts() {
     <div class="chart-year-sel" id="chart-year-sel">${years.map(y=>`<button class="chart-year-btn${y===_chartYear?' active':''}" onclick="selectChartYear('${y}',this)">${y}</button>`).join('')}</div>
     <div class="charts-grid">
       <div class="chart-card" style="grid-column:1/-1"><h4>💰 Solde mensuel — comparaison des années</h4><canvas id="chart-balance" height="80"></canvas></div>
+      <div class="chart-card" style="grid-column:1/-1"><h4>📈 Taux d'épargne mensuel (%) — toutes années</h4><canvas id="chart-savings" height="80"></canvas></div>
       <div class="chart-card"><h4>📊 Revenus vs Dépenses — <span id="chart-rd-yr">${_chartYear}</span></h4><canvas id="chart-revdep"></canvas></div>
       <div class="chart-card"><h4>🗂 Répartition des dépenses — <span id="chart-cat-yr">${_chartYear}</span></h4><canvas id="chart-cat"></canvas></div>
-      <div class="chart-card"><h4>💳 Modes de paiement — <span id="chart-meth-yr">${_chartYear}</span></h4><canvas id="chart-meth"></canvas></div>
+      <div class="chart-card" style="grid-column:1/-1"><h4>💎 Évolution du patrimoine — <span id="chart-wealth-yr">${_chartYear}</span></h4><canvas id="chart-wealth" height="80"></canvas></div>
+      <div class="chart-card"><h4>🏆 Top catégories de dépenses — <span id="chart-top-yr">${_chartYear}</span></h4><canvas id="chart-top"></canvas></div>
     </div></div>`;
   Object.values(_charts).forEach(c=>c.destroy());
   _charts = {};
-  buildBalanceChart(); buildPerYearCharts();
+  buildBalanceChart();
+  buildSavingsChart();
+  buildPerYearCharts();
 }
 function selectChartYear(y, btn) {
   _chartYear = y;
   document.querySelectorAll('.chart-year-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  ['rd','cat','meth'].forEach(id=>{const el=document.getElementById(`chart-${id}-yr`);if(el)el.textContent=y;});
-  ['revdep','cat','meth'].forEach(id=>{if(_charts[id]){_charts[id].destroy();delete _charts[id];}});
+  ['rd','cat','wealth','top'].forEach(id=>{const el=document.getElementById(`chart-${id}-yr`);if(el)el.textContent=y;});
+  ['revdep','cat','wealth','top'].forEach(id=>{if(_charts[id]){_charts[id].destroy();delete _charts[id];}});
   buildPerYearCharts();
 }
 function buildBalanceChart() {
@@ -3320,20 +3421,56 @@ function buildBalanceChart() {
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+' €'}}}}
   });
 }
+function buildSavingsChart() {
+  const years = getYears();
+  const datasets = years.map((y,i) => {
+    const rv=revTotal(y), dep=depTotal(y);
+    const rates=rv.map((r,mi)=>r>0?Math.round((r-dep[mi])/r*1000)/10:null);
+    return {label:y,data:rates,borderColor:PALETTE[i%PALETTE.length],backgroundColor:PALETTE[i%PALETTE.length]+'22',tension:.3,fill:false,pointRadius:4,spanGaps:true};
+  });
+  datasets.push({label:'✅ Objectif 20%',data:Array(12).fill(20),borderColor:'#00C89666',borderDash:[5,4],pointRadius:0,borderWidth:1.5});
+  datasets.push({label:'⚠️ Seuil 10%',data:Array(12).fill(10),borderColor:'#F5A62366',borderDash:[5,4],pointRadius:0,borderWidth:1.5});
+  _charts.savings = new Chart(document.getElementById('chart-savings'),{
+    type:'line',data:{labels:MONTHS,datasets},
+    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+'%'}}}}
+  });
+}
+function buildWealthChart(year) {
+  const s = DATA[year].soldes;
+  const initW = (parseFloat(s.compteIng)||0)+(parseFloat(s.comptePro)||0)+(parseFloat(s.livretInitial)||0)+(parseFloat(s.boite)||0);
+  const bal = balance(year);
+  let cumul = initW;
+  const wData = bal.map(v => { cumul += v; return Math.round(cumul*100)/100; });
+  _charts.wealth = new Chart(document.getElementById('chart-wealth'),{
+    type:'line',
+    data:{labels:MONTHS,datasets:[
+      {label:'Patrimoine total',data:wData,borderColor:'#5B6AF0',backgroundColor:'#5B6AF022',tension:.3,fill:true,pointRadius:4},
+      {label:'Niveau initial',data:Array(12).fill(Math.round(initW*100)/100),borderColor:'#ccc',borderDash:[4,4],pointRadius:0,borderWidth:1.5}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>fmtN(v)+' €'}}}}
+  });
+}
+function buildTopExpensesChart(year) {
+  const data = getVarCats().map(c=>({label:c.icon+' '+c.label,value:Math.round(sum(varTotal(year,c.key))*100)/100}))
+    .filter(c=>c.value>0).sort((a,b)=>b.value-a.value);
+  _charts.top = new Chart(document.getElementById('chart-top'),{
+    type:'bar',
+    data:{labels:data.map(c=>c.label),datasets:[{label:'Dépenses (€)',data:data.map(c=>c.value),backgroundColor:PALETTE.map(p=>p+'cc')}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+' €'}}}}
+  });
+}
 function buildPerYearCharts() {
   const y = _chartYear; if(!DATA[y]) return;
   const rv=revTotal(y), dep=depTotal(y);
   _charts.revdep = new Chart(document.getElementById('chart-revdep'),{type:'bar',
     data:{labels:MONTHS,datasets:[{label:'Revenus',data:rv.map(v=>Math.round(v*100)/100),backgroundColor:'#27ae6088'},{label:'Dépenses',data:dep.map(v=>Math.round(v*100)/100),backgroundColor:'#c0392b88'}]},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+' €'}}}}});
-  const chgT=sum(chgTotal(y)); const varCatTotals=getVarCats().map(c=>Math.round(sum(varTotal(y,c.key))*100)/100);
+  const chgT=sum(chgTotal(y)), varCatTotals=getVarCats().map(c=>Math.round(sum(varTotal(y,c.key))*100)/100);
   _charts.cat = new Chart(document.getElementById('chart-cat'),{type:'doughnut',
     data:{labels:['Charges fixes & occ.',...getVarCats().map(c=>c.label)],datasets:[{data:[Math.round(chgT*100)/100,...varCatTotals],backgroundColor:PALETTE}]},
     options:{responsive:true,plugins:{legend:{position:'right'}}}});
-  const methData = getMethods().map(mo=>({label:mo.label,val:Math.round(sum(varTotalByMethod(y,mo.key))*100)/100,color:mo.color}));
-  _charts.meth = new Chart(document.getElementById('chart-meth'),{type:'pie',
-    data:{labels:methData.map(m=>m.label),datasets:[{data:methData.map(m=>m.val),backgroundColor:methData.map(m=>m.color)}]},
-    options:{responsive:true,plugins:{legend:{position:'right'}}}});
+  buildWealthChart(y);
+  buildTopExpensesChart(y);
 }
 
 // ── CONFIG ──
@@ -3588,7 +3725,9 @@ function renderConfigTab() {
           <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
             <span style="font-size:16px">${c.icon}</span>
             <span style="flex:1;font-size:12px;font-weight:600">${_esc(c.label)}</span>
-            <span style="font-size:10px;color:var(--gray);font-family:monospace">${c.key}</span>
+            <input type="number" value="${(DATA.budgets&&DATA.budgets[c.key])||''}" min="0" placeholder="Budget/an €" title="Budget annuel pour cette catégorie"
+              style="width:90px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:11px;text-align:right;background:var(--surface);color:var(--text)"
+              onchange="setBudget('${c.key}',parseFloat(this.value)||0)">
             <button class="del-btn" onclick="removeVarCat('${c.key}')" title="Supprimer">✕</button>
           </div>`).join('')}
         </div>
@@ -4115,8 +4254,19 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.7';
+const APP_VERSION = '3.8';
 const CHANGELOG = {
+  '3.8': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📊', text: 'Nouveau : 4 indicateurs financiers (KPI) en tête de chaque année — taux d\'épargne, ratio charges, mois de réserve, projection' },
+      { icon: '📈', text: 'Nouveau graphique : taux d\'épargne mensuel multi-années avec seuils 10% et 20%' },
+      { icon: '💎', text: 'Nouveau graphique : évolution du patrimoine mois par mois' },
+      { icon: '🏆', text: 'Nouveau graphique : top catégories de dépenses (remplace le camembert modes de paiement)' },
+      { icon: '🎯', text: 'Budget cible par catégorie de dépenses : barre de progression dans Config → Catégories' },
+      { icon: '🔮', text: 'Projection de fin d\'année dans le résumé mensuel (épargne annuelle estimée)' }
+    ]
+  },
   '3.7': {
     date: 'Mai 2026',
     items: [
