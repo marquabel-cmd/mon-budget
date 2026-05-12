@@ -1567,8 +1567,12 @@ function _finishLogin(id) {
         const ly = getYears().slice(-1)[0];
         if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
         setCloudStatus('ok');
+        startRealtimeSync();
       });
-    } else { setCloudStatus('off'); }
+    } else {
+      setCloudStatus('off');
+      // Pas de Premium mais connecté : démarrer quand même si licence activée plus tard
+    }
   });
   loadData();
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
@@ -3293,7 +3297,7 @@ async function cloudPush() {
       ...(gistId    ? { _gistId:    gistId    } : {})
     };
     const r = await _fbFetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}, token);
-    if (r.ok) { setCloudStatus('ok'); _lastSyncError = ''; }
+    if (r.ok) { _lastPushTime = Date.now(); setCloudStatus('ok'); _lastSyncError = ''; }
     else { setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); }
   } catch(e) { setCloudStatus('error', e.message || 'Réseau inaccessible'); }
 }
@@ -3343,7 +3347,110 @@ async function cloudPullNow() {
   renderSummary();
   setCloudStatus('ok');
   showToast('✅ Données synchronisées depuis le cloud');
+  startRealtimeSync();
 }
+
+// ── SYNC TEMPS RÉEL (Firebase EventSource) ──
+let _realtimeSource = null;
+let _lastPushTime = 0;
+let _realtimeReconnectTimer = null;
+let _pendingRealtimeData = null;
+
+async function startRealtimeSync() {
+  if (!isLicensed() || !_fbUser) return;
+  stopRealtimeSync();
+  try {
+    const token = await fbGetToken();
+    if (!token) return;
+    const url = cloudApiUrl();
+    if (!url) return;
+    const streamUrl = url + (url.includes('?') ? '&' : '?') + 'auth=' + token;
+    _realtimeSource = new EventSource(streamUrl);
+    let firstEvent = true;
+    _realtimeSource.addEventListener('put', e => {
+      try {
+        const payload = JSON.parse(e.data);
+        if (!payload || payload.data === null || payload.data === undefined) { firstEvent = false; return; }
+        const incoming = payload.data;
+        if (typeof incoming !== 'object' || Array.isArray(incoming)) { firstEvent = false; return; }
+        const wasFirst = firstEvent; firstEvent = false;
+        // Ignorer notre propre push (5s window)
+        if (Date.now() - _lastPushTime < 5000) return;
+        // Premier event = état initial Firebase : appliquer seulement si données différentes
+        const { _syncedUsers: su, _gistToken: gt, _gistId: gi, ...budgetData } = incoming;
+        if (wasFirst && JSON.stringify(DATA) === JSON.stringify(budgetData)) return;
+        applyRealtimeData(incoming);
+      } catch(err) {}
+    });
+    _realtimeSource.onerror = () => {
+      stopRealtimeSync();
+      _realtimeReconnectTimer = setTimeout(startRealtimeSync, 30000);
+      setCloudStatus('error', 'Reconnexion dans 30s…');
+    };
+    // Rafraîchir la connexion avant expiration du token (50min)
+    _realtimeReconnectTimer = setTimeout(() => { stopRealtimeSync(); startRealtimeSync(); }, 50 * 60 * 1000);
+    // Indicateur "Live"
+    const el = document.getElementById('cloud-status');
+    if (el) { el.textContent = '🟢 Live'; el.style.color = '#7effa0'; el.title = 'Synchronisation temps réel active'; }
+  } catch(e) {}
+}
+
+function stopRealtimeSync() {
+  if (_realtimeSource) { _realtimeSource.close(); _realtimeSource = null; }
+  if (_realtimeReconnectTimer) { clearTimeout(_realtimeReconnectTimer); _realtimeReconnectTimer = null; }
+}
+
+function applyRealtimeData(d) {
+  // Ne pas interrompre une saisie en cours — mettre en attente
+  const activeEl = document.activeElement;
+  if (activeEl && ['INPUT','TEXTAREA','SELECT'].includes(activeEl.tagName)) {
+    _pendingRealtimeData = d;
+    activeEl.addEventListener('blur', () => {
+      if (_pendingRealtimeData) { const pd = _pendingRealtimeData; _pendingRealtimeData = null; applyRealtimeData(pd); }
+    }, { once: true });
+    return;
+  }
+  const { _syncedUsers, _gistToken, _gistId, ...budgetData } = d;
+  // Restaurer token Gist si absent
+  if (_gistToken && !getGistToken()) {
+    localStorage.setItem(gistTokenKey(), _gistToken);
+    if (_gistId) localStorage.setItem(gistIdKey(), _gistId);
+    if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
+  }
+  // Fusionner profils utilisateurs
+  if (_syncedUsers) {
+    Object.entries(_syncedUsers).forEach(([id, u]) => {
+      if (!USERS[id]) USERS[id] = u;
+      else if (!USERS[id].pin) Object.assign(USERS[id], { name: u.name, color: u.color });
+    });
+    saveUsers();
+  }
+  // Ne rien faire si données identiques
+  if (JSON.stringify(DATA) === JSON.stringify(budgetData)) return;
+  DATA = budgetData;
+  if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+  localStorage.setItem(dataKey(), JSON.stringify(DATA));
+  // Re-rendu complet
+  const activeTabEl = document.querySelector('#year-tabs .tab.active');
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  renderTabs();
+  getYears().forEach(y => renderYear(y));
+  renderSummary();
+  // Rester sur le même onglet si possible
+  if (activeTabEl) {
+    const yr = activeTabEl.textContent.match(/\d{4}/)?.[0];
+    if (yr) { const t = [...document.querySelectorAll('#year-tabs .tab')].find(t => t.textContent.includes(yr)); if(t) switchTab('y'+yr, t); }
+  }
+  setCloudStatus('ok');
+  showToast('🔄 Mise à jour reçue');
+}
+
+// Reconnecter quand la page redevient visible (retour onglet / déverrouillage mobile)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && isLicensed() && _fbUser && !_realtimeSource) startRealtimeSync();
+});
+window.addEventListener('online',  () => { if (isLicensed() && _fbUser && !_realtimeSource) startRealtimeSync(); });
+window.addEventListener('offline', () => stopRealtimeSync());
 
 // ── SAVE / RESET / EXPORT ──
 let _saveTimer;
@@ -4139,6 +4246,7 @@ async function fbResetPassword(email) {
   if (!r.ok) throw new Error(_fbErrMsg(d.error?.message));
 }
 function fbLogout() {
+  stopRealtimeSync();
   const uid = _fbUser?.uid || localStorage.getItem('mbudget-fb-uid');
   if (uid) localStorage.removeItem('mbudget-premium-' + uid);
   _fbSave(null);
@@ -4238,7 +4346,7 @@ async function fbInitAuth() {
   _fbUser = stored;
   if (Date.now() > stored.expiresAt - 120000) _fbUser = await _fbRefreshToken();
   if (_fbUser) {
-    fbCheckPremium(_fbUser.uid, _fbUser.idToken).then(() => renderConfigTab());
+    fbCheckPremium(_fbUser.uid, _fbUser.idToken).then(() => { renderConfigTab(); if (isLicensed() && !_realtimeSource) startRealtimeSync(); });
   }
 }
 
@@ -4451,8 +4559,16 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '4.3';
+const APP_VERSION = '4.4';
 const CHANGELOG = {
+  '4.4': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '⚡', text: 'Sync temps réel : Firebase EventSource — toute modification sur un appareil se répercute instantanément sur les autres' },
+      { icon: '🟢', text: 'Indicateur "Live" dans le header quand la connexion temps réel est active' },
+      { icon: '🔄', text: 'Reconnexion automatique au retour de veille, déverrouillage mobile, ou retour réseau' }
+    ]
+  },
   '4.3': {
     date: 'Mai 2026',
     items: [
