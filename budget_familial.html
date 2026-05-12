@@ -1279,7 +1279,8 @@ function initUsers() {
 
   const storedUsersRaw = localStorage.getItem('budget_users');
   if (storedUsersRaw === null) {
-    // Toute première ouverture — afficher l'onboarding
+    // Si identifiants Firebase présents (ex: nouvel appareil ou nouveau domaine), restaurer directement
+    if (_fbLoad()) { _autoRestoreFromFirebase(); return; }
     showOnboardingScreen();
     return;
   }
@@ -3819,6 +3820,58 @@ async function fbCheckPremium(uid, idToken) {
   }
   localStorage.removeItem('mbudget-premium-'+uid); return false;
 }
+async function _autoRestoreFromFirebase() {
+  showToast('🔄 Restauration de votre session…');
+  if (!_fbUser) {
+    const stored = _fbLoad();
+    if (!stored) { showOnboardingScreen(); return; }
+    _fbUser = stored;
+    if (Date.now() > stored.expiresAt - 120000) _fbUser = await _fbRefreshToken();
+    if (!_fbUser) { _fbSave(null); showOnboardingScreen(); return; }
+  }
+  const isPremium = await fbCheckPremium(_fbUser.uid, _fbUser.idToken);
+  const email = _fbUser.email || '';
+  const name = email.split('@')[0].replace(/[._-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim() || 'Utilisateur';
+  const id = 'u_' + _fbUser.uid.slice(0, 8);
+  USERS = {};
+  USERS[id] = { name, color: '#5B6AF0', admin: true };
+  saveUsers();
+  CURRENT_USER_ID = id;
+  localStorage.setItem('budget_current_user', id);
+  if (isPremium) {
+    setCloudStatus('syncing');
+    const cloudData = await cloudPull();
+    if (cloudData) {
+      DATA = cloudData;
+      if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+      localStorage.setItem(dataKey(), JSON.stringify(DATA));
+      setCloudStatus('ok');
+    } else {
+      loadData();
+      setCloudStatus('off');
+    }
+  } else {
+    loadData();
+    setCloudStatus('off');
+  }
+  document.getElementById('onboarding-screen').style.display = 'none';
+  document.getElementById('welcome-screen').style.display = 'none';
+  const fab = document.getElementById('main-fab');
+  if (fab) fab.style.display = 'flex';
+  const aiFab = document.getElementById('ai-chat-fab');
+  if (aiFab) aiFab.style.display = 'flex';
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  updateUserDisplay(); renderTabs();
+  getYears().forEach(y => renderYear(y));
+  renderSummary(); renderConfigTab();
+  const ly = getYears().slice(-1)[0];
+  if (ly) setTimeout(() => {
+    const tabs = document.querySelectorAll('#year-tabs .tab');
+    const t = tabs[tabs.length-1]; if (t) switchTab('y'+ly, t);
+  }, 50);
+  showToast('✅ Session restaurée — ' + email);
+}
+
 async function fbInitAuth() {
   const stored = _fbLoad();
   if (!stored) return;
@@ -3844,18 +3897,25 @@ function _getDeviceId() {
 
 function _parseDeviceLabel() {
   const ua = navigator.userAgent;
-  let browser = 'Navigateur';
-  if (ua.includes('Edg/')) browser = 'Edge';
-  else if (ua.includes('OPR/') || ua.includes('Opera')) browser = 'Opera';
-  else if (ua.includes('Chrome/')) browser = 'Chrome';
-  else if (ua.includes('Firefox/')) browser = 'Firefox';
-  else if (ua.includes('Safari/') && !ua.includes('Chrome')) browser = 'Safari';
+  let browserName = 'Navigateur', browserVer = '';
+  const edgM = ua.match(/Edg\/(\d+)/);
+  const chrM = ua.match(/Chrome\/(\d+)/);
+  const ffM  = ua.match(/Firefox\/(\d+)/);
+  const safM = ua.match(/Version\/(\d+).*Safari/);
+  if (edgM)           { browserName = 'Edge';    browserVer = edgM[1]; }
+  else if (ua.includes('OPR/') || ua.includes('Opera')) { browserName = 'Opera'; }
+  else if (chrM)      { browserName = 'Chrome';  browserVer = chrM[1]; }
+  else if (ffM)       { browserName = 'Firefox'; browserVer = ffM[1]; }
+  else if (safM)      { browserName = 'Safari';  browserVer = safM[1]; }
+  const browser = browserVer ? `${browserName} ${browserVer}` : browserName;
   let os = '';
-  if (/iPhone|iPad/.test(ua)) os = 'iOS';
+  if (/iPhone|iPad/.test(ua))  os = 'iOS';
   else if (/Android/.test(ua)) os = 'Android';
+  else if (/Windows NT 10/.test(ua)) os = 'Windows 10/11';
+  else if (/Windows NT 6\.3/.test(ua)) os = 'Windows 8.1';
   else if (/Windows/.test(ua)) os = 'Windows';
-  else if (/Mac OS/.test(ua)) os = 'macOS';
-  else if (/Linux/.test(ua)) os = 'Linux';
+  else if (/Mac OS/.test(ua))  os = 'macOS';
+  else if (/Linux/.test(ua))   os = 'Linux';
   return os ? `${browser} / ${os}` : browser;
 }
 
@@ -3938,8 +3998,7 @@ function signInWithGoogle() {
           closeAuthModal();
           const onboarding = document.getElementById('onboarding-screen');
           if (onboarding && onboarding.style.display !== 'none') {
-            showToast('✅ Connecté — chargement de vos données…');
-            setTimeout(() => window.location.reload(), 800);
+            _autoRestoreFromFirebase();
           } else {
             document.getElementById('onboarding-screen').style.display = 'none';
             renderConfigTab();
@@ -4031,8 +4090,15 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.1';
 const CHANGELOG = {
+  '3.1': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔄', text: 'Fix : restauration automatique de la session après rafraîchissement ou sur un nouvel appareil' },
+      { icon: '📱', text: 'Appareils : label enrichi avec version navigateur (Chrome 124, Edge 122…) pour mieux identifier chaque appareil' }
+    ]
+  },
   '3.0': {
     date: 'Mai 2026',
     items: [
