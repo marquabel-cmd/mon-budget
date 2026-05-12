@@ -3026,11 +3026,9 @@ function uploadUserPhoto(userId) {
   input.click();
 }
 
-// Token Firebase dans le header Authorization plutôt qu'en query param (pas de token dans les URLs)
 async function _fbFetch(url, options = {}, token = null) {
-  const headers = { ...(options.headers || {}) };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { ...options, headers });
+  const u = token ? url + (url.includes('?') ? '&' : '?') + 'auth=' + token : url;
+  return fetch(u, options);
 }
 
 // ── CLOUD SYNC ──

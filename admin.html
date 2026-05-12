@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -294,9 +294,8 @@ function checkAccess(u) {
 
 // ── FIREBASE FETCH ────────────────────────────────────────────────────
 async function _fbFetch(url, options = {}, token = null) {
-  const headers = { ...(options.headers || {}) };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { ...options, headers });
+  const u = token ? url + (url.includes('?') ? '&' : '?') + 'auth=' + token : url;
+  return fetch(u, options);
 }
 
 // ── USERS ─────────────────────────────────────────────────────────────
@@ -421,3 +420,4 @@ function showToast(msg) {
 </script>
 </body>
 </html>
+
