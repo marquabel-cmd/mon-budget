@@ -3936,9 +3936,15 @@ function signInWithGoogle() {
           const u = await _fbSignInWithIdp(token);
           await fbCheckPremium(u.uid, u.idToken);
           closeAuthModal();
-          document.getElementById('onboarding-screen').style.display = 'none';
-          renderConfigTab();
-          showToast('✅ Connecté avec Google — ' + u.email);
+          const onboarding = document.getElementById('onboarding-screen');
+          if (onboarding && onboarding.style.display !== 'none') {
+            showToast('✅ Connecté — chargement de vos données…');
+            setTimeout(() => window.location.reload(), 800);
+          } else {
+            document.getElementById('onboarding-screen').style.display = 'none';
+            renderConfigTab();
+            showToast('✅ Connecté avec Google — ' + u.email);
+          }
         } catch(e) {
           const errEl = document.getElementById('auth-login-err') || document.getElementById('auth-reg-err');
           if (errEl) errEl.textContent = e.message;
