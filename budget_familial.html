@@ -1362,7 +1362,7 @@ function goToCreateAccountFromOnboarding() {
   setTimeout(() => {
     const p = document.getElementById('welcome-add-panel');
     if (p) {
-      _wiz = {step:1, name:'', color:'#e67e22', pin:'', accountName:'', livretName:'',
+      _wiz = {step:1, name:'', color:'#e67e22', pin:'', accountName:'', livretName:'', budgets:{},
         revs: JSON.parse(JSON.stringify(WIZARD_REVS)),
         chgs: JSON.parse(JSON.stringify(WIZARD_CHGS))};
       p.style.display = 'block';
@@ -1618,7 +1618,7 @@ const WIZARD_CHGS = [
   {label:'📈 Livret — versement exceptionnel', amount:0,   checked:false, cat:'livret_in'},
   {label:'📉 Livret — retrait vers compte',    amount:0,   checked:false, cat:'livret_out'},
 ];
-let _wiz = {step:1, name:'', color:'#e67e22', revs:[], chgs:[], pin:'', accountName:'', livretName:'', gistToken:'', gistUser:''};
+let _wiz = {step:1, name:'', color:'#e67e22', revs:[], chgs:[], pin:'', accountName:'', livretName:'', gistToken:'', gistUser:'', budgets:{}};
 
 function toggleWelcomeAddPanel() {
   if (!isLicensed() && Object.keys(USERS).length >= 1) { showUpgrade('multi-utilisateurs'); return; }
@@ -1626,7 +1626,7 @@ function toggleWelcomeAddPanel() {
   if (!p) return;
   const open = p.style.display === 'block';
   if (open) { p.style.display='none'; return; }
-  _wiz = {step:1, name:'', color:'#e67e22', pin:'', accountName:'', livretName:'', gistToken:'', gistUser:'',
+  _wiz = {step:1, name:'', color:'#e67e22', pin:'', accountName:'', livretName:'', gistToken:'', gistUser:'', budgets:{},
     revs: JSON.parse(JSON.stringify(WIZARD_REVS)),
     chgs: JSON.parse(JSON.stringify(WIZARD_CHGS))};
   p.style.display = 'block';
@@ -1640,17 +1640,17 @@ function toggleWelcomeAddPanel() {
 function renderWizard() {
   const c = document.getElementById('wizard-content');
   if (!c) return;
-  const stepLabels = ['Profil','Revenus','Charges','PIN','Cloud'];
+  const stepLabels = ['Profil','Revenus','Charges','Budgets','PIN','Cloud'];
   const indicator = `<div style="display:flex;align-items:flex-start;justify-content:center;gap:0;margin-bottom:22px">
     ${stepLabels.map((s,i)=>{
       const done = i+1 < _wiz.step, active = i+1 === _wiz.step;
       const circle = done ? '✓' : i+1;
       const bg = done||active ? '#27ae60' : 'rgba(255,255,255,.15)';
       const border = active ? '2px solid #fff' : '2px solid transparent';
-      const sep = i<4 ? `<div style="flex:1;height:2px;background:${i+1<_wiz.step?'#27ae60':'rgba(255,255,255,.18)'};margin:14px 4px 0"></div>` : '';
+      const sep = i<5 ? `<div style="flex:1;height:2px;background:${i+1<_wiz.step?'#27ae60':'rgba(255,255,255,.18)'};margin:14px 4px 0"></div>` : '';
       return `<div style="display:flex;flex-direction:column;align-items:center;gap:5px">
-        <div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:${bg};color:#fff;border:${border}">${circle}</div>
-        <div style="font-size:10px;color:${active?'#fff':'rgba(255,255,255,.5)'};font-weight:700;text-transform:uppercase;letter-spacing:.4px">${s}</div>
+        <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:${bg};color:#fff;border:${border}">${circle}</div>
+        <div style="font-size:9px;color:${active?'#fff':'rgba(255,255,255,.5)'};font-weight:700;text-transform:uppercase;letter-spacing:.3px">${s}</div>
       </div>${sep}`;
     }).join('')}
   </div>`;
@@ -1716,9 +1716,34 @@ function renderWizard() {
       <div style="max-height:270px;overflow-y:auto;padding-right:4px">${rows}</div>
       <div style="display:flex;gap:8px;margin-top:14px">
         <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
-        <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">Suivant — PIN &rarr;</button>
+        <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">Suivant — Budgets &rarr;</button>
       </div>`;
   } else if (_wiz.step === 4) {
+    const BUDGET_DEF = {carburant:80,courses:300,divers:100,chien:60};
+    const cats = DEFAULT_VAR_CATS;
+    cats.forEach(c => { if (!(_wiz.budgets[c.key]>0)) _wiz.budgets[c.key] = (BUDGET_DEF[c.key]||0)*12; });
+    const rows = cats.map(c => {
+      const monthly = Math.round((_wiz.budgets[c.key]||0)/12);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+        <span style="font-size:20px;flex-shrink:0">${c.icon}</span>
+        <span style="flex:1;font-size:13px;color:#fff;font-weight:500">${c.label}</span>
+        <input type="number" value="${monthly||''}" placeholder="0" min="0" id="wbgt-${c.key}"
+          style="width:72px;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 8px;font-size:13px;background:rgba(255,255,255,.1);color:#fff;text-align:right;outline:none"
+          oninput="_wiz.budgets['${c.key}']=Math.round((parseFloat(this.value)||0)*12)">
+        <span style="font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0;min-width:36px">€/mois</span>
+      </div>`;
+    }).join('');
+    body = `<div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:12px;line-height:1.6">
+      Définissez un budget mensuel par catégorie. L'app vous affichera votre progression en temps réel.
+    </div>
+    <div style="max-height:250px;overflow-y:auto;padding-right:4px">${rows}</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:8px">💡 Optionnel — modifiable à tout moment dans Config → Catégories</div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
+      <button onclick="_wiz.budgets={};_wiz.step=5;renderWizard()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">⏭ Passer</button>
+      <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">Suivant — PIN &rarr;</button>
+    </div>`;
+  } else if (_wiz.step === 5) {
     const pinInputs = [0,1,2,3].map(i=>`<input id="wpin${i}" type="password" maxlength="1" inputmode="numeric" autocomplete="off"
       style="width:54px;height:64px;font-size:30px;font-weight:800;text-align:center;border:2px solid rgba(255,255,255,.3);border-radius:10px;background:rgba(255,255,255,.12);color:#fff;outline:none;transition:border-color .15s"
       oninput="wizPinInput(${i})" onkeydown="wizPinKey(event,${i})">`).join('');
@@ -1734,7 +1759,7 @@ function renderWizard() {
       <button onclick="wizardSkipPin()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">⏭ Passer</button>
       <button onclick="wizardConfirmPin()" class="welcome-create-btn" style="flex:2">Suivant &rarr;</button>
     </div>`;
-  } else if (_wiz.step === 5) {
+  } else if (_wiz.step === 6) {
     body = `<div style="text-align:center;padding:4px 0 8px">
       <div style="font-size:36px;margin-bottom:6px">🐙</div>
       <div style="display:inline-block;background:#27ae60;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px;margin-bottom:8px">100% GRATUIT</div>
@@ -1782,7 +1807,7 @@ function wizardNext() {
     _wiz.accountName = document.getElementById('wiz-acc-name')?.value.trim() || '';
     _wiz.livretName  = document.getElementById('wiz-liv-name')?.value.trim()  || '';
   }
-  _wiz.step = Math.min(5, _wiz.step + 1);
+  _wiz.step = Math.min(6, _wiz.step + 1);
   renderWizard();
 }
 function wizardBack() { _wiz.step = Math.max(1, _wiz.step - 1); renderWizard(); }
@@ -1798,11 +1823,11 @@ function wizPinKey(e, idx) {
     document.getElementById('wpin'+(idx-1)).focus();
   if (e.key==='Enter') wizardConfirmPin();
 }
-function wizardSkipPin() { _wiz.pin = ''; _wiz.step = 5; renderWizard(); }
+function wizardSkipPin() { _wiz.pin = ''; _wiz.step = 6; renderWizard(); }
 function wizardConfirmPin() {
   const pin = [0,1,2,3].map(i=>document.getElementById('wpin'+i)?.value||'').join('');
   if (pin.length < 4) { document.getElementById('wiz-pin-err').textContent = '⚠️ Entrez 4 chiffres ou cliquez Passer'; return; }
-  _wiz.pin = pin; _wiz.step = 5; renderWizard();
+  _wiz.pin = pin; _wiz.step = 6; renderWizard();
 }
 async function wizardGistSave() {
   const val = document.getElementById('wiz-gist-inp')?.value.trim();
@@ -1841,6 +1866,8 @@ function wizardFinish() {
   if (_wiz.accountName) localStorage.setItem('budget_pending_accName_'+id, _wiz.accountName);
   if (_wiz.livretName)  localStorage.setItem('budget_pending_livName_'+id, _wiz.livretName);
   if (_wiz.gistToken)   localStorage.setItem('budget_gist_token_'+id, _wiz.gistToken);
+  const budgetsToApply = Object.entries(_wiz.budgets||{}).filter(([,v])=>v>0);
+  if (budgetsToApply.length) localStorage.setItem('budget_pending_budgets_'+id, JSON.stringify(Object.fromEntries(budgetsToApply)));
   selectUserFromWelcome(id);
 }
 function saveUsers() { localStorage.setItem('budget_users', JSON.stringify(USERS)); }
@@ -1939,6 +1966,9 @@ function loadData() {
   if (s) { try { DATA = JSON.parse(s); if (!DATA.methods) DATA.methods=[...DEFAULT_METHODS]; if (!DATA.varCats) DATA.varCats=JSON.parse(JSON.stringify(DEFAULT_VAR_CATS)); } catch(e){ DATA = null; } }
   if (!DATA) DATA = CURRENT_USER_ID==='pascal' ? buildDefaults() : buildDefaultsForNewUser();
   if (!DATA.budgets) DATA.budgets = {};
+  // Apply budgets chosen during wizard
+  const pendingBudgets = localStorage.getItem('budget_pending_budgets_'+CURRENT_USER_ID);
+  if (pendingBudgets) { try { Object.assign(DATA.budgets, JSON.parse(pendingBudgets)); } catch(e){} localStorage.removeItem('budget_pending_budgets_'+CURRENT_USER_ID); }
   // Apply pending account/livret names chosen during wizard
   const pendingAcc = localStorage.getItem('budget_pending_accName_'+CURRENT_USER_ID);
   const pendingLiv = localStorage.getItem('budget_pending_livName_'+CURRENT_USER_ID);
@@ -3734,9 +3764,18 @@ function renderConfigTab() {
         <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
           <input type="text" id="new-varcat-icon" placeholder="⛽" style="width:44px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:14px;text-align:center">
           <input type="text" id="new-varcat-label" placeholder="Libellé" style="flex:1;min-width:100px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
-          <button class="btn btn-save" style="padding:5px 10px;font-size:12px" onclick="addVarCat(document.getElementById('new-varcat-icon').value,document.getElementById('new-varcat-label').value)">＋</button>
+          <button class="btn btn-save" style="padding:5px 10px;font-size:12px" onclick="addVarCatFromForm()">＋</button>
         </div>
-        <div style="font-size:10px;color:var(--gray);margin-top:4px">Emoji + libellé de la nouvelle catégorie</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--gray);flex-shrink:0">🎯 Budget :</span>
+          <input type="number" id="new-varcat-budget" placeholder="0" min="0" style="width:80px;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;text-align:right;background:var(--surface);color:var(--text)">
+          <select id="new-varcat-period" style="border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:12px;background:var(--surface);color:var(--text)">
+            <option value="month">€/mois → annualisé</option>
+            <option value="year">€/an</option>
+          </select>
+          <span style="font-size:10px;color:var(--gray)">(optionnel)</span>
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:4px">Emoji + libellé + budget optionnel</div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>🤖 Assistant IA (Groq)</h3>
         <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--green-light);border-radius:8px;margin-bottom:10px">
@@ -3770,7 +3809,15 @@ function renderConfigTab() {
   </div></div>`;
 }
 
-function addVarCat(icon, label) {
+function addVarCatFromForm() {
+  const icon = document.getElementById('new-varcat-icon')?.value || '';
+  const label = document.getElementById('new-varcat-label')?.value || '';
+  const budgetRaw = parseFloat(document.getElementById('new-varcat-budget')?.value) || 0;
+  const period = document.getElementById('new-varcat-period')?.value || 'month';
+  const annualBudget = budgetRaw > 0 ? (period === 'month' ? Math.round(budgetRaw * 12) : Math.round(budgetRaw)) : 0;
+  addVarCat(icon, label, annualBudget);
+}
+function addVarCat(icon, label, annualBudget) {
   if (!isLicensed() && getVarCats().length >= FREE_MAX_CATS) { showUpgrade(`catégories illimitées (max ${FREE_MAX_CATS} en gratuit)`); return; }
   icon = (icon || '').trim();
   label = (label || '').trim();
@@ -3781,13 +3828,12 @@ function addVarCat(icon, label) {
   DATA.varCats = getVarCats();
   DATA.varCats.push({key, icon: icon||'📦', label});
   getYears().forEach(y => { if (DATA[y] && DATA[y].vars) DATA[y].vars[key] = DATA[y].vars[key] || []; });
+  if (annualBudget > 0) { if (!DATA.budgets) DATA.budgets = {}; DATA.budgets[key] = annualBudget; }
   dSave();
   renderConfigTab();
   getYears().forEach(y => renderYear(y));
-  // Re-activate current year tab
-  const activeTab = document.querySelector('#year-tabs .tab.active');
-  if (activeTab) { /* already re-rendered, just keep active state */ }
-  showToast(`Catégorie "${label}" ajoutée`);
+  const budgetMsg = annualBudget > 0 ? ` · Budget ${fmtN(annualBudget)} €/an` : '';
+  showToast(`Catégorie "${label}" ajoutée${budgetMsg}`);
 }
 function removeVarCat(key) {
   const cats = getVarCats();
@@ -4254,8 +4300,15 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.8';
+const APP_VERSION = '3.9';
 const CHANGELOG = {
+  '3.9': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🎯', text: 'Wizard création de compte : étape Budgets avec suggestions €/mois → annualisé' },
+      { icon: '🎯', text: 'Config catégories : saisie du budget €/mois ou €/an lors de l\'ajout' }
+    ]
+  },
   '3.8': {
     date: 'Mai 2026',
     items: [
