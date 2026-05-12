@@ -166,6 +166,15 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
       <div id="panel-result" style="margin-top:10px;font-size:12px;color:#8892B0"></div>
     </div>
 
+    <!-- Beta keys -->
+    <div class="section-header" style="margin-bottom:10px">
+      <span class="section-title">🔑 Clés bêta</span>
+      <button class="btn btn-orange btn-sm" onclick="generateBetaKey()">+ Générer une clé</button>
+    </div>
+    <div id="beta-keys-list" style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:16px;margin-bottom:24px;font-size:13px;color:#8892B0">
+      Aucune clé générée pour l'instant.
+    </div>
+
     <!-- Users table -->
     <div class="section-header">
       <span class="section-title">👥 Clients (<span id="user-count">0</span>)</span>
@@ -290,6 +299,7 @@ function checkAccess(u) {
   document.getElementById('admin-email').textContent = u.email;
   document.getElementById('dashboard').style.display = '';
   loadUsers();
+  loadBetaKeys();
 }
 
 // ── FIREBASE FETCH ────────────────────────────────────────────────────
@@ -356,7 +366,7 @@ function selectUser(uid) {
   document.getElementById('panel-devices').textContent = Object.keys(info.devices || {}).length + '/3';
   document.getElementById('panel-last').textContent    = info.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
   document.getElementById('panel-result').textContent  = '';
-  document.getElementById('user-panel').style.display  = '';
+  document.getElementById('user-panel').style.display  = 'block';
   document.getElementById('user-panel').scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 function closePanel() { document.getElementById('user-panel').style.display = 'none'; _selectedUid = null; }
@@ -395,6 +405,73 @@ function viewData() {
   if (!_selectedUid) return;
   window.location.href = 'budget_familial.html';
   showToast('💡 Utilisez le panel Admin dans l\'app pour voir les données');
+}
+
+// ── BETA KEYS ─────────────────────────────────────────────────────────
+let _betaKeys = [];
+
+function _randKey() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const seg = () => Array.from({length:4}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+  return `BETA-${seg()}-${seg()}-${seg()}`;
+}
+
+async function generateBetaKey() {
+  const token = await getToken();
+  const key = _randKey();
+  const payload = { active: true, type: 'beta', createdAt: Date.now() };
+  const r = await _fbFetch(`${LICENSE_DB}/licenses/${key}.json`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+  }, token);
+  if (!r.ok) { showToast('❌ Erreur création clé'); return; }
+  _betaKeys.unshift({ key, createdAt: Date.now() });
+  renderBetaKeys();
+  showToast('✅ Clé bêta créée');
+}
+
+async function loadBetaKeys() {
+  try {
+    const token = await getToken();
+    const r = await _fbFetch(`${LICENSE_DB}/licenses.json?orderBy="type"&equalTo="beta"`, {}, token);
+    const data = await r.json();
+    if (!data) { _betaKeys = []; renderBetaKeys(); return; }
+    _betaKeys = Object.entries(data).map(([key, val]) => ({ key, ...val }))
+      .sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    renderBetaKeys();
+  } catch { _betaKeys = []; renderBetaKeys(); }
+}
+
+async function revokeBetaKey(key) {
+  if (!confirm(`Révoquer la clé ${key} ?`)) return;
+  const token = await getToken();
+  await _fbFetch(`${LICENSE_DB}/licenses/${key}/active.json`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: 'false'
+  }, token);
+  _betaKeys = _betaKeys.map(k => k.key === key ? {...k, active: false} : k);
+  renderBetaKeys();
+  showToast('✕ Clé révoquée');
+}
+
+function copyKey(key) {
+  navigator.clipboard.writeText(key).then(() => showToast('📋 Clé copiée !'));
+}
+
+function renderBetaKeys() {
+  const el = document.getElementById('beta-keys-list');
+  if (!_betaKeys.length) { el.textContent = 'Aucune clé bêta générée.'; return; }
+  el.innerHTML = _betaKeys.map(k => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2C3050;gap:12px;flex-wrap:wrap">
+      <div>
+        <span style="font-family:monospace;font-size:13px;color:${k.active===false?'#8892B0':'#E2E4F0'};text-decoration:${k.active===false?'line-through':'none'}">${k.key}</span>
+        ${k.uid ? `<span style="font-size:11px;color:#5B6AF0;margin-left:8px">✓ Utilisée</span>` : ''}
+        ${k.active===false ? `<span style="font-size:11px;color:#F04F5B;margin-left:8px">Révoquée</span>` : ''}
+        <div style="font-size:11px;color:#8892B0;margin-top:2px">${k.createdAt ? new Date(k.createdAt).toLocaleDateString('fr-FR') : ''}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        ${k.active!==false ? `<button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key}')">📋 Copier</button>` : ''}
+        ${k.active!==false && !k.uid ? `<button class="btn btn-red btn-sm" onclick="revokeBetaKey('${k.key}')">✕</button>` : ''}
+      </div>
+    </div>`).join('');
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────
