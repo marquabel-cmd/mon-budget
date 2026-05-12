@@ -149,8 +149,11 @@ a:hover{text-decoration:underline}
       <a href="#revenus">💼 Revenus</a>
       <a href="#charges">🏠 Charges</a>
       <a href="#variables">🛒 Dépenses variables</a>
+      <a href="#budget-cible">🎯 Budgets par catégorie</a>
       <a href="#livret">💰 Livret d'épargne</a>
+      <a href="#indicateurs">📈 Indicateurs financiers</a>
       <a href="#resume">📊 Résumé mensuel</a>
+      <a href="#graphiques">📉 Graphiques</a>
       <a href="#sauvegarde">💾 Sauvegarde</a>
       <a href="#github-gist" style="background:#e8f8f0;color:#27ae60;border-color:#27ae60">🐙 GitHub Gist gratuit</a>
       <a href="#dark">🌙 Mode nuit</a>
@@ -328,17 +331,22 @@ a:hover{text-decoration:underline}
         <div class="feature-card">
           <div class="fc-icon">➕</div>
           <div class="fc-title">Créer un compte</div>
-          <div class="fc-desc">Configurez votre profil, vos revenus et charges habituelles en 4 étapes.</div>
+          <div class="fc-desc">Configurez votre profil, vos revenus et charges habituelles en 6 étapes.</div>
         </div>
       </div>
 
-      <h3>Création de compte (assistant en 4 étapes)</h3>
+      <h3>Création de compte (assistant en 6 étapes)</h3>
       <ol>
         <li><b>Profil</b> — Votre prénom et couleur d'avatar</li>
         <li><b>Revenus</b> — Vos revenus mensuels habituels (salaires, allocations…)</li>
         <li><b>Charges</b> — Vos charges fixes récurrentes (loyer, énergie, abonnements…)</li>
+        <li><b>Budgets</b> — Budget mensuel suggéré pour chaque catégorie de dépenses (converti automatiquement en annuel)</li>
         <li><b>PIN</b> — Code de sécurité facultatif pour protéger vos données</li>
+        <li><b>Cloud</b> — Connexion Google optionnelle pour la sync Premium</li>
       </ol>
+      <div class="tip">
+        <b>💡 Budgets suggérés</b> — À l'étape Budgets, l'assistant pré-remplit des montants courants (ex : courses 300 €/mois). Modifiez-les selon votre situation, ou laissez 0 pour ne pas définir de budget. Les montants sont automatiquement annualisés (×12).
+      </div>
 
       <h3>Installation sur mobile / bureau</h3>
       <p>Sur mobile (Chrome/Safari), appuyez sur <b>« Ajouter à l'écran d'accueil »</b>. Sur PC (Chrome/Edge), cliquez sur l'icône d'installation dans la barre d'adresse. L'app fonctionne ensuite hors ligne.</p>
@@ -619,6 +627,51 @@ a:hover{text-decoration:underline}
       </div>
     </div>
 
+    <!-- Budgets par catégorie -->
+    <div class="section" id="budget-cible">
+      <h2><span>🎯</span> Budgets par catégorie</h2>
+      <p class="lead">Définissez un budget annuel pour chaque catégorie de dépenses variables et suivez vos progrès en temps réel.</p>
+
+      <h3>Comment ça fonctionne</h3>
+      <p>Pour chaque catégorie (courses, carburant…), vous pouvez fixer un budget annuel. Une barre de progression s'affiche sous le titre de la catégorie, indiquant combien vous avez dépensé par rapport à l'objectif.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card" style="border-left:4px solid #00C896">
+          <div class="fc-icon">🟢</div>
+          <div class="fc-title">Sous les 80%</div>
+          <div class="fc-desc">Barre verte — vous êtes dans les clous.</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #F5A623">
+          <div class="fc-icon">🟡</div>
+          <div class="fc-title">Entre 80% et 100%</div>
+          <div class="fc-desc">Barre orange — approchez de la limite, attention !</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #F04F5B">
+          <div class="fc-icon">🔴</div>
+          <div class="fc-title">Dépassement</div>
+          <div class="fc-desc">Barre rouge avec ⚠️ — budget dépassé pour l'année.</div>
+        </div>
+      </div>
+
+      <h3>Définir un budget</h3>
+      <p>Trois façons de définir un budget :</p>
+      <ol>
+        <li><b>À la création du compte</b> — L'assistant wizard propose des montants suggérés (ex : courses 300 €/mois) à l'étape 4. Modifiez-les, puis confirmez. Les montants €/mois sont automatiquement convertis en €/an.</li>
+        <li><b>En ajoutant une catégorie</b> — Dans <b>⚙️ Config → Catégories</b>, saisissez un montant €/mois ou €/an lors de l'ajout d'une nouvelle catégorie.</li>
+        <li><b>Via la Config</b> — Dans <b>⚙️ Config → Catégories</b>, modifiez le champ <b>Budget/an €</b> directement sur la ligne de la catégorie existante.</li>
+      </ol>
+
+      <h3>Alerte budget manquant</h3>
+      <p>Quand vous cliquez sur <b>⚡ +</b> ou utilisez l'<b>Ajout rapide</b> pour une catégorie sans budget, une alerte orange s'affiche dans le formulaire avec un lien <b>Définir un budget →</b>. Cliquez dessus pour saisir un montant mensuel immédiatement.</p>
+
+      <h3>Modifier une catégorie</h3>
+      <p>Dans <b>⚙️ Config → Catégories</b>, vous pouvez désormais modifier directement l'<b>icône</b> et le <b>libellé</b> d'une catégorie existante en cliquant sur les champs correspondants. Inutile de supprimer et recréer.</p>
+
+      <div class="tip">
+        <b>💡 Le budget est partagé par toutes les années</b> — Le budget défini pour une catégorie s'applique à toutes les années. La barre de progression affiche la consommation de l'année affichée.
+      </div>
+    </div>
+
     <!-- Livret -->
     <div class="section" id="livret">
       <h2><span>💰</span> Livret d'épargne</h2>
@@ -665,6 +718,84 @@ a:hover{text-decoration:underline}
         <li><b>Compte ING</b> — Solde du compte courant au 1er janvier</li>
         <li><b>Livret initial</b> — Solde du livret au 1er janvier (auto-calculé pour les années suivantes)</li>
       </ul>
+    </div>
+
+    <!-- Indicateurs financiers KPI -->
+    <div class="section" id="indicateurs">
+      <h2><span>📈</span> Indicateurs financiers (KPI)</h2>
+      <p class="lead">Quatre indicateurs clés s'affichent automatiquement en haut de chaque année pour évaluer votre santé financière d'un coup d'œil.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card" style="border-top:3px solid #5B6AF0">
+          <div class="fc-icon">💚</div>
+          <div class="fc-title">Taux d'épargne</div>
+          <div class="fc-desc">% de vos revenus mis de côté. Objectif recommandé : ≥ 20%.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #F04F5B">
+          <div class="fc-icon">🏠</div>
+          <div class="fc-title">Charges / Revenus</div>
+          <div class="fc-desc">% de vos revenus consommés par les charges fixes. En dessous de 50% c'est sain.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #F5A623">
+          <div class="fc-icon">🛡️</div>
+          <div class="fc-title">Mois de réserve</div>
+          <div class="fc-desc">Combien de mois de dépenses votre solde actuel peut couvrir.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #8B5CF6">
+          <div class="fc-icon">🔮</div>
+          <div class="fc-title">Projection annuelle</div>
+          <div class="fc-desc">Épargne estimée sur l'année complète basée sur les mois déjà renseignés.</div>
+        </div>
+      </div>
+
+      <h3>Projection fin d'année</h3>
+      <p>Dans le résumé mensuel, une ligne de projection s'affiche si vous avez au moins 1 mois de données et que l'année n'est pas encore terminée. Elle calcule votre épargne annuelle estimée sur la base de votre moyenne mensuelle actuelle.</p>
+      <div class="tip">
+        <b>💡 Interprétation</b> — Un taux d'épargne vert (≥ 20%) et une projection positive (bleue) indiquent une situation financière saine. Un ratio charges/revenus rouge (> 70%) signale un risque de déséquilibre.
+      </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="section" id="graphiques">
+      <h2><span>📉</span> Graphiques</h2>
+      <p class="lead">L'onglet <b>Graphiques</b> offre plusieurs visualisations de vos finances, filtrables par année.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="fc-icon">📊</div>
+          <div class="fc-title">Revenus vs Dépenses</div>
+          <div class="fc-desc">Histogramme comparant mois par mois vos revenus, charges et dépenses variables.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">💰</div>
+          <div class="fc-title">Évolution du solde</div>
+          <div class="fc-desc">Courbe de votre solde bancaire mois par mois.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">📈</div>
+          <div class="fc-title">Taux d'épargne mensuel</div>
+          <div class="fc-desc">Courbe du % d'épargne chaque mois, avec lignes de référence à 10% (seuil) et 20% (objectif). Toutes les années sont affichées.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🏦</div>
+          <div class="fc-title">Évolution du patrimoine</div>
+          <div class="fc-desc">Courbe cumulative de votre solde + livret mois par mois pour l'année sélectionnée.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🛒</div>
+          <div class="fc-title">Top catégories</div>
+          <div class="fc-desc">Barres horizontales des catégories de dépenses les plus importantes, du plus élevé au plus faible.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🔄</div>
+          <div class="fc-title">Répartition des charges</div>
+          <div class="fc-desc">Camembert des charges fixes selon votre mode de paiement.</div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <b>💡 Astuce</b> — Sur le graphique du taux d'épargne, vous pouvez comparer plusieurs années simultanément. Chaque année a sa propre couleur de courbe.
+      </div>
     </div>
 
     <!-- Sauvegarde -->
@@ -866,6 +997,9 @@ a:hover{text-decoration:underline}
 
       <div class="tip">
         <b>💡 Astuce</b> — L'ajout rapide détecte automatiquement l'année en cours selon l'onglet affiché. Si vous êtes sur l'onglet 2026, la dépense sera ajoutée en 2026.
+      </div>
+      <div class="tip" style="background:#FEF6E6;border-left-color:#F5A623">
+        <b>⚠️ Alerte budget</b> — Si la catégorie sélectionnée n'a pas de budget défini, une alerte orange s'affiche dans le formulaire. Cliquez sur <b>Définir un budget →</b> pour en saisir un directement. <a href="#budget-cible">En savoir plus sur les budgets →</a>
       </div>
 
       <h3>Champs disponibles</h3>

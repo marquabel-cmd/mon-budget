@@ -691,6 +691,10 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
         <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Commentaire (optionnel)</label>
         <input id="qa-comment" type="text" placeholder="ex: Supermarché, Total..." style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
       </div>
+      <div id="qa-budget-notice" style="display:none;background:var(--orange-light);border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:8px 10px;font-size:12px;color:#7a4f00">
+        ⚠️ Pas de budget défini pour cette catégorie.
+        <a href="#" onclick="event.preventDefault();openBudgetSetFromQA()" style="color:#e08800;font-weight:700;text-decoration:underline">Définir un budget →</a>
+      </div>
       <div id="qa-error" style="color:var(--red);font-size:12px;font-weight:600;min-height:16px"></div>
       <button onclick="submitQuickAdd()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--blue),#2980b9);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:2px">✅ Ajouter</button>
     </div>
@@ -2841,6 +2845,8 @@ function openQuickAdd(year, catKey) {
   // Populate category
   const catSel = document.getElementById('qa-cat');
   catSel.innerHTML = getVarCats().map(c=>`<option value="${c.key}"${c.key===catKey?' selected':''}>${c.icon} ${_esc(c.label)}</option>`).join('');
+  catSel.onchange = () => updateQaBudgetNotice(catSel.value);
+  updateQaBudgetNotice(catKey || catSel.value);
   // Populate months
   const mSel = document.getElementById('qa-month');
   const curM = new Date().getMonth();
@@ -3012,6 +3018,26 @@ function setBudget(key, amount) {
     const el = document.getElementById(`budget-bar-${y}-${key}`);
     if (el) { el.className = amount > 0 ? 'budget-bar-wrap' : ''; el.innerHTML = renderBudgetBarInner(y, key); }
   });
+}
+
+function updateQaBudgetNotice(catKey) {
+  const notice = document.getElementById('qa-budget-notice');
+  if (!notice) return;
+  const hasBudget = !!(DATA.budgets && DATA.budgets[catKey]);
+  notice.style.display = hasBudget ? 'none' : 'block';
+}
+function openBudgetSetFromQA() {
+  const catKey = document.getElementById('qa-cat')?.value;
+  if (!catKey) return;
+  const cat = getVarCats().find(c => c.key === catKey);
+  const name = cat ? `${cat.icon} ${cat.label}` : catKey;
+  const val = prompt(`Budget mensuel pour "${name}" (€/mois) :`);
+  if (val === null) return;
+  const monthly = parseFloat(val) || 0;
+  if (monthly <= 0) return;
+  setBudget(catKey, Math.round(monthly * 12));
+  updateQaBudgetNotice(catKey);
+  showToast(`🎯 Budget ${fmtN(monthly)} €/mois (${fmtN(Math.round(monthly*12))} €/an) défini`);
 }
 
 // ── RÉSUMÉ MENSUEL ──
@@ -3752,11 +3778,15 @@ function renderConfigTab() {
       <div class="config-card" style="margin-top:14px"><h3>🗂 Catégories de dépenses</h3>
         <div style="margin-bottom:8px">
           ${getVarCats().map(c=>`
-          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-            <span style="font-size:16px">${c.icon}</span>
-            <span style="flex:1;font-size:12px;font-weight:600">${_esc(c.label)}</span>
-            <input type="number" value="${(DATA.budgets&&DATA.budgets[c.key])||''}" min="0" placeholder="Budget/an €" title="Budget annuel pour cette catégorie"
-              style="width:90px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:11px;text-align:right;background:var(--surface);color:var(--text)"
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <input type="text" id="cat-icon-${c.key}" value="${_esc(c.icon)}" title="Icône (emoji)"
+              style="width:36px;border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:14px;text-align:center;background:var(--surface);color:var(--text)"
+              onchange="renameVarCat('${c.key}')">
+            <input type="text" id="cat-label-${c.key}" value="${_esc(c.label)}" title="Libellé"
+              style="flex:1;min-width:60px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;font-weight:600;background:var(--surface);color:var(--text)"
+              onchange="renameVarCat('${c.key}')">
+            <input type="number" value="${(DATA.budgets&&DATA.budgets[c.key])||''}" min="0" placeholder="Budget/an €" title="Budget annuel"
+              style="width:80px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:11px;text-align:right;background:var(--surface);color:var(--text)"
               onchange="setBudget('${c.key}',parseFloat(this.value)||0)">
             <button class="del-btn" onclick="removeVarCat('${c.key}')" title="Supprimer">✕</button>
           </div>`).join('')}
@@ -3846,6 +3876,20 @@ function removeVarCat(key) {
   renderConfigTab();
   getYears().forEach(y => renderYear(y));
   showToast('Catégorie supprimée');
+}
+function renameVarCat(key) {
+  const newIcon = document.getElementById('cat-icon-' + key)?.value.trim();
+  const newLabel = document.getElementById('cat-label-' + key)?.value.trim();
+  if (!newLabel) return;
+  const cats = getVarCats();
+  const cat = cats.find(c => c.key === key);
+  if (!cat) return;
+  if (newIcon) cat.icon = newIcon;
+  cat.label = newLabel;
+  DATA.varCats = cats;
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  showToast('✅ Catégorie mise à jour');
 }
 function addMethodFromForm() {
   const key = document.getElementById('new-method-key').value.trim().replace(/\s+/g,'_').toLowerCase();
@@ -4300,8 +4344,15 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.9';
+const APP_VERSION = '4.0';
 const CHANGELOG = {
+  '4.0': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '✏️', text: 'Config catégories : icône et libellé maintenant éditables directement (plus besoin de supprimer et recréer)' },
+      { icon: '⚠️', text: 'Ajout rapide : alerte si la catégorie n\'a pas de budget, avec lien pour en définir un' }
+    ]
+  },
   '3.9': {
     date: 'Mai 2026',
     items: [
