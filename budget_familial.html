@@ -1290,6 +1290,11 @@ function initUsers() {
     showOnboardingScreen();
     return;
   }
+  // Migration: lier le premier utilisateur existant à Firebase si pas encore fait
+  if (!localStorage.getItem('mbudget-fb-localid') && _fbLoad()) {
+    const firstId = Object.keys(USERS).find(k => k !== '_demo');
+    if (firstId) localStorage.setItem('mbudget-fb-localid', firstId);
+  }
   // Restaurer mode démo si actif
   if (localStorage.getItem('budget_demo_active') === '1' && USERS['_demo']) {
     document.getElementById('demo-banner').style.display = 'flex';
@@ -1514,7 +1519,7 @@ function _finishLogin(id) {
     if (!_fbUser) { setTimeout(() => openAuthModal('login'), 700); return; }
     // Cloud sync uniquement si l'utilisateur actif est le compte Firebase (pas un autre profil local)
     const fbLocalId = localStorage.getItem('mbudget-fb-localid');
-    if (isLicensed() && (!fbLocalId || id === fbLocalId)) {
+    if (isLicensed() && id === fbLocalId) {
       setCloudStatus('syncing');
       cloudPull().then(cloudData => {
         if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; }
@@ -4110,8 +4115,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.5';
+const APP_VERSION = '3.6';
 const CHANGELOG = {
+  '3.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🐛', text: 'Fix : les données cloud ne s\'appliquent plus aux profils locaux non liés à Firebase' }
+    ]
+  },
   '3.5': {
     date: 'Mai 2026',
     items: [
