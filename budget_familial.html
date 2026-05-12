@@ -3936,6 +3936,7 @@ function signInWithGoogle() {
           const u = await _fbSignInWithIdp(token);
           await fbCheckPremium(u.uid, u.idToken);
           closeAuthModal();
+          document.getElementById('onboarding-screen').style.display = 'none';
           renderConfigTab();
           showToast('✅ Connecté avec Google — ' + u.email);
         } catch(e) {
@@ -4471,6 +4472,7 @@ window.addEventListener('message', async (e) => {
     showToast('✅ Connecté avec Google — ' + u.email);
     await fbCheckPremium(u.uid, u.idToken);
     closeAuthModal();
+    document.getElementById('onboarding-screen').style.display = 'none';
     renderConfigTab();
   } catch(er) { showToast('❌ ' + er.message); }
 });
