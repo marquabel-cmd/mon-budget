@@ -3284,7 +3284,14 @@ async function cloudPush() {
       if (u.isDemo) return;
       usersToSync[k] = { name: u.name, color: u.color, admin: !!u.admin };
     });
-    const payload = { ...DATA, _syncedUsers: usersToSync };
+    const gistToken = getGistToken();
+    const gistId = getGistId();
+    const payload = {
+      ...DATA,
+      _syncedUsers: usersToSync,
+      ...(gistToken ? { _gistToken: gistToken } : {}),
+      ...(gistId    ? { _gistId:    gistId    } : {})
+    };
     const r = await _fbFetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}, token);
     if (r.ok) { setCloudStatus('ok'); _lastSyncError = ''; }
     else { setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); }
@@ -3310,7 +3317,14 @@ async function cloudPull() {
       saveUsers();
       renderWelcomeScreen();
     }
-    const { _syncedUsers, ...budgetData } = d;
+    const { _syncedUsers, _gistToken, _gistId, ...budgetData } = d;
+    // Restaurer le token Gist s'il est absent localement
+    if (_gistToken && !getGistToken()) {
+      localStorage.setItem(gistTokenKey(), _gistToken);
+      if (_gistId) localStorage.setItem(gistIdKey(), _gistId);
+      showToast('🐙 Token GitHub Gist restauré depuis le cloud');
+      renderConfigTab();
+    }
     return budgetData;
   } catch(e) { _lastSyncError = e.message || 'Réseau inaccessible'; return null; }
 }
@@ -4437,8 +4451,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '4.2';
+const APP_VERSION = '4.3';
 const CHANGELOG = {
+  '4.3': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🐙', text: 'Token GitHub Gist inclus dans la sync Firebase — s\'installe automatiquement sur chaque appareil connecté' }
+    ]
+  },
   '4.2': {
     date: 'Mai 2026',
     items: [
