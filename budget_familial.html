@@ -3882,7 +3882,7 @@ function signInWithGoogle() {
   if (!GOOGLE_CLIENT_ID) { showToast('❌ Client ID Google non configuré'); return; }
   const nonce = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   sessionStorage.setItem('google_nonce', nonce);
-  const redirectUri = window.location.origin + window.location.pathname;
+  const redirectUri = 'https://marquabel-cmd.github.io/mon-budget/budget_familial.html';
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: redirectUri,
