@@ -49,7 +49,11 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 
 /* ── STATS ── */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
-.stat-card{background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:20px}
+.stat-card{background:#1C1F30;border:2px solid #2C3050;border-radius:12px;padding:20px;transition:border-color .15s,background .15s}
+.stat-card.clickable{cursor:pointer}
+.stat-card.clickable:hover{background:#22263a;border-color:#5B6AF0}
+.stat-card.active{border-color:#5B6AF0;background:#1a1d35}
+.stat-card.active .stat-label::after{content:' ✕';font-size:9px;opacity:.6}
 .stat-label{font-size:11px;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .stat-value{font-size:28px;font-weight:700;line-height:1}
 .stat-sub{font-size:12px;color:#8892B0;margin-top:4px}
@@ -139,10 +143,10 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
 
     <!-- Stats -->
     <div class="stats-grid" id="stats-grid">
-      <div class="stat-card"><div class="stat-label">Utilisateurs</div><div class="stat-value stat-blue" id="s-total">—</div><div class="stat-sub">comptes enregistrés</div></div>
-      <div class="stat-card"><div class="stat-label">Premium payant</div><div class="stat-value stat-green" id="s-premium">—</div><div class="stat-sub">abonnements annuels actifs</div></div>
-      <div class="stat-card"><div class="stat-label">Premium À vie</div><div class="stat-value stat-green" id="s-lifetime">—</div><div class="stat-sub">licences permanentes</div></div>
-      <div class="stat-card"><div class="stat-label">Gratuit</div><div class="stat-value stat-orange" id="s-free">—</div><div class="stat-sub">comptes sans abonnement</div></div>
+      <div class="stat-card clickable" id="fc-all" onclick="setFilter('all')"><div class="stat-label">Utilisateurs</div><div class="stat-value stat-blue" id="s-total">—</div><div class="stat-sub">comptes enregistrés</div></div>
+      <div class="stat-card clickable" id="fc-paying" onclick="setFilter('paying')"><div class="stat-label">Premium payant</div><div class="stat-value stat-green" id="s-premium">—</div><div class="stat-sub">abonnements annuels actifs</div></div>
+      <div class="stat-card clickable" id="fc-lifetime" onclick="setFilter('lifetime')"><div class="stat-label">Premium À vie</div><div class="stat-value stat-green" id="s-lifetime">—</div><div class="stat-sub">licences permanentes</div></div>
+      <div class="stat-card clickable" id="fc-free" onclick="setFilter('free')"><div class="stat-label">Gratuit</div><div class="stat-value stat-orange" id="s-free">—</div><div class="stat-sub">comptes sans abonnement</div></div>
       <div class="stat-card"><div class="stat-label">Revenus estimés</div><div class="stat-value stat-purple" id="s-revenue">—</div><div class="stat-sub">payants × 14,90 € / an</div></div>
     </div>
 
@@ -439,12 +443,23 @@ function renderUsers(entries) {
   }).join('');
 }
 
+let _activeFilter = null;
+function setFilter(type) {
+  _activeFilter = (_activeFilter === type || type === 'all') ? null : type;
+  ['all','paying','lifetime','free'].forEach(f => {
+    const c = document.getElementById('fc-' + f);
+    if (c) c.classList.toggle('active', _activeFilter === f);
+  });
+  filterUsers();
+}
 function filterUsers() {
   const q = document.getElementById('search').value.toLowerCase();
-  const filtered = Object.entries(_allUsers).filter(([uid, info]) =>
-    (info?.email || '').toLowerCase().includes(q) || uid.toLowerCase().includes(q)
-  );
-  renderUsers(filtered);
+  let entries = Object.entries(_allUsers);
+  if (_activeFilter === 'paying')   entries = entries.filter(([,v]) => typeof v?.premium === 'number' && v.premium > Date.now());
+  if (_activeFilter === 'lifetime') entries = entries.filter(([,v]) => v?.premium === true);
+  if (_activeFilter === 'free')     entries = entries.filter(([,v]) => !_isPremiumActive(v?.premium));
+  if (q) entries = entries.filter(([uid, info]) => (info?.email||'').toLowerCase().includes(q) || uid.toLowerCase().includes(q));
+  renderUsers(entries);
 }
 
 // ── USER PANEL ────────────────────────────────────────────────────────
