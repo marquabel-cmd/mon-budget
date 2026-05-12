@@ -140,9 +140,10 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
     <!-- Stats -->
     <div class="stats-grid" id="stats-grid">
       <div class="stat-card"><div class="stat-label">Utilisateurs</div><div class="stat-value stat-blue" id="s-total">—</div><div class="stat-sub">comptes enregistrés</div></div>
-      <div class="stat-card"><div class="stat-label">Premium</div><div class="stat-value stat-green" id="s-premium">—</div><div class="stat-sub">abonnements actifs</div></div>
+      <div class="stat-card"><div class="stat-label">Premium payant</div><div class="stat-value stat-green" id="s-premium">—</div><div class="stat-sub">abonnements annuels actifs</div></div>
+      <div class="stat-card"><div class="stat-label">Premium À vie</div><div class="stat-value stat-green" id="s-lifetime">—</div><div class="stat-sub">licences permanentes</div></div>
       <div class="stat-card"><div class="stat-label">Gratuit</div><div class="stat-value stat-orange" id="s-free">—</div><div class="stat-sub">comptes sans abonnement</div></div>
-      <div class="stat-card"><div class="stat-label">Revenus estimés</div><div class="stat-value stat-purple" id="s-revenue">—</div><div class="stat-sub">à 14,90 € / an</div></div>
+      <div class="stat-card"><div class="stat-label">Revenus estimés</div><div class="stat-value stat-purple" id="s-revenue">—</div><div class="stat-sub">payants × 14,90 € / an</div></div>
     </div>
 
     <!-- User panel -->
@@ -402,12 +403,15 @@ function _isPremiumActive(p) {
 
 function renderStats() {
   const entries = Object.entries(_allUsers);
-  const total   = entries.length;
-  const premium = entries.filter(([,v]) => _isPremiumActive(v?.premium)).length;
-  document.getElementById('s-total').textContent   = total;
-  document.getElementById('s-premium').textContent = premium;
-  document.getElementById('s-free').textContent    = total - premium;
-  document.getElementById('s-revenue').textContent = (premium * 14.90).toFixed(2) + ' €';
+  const total    = entries.length;
+  const paying   = entries.filter(([,v]) => typeof v?.premium === 'number' && v.premium > Date.now()).length;
+  const lifetime = entries.filter(([,v]) => v?.premium === true).length;
+  const free     = total - paying - lifetime;
+  document.getElementById('s-total').textContent    = total;
+  document.getElementById('s-premium').textContent  = paying;
+  document.getElementById('s-lifetime').textContent = lifetime;
+  document.getElementById('s-free').textContent     = free;
+  document.getElementById('s-revenue').textContent  = (paying * 14.90).toFixed(2) + ' €';
 }
 
 function renderUsers(entries) {
