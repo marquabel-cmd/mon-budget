@@ -1889,6 +1889,14 @@ function addUserFromForm() {
   renderConfigTab();
   showToast('👤 ' + name + ' ajouté');
 }
+function renameUser(userId) {
+  const current = USERS[userId]?.name || '';
+  const newName = prompt('Nouveau nom :', current);
+  if (!newName || !newName.trim() || newName.trim() === current) return;
+  USERS[userId].name = newName.trim();
+  saveUsers(); dSave(); renderConfigTab(); updateUserDisplay();
+  showToast('✅ Renommé en "' + newName.trim() + '"');
+}
 function confirmDeleteUser(userId) {
   const name = USERS[userId]?.name || userId;
   confirmDelete(`Supprimer l'utilisateur "${name}" et toutes ses données ?`, () => {
@@ -3336,6 +3344,7 @@ function renderConfigTab() {
       <span style="font-size:10px;color:${u.pin?'var(--blue)':'#ccc'};margin-right:4px" title="${u.pin?'PIN activé':'Sans PIN'}">${u.pin?'🔒':'🔓'}</span>
       <div class="user-card-actions">
         <button class="btn-sm" style="background:#f0f4ff;color:var(--blue);border:1px solid var(--blue)" onclick="uploadUserPhoto('${id}')" title="Photo de profil">📷</button>
+        <button class="btn-sm" style="background:transparent;color:var(--gray);border:1px solid var(--border)" onclick="renameUser('${id}')" title="Renommer">✏️</button>
         ${id!==CURRENT_USER_ID?`<button class="btn-sm btn-sm-edit" onclick="switchUser('${id}')">Activer</button>`:''}
         ${isAdmin && Object.keys(USERS).length>1?`<button class="btn-sm btn-sm-del" onclick="confirmDeleteUser('${id}')">✕</button>`:''}
       </div>
@@ -3711,8 +3720,9 @@ function _fbSave(u) {
     localStorage.setItem('mbudget-fb-token',   u.idToken);
     localStorage.setItem('mbudget-fb-refresh', u.refreshToken);
     localStorage.setItem('mbudget-fb-exp',     String(u.expiresAt || 0));
+    if (u.displayName) localStorage.setItem('mbudget-fb-name', u.displayName);
   } else {
-    ['uid','email','token','refresh','exp'].forEach(k => localStorage.removeItem('mbudget-fb-' + k));
+    ['uid','email','token','refresh','exp','name'].forEach(k => localStorage.removeItem('mbudget-fb-' + k));
   }
 }
 function _fbLoad() {
@@ -3721,7 +3731,8 @@ function _fbLoad() {
   return { uid, email: localStorage.getItem('mbudget-fb-email')||'',
     idToken: localStorage.getItem('mbudget-fb-token')||'',
     refreshToken: localStorage.getItem('mbudget-fb-refresh')||'',
-    expiresAt: parseInt(localStorage.getItem('mbudget-fb-exp')||'0') };
+    expiresAt: parseInt(localStorage.getItem('mbudget-fb-exp')||'0'),
+    displayName: localStorage.getItem('mbudget-fb-name')||'' };
 }
 async function _fbRefreshToken() {
   const s = _fbLoad();
@@ -3834,7 +3845,9 @@ async function _autoRestoreFromFirebase() {
   }
   const isPremium = await fbCheckPremium(_fbUser.uid, _fbUser.idToken);
   const email = _fbUser.email || '';
-  const name = email.split('@')[0].replace(/[._-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim() || 'Utilisateur';
+  const displayName = _fbUser.displayName || localStorage.getItem('mbudget-fb-name') || '';
+  const rawName = displayName ? displayName.split(' ')[0] : email.split('@')[0];
+  const name = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() || 'Utilisateur';
   const id = 'u_' + _fbUser.uid.slice(0, 8);
   USERS = {};
   USERS[id] = { name, color: '#5B6AF0', admin: true };
@@ -3966,7 +3979,8 @@ async function _fbSignInWithIdp(idToken) {
   const d = await r.json();
   if (!r.ok) throw new Error(_fbErrMsg(d.error?.message));
   const u = { uid:d.localId, email:d.email, idToken:d.idToken,
-    refreshToken:d.refreshToken, expiresAt:Date.now()+parseInt(d.expiresIn)*1000 };
+    refreshToken:d.refreshToken, expiresAt:Date.now()+parseInt(d.expiresIn)*1000,
+    displayName: d.displayName || '' };
   _fbSave(u); return u;
 }
 
@@ -4093,8 +4107,15 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '3.2';
+const APP_VERSION = '3.3';
 const CHANGELOG = {
+  '3.3': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '👤', text: 'Nom d\'utilisateur : utilise le prénom Google (ex: Pascal) au lieu du préfixe email' },
+      { icon: '✏️', text: 'Bouton renommer (✏️) ajouté sur chaque utilisateur dans Config' }
+    ]
+  },
   '3.2': {
     date: 'Mai 2026',
     items: [
