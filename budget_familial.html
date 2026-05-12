@@ -1510,7 +1510,24 @@ function doLogin(id) {
 
 function _finishLogin(id) {
   fbInitAuth().then(() => {
-    if (!_fbUser) setTimeout(() => openAuthModal('login'), 700);
+    if (!_fbUser) { setTimeout(() => openAuthModal('login'), 700); return; }
+    // Cloud sync après fbInitAuth : isLicensed() est fiable ici (fbCheckPremium terminé)
+    if (isLicensed()) {
+      setCloudStatus('syncing');
+      cloudPull().then(cloudData => {
+        if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; }
+        if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
+        DATA = cloudData;
+        if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+        document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+        renderTabs();
+        getYears().forEach(y => renderYear(y));
+        renderSummary();
+        const ly = getYears().slice(-1)[0];
+        if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
+        setCloudStatus('ok');
+      });
+    } else { setCloudStatus('off'); }
   });
   loadData();
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
@@ -1550,23 +1567,6 @@ function _finishLogin(id) {
   }
   // Rappel export JSON
   setTimeout(checkExportReminder, 1500);
-  // Cloud sync: pull latest data after local render
-  if (isLicensed()) {
-    setCloudStatus('syncing');
-    cloudPull().then(cloudData => {
-      if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; }
-      if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
-      DATA = cloudData;
-      if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
-      document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
-      renderTabs();
-      getYears().forEach(y => renderYear(y));
-      renderSummary();
-      const ly = getYears().slice(-1)[0];
-      if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
-      setCloudStatus('ok');
-    });
-  } else { setCloudStatus('off'); }
 }
 
 // ── WIZARD SUGGESTIONS ──
@@ -4031,8 +4031,16 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '2.9';
+const APP_VERSION = '3.0';
 const CHANGELOG = {
+  '3.0': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔄', text: 'Fix : chargement des données cloud après connexion Google sur un nouvel appareil ou nouveau domaine' },
+      { icon: '🌐', text: 'Domaine personnalisé : budget.marquabel.be' },
+      { icon: '🔑', text: 'Bouton "J\'ai déjà un compte" sur l\'écran d\'accueil' }
+    ]
+  },
   '2.9': {
     date: 'Mai 2026',
     items: [
