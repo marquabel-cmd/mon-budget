@@ -56,18 +56,18 @@
 [data-theme="dark"] .charge-table thead th{background:var(--surface-alt);color:var(--gray);border-bottom-color:var(--border)}
 [data-theme="dark"] .charge-table thead th.lbl-col{background:var(--surface-alt)}
 [data-theme="dark"] .charge-table thead th.tot-col{background:#263050;color:#90caf9 !important}
-[data-theme="dark"] .charge-table tbody tr:hover td{background:#252c6a}
+[data-theme="dark"] .charge-table tbody tr:hover td{background:rgba(100,110,210,0.28)}
 [data-theme="dark"] .charge-table tbody td{border-bottom-color:var(--border);color:var(--text)}
 [data-theme="dark"] .charge-table tbody td.lbl-col{background:var(--surface)}
-[data-theme="dark"] .charge-table tbody tr:hover td.lbl-col{background:#252c6a}
+[data-theme="dark"] .charge-table tbody tr:hover td.lbl-col{background:rgba(100,110,210,0.28)}
 [data-theme="dark"] .cell-amt{color:var(--text)}
 [data-theme="dark"] .sep-row td{background:#1a3566}
 [data-theme="dark"] .occ-row td{background:#2a2810}
 [data-theme="dark"] .var-table thead th{background:var(--surface-alt);color:var(--gray);border-bottom-color:var(--border)}
 [data-theme="dark"] .var-table tbody td{color:var(--text)}
 [data-theme="dark"] .var-table tbody tr{border-bottom-color:var(--border)}
-[data-theme="dark"] .var-table:not(.var-tx-table) tbody tr:hover td{background:#252c6a}
-[data-theme="dark"] .var-tx-table tr.row-hov td{background:#252c6a!important}
+[data-theme="dark"] .var-table:not(.var-tx-table) tbody tr:hover td{background:rgba(100,110,210,0.28)}
+[data-theme="dark"] .var-tx-table tr.row-hov td{background:rgba(100,110,210,0.28)!important}
 [data-theme="dark"] .var-month-row td{background:#1a2035;color:#90caf9}
 [data-theme="dark"] .var-subtotal td{background:var(--surface-alt);color:var(--gray)}
 [data-theme="dark"] .summary-table thead th{background:#1e2540;color:var(--gray);border-bottom-color:var(--border)}
@@ -87,8 +87,8 @@
 [data-theme="dark"] .summary-table tbody td{color:var(--text)}
 [data-theme="dark"] .summary-table .neg{color:#ff6b7a}
 [data-theme="dark"] .summary-table .pos{color:#4ecdc4}
-[data-theme="dark"] .summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td{background:#252c6a}
-[data-theme="dark"] .summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td.lbl-col{background:#252c6a}
+[data-theme="dark"] .summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td{background:rgba(100,110,210,0.28)}
+[data-theme="dark"] .summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td.lbl-col{background:rgba(100,110,210,0.28)}
 [data-theme="dark"] input,select{color-scheme:dark}
 /* ── CSS VARS ROWS ── */
 :root{
@@ -122,13 +122,13 @@
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;font-size:14px;line-height:1.5}
 
 /* ── HEADER ── */
-header{background:#1A1D2E;color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 0 rgba(255,255,255,0.06);height:60px;flex-shrink:0}
+header{background:linear-gradient(135deg,#1A1D2E 0%,#252A4A 100%);color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #5B6AF0;height:60px;flex-shrink:0}
 header h1{font-size:18px;font-weight:700;margin:0;letter-spacing:-0.01em}
 header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .header-btns{display:flex;gap:8px}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'Inter',system-ui,sans-serif;transition:all .15s}
 .btn-save{background:var(--blue);color:#fff}.btn-save:hover{background:var(--blue-dark)}
-.btn-reset{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)}.btn-reset:hover{background:rgba(255,255,255,.3)}
+.btn-reset{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.55);letter-spacing:.01em}.btn-reset:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.75)}
 .btn-csv{background:#e67e22;color:#fff}.btn-csv:hover{background:#d35400}
 
 /* ── TABS ── */
@@ -170,10 +170,10 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .charge-table thead th{background:var(--surface-alt);font-size:11px;font-weight:600;text-transform:uppercase;padding:10px 6px;text-align:center;border-bottom:2px solid var(--border);color:var(--gray);min-width:82px;letter-spacing:0.04em}
 .charge-table thead th.lbl-col{text-align:left;min-width:205px;padding-left:16px;position:sticky;left:0;z-index:3;background:var(--surface-alt)}
 .charge-table thead th.tot-col{background:var(--text);color:#fff !important;min-width:95px;border-left:3px solid rgba(255,255,255,0.1)}
-.charge-table tbody tr:hover td{background:#c8d2ff}
-.charge-table tbody td{padding:3px 3px;border-bottom:1px solid #d8dce6;text-align:center;min-width:82px;vertical-align:middle}
+.charge-table tbody tr:hover td{background:rgba(91,106,240,0.09)}
+.charge-table tbody td{padding:5px 6px;border-bottom:1px solid #d8dce6;text-align:center;min-width:82px;vertical-align:middle}
 .charge-table tbody td.lbl-col{text-align:left;padding-left:14px;font-weight:500;min-width:205px;position:sticky;left:0;z-index:2;background:var(--bg);box-shadow:2px 0 4px rgba(0,0,0,.06)}
-.charge-table tbody tr:hover td.lbl-col{background:#c8d2ff}
+.charge-table tbody tr:hover td.lbl-col{background:rgba(91,106,240,0.09)}
 .charge-table tbody td.tot-col{font-weight:800;background:#dde3eb;min-width:95px;font-size:13px;border-left:3px solid #b0bec5;color:#1a252f}
 /* separator row */
 .sep-row td{background:#1a3c6e;color:#fff;font-weight:700;padding:6px 14px;font-size:11px;letter-spacing:.5px}
@@ -188,9 +188,15 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .cell-amt.neg{color:var(--red)}
 .paid-dot{font-size:10px;color:#7a8299;cursor:pointer;display:block;text-align:right;padding-right:3px;user-select:none;transition:color .15s;line-height:1;margin-top:1px}
 .charge-table tbody td:hover .paid-dot{color:rgba(0,150,0,.7)}
-td.is-paid{background:var(--green-light) !important;cursor:pointer}
-td.is-paid .paid-dot{color:var(--green) !important;font-weight:700;font-size:11px}
-td.is-paid .cell-amt{color:var(--green);font-weight:600}
+td.is-paid{background:var(--green-light) !important;cursor:pointer;transition:background .25s ease}
+td.is-paid .paid-dot{color:var(--green) !important;font-weight:700;font-size:11px;transition:color .25s ease}
+td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ease}
+/* ── SKELETON LOADER ── */
+@keyframes skeleton-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.skeleton{background:var(--border);border-radius:4px;animation:skeleton-pulse 1.4s ease infinite}
+.skeleton-row td{height:28px;border-bottom:none}
+.skeleton-row td>div{background:var(--border);border-radius:4px;height:14px;animation:skeleton-pulse 1.4s ease infinite;margin:0 auto;width:70%}
+.skeleton-row:nth-child(even) td>div{animation-delay:.2s}
 .del-btn{background:none;border:none;color:#8a93a8;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px}
 .del-btn:hover{color:var(--red)}
 .cal-check{display:none;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--blue)}
@@ -212,9 +218,9 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .var-table thead th{background:#f0f2f5;font-size:10px;font-weight:700;text-transform:uppercase;padding:6px 8px;text-align:left;border-bottom:2px solid var(--border);color:var(--gray)}
 .var-table tbody tr{border-bottom:1px solid #f0f2f4}
 /* hover uniquement sur la table des mois (pas sur la table détail imbriquée) */
-.var-table:not(.var-tx-table) tbody tr:hover td{background:#c8d2ff}
+.var-table:not(.var-tx-table) tbody tr:hover td{background:rgba(91,106,240,0.09)}
 /* hover sur lignes de transaction via JS (classe row-hov, mouseenter/mouseleave) */
-.var-tx-table tr.row-hov td{background:#c8d2ff!important}
+.var-tx-table tr.row-hov td{background:rgba(91,106,240,0.09)!important}
 .var-table td{padding:4px 6px;vertical-align:middle}
 /* Table détail : tout sur une ligne, scroll horizontal si besoin */
 .var-tx-table{white-space:nowrap}
@@ -248,8 +254,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 [data-theme="dark"] .summary-table thead th.lbl-col{background:#1e2540}
 [data-theme="dark"] .summary-table tbody td.lbl-col{background:var(--surface)}
 .summary-table tbody td.lbl-col{text-align:left;padding-left:24px;font-weight:500}
-.summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td{background:#c8d2ff}
-.summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td.lbl-col{background:#c8d2ff}
+.summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td{background:rgba(91,106,240,0.09)}
+.summary-table tbody tr:not(.yr-hdr):not(.tot-row):not(.bal-row):hover td.lbl-col{background:rgba(91,106,240,0.09)}
 .summary-table tr.yr-hdr td{background:var(--blue);color:#fff;font-weight:700;padding:8px 14px;font-size:12px;letter-spacing:0.05em;text-transform:uppercase}
 .summary-table tr.tot-row td{background:#e4e9ef;font-weight:700;font-size:12px}
 .summary-table tr.bal-row td{background:var(--blue-light);font-weight:800;font-size:13px;color:var(--blue)}
@@ -281,12 +287,18 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .kpi-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
 .kpi-value{font-size:26px;font-weight:800;line-height:1.1;margin-bottom:4px}
 .kpi-sub{font-size:10px;color:var(--gray)}
+@media(max-width:700px){
+  .kpi-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .kpi-card{min-width:0;padding:10px 12px}
+  .kpi-value{font-size:20px}
+}
 /* ── BUDGET BARS ── */
 .budget-bar-wrap{padding:6px 14px 10px;border-bottom:1px solid var(--border);background:var(--surface-alt)}
 .budget-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .budget-bar-lbl{font-size:11px;color:var(--gray);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.budget-bar-track{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
-.budget-bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.budget-bar-track{flex:1;height:11px;background:var(--border);border-radius:6px;overflow:hidden}
+.budget-bar-fill{height:100%;border-radius:6px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0}
+.budget-bar-fill.animated{}
 .budget-bar-amt{font-size:11px;font-weight:700;white-space:nowrap}
 /* ── CHARTS ── */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:4px 0 18px}
@@ -532,15 +544,15 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600}
 .auth-tab-btn.active{background:var(--surface)!important;color:var(--text);box-shadow:var(--shadow-sm)}
 /* ── ROW ACTIVE SELECTION (click / touch) ── */
 .charge-table tbody tr.row-active td,
-.summary-table tbody tr.row-active td{background:#c8d2ff!important}
+.summary-table tbody tr.row-active td{background:rgba(91,106,240,0.09)!important}
 .charge-table tbody tr.row-active td.lbl-col,
-.summary-table tbody tr.row-active td.lbl-col{background:#c8d2ff!important}
+.summary-table tbody tr.row-active td.lbl-col{background:rgba(91,106,240,0.09)!important}
 /* var-table : couleur plus vive pour se distinguer des fonds de mode de paiement */
 .var-table tbody tr.row-active td{background:#7b8fff!important;color:#fff!important}
 [data-theme="dark"] .charge-table tbody tr.row-active td,
-[data-theme="dark"] .summary-table tbody tr.row-active td{background:#252c6a!important}
+[data-theme="dark"] .summary-table tbody tr.row-active td{background:rgba(100,110,210,0.28)!important}
 [data-theme="dark"] .charge-table tbody tr.row-active td.lbl-col,
-[data-theme="dark"] .summary-table tbody tr.row-active td.lbl-col{background:#252c6a!important}
+[data-theme="dark"] .summary-table tbody tr.row-active td.lbl-col{background:rgba(100,110,210,0.28)!important}
 [data-theme="dark"] .var-table tbody tr.row-active td{background:#3a4aaa!important;color:var(--text)!important}
 /* Désactiver le hover CSS collant sur écrans tactiles */
 @media (hover:none){
@@ -2127,11 +2139,14 @@ function renderTabs() {
     `<div class="tab" onclick="switchTab('y${y}',this)">📅 ${y}${years.length > 1 ? `<span class="tab-del" onclick="event.stopPropagation();deleteYear('${y}')">✕</span>` : ''}</div>`
   ).join('');
   const container = document.getElementById('main-container');
+  const skeletonRows = Array(5).fill(0).map(()=>`<tr class="skeleton-row">${Array(13).fill(0).map(()=>`<td><div></div></td>`).join('')}</tr>`).join('');
+  const skeletonHTML = `<div class="container" style="padding-top:20px"><table class="charge-table"><tbody>${skeletonRows}</tbody></table></div>`;
   years.forEach(y => {
     if (!document.getElementById('tab-y'+y)) {
       const div = document.createElement('div');
       div.id = 'tab-y' + y;
       div.className = 'tab-panel';
+      div.innerHTML = skeletonHTML;
       container.appendChild(div);
     }
   });
@@ -2268,6 +2283,7 @@ function renderYear(year) {
       renderChargeSection(year) + renderVarSection(year) + renderMonthSummary(year);
     updateLivretDisplay(year);
     updateCompteDisplay(year);
+    setTimeout(animateBudgetBars, 60);
   } catch(e) {
     console.error('renderYear error', year, e);
     showToast('❌ Erreur rendu ' + year + ' : ' + e.message);
@@ -3003,7 +3019,7 @@ function renderBudgetBarInner(year, key) {
     <span class="budget-bar-amt" style="color:${color}">${fmtN(spent)} € · ${pct}%${spent>budget?' ⚠️':''}</span>
   </div>
   <div class="budget-bar-row">
-    <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    <div class="budget-bar-track"><div class="budget-bar-fill" data-pct="${pct}" style="width:0;background:${color}"></div></div>
   </div>`;
 }
 function renderBudgetBar(year, cat) {
@@ -3020,6 +3036,19 @@ function setBudget(key, amount) {
   });
 }
 
+function animateBudgetBars() {
+  const fills = document.querySelectorAll('.budget-bar-fill[data-pct]');
+  if (!fills.length) return;
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.width = e.target.dataset.pct + '%';
+        obs.unobserve(e.target);
+      }
+    });
+  }, {threshold: 0.1});
+  fills.forEach(f => { f.style.width = '0'; obs.observe(f); });
+}
 function updateQaBudgetNotice(catKey) {
   const notice = document.getElementById('qa-budget-notice');
   if (!notice) return;
@@ -4344,8 +4373,17 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '4.0';
+const APP_VERSION = '4.1';
 const CHANGELOG = {
+  '4.1': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🎨', text: 'Refonte graphique : hover tableaux doux, header gradient + filet bleu, boutons header plus lisibles' },
+      { icon: '📊', text: 'Barres de budget plus épaisses (11px) avec animation au scroll' },
+      { icon: '📱', text: 'KPI cards : grille 2×2 sur mobile, skeleton loader au chargement' },
+      { icon: '✅', text: 'Transition douce sur le toggle « payé »' }
+    ]
+  },
   '4.0': {
     date: 'Mai 2026',
     items: [

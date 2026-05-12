@@ -1,4 +1,4 @@
-const CACHE = 'mon-budget-v55';
+const CACHE = 'mon-budget-v56';
 const STATIC = [
   './manifest.json',
   './icon-192.png',
