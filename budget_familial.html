@@ -3673,6 +3673,9 @@ function _esc(str) {
 
 function openAide() {
   const url = 'aide.html';
+  // En mode PWA standalone (Android/iOS), window.open est bloqué → navigation directe
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isStandalone) { window.location.href = url; return; }
   const w = window.open(url, '_blank');
   if (!w || w.closed || typeof w.closed === 'undefined') {
     window.location.href = url;
@@ -4611,8 +4614,14 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '4.7';
+const APP_VERSION = '4.8';
 const CHANGELOG = {
+  '4.8': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '❓', text: 'Bouton Aide enfin fonctionnel sur Android PWA : détection du mode standalone pour éviter le blocage de window.open' }
+    ]
+  },
   '4.7': {
     date: 'Mai 2026',
     items: [
