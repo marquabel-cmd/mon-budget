@@ -205,6 +205,41 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
   </div>
 </div>
 
+<!-- Modal création clé bêta -->
+<div id="beta-key-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:9000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeBetaKeyModal()">
+  <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:16px;padding:28px;width:100%;max-width:420px">
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">🔑 Nouvelle clé bêta</h3>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Destinataire *</label>
+        <input id="bk-name" type="text" placeholder="Nom ou pseudo du bêta testeur" class="auth-input" style="margin:0">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Email (optionnel)</label>
+        <input id="bk-email" type="email" placeholder="email@exemple.com" class="auth-input" style="margin:0">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Notes (optionnel)</label>
+        <textarea id="bk-notes" placeholder="ex: Beta testeur forum Reddit, ami, partenaire…" class="auth-input" style="margin:0;resize:vertical;min-height:64px;font-family:Inter,sans-serif"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Durée de validité</label>
+        <select id="bk-duration" class="auth-input" style="margin:0">
+          <option value="30">1 mois</option>
+          <option value="90">3 mois</option>
+          <option value="180">6 mois</option>
+          <option value="365" selected>1 an</option>
+          <option value="0">À vie (sans expiration)</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeBetaKeyModal()">Annuler</button>
+      <button class="btn btn-orange" style="flex:1;font-weight:700" onclick="confirmGenerateBetaKey()">✅ Générer la clé</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -405,15 +440,27 @@ function selectUser(uid) {
   if (!devEntries.length) {
     devList.innerHTML = '<div style="font-size:12px;color:#8892B0;padding:6px 0">Aucun appareil enregistré</div>';
   } else {
-    devList.innerHTML = devEntries.map(([devId, lastSeen], i) => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#20243A;border-radius:8px;margin-bottom:6px;gap:12px">
-        <div>
-          <span style="font-size:13px;font-weight:600">📱 Appareil ${i+1}</span>
-          <span style="font-size:11px;color:#8892B0;margin-left:8px">${typeof lastSeen === 'number' ? 'vu le ' + new Date(lastSeen).toLocaleDateString('fr-FR') : ''}</span>
-          <div style="font-size:10px;color:#8892B0;font-family:monospace;margin-top:2px;word-break:break-all">${_esc(devId)}</div>
+    devList.innerHTML = devEntries.map(([devId, val], i) => {
+      const d = (val && typeof val === 'object') ? val : { lastSeen: val };
+      const label     = d.label || 'Appareil inconnu';
+      const lastSeen  = d.lastSeen  ? new Date(d.lastSeen).toLocaleDateString('fr-FR')  : '—';
+      const firstSeen = d.firstSeen ? new Date(d.firstSeen).toLocaleDateString('fr-FR') : '—';
+      const ua        = d.ua ? `<div style="font-size:10px;color:#8892B0;margin-top:3px;word-break:break-all;max-width:400px">${_esc(d.ua.substring(0,120))}…</div>` : '';
+      const icon = /iOS|iPhone|iPad/.test(label) ? '📱' : /Android/.test(label) ? '📱' : /macOS/.test(label) ? '💻' : '🖥️';
+      return `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:10px 12px;background:#20243A;border-radius:8px;margin-bottom:6px;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+            <span style="font-size:13px;font-weight:600">${icon} ${_esc(label)}</span>
+            <span style="font-size:10px;background:#2C3050;color:#8892B0;border-radius:4px;padding:1px 6px">Appareil ${i+1}</span>
+          </div>
+          <div style="font-size:11px;color:#8892B0">1ère connexion : ${firstSeen} &nbsp;·&nbsp; Dernière : ${lastSeen}</div>
+          <div style="font-size:10px;color:#8892B0;font-family:monospace;margin-top:2px">${_esc(devId)}</div>
+          ${ua}
         </div>
-        <button class="btn btn-red btn-sm" onclick="revokeDevice('${_esc(uid)}','${_esc(devId)}')">✕ Révoquer</button>
-      </div>`).join('');
+        <button class="btn btn-red btn-sm" style="flex-shrink:0" onclick="revokeDevice('${_esc(uid)}','${_esc(devId)}')">✕ Révoquer</button>
+      </div>`;
+    }).join('');
   }
 
   document.getElementById('panel-result').textContent = '';
@@ -500,18 +547,39 @@ function _randKey() {
   return `BETA-${seg()}-${seg()}-${seg()}`;
 }
 
-async function generateBetaKey() {
-  const token   = await getToken();
-  const key     = _randKey();
-  const expiry  = Date.now() + 365 * 24 * 3600 * 1000;
-  const payload = { active: true, type: 'beta', createdAt: Date.now(), expiresAt: expiry };
+function generateBetaKey() {
+  document.getElementById('bk-name').value  = '';
+  document.getElementById('bk-email').value = '';
+  document.getElementById('bk-notes').value = '';
+  document.getElementById('bk-duration').value = '365';
+  document.getElementById('beta-key-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('bk-name').focus(), 50);
+}
+function closeBetaKeyModal() {
+  document.getElementById('beta-key-modal').style.display = 'none';
+}
+async function confirmGenerateBetaKey() {
+  const name     = document.getElementById('bk-name').value.trim();
+  const email    = document.getElementById('bk-email').value.trim();
+  const notes    = document.getElementById('bk-notes').value.trim();
+  const days     = parseInt(document.getElementById('bk-duration').value);
+  if (!name) { document.getElementById('bk-name').focus(); showToast('⚠️ Renseigne un destinataire'); return; }
+  const token    = await getToken();
+  const key      = _randKey();
+  const now      = Date.now();
+  const expiry   = days > 0 ? now + days * 24 * 3600 * 1000 : null;
+  const payload  = { active: true, type: 'beta', createdAt: now, recipient: name };
+  if (email)  payload.email     = email;
+  if (notes)  payload.notes     = notes;
+  if (expiry) payload.expiresAt = expiry;
   const r = await _fbFetch(`${LICENSE_DB}/licenses/${key}.json`, {
     method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
   }, token);
   if (!r.ok) { showToast('❌ Erreur création clé'); return; }
   _betaKeys.unshift({ key, ...payload });
   renderBetaKeys();
-  showToast('✅ Clé bêta créée (valable 1 an)');
+  closeBetaKeyModal();
+  showToast('✅ Clé créée pour ' + name);
 }
 
 async function loadBetaKeys() {
@@ -548,24 +616,34 @@ function renderBetaKeys() {
   if (!_betaKeys.length) { el.textContent = 'Aucune clé bêta générée.'; return; }
   const now = Date.now();
   el.innerHTML = _betaKeys.map(k => {
-    const revoked  = k.active === false;
-    const expired  = k.expiresAt && k.expiresAt < now;
-    const used     = !!k.uid;
+    const revoked   = k.active === false;
+    const expired   = k.expiresAt && k.expiresAt < now;
+    const used      = !!k.uid;
     const expiryTxt = k.expiresAt
       ? (expired ? '⚠️ Expirée le ' : 'Expire le ') + new Date(k.expiresAt).toLocaleDateString('fr-FR')
       : 'À vie';
-    const color = revoked ? '#8892B0' : expired ? '#F04F5B' : '#E2E4F0';
+    const keyColor  = revoked ? '#8892B0' : expired ? '#F04F5B' : '#E2E4F0';
     return `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #2C3050;gap:12px;flex-wrap:wrap">
-      <div>
-        <span style="font-family:monospace;font-size:13px;color:${color};text-decoration:${revoked?'line-through':'none'}">${k.key}</span>
-        ${used  ? `<span style="font-size:11px;color:#5B6AF0;margin-left:8px">✓ Utilisée</span>` : ''}
-        ${revoked ? `<span style="font-size:11px;color:#F04F5B;margin-left:8px">Révoquée</span>` : ''}
-        <div style="font-size:11px;color:${expired?'#F04F5B':'#8892B0'};margin-top:3px">${expiryTxt}</div>
-      </div>
-      <div style="display:flex;gap:6px">
-        ${!revoked ? `<button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key}')">📋 Copier</button>` : ''}
-        ${!revoked && !used ? `<button class="btn btn-red btn-sm" onclick="revokeBetaKey('${k.key}')">✕</button>` : ''}
+    <div style="padding:12px 0;border-bottom:1px solid #2C3050">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-family:monospace;font-size:13px;font-weight:700;color:${keyColor};text-decoration:${revoked?'line-through':'none'}">${k.key}</span>
+            ${used    ? `<span style="font-size:10px;background:#5B6AF020;color:#5B6AF0;border-radius:4px;padding:1px 6px">✓ Utilisée</span>` : ''}
+            ${revoked ? `<span style="font-size:10px;background:#F04F5B20;color:#F04F5B;border-radius:4px;padding:1px 6px">Révoquée</span>` : ''}
+            ${expired && !revoked ? `<span style="font-size:10px;background:#F04F5B20;color:#F04F5B;border-radius:4px;padding:1px 6px">Expirée</span>` : ''}
+          </div>
+          ${k.recipient ? `<div style="font-size:13px;font-weight:600;color:#E2E4F0">👤 ${_esc(k.recipient)}${k.email ? ` <span style="font-size:11px;color:#8892B0;font-weight:400">&lt;${_esc(k.email)}&gt;</span>` : ''}</div>` : ''}
+          ${k.notes    ? `<div style="font-size:12px;color:#8892B0;margin-top:2px">💬 ${_esc(k.notes)}</div>` : ''}
+          <div style="font-size:11px;color:${expired&&!revoked?'#F04F5B':'#8892B0'};margin-top:4px">
+            ${expiryTxt}
+            ${k.createdAt ? ` &nbsp;·&nbsp; Créée le ${new Date(k.createdAt).toLocaleDateString('fr-FR')}` : ''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          ${!revoked ? `<button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key}')">📋 Copier</button>` : ''}
+          ${!revoked && !used ? `<button class="btn btn-red btn-sm" onclick="revokeBetaKey('${k.key}')">✕</button>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
