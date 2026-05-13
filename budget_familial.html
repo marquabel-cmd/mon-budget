@@ -744,6 +744,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
     <div class="welcome-logo-icon">💰</div>
     <div class="welcome-title">Mon Budget</div>
     <div class="welcome-sub">Gestion mensuelle des revenus et dépenses</div>
+    <div id="welcome-version" style="font-size:11px;color:rgba(255,255,255,.25);margin-bottom:8px"></div>
     <div class="welcome-users-grid" id="welcome-users-grid"></div>
     <hr class="welcome-divider">
     <button class="welcome-add-toggle" onclick="toggleWelcomeAddPanel()">＋ Créer un utilisateur</button>
@@ -4154,7 +4155,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v71</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v72</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -4678,12 +4679,20 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '5.6';
+const APP_VERSION = '5.7';
 document.addEventListener('DOMContentLoaded', () => {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
+  const wv = document.getElementById('welcome-version');
+  if (wv) wv.textContent = 'v' + APP_VERSION;
 });
 const CHANGELOG = {
+  '5.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔢', text: 'Numéro de version affiché sur l\'écran d\'accueil — visible avant même de se connecter' }
+    ]
+  },
   '5.6': {
     date: 'Mai 2026',
     items: [
