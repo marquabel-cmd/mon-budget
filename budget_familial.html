@@ -3407,7 +3407,8 @@ function stopAutoLock() {
 function lockScreen() {
   stopAutoLock();
   stopRealtimeSync();
-  saveData(); // Sauvegarder avant de verrouiller
+  saveData();
+  const lockedId = CURRENT_USER_ID; // mémoriser avant de vider
   CURRENT_USER_ID = '';
   localStorage.removeItem('budget_current_user');
   DATA = null;
@@ -3418,6 +3419,10 @@ function lockScreen() {
   const ws = document.getElementById('welcome-screen');
   if (ws) { ws.style.opacity = '0'; ws.style.display = 'flex'; requestAnimationFrame(() => { ws.style.transition = 'opacity .3s'; ws.style.opacity = '1'; }); }
   showToast('🔒 Session verrouillée — inactivité de 10 min');
+  // Si l'utilisateur a un PIN → afficher la saisie directement après l'animation
+  if (lockedId && USERS[lockedId]?.pin) {
+    setTimeout(() => showPinOverlay(lockedId, 'login'), 400);
+  }
 }
 
 // Écouter toute activité utilisateur (throttle 10s pour ne pas surcharger)
@@ -3717,7 +3722,6 @@ function _esc(str) {
 
 let _aideHistoryPushed = false;
 function openAide(anchor) {
-  showToast('⏳ Ouverture aide…');
   const modal = document.getElementById('aide-modal');
   const iframe = document.getElementById('aide-iframe');
   if (!modal || !iframe) { showToast('❌ modal introuvable'); window.location.href = 'aide.html'; return; }
@@ -4155,7 +4159,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v73</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v74</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -4679,7 +4683,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '5.8';
+const APP_VERSION = '5.9';
 document.addEventListener('DOMContentLoaded', () => {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -4687,6 +4691,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (wv) wv.textContent = 'v' + APP_VERSION;
 });
 const CHANGELOG = {
+  '5.9': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔒', text: 'Verrouillage automatique amélioré : si un code PIN est défini, la saisie du PIN s\'affiche directement au réveil — plus besoin de retaper son identifiant' }
+    ]
+  },
   '5.8': {
     date: 'Mai 2026',
     items: [
