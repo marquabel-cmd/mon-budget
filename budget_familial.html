@@ -4155,7 +4155,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v72</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v73</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -4679,7 +4679,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '5.7';
+const APP_VERSION = '5.8';
 document.addEventListener('DOMContentLoaded', () => {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -4687,6 +4687,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (wv) wv.textContent = 'v' + APP_VERSION;
 });
 const CHANGELOG = {
+  '5.8': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '❓', text: 'Sur mobile : bouton ? ouvre l\'aide directement sans dropdown — plus fiable sur Android' }
+    ]
+  },
   '5.7': {
     date: 'Mai 2026',
     items: [
@@ -6073,6 +6079,7 @@ document.addEventListener('keydown', e => {
 
 function toggleHelpDropdown(e) {
   e.stopPropagation();
+  if (window.innerWidth <= 700) { openAide(); return; }
   document.getElementById('tour-help-dropdown').classList.toggle('open');
 }
 function closeHelpDropdown() {
