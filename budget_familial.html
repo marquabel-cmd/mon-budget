@@ -1569,6 +1569,7 @@ function _finishLogin(id) {
       cloudPull().then(cloudData => {
         if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; }
         if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
+        _backupBeforeCloudReplace();
         DATA = cloudData;
         if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
         document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
@@ -1910,6 +1911,14 @@ function wizardFinish() {
 function saveUsers() { localStorage.setItem('budget_users', JSON.stringify(USERS)); }
 function dataKey() { return `budget_data_${CURRENT_USER_ID}`; }
 function bakPrefix() { return `budget_bak_${CURRENT_USER_ID}_`; }
+// Vérifie qu'un objet budget contient au moins une année de données réelles
+function _hasYearData(d) { return d && typeof d === 'object' && Object.keys(d).some(k => /^\d{4}$/.test(k)); }
+// Crée un backup horodaté avant tout remplacement cloud
+function _backupBeforeCloudReplace() {
+  if (!_hasYearData(DATA) || !CURRENT_USER_ID) return;
+  const key = bakPrefix() + 'pre-cloud_' + new Date().toISOString().slice(0,16).replace('T','_').replace(':','h');
+  if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(DATA));
+}
 
 function updateUserDisplay() {
   const u = USERS[CURRENT_USER_ID];
@@ -3290,6 +3299,7 @@ function setCloudStatus(s, errMsg) {
 async function cloudPush() {
   const url = cloudApiUrl();
   if (!url || !DATA) return;
+  if (!_hasYearData(DATA)) return; // Ne jamais écraser le cloud avec des données vides
   if (!_deviceAllowed) { setCloudStatus('error', `Appareil non autorisé — ${MAX_DEVICES} appareils max`); return; }
   const token = await fbGetToken();
   setCloudStatus('syncing');
@@ -3345,6 +3355,8 @@ async function cloudPull() {
       renderWelcomeScreen();
     }
     const { _syncedUsers, _gistToken, _gistId, ...budgetData } = d;
+    // Refuser des données cloud vides si on a des données locales valides
+    if (!_hasYearData(budgetData)) { _lastSyncError = 'Données cloud vides — restauration ignorée'; return null; }
     // Restaurer le token Gist s'il est absent localement
     if (_gistToken && !getGistToken()) {
       localStorage.setItem(gistTokenKey(), _gistToken);
@@ -3487,8 +3499,12 @@ function applyRealtimeData(d) {
     });
     saveUsers();
   }
+  // Refuser des données vides si on a des données locales valides
+  if (!_hasYearData(budgetData)) { showToast('⚠️ Sync ignorée : données cloud vides'); return; }
   // Ne rien faire si données identiques
   if (JSON.stringify(DATA) === JSON.stringify(budgetData)) return;
+  // Backup automatique avant tout remplacement
+  _backupBeforeCloudReplace();
   DATA = budgetData;
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
@@ -3519,6 +3535,7 @@ let _saveTimer;
 function dSave() { clearTimeout(_saveTimer); _saveTimer=setTimeout(saveData,1500); }
 function saveData() {
   if (_compareMode || _isAdminMode) return;
+  if (!_hasYearData(DATA)) return; // Ne jamais sauvegarder des données vides
   const json = JSON.stringify(DATA);
   localStorage.setItem(dataKey(), json);
   const now = new Date();
@@ -4643,8 +4660,15 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '5.2';
+const APP_VERSION = '5.3';
 const CHANGELOG = {
+  '5.3': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🛡️', text: 'Protection critique : sync cloud refusée si données vides, backup automatique avant tout remplacement par le cloud' },
+      { icon: '💾', text: 'Sauvegarde et push cloud bloqués si aucune année réelle — fin des backups à 0 ko' }
+    ]
+  },
   '5.1': {
     date: 'Mai 2026',
     items: [

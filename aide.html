@@ -132,7 +132,7 @@ a:hover{text-decoration:underline}
     <h1>Aide — Mon Budget</h1>
     <p>Guide d'utilisation complet de l'application</p>
   </div>
-  <a class="top-bar-back" href="budget_familial.html">← Retour à l'app</a>
+  <a class="top-bar-back" href="budget_familial.html" onclick="if(window.parent!==window){event.preventDefault();window.parent.closeAide();}">← Retour à l'app</a>
 </div>
 
 <div class="layout">
