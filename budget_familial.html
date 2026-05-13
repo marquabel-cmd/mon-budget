@@ -909,7 +909,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
       <button class="btn btn-csv btn-hide-xs"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
       <button class="btn btn-hide-xs" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
-      <div style="position:relative">
+      <div id="tour-help-wrap" style="position:relative">
         <button class="btn" onclick="toggleHelpDropdown(event)" title="Aide & Tour" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
         <div id="tour-help-dropdown">
           <div class="tour-help-item" onclick="openInstallModal();closeHelpDropdown()">📲 Installer l'application</div>
@@ -3611,19 +3611,26 @@ function openBackups() {
     list.innerHTML = header + '<p class="no-backup">Aucune sauvegarde disponible.</p>';
   } else {
     list.innerHTML = header + keys.map(k => {
-      const parts = k.replace(pfx,'').split('-');
-      let label;
-      if (parts.length >= 3) {
-        // Format YYYY-MM-DD
-        label = `${parts[2]} ${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}`;
-      } else {
-        // Ancien format YYYY-MM
-        label = `${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}`;
-      }
-      // Taille du backup
+      const raw = k.replace(pfx, '');
       const size = Math.round(localStorage.getItem(k).length / 1024);
+      let label, icon = '📅';
+      if (raw.startsWith('pre-cloud_')) {
+        // Format pre-cloud_2026-05-13_10h30
+        const m = raw.match(/pre-cloud_(\d{4})-(\d{2})-(\d{2})_(\d{2})h(\d{2})/);
+        label = m ? `Avant sync — ${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : 'Avant sync cloud';
+        icon = '🔄';
+      } else if (raw.startsWith('pre-reset_')) {
+        const m = raw.match(/pre-reset_(\d{4})-(\d{2})-(\d{2})/);
+        label = m ? `Avant reset — ${m[3]}/${m[2]}/${m[1]}` : 'Avant reset';
+        icon = '⚠️';
+      } else {
+        const parts = raw.split('-');
+        label = parts.length >= 3
+          ? `${parts[2]} ${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}`
+          : `${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}`;
+      }
       return `<div class="backup-item">
-        <span class="bk-date">📅 ${label} <span style="color:var(--gray);font-size:10px">(${size} ko)</span></span>
+        <span class="bk-date">${icon} ${label} <span style="color:var(--gray);font-size:10px">(${size} ko)</span></span>
         <button class="bk-restore" onclick="restoreBackup('${k}')">Restaurer</button>
       </div>`;
     }).join('');
@@ -4147,7 +4154,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v70</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v71</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -4671,16 +4678,23 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '5.5';
+const APP_VERSION = '5.6';
 document.addEventListener('DOMContentLoaded', () => {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
 });
 const CHANGELOG = {
+  '5.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '❓', text: 'Menu ? corrigé sur mobile : le dropdown reste ouvert quand on tape dessus (fix event bubbling)' },
+      { icon: '📦', text: 'Backups : les sauvegardes "Avant sync cloud" et "Avant reset" s\'affichent maintenant avec la bonne date et icône' }
+    ]
+  },
   '5.5': {
     date: 'Mai 2026',
     items: [
-      { icon: '🔢', text: 'Version de l\'app visible dans le menu ❓ et dans Config → Données — utile pour vérifier qu\'une mise à jour est bien appliquée' }
+      { icon: '🔢', text: 'Version de l\'app visible dans le menu ❓ et dans Config → Données' }
     ]
   },
   '5.4': {
@@ -6055,7 +6069,7 @@ function toggleHelpDropdown(e) {
 function closeHelpDropdown() {
   document.getElementById('tour-help-dropdown').classList.remove('open');
 }
-document.addEventListener('click', () => closeHelpDropdown());
+document.addEventListener('click', e => { if (!e.target.closest('#tour-help-wrap')) closeHelpDropdown(); });
 
 // ──────────────────────────────────────────────────────────────
 // OPFS — sauvegarde locale persistante (résiste au vidage cache)
