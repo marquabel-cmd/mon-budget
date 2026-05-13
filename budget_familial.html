@@ -905,7 +905,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
       <span id="last-sync-time" style="font-size:10px;color:rgba(255,255,255,0.4);white-space:nowrap;align-self:center;display:none"></span>
       <span id="last-save-info" style="font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;align-self:center"></span>
-      <button class="btn btn-save" onclick="saveData()">💾 <span class="btn-label">Sauvegarder</span></button>
+      <span id="autosave-indicator" title="Sauvegarde automatique" style="font-size:11px;color:rgba(255,255,255,0.5);white-space:nowrap;align-self:center;display:none">💾 --:--</span>
       <button class="btn btn-csv btn-hide-xs"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
       <button class="btn btn-hide-xs" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
@@ -3529,11 +3529,13 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('online',  () => { if (isLicensed() && _fbUser && !_realtimeSource) startRealtimeSync(); });
 window.addEventListener('offline', () => stopRealtimeSync());
+// Sauvegarde forcée si l'onglet se ferme avec des modifications en attente
+window.addEventListener('beforeunload', () => { if (_saveTimer) { clearTimeout(_saveTimer); saveData(true); } });
 
 // ── SAVE / RESET / EXPORT ──
 let _saveTimer;
-function dSave() { clearTimeout(_saveTimer); _saveTimer=setTimeout(saveData,1500); }
-function saveData() {
+function dSave() { clearTimeout(_saveTimer); _saveTimer = setTimeout(() => saveData(true), 1500); }
+function saveData(silent = false) {
   if (_compareMode || _isAdminMode) return;
   if (!_hasYearData(DATA)) return; // Ne jamais sauvegarder des données vides
   const json = JSON.stringify(DATA);
@@ -3546,7 +3548,7 @@ function saveData() {
   // Garder les 20 derniers backups
   const allBaks = Object.keys(localStorage).filter(k=>k.startsWith(bakPrefix())).sort();
   if (allBaks.length > 20) allBaks.slice(0, allBaks.length - 20).forEach(k => localStorage.removeItem(k));
-  showToast('✅ Sauvegardé');
+  if (!silent) showToast('✅ Sauvegardé');
   updateLastSaveDisplay();
   // ── Protections multi-couches ──
   cloudPush();                          // Firebase (Premium)
@@ -3556,13 +3558,18 @@ function saveData() {
 }
 
 function updateLastSaveDisplay() {
-  const el = document.getElementById('last-save-info');
+  const el = document.getElementById('autosave-indicator');
   if (!el) return;
   const iso = localStorage.getItem('budget_lastsave_' + CURRENT_USER_ID);
-  if (!iso) { el.textContent = ''; return; }
+  if (!iso) { el.style.display = 'none'; return; }
   const d = new Date(iso);
   const pad = n => String(n).padStart(2,'0');
-  el.textContent = `💾 ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  el.textContent = `💾 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  el.style.display = '';
+  el.style.color = 'rgba(255,255,255,0.55)';
+  // Flash vert bref pour confirmer la sauvegarde
+  el.style.color = '#7effa0';
+  setTimeout(() => { el.style.color = 'rgba(255,255,255,0.45)'; }, 1200);
 }
 
 // ── THÈME JOUR / NUIT ──
@@ -4139,7 +4146,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-save" onclick="saveData()">💾 Forcer sauvegarde</button>
+          <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
           <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">📦 Voir les backups</button>
           <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="resetData()">🚨 Réinitialiser les données — SUPPRESSION TOTALE</button>
         </div>
@@ -4660,8 +4667,15 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '5.3';
+const APP_VERSION = '5.4';
 const CHANGELOG = {
+  '5.4': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '💾', text: 'Bouton Sauvegarder supprimé — sauvegarde automatique 1,5s après chaque modification, indicateur 💾 HH:MM dans le header' },
+      { icon: '🔒', text: 'Sauvegarde forcée à la fermeture de l\'onglet si des modifications sont en attente' }
+    ]
+  },
   '5.3': {
     date: 'Mai 2026',
     items: [
@@ -5900,9 +5914,9 @@ const TOUR_STEPS = [
   { icon:'📅', title:'Vos onglets d\'années',
     text:'Chaque onglet = une année de budget. Cliquez sur <b>＋ Année</b> pour ajouter une nouvelle année. <small style="color:#F5A623">⚠️ 1 an max en version gratuite</small>',
     target:'.tabs', link:'aide.html#annee' },
-  { icon:'💾', title:'Sauvegardez toujours !',
-    text:'Après <b>chaque modification</b>, cliquez sur ce bouton. Vos données sont stockées dans votre navigateur — sans sauvegarde, elles sont perdues.',
-    target:'.btn-save', link:'aide.html#sauvegarde' },
+  { icon:'💾', title:'Sauvegarde automatique',
+    text:'Chaque modification est <b>sauvegardée automatiquement</b> 1,5s après la saisie. L\'indicateur 💾 HH:MM dans le header confirme la dernière sauvegarde.',
+    target:'#autosave-indicator', link:'aide.html#sauvegarde' },
   { icon:'📦', title:'Vos sauvegardes (Backups)',
     text:'L\'app crée un backup automatique chaque jour et en conserve 20. En cas de problème, restaurez en un seul clic.',
     target:'button[onclick="openBackups()"]', link:'aide.html#sauvegarde' },
