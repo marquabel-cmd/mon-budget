@@ -146,13 +146,13 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .tab-panel{display:none}.tab-panel.active{display:block}
 
 /* ── SOLDE CARDS ── */
-.soldes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
-.solde-card{background:var(--surface);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow-sm);border:1px solid var(--border);border-top:3px solid var(--blue);display:flex;flex-direction:column}
+.soldes-grid{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.solde-card{flex:1;min-width:150px;background:var(--surface);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow-sm);border:1px solid var(--border);border-top:3px solid var(--blue);text-align:center}
 .solde-card.computed{border-top-color:var(--green)}
 .solde-card label{display:block;font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;line-height:1.3}
-.solde-card input{width:100%;border:none;font-size:20px;font-weight:800;color:var(--text);background:transparent;outline:none;font-family:'Inter',system-ui,sans-serif;margin-top:auto}
+.solde-card input{width:100%;border:none;font-size:20px;font-weight:800;color:var(--text);background:transparent;outline:none;font-family:'Inter',system-ui,sans-serif;text-align:center}
 .solde-card input:focus{border-bottom:2px solid var(--blue)}
-.solde-card .computed-val{font-size:20px;font-weight:800;color:var(--text);margin-top:auto}
+.solde-card .computed-val{font-size:20px;font-weight:800;color:var(--text)}
 
 /* ── SECTION CARDS ── */
 .section-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-sm);margin-bottom:12px;border:1px solid var(--border);overflow:hidden}
@@ -496,8 +496,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   .tab{font-size:11px;padding:8px 10px;white-space:nowrap;flex-shrink:0}
   .container{padding:10px 8px}
   .config-grid{grid-template-columns:1fr}
-  .soldes-grid{grid-template-columns:repeat(2,1fr);gap:6px}
-  .solde-card{padding:10px 12px}
+  .soldes-grid{gap:6px}
+  .solde-card{min-width:calc(50% - 3px);padding:10px 12px}
   .solde-card input{font-size:15px}
   .solde-card .computed-val{font-size:15px}
   .section-header{padding:10px 12px}
@@ -511,8 +511,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   .user-switcher{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* Masquer Export CSV et Import CSV sur très petit écran */
   .btn-hide-xs{display:none!important}
-  .soldes-grid{grid-template-columns:1fr 1fr;gap:6px}
-  .solde-card{min-width:0}
+  .solde-card{min-width:calc(50% - 3px)}
 }
 /* ── FAB AJOUT RAPIDE ── */
 .fab{position:fixed;bottom:22px;right:22px;width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;border:none;font-size:26px;line-height:1;cursor:pointer;box-shadow:0 4px 20px rgba(0,200,150,.45);z-index:900;display:flex;align-items:center;justify-content:center;transition:transform .18s,box-shadow .18s}
@@ -1139,6 +1138,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
         <span class="chevron">▾</span>
       </div>
       <div class="section-body summary-wrap"><table class="summary-table" id="summary-table"></table></div>
+      <div id="summary-stats"></div>
     </div>
   </div>
 </div>
@@ -3754,7 +3754,8 @@ function renderSummary() {
       </tbody>
     </table>
   </div>`;
-  table.insertAdjacentHTML('afterend', statsHtml);
+  const statsContainer = document.getElementById('summary-stats');
+  if (statsContainer) statsContainer.innerHTML = statsHtml;
 
   const b=document.getElementById('sum-badge');
   if(b){
@@ -5287,7 +5288,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v108</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v109</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5970,8 +5971,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '9.2';
-const SW_VERSION = 'v108';
+const APP_VERSION = '9.3';
+const SW_VERSION = 'v109';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5983,6 +5984,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.3': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📊', text: 'Résumé : statistiques ne se répètent plus (conteneur dédié)' },
+      { icon: '✨', text: 'Cartes soldes : même largeur et centrées comme les KPI cards' }
+    ]
+  },
   '9.2': {
     date: 'Mai 2026',
     items: [
