@@ -4661,7 +4661,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v92</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v93</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5333,8 +5333,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '7.6';
-const SW_VERSION = 'v92';
+const APP_VERSION = '7.7';
+const SW_VERSION = 'v93';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5346,6 +5346,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '7.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🎤', text: 'Saisie vocale : plus de coupure sur les silences courts — écoute en continu, envoi automatique après 2,5 s de silence réel' }
+    ]
+  },
   '7.6': {
     date: 'Mai 2026',
     items: [
@@ -6636,9 +6642,12 @@ async function triggerInstall() {
 // ── SAISIE VOCALE ──
 let _speechRec = null;
 let _voiceListening = false;
+let _voiceFinalText = '';
+let _voiceSilenceTimer = null;
+const VOICE_SILENCE_MS = 2500; // 2,5 s de silence avant envoi automatique
 
 function toggleVoiceInput() {
-  if (_voiceListening) { _stopVoice(); return; }
+  if (_voiceListening) { _stopVoice(true); return; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     _appendAiMsg('bot', '⚠️ La saisie vocale n\'est pas disponible sur ce navigateur. Utilisez Chrome ou Edge.');
@@ -6646,52 +6655,80 @@ function toggleVoiceInput() {
   }
   const rec = new SR();
   rec.lang = 'fr-FR';
-  rec.continuous = false;
+  rec.continuous = true;      // ne pas couper aux silences courts
   rec.interimResults = true;
 
-  const btn   = document.getElementById('ai-mic-btn');
-  const input = document.getElementById('ai-chat-input');
+  const btn    = document.getElementById('ai-mic-btn');
+  const input  = document.getElementById('ai-chat-input');
   const status = document.getElementById('ai-chat-status');
+  _voiceFinalText = '';
 
   rec.onstart = () => {
     _voiceListening = true;
     if (btn)    { btn.classList.add('listening'); btn.title = 'Cliquez pour arrêter'; btn.textContent = '⏹'; }
-    if (status) status.textContent = '🎤 Parlez maintenant…';
+    if (status) status.textContent = '🎤 Parlez…';
   };
 
   rec.onresult = (e) => {
-    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-    if (input) input.value = transcript;
-    if (e.results[e.results.length - 1].isFinal) {
-      _stopVoice();
-      // Envoi automatique après transcription finale
-      setTimeout(() => sendAiMessage(), 400);
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) _voiceFinalText += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    if (input) input.value = (_voiceFinalText + interim).trim();
+    // Réinitialiser le timer de silence à chaque résultat final
+    if (e.results[e.resultIndex]?.isFinal) {
+      clearTimeout(_voiceSilenceTimer);
+      if (status) status.textContent = `🎤 Silence détecté dans ${VOICE_SILENCE_MS/1000}s…`;
+      _voiceSilenceTimer = setTimeout(() => {
+        _stopVoice(false); // arrêt automatique
+        setTimeout(() => { if (document.getElementById('ai-chat-input')?.value.trim()) sendAiMessage(); }, 300);
+      }, VOICE_SILENCE_MS);
     }
   };
 
   rec.onerror = (e) => {
-    _stopVoice();
+    if (e.error === 'no-speech') {
+      // Silence trop long — on arrête proprement sans message d'erreur
+      _stopVoice(false);
+      return;
+    }
+    _stopVoice(false);
     if (e.error === 'not-allowed' || e.error === 'permission-denied')
       _appendAiMsg('bot', '🎤 Accès au microphone refusé.<br>Autorisez le microphone dans les paramètres de votre navigateur et réessayez.');
-    else if (e.error === 'no-speech')
-      showToast('⚠️ Aucune voix détectée — réessayez');
     else
       showToast('⚠️ Erreur microphone : ' + e.error);
   };
 
-  rec.onend = () => _stopVoice();
+  rec.onend = () => {
+    // En mode continuous, onend peut se déclencher si le navigateur coupe malgré tout
+    // On relance si on est encore censé écouter et qu'il n'y a pas eu d'erreur
+    if (_voiceListening) {
+      try { rec.start(); } catch(e) { _stopVoice(false); }
+    }
+  };
 
   _speechRec = rec;
   rec.start();
 }
 
-function _stopVoice() {
+function _stopVoice(manual = false) {
   _voiceListening = false;
-  if (_speechRec) { try { _speechRec.stop(); } catch(e) {} _speechRec = null; }
+  clearTimeout(_voiceSilenceTimer);
+  _voiceSilenceTimer = null;
+  if (_speechRec) {
+    _speechRec.onend = null; // éviter la relance automatique
+    try { _speechRec.stop(); } catch(e) {}
+    _speechRec = null;
+  }
   const btn    = document.getElementById('ai-mic-btn');
   const status = document.getElementById('ai-chat-status');
   if (btn)    { btn.classList.remove('listening'); btn.title = 'Saisie vocale'; btn.textContent = '🎤'; }
   if (status) status.textContent = 'Propulsé par Groq';
+  // Si arrêt manuel avec du texte → envoyer aussi
+  if (manual && document.getElementById('ai-chat-input')?.value.trim()) {
+    setTimeout(() => sendAiMessage(), 200);
+  }
 }
 
 async function _callGemini(apiKey, systemContext, userMessage) {
