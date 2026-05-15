@@ -1095,6 +1095,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 
 <div class="container" id="main-container">
   <div id="tab-resume" class="tab-panel active">
+    <div id="resume-back-btn"></div>
     <div class="section-card">
       <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
         <span class="section-title">📈 Vue d'ensemble annuelle <span class="badge badge-b" id="sum-badge">–</span></span>
@@ -3640,6 +3641,11 @@ function renderSummary() {
     b.textContent=fmtN(t)+' €';
     b.className='badge '+(t<0?'badge-r':'badge-b');
   }
+  const resumeBack=document.getElementById('resume-back-btn');
+  if(resumeBack){
+    const lastY=years.length?[...years].reverse()[0]:null;
+    resumeBack.innerHTML=lastY?`<div style="margin-bottom:16px"><button onclick="_switchYearMobile('${lastY}')" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--blue);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-sm);transition:background .15s" onmouseover="this.style.background='var(--blue-light)'" onmouseout="this.style.background='var(--surface)'">← Retour à ${lastY}</button></div>`:'';
+  }
 }
 
 // ── TOGGLE COLLAPSE ──
@@ -4657,7 +4663,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v98</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v99</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5340,8 +5346,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '8.2';
-const SW_VERSION = 'v98';
+const APP_VERSION = '8.3';
+const SW_VERSION = 'v99';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5353,6 +5359,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '8.3': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '⬆️', text: 'Config & Résumé : bouton ← Retour à [année] ajouté en haut des onglets pour navigation rapide' }
+    ]
+  },
   '8.2': {
     date: 'Mai 2026',
     items: [
