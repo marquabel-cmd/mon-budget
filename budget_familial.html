@@ -4404,7 +4404,12 @@ function renderConfigTab() {
         </div>`;
       }).join('')}
     </div>` : '';
-  wrap.innerHTML = `<div class="container">${yearSummary}<div class="config-grid">
+  const lastYear = years.length ? [...years].reverse()[0] : null;
+  const backBtn = lastYear ? `
+    <div style="margin-bottom:16px">
+      <button onclick="_switchYearMobile('${lastYear}')" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--blue);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-sm);transition:background .15s" onmouseover="this.style.background='var(--blue-light)'" onmouseout="this.style.background='var(--surface)'">← Retour à ${lastYear}</button>
+    </div>` : '';
+  wrap.innerHTML = `<div class="container">${backBtn}${yearSummary}<div class="config-grid">
     <div>
       <div class="config-card"><h3>👤 Utilisateurs</h3>${userList}
         <div class="add-user-form">
@@ -4668,7 +4673,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v96</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v97</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5351,8 +5356,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '8.0';
-const SW_VERSION = 'v96';
+const APP_VERSION = '8.1';
+const SW_VERSION = 'v97';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5364,6 +5369,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '8.1': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '⬅️', text: 'Config : bouton "← Retour à [année]" ajouté en haut de la page pour revenir facilement à l\'année active' },
+      { icon: '⬅️', text: 'Page Mon Compte (dashboard) : barre de retour permanente en haut de page — "← Retour à l\'app" toujours visible sur l\'écran de connexion' }
+    ]
+  },
   '8.0': {
     date: 'Mai 2026',
     items: [
