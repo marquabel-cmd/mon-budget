@@ -4159,6 +4159,10 @@ function buildPerYearCharts() {
 }
 
 // ── CONFIG ──
+function _goToYear(y) {
+  const tab = [...document.querySelectorAll('#year-tabs .tab')].find(t => t.textContent.trim().includes(String(y)));
+  if (tab) tab.click();
+}
 function renderConfigTab() {
   const wrap = document.getElementById('tab-config');
   const cfg = loadUserConfig();
@@ -4192,7 +4196,25 @@ function renderConfigTab() {
         onchange="updateMethodColor(${i},'bg',this.value)">
       <button class="del-btn" onclick="deleteMethod(${i})" title="Supprimer">✕</button>
     </div>`).join('');
-  wrap.innerHTML = `<div class="container"><div class="config-grid">
+  const years = getYears();
+  const yearSummary = years.length ? `
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+      ${years.map(y => {
+        const rv = sum(revTotal(y)), dep = sum(depTotal(y)), bal = rv - dep;
+        const balColor = bal >= 0 ? 'var(--green)' : 'var(--red)';
+        const balBg = bal >= 0 ? 'var(--green-light)' : '#fff5f5';
+        return `<div style="flex:1;min-width:160px;background:var(--surface);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-sm);border-top:3px solid var(--blue);cursor:pointer" onclick="_goToYear(${y})">
+          <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px">📅 ${y}</div>
+          <div style="display:flex;flex-direction:column;gap:5px;font-size:12px">
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">Revenus</span><span style="font-weight:700;color:var(--green)">${fmtN(rv)} €</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">Dépenses</span><span style="font-weight:700;color:var(--red)">${fmtN(dep)} €</span></div>
+            <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:5px;margin-top:2px"><span style="color:var(--gray);font-weight:600">Balance</span><span style="font-weight:800;color:${balColor}">${bal>=0?'+':''}${fmtN(bal)} €</span></div>
+          </div>
+          <div style="margin-top:10px;text-align:right"><span style="font-size:10px;color:var(--blue);font-weight:700">Voir →</span></div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+  wrap.innerHTML = `<div class="container">${yearSummary}<div class="config-grid">
     <div>
       <div class="config-card"><h3>👤 Utilisateurs</h3>${userList}
         <div class="add-user-form">
