@@ -791,6 +791,69 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   </div>
 </div>
 
+<!-- ── ADD ROW MODAL ── -->
+<div id="add-row-modal" style="display:none;position:fixed;inset:0;z-index:2600;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)document.getElementById('add-row-modal').style.display='none'">
+  <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(400px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h3 style="margin:0;font-size:16px;color:var(--blue)">＋ Nouvelle ligne</h3>
+      <button onclick="document.getElementById('add-row-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text);line-height:1">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Type</label>
+        <select id="ar-type" onchange="updateAddRowModal()" style="width:100%;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+          <option value="revenu">💰 Revenu</option>
+          <option value="fixed">🔒 Charge fixe récurrente</option>
+          <option value="occasional">📌 Charge occasionnelle</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Libellé</label>
+        <input id="ar-label" type="text" placeholder="Ex : Salaire, Loyer, Assurance…" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Fréquence (× par an)</label>
+          <input id="ar-freq" type="number" min="1" max="52" value="12" oninput="updateAddRowPreview()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Mois de début</label>
+          <select id="ar-startmonth" onchange="updateAddRowPreview()" style="width:100%;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px"></select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Montant par occurrence (€)</label>
+        <input id="ar-amount" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateAddRowPreview()" onkeydown="if(event.key==='Enter')submitAddRow()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+      </div>
+      <div id="ar-enddate-wrap" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
+        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:8px">Date de fin</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:8px;cursor:pointer">
+          <input type="checkbox" id="ar-noend" onchange="updateAddRowEndDate()" checked> Sans date de fin (jusqu'à révocation)
+        </label>
+        <div id="ar-enddate-fields" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
+          <select id="ar-endmonth" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px"></select>
+          <input id="ar-endyear" type="number" placeholder="2026" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px">
+        </div>
+      </div>
+      <div id="ar-preview" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);border-left:3px solid var(--blue)"></div>
+      <div id="ar-error" style="color:#ff6b6b;font-size:12px;min-height:16px"></div>
+      <button onclick="submitAddRow()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--blue),#8B5CF6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">✅ Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PROPAGATE MODAL ── -->
+<div id="propagate-modal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(360px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
+    <h3 style="margin:0 0 10px;font-size:15px;color:var(--text)">↘ Appliquer aux mois suivants ?</h3>
+    <p style="margin:0 0 18px;font-size:13px;color:var(--gray);line-height:1.5">Appliquer <b id="prop-amount" style="color:var(--text)"></b> € à partir de <b id="prop-from" style="color:var(--text)"></b> jusqu'en Décembre ?</p>
+    <div style="display:flex;gap:8px">
+      <button onclick="confirmPropagate(true)" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">✅ Oui, appliquer</button>
+      <button onclick="confirmPropagate(false)" style="flex:1;padding:11px;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">Non</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── DEMO BANNER ── -->
 <div id="demo-banner">
   <span>🎮 MODE DÉMO — Les données affichées sont fictives</span>
@@ -2503,8 +2566,9 @@ function renderRevSection(year) {
       return `<td id="rc-${year}-${ri}-${mi}" class="${paid?'is-paid':''}" onclick="toggleRevPaid('${year}',${ri},${mi})">
         <span class="paid-dot">${paid?'✓':'○'}</span>
         <input class="cell-amt${v<0?' neg':''}" type="number" step="0.01" value="${v}"
-          onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
-          oninput="DATA['${year}'].revenus[${ri}].v[${mi}]=+this.value;refreshRevTotals('${year}');dSave()" onclick="event.stopPropagation()"></td>`;
+          onfocus="this.select();this.dataset.prev=this.value" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
+          oninput="DATA['${year}'].revenus[${ri}].v[${mi}]=+this.value;refreshRevTotals('${year}');dSave()"
+          onblur="proposePropagate(this,'${year}','revenus',${ri},${mi})" onclick="event.stopPropagation()"></td>`;
     }).join('');
     return `<tr><td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check cal-check-compte" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','compte',${ri},this.checked)" onclick="event.stopPropagation()">
@@ -2537,7 +2601,7 @@ function renderRevSection(year) {
         </tr>
       </tbody></table>
       <div style="padding:8px 14px">
-        <button class="add-tx-btn" onclick="addRevRow('${year}')">+ Ajouter une ligne</button>
+        <button class="add-tx-btn" onclick="openAddRowModal('${year}','revenu')">＋ Ajouter une ligne</button>
       </div>
     </div>
   </div>`;
@@ -2605,8 +2669,9 @@ function renderChargeSection(year) {
       return `<td id="cc-${year}-${ri}-${mi}" class="${paid?'is-paid':''}" onclick="togglePaid('${year}',${ri},${mi})">
         <div class="cell-wrap">
           <input class="cell-amt${v<0?' neg':''}" type="number" step="0.01" value="${v}"
-            onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
-            oninput="updateCharge('${year}',${ri},${mi},this)" onclick="event.stopPropagation()">
+            onfocus="this.select();this.dataset.prev=this.value" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
+            oninput="updateCharge('${year}',${ri},${mi},this)"
+            onblur="proposePropagate(this,'${year}','charges',${ri},${mi})" onclick="event.stopPropagation()">
           <span class="paid-dot">✓</span>
         </div></td>`;
     }).join('');
@@ -2654,9 +2719,9 @@ function renderChargeSection(year) {
         </tr>
       </tbody></table>
       <div style="padding:8px 14px">
-        <button class="add-tx-btn" onclick="addCharge('${year}','fixed')">+ Charge récurrente</button>
+        <button class="add-tx-btn" onclick="openAddRowModal('${year}','fixed')">＋ Charge récurrente</button>
         &nbsp;
-        <button class="add-tx-btn" onclick="addCharge('${year}','occasional')" style="border-color:var(--orange);color:var(--orange)">+ Charge occasionnelle</button>
+        <button class="add-tx-btn" onclick="openAddRowModal('${year}','occasional')" style="border-color:var(--orange);color:var(--orange)">＋ Charge occasionnelle</button>
       </div>
     </div>
   </div>`;
@@ -2712,6 +2777,103 @@ function addCharge(year, cat) {
 function delCharge(year, ri) {
   const lbl = DATA[year].charges[ri]?.label || 'cette charge';
   confirmDelete(`Supprimer "${lbl}" ?`, () => { DATA[year].charges.splice(ri,1); renderYear(year); dSave(); });
+}
+
+// ── ADD ROW MODAL ──
+let _arYear = null;
+function openAddRowModal(year, type) {
+  _arYear = year;
+  document.getElementById('ar-type').value = type;
+  const labels = {revenu:'Nouveau revenu', fixed:'Nouvelle charge', occasional:'Charge occasionnelle'};
+  document.getElementById('ar-label').value = labels[type] || '';
+  document.getElementById('ar-freq').value = 12;
+  const sm = document.getElementById('ar-startmonth');
+  sm.innerHTML = MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  sm.value = new Date().getMonth();
+  const em = document.getElementById('ar-endmonth');
+  em.innerHTML = MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  document.getElementById('ar-endyear').value = year;
+  document.getElementById('ar-noend').checked = true;
+  document.getElementById('ar-enddate-fields').style.display = 'none';
+  document.getElementById('ar-amount').value = '';
+  document.getElementById('ar-error').textContent = '';
+  document.getElementById('ar-preview').style.display = 'none';
+  updateAddRowModal();
+  document.getElementById('add-row-modal').style.display = 'flex';
+  setTimeout(() => { const l = document.getElementById('ar-label'); l.focus(); l.select(); }, 80);
+}
+function updateAddRowModal() {
+  const isOcc = document.getElementById('ar-type').value === 'occasional';
+  document.getElementById('ar-enddate-wrap').style.display = isOcc ? 'block' : 'none';
+  updateAddRowPreview();
+}
+function updateAddRowEndDate() {
+  const hide = document.getElementById('ar-noend').checked;
+  document.getElementById('ar-enddate-fields').style.display = hide ? 'none' : 'grid';
+}
+function updateAddRowPreview() {
+  const freq = parseInt(document.getElementById('ar-freq').value) || 0;
+  const amount = parseFloat(document.getElementById('ar-amount').value) || 0;
+  const startMonth = parseInt(document.getElementById('ar-startmonth').value) || 0;
+  const prev = document.getElementById('ar-preview');
+  if (!freq || !amount) { prev.style.display = 'none'; return; }
+  const payMonths = Array.from({length: Math.min(freq,12)}, (_,i) => Math.floor(startMonth + i * 12 / freq) % 12);
+  const annual = amount * freq;
+  prev.innerHTML = `→ ${freq}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${payMonths.map(m => MONTHS[m]).join(', ')}</span>`;
+  prev.style.display = 'block';
+}
+function submitAddRow() {
+  const year = _arYear;
+  const type = document.getElementById('ar-type').value;
+  const label = document.getElementById('ar-label').value.trim() || (type==='revenu'?'Nouveau revenu':'Nouvelle charge');
+  const freq = parseInt(document.getElementById('ar-freq').value);
+  const amount = parseFloat(document.getElementById('ar-amount').value) || 0;
+  const startMonth = parseInt(document.getElementById('ar-startmonth').value) || 0;
+  const errEl = document.getElementById('ar-error');
+  errEl.textContent = '';
+  if (!freq || freq < 1 || freq > 52) { errEl.textContent = '⚠️ Fréquence entre 1 et 52'; return; }
+  const v = Array(12).fill(0);
+  Array.from({length: freq}, (_,i) => Math.floor(startMonth + i * 12 / freq) % 12).forEach(m => { v[m] += amount; });
+  if (type === 'occasional') {
+    const noEnd = document.getElementById('ar-noend').checked;
+    if (!noEnd) {
+      const endMonth = parseInt(document.getElementById('ar-endmonth').value);
+      const endYear = parseInt(document.getElementById('ar-endyear').value);
+      if (endYear === parseInt(year)) { for (let m = endMonth + 1; m < 12; m++) v[m] = 0; }
+      else if (endYear < parseInt(year)) { v.fill(0); }
+    }
+  }
+  if (type === 'revenu') {
+    DATA[year].revenus.push({label, v, paid: Array(12).fill(true), inCalc: true});
+  } else {
+    DATA[year].charges.push({label, cat: type, v, paid: Array(12).fill(false)});
+  }
+  renderYear(year);
+  dSave();
+  document.getElementById('add-row-modal').style.display = 'none';
+  showToast(`✅ "${label}" ajouté`);
+}
+
+// ── PROPAGATION ──
+let _propCtx = null;
+function proposePropagate(el, year, dataType, ri, mi) {
+  const newVal = parseFloat(el.value) || 0;
+  const prev = parseFloat(el.dataset.prev);
+  if (isNaN(prev) || newVal === prev || mi >= 11) return;
+  _propCtx = {year, dataType, ri, mi, val: newVal};
+  document.getElementById('prop-amount').textContent = fmtN(newVal);
+  document.getElementById('prop-from').textContent = MONTHS[mi + 1];
+  document.getElementById('propagate-modal').style.display = 'flex';
+}
+function confirmPropagate(yes) {
+  document.getElementById('propagate-modal').style.display = 'none';
+  if (yes && _propCtx) {
+    const {year, dataType, ri, mi, val} = _propCtx;
+    for (let m = mi + 1; m < 12; m++) DATA[year][dataType][ri].v[m] = val;
+    renderYear(year);
+    dSave();
+  }
+  _propCtx = null;
 }
 
 // ── VARIABLE EXPENSES ──
@@ -4159,7 +4321,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v74</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v75</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -4683,7 +4845,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '5.9';
+const APP_VERSION = '6.0';
 document.addEventListener('DOMContentLoaded', () => {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -4691,6 +4853,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (wv) wv.textContent = 'v' + APP_VERSION;
 });
 const CHANGELOG = {
+  '6.0': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '➕', text: 'Nouveau modal d\'ajout de ligne : choisissez le type, le libellé, la fréquence (×/an), le mois de début et le montant — les cases se remplissent automatiquement' },
+      { icon: '↘', text: 'Propagation de montant : quand vous modifiez une cellule, une confirmation propose d\'appliquer le nouveau montant à tous les mois suivants' }
+    ]
+  },
   '5.9': {
     date: 'Mai 2026',
     items: [
