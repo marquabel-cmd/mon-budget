@@ -146,6 +146,8 @@ a:hover{text-decoration:underline}
       <a href="#premium" class="nav-premium">⭐ Gratuit vs Premium</a>
       <a href="#demo">🎮 Mode démo</a>
       <a href="#interface">🖥️ Interface</a>
+      <a href="#accueil">🏠 Tableau de bord</a>
+      <a href="#objectif-epargne">🎯 Objectif d'épargne</a>
       <a href="#revenus">💼 Revenus</a>
       <a href="#charges">🏠 Charges</a>
       <a href="#variables">🛒 Dépenses variables</a>
@@ -162,8 +164,8 @@ a:hover{text-decoration:underline}
       <a href="#ajout-rapide">➕ Ajout rapide</a>
       <a href="#assistant-ia">🤖 Assistant IA</a>
       <div style="margin-top:14px;padding:8px 10px;border-top:1px solid #e8eaf6;font-size:10px;color:#9BA3C9;line-height:1.6">
-        📱 App <b id="aide-app-version">6.5</b><br>
-        🔧 SW <b id="aide-sw-version">v81</b>
+        📱 App <b id="aide-app-version">8.5</b><br>
+        🔧 SW <b id="aide-sw-version">v101</b>
       </div>
     </nav>
   </aside>
@@ -525,7 +527,8 @@ a:hover{text-decoration:underline}
       <ul>
         <li><b>💾 Sauvegarder</b> — Enregistre toutes les modifications dans le navigateur</li>
         <li><b>📥 Export CSV</b> — Exporte les données du mois actuel en CSV</li>
-        <li><b>📂 Import CSV</b> — Importe des données depuis un fichier CSV</li>
+        <li><b>🖨️ PDF</b> — Imprime ou exporte en PDF la vue actuellement affichée</li>
+        <li><b>📂 Import CSV</b> — Importe des transactions depuis un relevé bancaire CSV (détection automatique des colonnes, choix de catégorie et méthode)</li>
         <li><b>📦 Backups</b> — Affiche la liste des sauvegardes automatiques (une par jour, 20 max)</li>
         <li><b>🔐 Connexion</b> — Connexion avec Google pour la synchronisation cloud Premium</li>
         <li><b>❓ Aide</b> — Relance le tour guidé ou ouvre ce guide</li>
@@ -543,6 +546,81 @@ a:hover{text-decoration:underline}
 
       <h3>Colonnes de mois</h3>
       <p>Chaque tableau a 12 colonnes (Jan–Déc). Saisissez directement les montants dans les cellules. Appuyez sur <b>Entrée</b> ou <b>Tab</b> pour passer à la cellule suivante.</p>
+    </div>
+
+    <!-- Tableau de bord mensuel -->
+    <div class="section" id="accueil">
+      <h2><span>🏠</span> Tableau de bord mensuel</h2>
+      <p class="lead">L'onglet <b>Accueil</b> est votre vue synthèse du mois : d'un coup d'œil, vous voyez où vous en êtes financièrement sans avoir à parcourir les tableaux détaillés.</p>
+
+      <h3>Navigation entre les mois</h3>
+      <p>Utilisez les boutons <b>←</b> et <b>→</b> pour naviguer d'un mois à l'autre. Le changement d'année s'effectue automatiquement (janvier → décembre de l'année précédente et inversement). Utilisez le sélecteur d'année pour sauter directement à une année.</p>
+
+      <h3>4 indicateurs clés (KPIs)</h3>
+      <div class="feature-grid">
+        <div class="feature-card" style="border-top:3px solid #27ae60">
+          <div class="fc-icon">💹</div>
+          <div class="fc-title">Revenus</div>
+          <div class="fc-desc">Total des revenus perçus ce mois.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #5B6AF0">
+          <div class="fc-icon">🏠</div>
+          <div class="fc-title">Charges</div>
+          <div class="fc-desc">Charges récurrentes + versements livret d'épargne de ce mois.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #e67e22">
+          <div class="fc-icon">🛒</div>
+          <div class="fc-title">Variables</div>
+          <div class="fc-desc">Total des dépenses variables (courses, loisirs…) du mois.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #8B5CF6">
+          <div class="fc-icon">💰</div>
+          <div class="fc-title">Solde</div>
+          <div class="fc-desc">Revenus − Charges − Variables. En vert si positif, en rouge si négatif.</div>
+        </div>
+      </div>
+
+      <h3>🔄 Comparaison vs année précédente</h3>
+      <p>Si vous avez des données pour l'année précédente, un tableau comparatif s'affiche automatiquement pour le même mois. Il indique pour chaque indicateur le delta (+ ou −) avec une couleur verte (amélioration) ou rouge (régression).</p>
+
+      <h3>⚠️ Alertes budgets dépassés</h3>
+      <p>Si une catégorie de dépenses variables dépasse son budget mensuel (défini dans la gestion des catégories), une alerte rouge apparaît dans le tableau de bord avec le montant dépensé vs le budget.</p>
+
+      <h3>🛒 Dernières dépenses</h3>
+      <p>La liste des dépenses variables du mois est affichée, triées par montant décroissant (jusqu'à 8 entrées + compteur des autres).</p>
+
+      <h3>📅 Bouton "Aller à l'année en cours"</h3>
+      <p>Un bouton rapide permet de naviguer directement vers l'onglet de l'année actuelle (ex: 2026) depuis le tableau de bord.</p>
+
+      <div class="tip">
+        <b>💡 Astuce</b> — Commencez votre session par l'onglet Accueil pour voir rapidement où vous en êtes. Si le solde est rouge, consultez les catégories dépassées pour identifier les postes à réduire.
+      </div>
+    </div>
+
+    <!-- Objectif d'épargne -->
+    <div class="section" id="objectif-epargne">
+      <h2><span>🎯</span> Objectif d'épargne mensuel</h2>
+      <p class="lead">Définissez un objectif d'épargne mensuel en euros. Une barre de progression s'affiche dans l'onglet Accueil pour suivre votre avancement.</p>
+
+      <h3>Configurer l'objectif</h3>
+      <ol style="margin:8px 0 12px 20px;line-height:2">
+        <li>Ouvrez l'onglet <b>⚙️ Config</b></li>
+        <li>Descendez jusqu'à la section <b>🎯 Objectif d'épargne mensuel</b></li>
+        <li>Saisissez le montant cible (ex : 500 €/mois)</li>
+        <li>Cliquez sur <b>✅</b> pour enregistrer</li>
+      </ol>
+
+      <h3>Barre de progression</h3>
+      <p>Dans l'onglet <b>🏠 Accueil</b>, la barre indique le pourcentage d'objectif atteint pour le mois affiché :</p>
+      <ul>
+        <li><b>Vert</b> — Objectif atteint ou dépassé 🎉</li>
+        <li><b>Bleu</b> — En bonne voie (solde positif mais sous l'objectif)</li>
+        <li><b>Rouge</b> — Solde négatif, objectif non atteignable ce mois</li>
+      </ul>
+
+      <div class="tip">
+        <b>💡 Conseil</b> — Un bon objectif d'épargne représente 10–20% de vos revenus mensuels nets. Commencez modestement et augmentez progressivement.
+      </div>
     </div>
 
     <!-- Revenus -->
@@ -762,7 +840,7 @@ a:hover{text-decoration:underline}
     <!-- Graphiques -->
     <div class="section" id="graphiques">
       <h2><span>📉</span> Graphiques</h2>
-      <p class="lead">L'onglet <b>Graphiques</b> offre plusieurs visualisations de vos finances, filtrables par année.</p>
+      <p class="lead">L'onglet <b>Graphiques</b> offre plusieurs visualisations de vos finances, filtrables par année. Un bouton <b>📅 Aller à [année en cours]</b> permet de revenir directement à l'onglet de l'année actuelle.</p>
 
       <div class="feature-grid">
         <div class="feature-card">
