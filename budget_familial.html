@@ -1046,6 +1046,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   </div>
 </header>
 
+<div id="tab-accueil" class="tab-panel"></div>
 <div id="tab-charts" class="tab-panel"></div>
 <div id="tab-config" class="tab-panel"></div>
 
@@ -1085,6 +1086,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 </div>
 
 <div class="tabs">
+  <div class="tab" onclick="switchTab('accueil',this)">🏠 Accueil</div>
   <div class="tab active" onclick="switchTab('resume',this)">📊 Résumé</div>
   <div id="year-tabs" style="display:contents"></div>
   <div id="year-tab-mobile"></div>
@@ -2301,7 +2303,8 @@ function switchTab(id, el) {
     const sel = document.getElementById('year-select-mob');
     if (sel) sel.value = id.slice(1);
   }
-  if (id==='resume') renderSummary();
+  if (id==='accueil') renderDashboard();
+  else if (id==='resume') renderSummary();
   else if (id==='charts') renderCharts();
   else if (id==='config') renderConfigTab();
 }
@@ -3215,6 +3218,7 @@ function toggleMonthDetail(year, catKey, m, btn) {
 
 // ── QUICK ADD ──
 let _qaYear = null, _qaCat = null;
+let _dashYear = null, _dashMonth = new Date().getMonth();
 function openQuickAdd(year, catKey) {
   // Auto-detect year from active tab if not provided
   if (!year) {
@@ -4360,6 +4364,170 @@ function _goToTab(id) {
     _goToYear(id.slice(1));
   }
 }
+// ─────────────────────────────────────────────
+// 🏠 TABLEAU DE BORD MENSUEL
+// ─────────────────────────────────────────────
+function renderDashboard() {
+  const wrap = document.getElementById('tab-accueil');
+  const years = getYears();
+  if (!years.length) {
+    wrap.innerHTML = `<div class="container" style="padding-top:40px;text-align:center;color:var(--gray)">
+      <div style="font-size:40px;margin-bottom:16px">📭</div>
+      <p style="font-size:15px;margin-bottom:16px">Aucune donnée pour l'instant.</p>
+      <button class="btn btn-save" onclick="addYear()">＋ Ajouter une année</button>
+    </div>`;
+    return;
+  }
+  if (!_dashYear || !years.includes(String(_dashYear))) _dashYear = [...years].reverse()[0];
+  const yr = String(_dashYear);
+  const mi = _dashMonth;
+  const rv = revTotal(yr)[mi];
+  const ch = chgTotal(yr)[mi];
+  const vr = allVarTotal(yr)[mi];
+  const dep = ch + vr;
+  const bal = rv - dep;
+  const cfg = loadUserConfig();
+  const goal = parseFloat(cfg.savingsGoal) || 0;
+
+  // Navigation
+  const yIdx = years.indexOf(yr);
+  const canPrev = !(mi === 0 && yIdx === 0);
+  const canNext = !(mi === 11 && yIdx === years.length - 1);
+
+  // Dernières dépenses variables du mois
+  const txList = [];
+  getVarCats().forEach(cat => {
+    (DATA[yr].vars[cat.key] || []).forEach(tx => {
+      if (tx.month === mi) txList.push({...tx, catLabel: cat.label, catIcon: cat.icon || '🛍️'});
+    });
+  });
+  txList.sort((a, b) => (b.amount || 0) - (a.amount || 0));
+
+  // Alertes budgets dépassés
+  const alerts = [];
+  getVarCats().forEach(cat => {
+    const spent = varTotal(yr, cat.key)[mi];
+    const budget = parseFloat(cat.budget) || 0;
+    if (budget > 0 && spent > budget) alerts.push({icon: cat.icon || '🛍️', label: cat.label, spent, budget});
+  });
+
+  // Barre objectif épargne
+  let goalHtml = '';
+  if (goal > 0) {
+    const pct = Math.min(100, Math.max(0, Math.round((bal / goal) * 100)));
+    const color = bal >= goal ? 'var(--green)' : bal >= 0 ? 'var(--blue)' : 'var(--red)';
+    const bgColor = bal >= goal ? 'var(--green-light)' : bal >= 0 ? 'rgba(91,106,240,.12)' : 'var(--red-light)';
+    goalHtml = `
+      <div class="section-card" style="margin-bottom:14px;border-left:3px solid ${color}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-weight:700;font-size:13px">🎯 Objectif épargne</span>
+          <span style="font-size:13px;font-weight:800;color:${color}">${fmtN(bal)} € <span style="font-size:11px;font-weight:400;color:var(--gray)">/ ${fmtN(goal)} €</span></span>
+        </div>
+        <div style="background:var(--border);border-radius:20px;height:10px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:20px;transition:width .5s ease"></div>
+        </div>
+        <div style="font-size:11px;color:var(--gray);margin-top:5px">${pct >= 100 ? '🎉 Objectif atteint !' : `${pct}% atteint — il manque ${fmtN(goal - bal)} €`}</div>
+      </div>`;
+  }
+
+  // Alertes HTML
+  const alertsHtml = alerts.length ? `
+    <div class="section-card" style="margin-bottom:14px;border-left:3px solid var(--red)">
+      <div style="font-weight:700;font-size:13px;color:var(--red);margin-bottom:8px">⚠️ Budgets dépassés ce mois</div>
+      ${alerts.map(a => `
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)">
+          <span>${a.icon} ${_esc(a.label)}</span>
+          <span style="color:var(--red);font-weight:700">${fmtN(a.spent)} € <span style="font-weight:400;color:var(--gray)">/ budget ${fmtN(a.budget)} €</span></span>
+        </div>`).join('')}
+    </div>` : '';
+
+  // Transactions HTML
+  const txHtml = txList.length
+    ? txList.slice(0, 8).map(tx => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <span>${tx.catIcon} <b>${_esc(tx.catLabel)}</b>${tx.comment ? ` <span style="color:var(--gray)">— ${_esc(tx.comment)}</span>` : ''}</span>
+          <span style="font-weight:700;white-space:nowrap;color:var(--text)">${fmtN(tx.amount)} €</span>
+        </div>`).join('')
+    : `<p style="color:var(--gray);font-size:12px;text-align:center;padding:14px 0">Aucune dépense variable ce mois.</p>`;
+
+  // Sélecteur d'année (si plusieurs)
+  const yearSel = years.length > 1
+    ? `<select onchange="_dashSetYear(this.value)" style="margin-top:5px;font-size:11px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;background:var(--surface);color:var(--text);cursor:pointer">
+        ${years.map(y => `<option value="${y}"${y===yr?' selected':''}>${y}</option>`).join('')}
+      </select>` : `<div style="font-size:12px;color:var(--gray);margin-top:3px">${yr}</div>`;
+
+  const btnStyle = (active, c) => `background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 16px;font-size:20px;cursor:${active?'pointer':'default'};color:${active?c:'var(--gray)'};opacity:${active?1:.35}`;
+
+  wrap.innerHTML = `<div class="container">
+    <!-- Navigation mois -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <button onclick="_dashNav(-1)" ${canPrev?'':'disabled'} style="${btnStyle(canPrev,'var(--blue)')}">←</button>
+      <div style="text-align:center">
+        <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:.5px">${MONTHS[mi]}</div>
+        ${yearSel}
+      </div>
+      <button onclick="_dashNav(1)" ${canNext?'':'disabled'} style="${btnStyle(canNext,'var(--blue)')}">→</button>
+    </div>
+
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px">
+      <div class="section-card" style="padding:14px;text-align:center">
+        <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💹 Revenus</div>
+        <div style="font-size:22px;font-weight:800;color:var(--green);margin-top:6px">${fmtN(rv)} €</div>
+      </div>
+      <div class="section-card" style="padding:14px;text-align:center">
+        <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🏠 Charges</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(ch)} €</div>
+      </div>
+      <div class="section-card" style="padding:14px;text-align:center">
+        <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🛒 Variables</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(vr)} €</div>
+      </div>
+      <div class="section-card" style="padding:14px;text-align:center;border-left:3px solid ${bal>=0?'var(--green)':'var(--red)'}">
+        <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💰 Solde</div>
+        <div style="font-size:22px;font-weight:800;color:${bal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmtN(bal)} €</div>
+      </div>
+    </div>
+
+    ${goalHtml}
+    ${alertsHtml}
+
+    <!-- Dépenses variables du mois -->
+    <div class="section-card">
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+        <span>🛒 Dépenses variables</span>
+        ${txList.length ? `<span style="font-size:11px;color:var(--gray);font-weight:400">${txList.length} transaction${txList.length>1?'s':''} · ${fmtN(vr)} € total</span>` : ''}
+      </div>
+      ${txHtml}
+      ${txList.length > 8 ? `<div style="text-align:center;font-size:11px;color:var(--gray);margin-top:8px">… et ${txList.length-8} autre${txList.length-8>1?'s':''}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function _dashNav(dir) {
+  const years = getYears();
+  const yIdx = years.indexOf(String(_dashYear));
+  let mi = _dashMonth + dir;
+  if (mi < 0) {
+    if (yIdx > 0) { _dashYear = years[yIdx - 1]; _dashMonth = 11; }
+  } else if (mi > 11) {
+    if (yIdx < years.length - 1) { _dashYear = years[yIdx + 1]; _dashMonth = 0; }
+  } else {
+    _dashMonth = mi;
+  }
+  renderDashboard();
+}
+function _dashSetYear(yr) { _dashYear = yr; renderDashboard(); }
+
+function saveSavingsGoal() {
+  const v = parseFloat(document.getElementById('cfg-savings-goal')?.value) || 0;
+  const cfg = loadUserConfig();
+  cfg.savingsGoal = v > 0 ? v : undefined;
+  saveUserConfig(cfg);
+  showToast(v > 0 ? `🎯 Objectif : ${fmtN(v)} €/mois enregistré` : '🎯 Objectif supprimé');
+  renderConfigTab();
+}
+
 function renderConfigTab() {
   const wrap = document.getElementById('tab-config');
   const cfg = loadUserConfig();
@@ -4423,6 +4591,15 @@ function renderConfigTab() {
           <button class="btn btn-save" style="padding:5px 10px;font-size:12px" onclick="addMethodFromForm()">＋</button>
         </div>
         <div style="font-size:10px;color:var(--gray);margin-top:4px">Couleur bordure + couleur fond</div>
+      </div>
+      <div class="config-card" style="margin-top:14px"><h3>🎯 Objectif d'épargne mensuel</h3>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">Définissez un objectif d'épargne par mois. Il s'affiche dans l'onglet <b>🏠 Accueil</b> avec une barre de progression.</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="number" id="cfg-savings-goal" step="10" min="0" placeholder="ex : 500" value="${cfg.savingsGoal||''}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text)">
+          <span style="font-size:13px;color:var(--gray);white-space:nowrap">€ / mois</span>
+          <button onclick="saveSavingsGoal()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">✅</button>
+        </div>
+        ${cfg.savingsGoal ? `<div style="font-size:11px;color:var(--green);margin-top:8px">✓ Objectif actuel : <b>${fmtN(cfg.savingsGoal)} €/mois</b></div>` : '<div style="font-size:11px;color:var(--gray);margin-top:6px">Aucun objectif défini.</div>'}
       </div>
       ${(() => {
         const accs = getAccounts();
@@ -4663,7 +4840,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v99</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v100</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5346,8 +5523,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '8.3';
-const SW_VERSION = 'v99';
+const APP_VERSION = '8.4';
+const SW_VERSION = 'v100';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5359,6 +5536,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '8.4': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🏠', text: 'Nouveau : onglet Accueil — tableau de bord mensuel avec KPIs, navigation ← →, alertes budgets dépassés, liste des dépenses' },
+      { icon: '🎯', text: 'Nouveau : objectif d\'épargne mensuel dans Config — barre de progression dans le tableau de bord' }
+    ]
+  },
   '8.3': {
     date: 'Mai 2026',
     items: [
