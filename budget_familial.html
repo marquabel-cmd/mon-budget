@@ -285,7 +285,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 .user-menu-item:hover{background:var(--blue-light);color:var(--blue)}
 .user-menu-sep{border:none;border-top:1px solid var(--border);margin:4px 0}
 /* ── KPI CARDS ── */
-.kpi-cards{display:flex;gap:12px;margin:0 0 16px;flex-wrap:wrap}
+.kpi-cards{display:flex;gap:12px;margin:16px 0;flex-wrap:wrap}
 .kpi-card{flex:1;min-width:150px;background:var(--surface);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow-sm);border-top:3px solid var(--blue);text-align:center}
 .kpi-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
 .kpi-value{font-size:26px;font-weight:800;line-height:1.1;margin-bottom:4px}
@@ -2530,8 +2530,7 @@ function renderYear(year) {
   const _secOpen = {};
   wrap.querySelectorAll('.section-card').forEach(c => { const k = c.dataset.section||c.id; if(k) _secOpen[k] = !c.classList.contains('collapsed'); });
   try {
-    wrap.innerHTML = '<div class="container" style="padding-top:16px;padding-bottom:0">' + renderKpiCards(year) + '</div>' +
-      renderSoldes(year) + renderRevSection(year) +
+    wrap.innerHTML = renderKpiCards(year) + renderSoldes(year) + renderRevSection(year) +
       renderChargeSection(year) + renderVarSection(year) + renderMonthSummary(year);
     // Restaurer l'état des sections
     wrap.querySelectorAll('.section-card').forEach(c => { const k = c.dataset.section||c.id; if(k && _secOpen[k]) c.classList.remove('collapsed'); });
@@ -2978,14 +2977,26 @@ function openEditRowModal(year, dataType, ri) {
   const detectedInterval = nonZero.length >= 2 ? (nonZero[1] - nonZero[0]) : (nonZero.length === 1 ? 12 : 1);
   _arPopulateMonths();
   document.getElementById('ar-startmonth').value = detectedStart;
-  document.getElementById('ar-endyear').value = year;
-  document.getElementById('ar-noend').checked = false;
-  document.getElementById('ar-enddate-fields').style.display = 'grid';
   document.getElementById('ar-freq').value = Math.min(Math.max(detectedInterval, 1), 12);
   document.getElementById('ar-amount').value = firstAmt || '';
   document.getElementById('ar-error').textContent = '';
+  // Restaurer date de fin et répétitions depuis la ligne sauvegardée
+  const hasNoEnd = row.noEnd || false;
+  document.getElementById('ar-noend').checked = hasNoEnd;
+  document.getElementById('ar-enddate-fields').style.display = hasNoEnd ? 'none' : 'grid';
+  if (!hasNoEnd && row.endMonth !== undefined && row.endYear !== undefined) {
+    document.getElementById('ar-endmonth').value = row.endMonth;
+    document.getElementById('ar-endyear').value = row.endYear;
+  } else if (!hasNoEnd) {
+    document.getElementById('ar-endyear').value = year;
+  }
   const repsEl2 = document.getElementById('ar-reps');
-  if (repsEl2) { repsEl2.value = ''; document.getElementById('ar-reps-hint').textContent = ''; }
+  if (repsEl2) {
+    repsEl2.value = row.reps || '';
+    const hint = document.getElementById('ar-reps-hint');
+    if (hint) hint.textContent = (row.reps && row.endMonth !== undefined && row.endYear !== undefined)
+      ? `→ fin ${MONTHS[row.endMonth]} ${row.endYear}` : '';
+  }
   updateAddRowModal();
   document.getElementById('add-row-modal').style.display = 'flex';
   setTimeout(() => { const l = document.getElementById('ar-label'); l.focus(); l.select(); }, 80);
@@ -3066,17 +3077,22 @@ function submitAddRow() {
   const v = Array(12).fill(0);
   for (let m = startMonth; m < 12; m += interval) v[m] += amount;
   const noEnd = document.getElementById('ar-noend').checked;
+  const reps = parseInt(document.getElementById('ar-reps')?.value) || 0;
+  let savedEndMonth, savedEndYear;
   if (!noEnd) {
-    const endMonth = parseInt(document.getElementById('ar-endmonth').value);
-    const endYear = parseInt(document.getElementById('ar-endyear').value);
-    if (endYear === parseInt(year)) { for (let m = endMonth + 1; m < 12; m++) v[m] = 0; }
-    else if (endYear < parseInt(year)) { v.fill(0); }
+    savedEndMonth = parseInt(document.getElementById('ar-endmonth').value);
+    savedEndYear = parseInt(document.getElementById('ar-endyear').value);
+    if (savedEndYear === parseInt(year)) { for (let m = savedEndMonth + 1; m < 12; m++) v[m] = 0; }
+    else if (savedEndYear < parseInt(year)) { v.fill(0); }
   }
+  // Métadonnées à sauvegarder pour restauration en édition
+  const rowMeta = { noEnd, reps: reps || undefined, endMonth: noEnd ? undefined : savedEndMonth, endYear: noEnd ? undefined : savedEndYear };
   if (_arEditMode && _arEditIdx !== null) {
     const row = DATA[year][_arEditDataType][_arEditIdx];
     row.label = label;
     if (_arEditDataType === 'charges') row.cat = type;
     for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
+    Object.assign(row, rowMeta);
     renderYear(year);
     dSave();
     document.getElementById('add-row-modal').style.display = 'none';
@@ -3085,9 +3101,9 @@ function submitAddRow() {
     return;
   }
   if (type === 'revenu') {
-    DATA[year].revenus.push({label, v, paid: Array(12).fill(false), inCalc: true});
+    DATA[year].revenus.push({label, v, paid: Array(12).fill(false), inCalc: true, ...rowMeta});
   } else {
-    DATA[year].charges.push({label, cat: type, v, paid: Array(12).fill(false)});
+    DATA[year].charges.push({label, cat: type, v, paid: Array(12).fill(false), ...rowMeta});
   }
   renderYear(year);
   dSave();
@@ -5288,7 +5304,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v109</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v110</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5971,8 +5987,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '9.3';
-const SW_VERSION = 'v109';
+const APP_VERSION = '9.4';
+const SW_VERSION = 'v110';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5984,6 +6000,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.4': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '✏️', text: 'Modal modification : date de fin et répétitions restaurées depuis la ligne sauvegardée' },
+      { icon: '📐', text: 'KPI cards et cartes soldes : même largeur sans décalage de conteneur' }
+    ]
+  },
   '9.3': {
     date: 'Mai 2026',
     items: [
