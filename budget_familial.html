@@ -3629,8 +3629,8 @@ async function cloudPull() {
       renderWelcomeScreen();
     }
     const { _syncedUsers, _gistToken, _gistId, ...budgetData } = d;
-    // Refuser des données cloud vides si on a des données locales valides
-    if (!_hasYearData(budgetData)) { _lastSyncError = 'Données cloud vides — restauration ignorée'; return null; }
+    // Refuser des données cloud vides si on a des données locales valides (retour silencieux — pas une erreur)
+    if (!_hasYearData(budgetData)) { return null; }
     // Restaurer le token Gist s'il est absent localement
     if (_gistToken && !getGistToken()) {
       localStorage.setItem(gistTokenKey(), _gistToken);
@@ -3646,7 +3646,11 @@ async function cloudPullNow() {
   if (!_fbUser) { showToast('⚠️ Connectez-vous avec Google d\'abord'); openAuthModal('login'); return; }
   setCloudStatus('syncing');
   const cloudData = await cloudPull();
-  if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Échec de la récupération'); return; }
+  if (!cloudData) {
+    if (!_lastSyncError) { setCloudStatus('off'); showToast('ℹ️ Aucune donnée dans le cloud'); }
+    else { setCloudStatus('error', _lastSyncError); }
+    return;
+  }
   DATA = cloudData;
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
@@ -4478,7 +4482,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v81</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v82</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5150,8 +5154,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '6.5';
-const SW_VERSION = 'v81';
+const APP_VERSION = '6.6';
+const SW_VERSION = 'v82';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5163,6 +5167,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '6.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '☁️', text: 'Fix sync : le cloud vide ne déclenche plus l\'alerte ⚠️ orange — l\'indicateur reste discret jusqu\'à la première synchronisation réelle' }
+    ]
+  },
   '6.5': {
     date: 'Mai 2026',
     items: [
