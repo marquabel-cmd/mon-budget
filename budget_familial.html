@@ -3091,6 +3091,20 @@ function renderMethodTotals(year) {
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
+function _filterVarCats(year, q) {
+  const ql = q.trim().toLowerCase();
+  const varSection = document.getElementById('var-section-' + year);
+  if (!varSection) return;
+  varSection.querySelectorAll('.section-card[data-cat]').forEach(card => {
+    if (!ql) { card.style.display = ''; return; }
+    const label = (card.querySelector('.section-title')?.textContent || '').toLowerCase();
+    card.style.display = label.includes(ql) ? '' : 'none';
+  });
+  const vis = [...varSection.querySelectorAll('.section-card[data-cat]')].filter(c => c.style.display !== 'none').length;
+  const countEl = document.getElementById('var-filter-count-' + year);
+  if (countEl) countEl.textContent = ql ? vis + ' catégorie' + (vis !== 1 ? 's' : '') + ' affichée' + (vis !== 1 ? 's' : '') : '';
+}
+
 function renderVarSection(year) {
   const varMths = allVarTotal(year);
   const gt = sum(varMths);
@@ -3103,6 +3117,11 @@ function renderVarSection(year) {
       <div class="legend">
         <span style="font-weight:700;margin-right:4px">Mode de paiement :</span>
         ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${_esc(mo.label)}</span>`).join('')}
+      </div>
+      <div style="padding:10px 16px 4px">
+        <input type="search" placeholder="🔍 Filtrer les catégories…" oninput="_filterVarCats('${year}',this.value)"
+          style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text);font-family:inherit">
+        <span id="var-filter-count-${year}" style="font-size:11px;color:var(--blue);display:block;min-height:16px;margin-top:3px"></span>
       </div>
       <div class="var-section">${getVarCats().map(c => renderVarCat(year, c)).join('')}</div>
       ${renderMethodTotals(year)}
@@ -3236,7 +3255,7 @@ function toggleMonthDetail(year, catKey, m, btn) {
 
 // ── QUICK ADD ──
 let _qaYear = null, _qaCat = null;
-let _dashYear = null, _dashMonth = new Date().getMonth();
+let _dashYear = null, _dashMonth = new Date().getMonth(), _dashView = 'month';
 function openQuickAdd(year, catKey) {
   // Auto-detect year from active tab if not provided
   if (!year) {
@@ -3656,6 +3675,33 @@ function renderSummary() {
   });
   html += '</tbody>';
   table.innerHTML = html;
+
+  // Stats annuelles enrichies
+  let statsHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:20px">';
+  years.forEach(year => {
+    const rv=revTotal(year), ch=chgTotal(year), vr=allVarTotal(year);
+    const bal=rv.map((r,i)=>r-ch[i]-vr[i]);
+    const tRv=sum(rv), tBal=sum(bal);
+    const savingsRate = tRv > 0 ? Math.round((tBal/tRv)*100) : 0;
+    const bestMi = bal.indexOf(Math.max(...bal));
+    const worstMi = bal.indexOf(Math.min(...bal));
+    const biggestVrMi = allVarTotal(year).indexOf(Math.max(...allVarTotal(year)));
+    const cats = getVarCats().map(c=>({...c,total:sum(varTotal(year,c.key))})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
+    const topCat = cats[0];
+    statsHtml += `<div class="section-card" style="padding:16px">
+      <div style="font-weight:800;font-size:13px;color:var(--blue);margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:8px">📊 Stats ${year}</div>
+      <div style="display:grid;gap:7px;font-size:12px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">Taux d'épargne</span><span style="font-weight:700;color:${savingsRate>=0?'var(--green)':'var(--red)'}">${savingsRate}%</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">Épargne moy./mois</span><span style="font-weight:700;color:${tBal>=0?'var(--green)':'var(--red)'}">${fmtN(tBal/12)} €</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">🏆 Meilleur mois</span><span style="font-weight:700;color:var(--green)">${MONTHS[bestMi]} (${fmtN(bal[bestMi])} €)</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">📉 Mois difficile</span><span style="font-weight:700;color:var(--red)">${MONTHS[worstMi]} (${fmtN(bal[worstMi])} €)</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">🛒 Mois le + dépensier</span><span style="font-weight:700">${MONTHS[biggestVrMi]}</span></div>
+        ${topCat?`<div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">💸 Top catégorie</span><span style="font-weight:700">${topCat.icon||'🛍️'} ${_esc(topCat.label)} (${fmtN(topCat.total)} €)</span></div>`:''}
+      </div>
+    </div>`;
+  });
+  statsHtml += '</div>';
+  table.insertAdjacentHTML('afterend', statsHtml);
 
   const b=document.getElementById('sum-badge');
   if(b){
@@ -4406,7 +4452,7 @@ function _doSearch(q) {
     return;
   }
   const ql = q.toLowerCase().trim();
-  const years = getYears();
+  const years = [...getYears()].reverse();
   let html = '', total = 0;
   years.forEach(yr => {
     const hits = [];
@@ -4655,6 +4701,59 @@ function renderDashboard() {
     : `<p style="color:var(--gray);font-size:12px;text-align:center;padding:14px 0">Aucune dépense variable ce mois.</p>`;
 
   // Sélecteur d'année (si plusieurs)
+  // Toggle vue Mois / Année
+  const viewToggle = `<div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:inline-flex">
+      <button onclick="_dashView='month';renderDashboard()" style="padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:${_dashView==='month'?'var(--blue)':'transparent'};color:${_dashView==='month'?'#fff':'var(--gray)'}">📅 Mois</button>
+      <button onclick="_dashView='year';renderDashboard()" style="padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:${_dashView==='year'?'var(--blue)':'transparent'};color:${_dashView==='year'?'#fff':'var(--gray)'}">📊 Année</button>
+    </div>
+  </div>`;
+
+  // Vue annuelle
+  if (_dashView === 'year') {
+    const tRv = sum(spRv), tCh = sum(spCh), tVr = sum(spVr);
+    const tBal = tRv - tCh - tVr;
+    const balArr = spBal;
+    const savingsRate = tRv > 0 ? Math.round((tBal / tRv) * 100) : 0;
+    const bestMi = balArr.indexOf(Math.max(...balArr));
+    const worstMi = balArr.indexOf(Math.min(...balArr));
+    const maxAbs = Math.max(...balArr.map(v => Math.abs(v)), 1);
+    const annualYearSel = years.length > 1
+      ? `<select onchange="_dashSetYear(this.value)" style="font-size:14px;font-weight:700;border:1px solid var(--border);border-radius:8px;padding:5px 12px;background:var(--surface);color:var(--text);cursor:pointer;margin-bottom:16px">${years.map(y=>`<option value="${y}"${y===yr?' selected':''}>${y}</option>`).join('')}</select>`
+      : `<div style="font-size:18px;font-weight:800;margin-bottom:16px">${yr}</div>`;
+    wrap.innerHTML = `<div class="container">${viewToggle}${annualYearSel}
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px">
+        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💹 Revenus</div><div style="font-size:20px;font-weight:800;color:var(--green);margin-top:6px">${fmtN(tRv)} €</div></div>
+        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🏠 Charges</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(tCh)} €</div></div>
+        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🛒 Variables</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(tVr)} €</div></div>
+        <div class="section-card" style="padding:14px;text-align:center;border-left:3px solid ${tBal>=0?'var(--green)':'var(--red)'}"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💰 Solde annuel</div><div style="font-size:20px;font-weight:800;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmtN(tBal)} €</div></div>
+      </div>
+      <div class="section-card" style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px">📈 Indicateurs</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Taux d'épargne</div><div style="font-weight:800;font-size:20px;color:${savingsRate>=0?'var(--green)':'var(--red)'};margin-top:4px">${savingsRate}%</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Épargne moy./mois</div><div style="font-weight:800;font-size:18px;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:4px">${fmtN(tBal/12)} €</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">🏆 Meilleur mois</div><div style="font-weight:700;font-size:13px;color:var(--green);margin-top:4px">${MONTHS[bestMi]} · ${fmtN(balArr[bestMi])} €</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">📉 Mois difficile</div><div style="font-weight:700;font-size:13px;color:var(--red);margin-top:4px">${MONTHS[worstMi]} · ${fmtN(balArr[worstMi])} €</div></div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px">📊 Solde mois par mois</div>
+        ${balArr.map((v,i) => {
+          const pct = Math.round((Math.abs(v)/maxAbs)*100);
+          const col = v>=0?'var(--green)':'var(--red)';
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <div style="width:28px;text-align:right;color:var(--gray);font-size:11px;flex-shrink:0">${MONTHS[i].slice(0,3)}</div>
+            <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:4px"></div></div>
+            <div style="width:70px;text-align:right;font-weight:700;color:${col};font-size:11px">${fmtN(v)} €</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+    _dashInitSwipe(wrap);
+    return;
+  }
+
   const yearSel = years.length > 1
     ? `<select onchange="_dashSetYear(this.value)" style="margin-top:5px;font-size:11px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;background:var(--surface);color:var(--text);cursor:pointer">
         ${years.map(y => `<option value="${y}"${y===yr?' selected':''}>${y}</option>`).join('')}
@@ -4668,7 +4767,38 @@ function renderDashboard() {
       <button onclick="_switchYearMobile('${curY}')" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--blue);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">📅 Aller à ${curY} →</button>
     </div>` : '';
 
+  // Donut répartition dépenses variables du mois
+  const catAmounts = getVarCats().map(cat=>({...cat,amount:varTotal(yr,cat.key)[mi]})).filter(c=>c.amount>0).sort((a,b)=>b.amount-a.amount);
+  const donutHtml = catAmounts.length >= 2 ? (() => {
+    const donutColors = ['#5B6AF0','#F5A623','#2ECC71','#F04F5B','#8B5CF6','#3BAFDA','#E67E22','#1ABC9C','#9B59B6','#E74C3C'];
+    const sz=130,r=42,ir=26,cx=sz/2,cy=sz/2;
+    const pc=(a,rad)=>[cx+rad*Math.cos(a),cy+rad*Math.sin(a)];
+    let ang=-Math.PI/2;
+    const paths=catAmounts.map((c,i)=>{
+      const sw=(c.amount/vr)*2*Math.PI;
+      const [x1,y1]=pc(ang,r),[x2,y2]=pc(ang+sw,r),[ix1,iy1]=pc(ang,ir),[ix2,iy2]=pc(ang+sw,ir);
+      const la=sw>Math.PI?1:0;
+      const d=`M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${la} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L${ix2.toFixed(1)} ${iy2.toFixed(1)} A${ir} ${ir} 0 ${la} 0 ${ix1.toFixed(1)} ${iy1.toFixed(1)}Z`;
+      ang+=sw;
+      return `<path d="${d}" fill="${donutColors[i%donutColors.length]}" opacity="0.88"/>`;
+    }).join('');
+    const svgStr=`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">${paths}</svg>`;
+    const legend=catAmounts.map((c,i)=>{
+      const pct=Math.round(c.amount/vr*100);
+      return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:12px">
+        <div style="width:9px;height:9px;border-radius:50%;background:${donutColors[i%donutColors.length]};flex-shrink:0"></div>
+        <span>${c.icon||'🛍️'} ${_esc(c.label)}</span>
+        <span style="margin-left:auto;font-weight:700;white-space:nowrap">${fmtN(c.amount)} € <span style="color:var(--gray);font-weight:400">(${pct}%)</span></span>
+      </div>`;
+    }).join('');
+    return `<div class="section-card" style="margin-bottom:14px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:10px">🍩 Répartition des dépenses</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">${svgStr}<div style="flex:1;min-width:100px">${legend}</div></div>
+    </div>`;
+  })() : '';
+
   wrap.innerHTML = `<div class="container">
+    ${viewToggle}
     <!-- Navigation mois -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
       <button onclick="_dashNav(-1)" ${canPrev?'':'disabled'} style="${btnStyle(canPrev,'var(--blue)')}">←</button>
@@ -4705,6 +4835,7 @@ function renderDashboard() {
       </div>
     </div>
 
+    ${donutHtml}
     ${goalHtml}
     ${alertsHtml}
     ${compHtml}
@@ -5100,7 +5231,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v105</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v106</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5783,8 +5914,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '8.9';
-const SW_VERSION = 'v105';
+const APP_VERSION = '9.0';
+const SW_VERSION = 'v106';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5796,6 +5927,16 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.0': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔍', text: 'Recherche globale : résultats triés du plus récent au plus ancien' },
+      { icon: '📅', text: 'Accueil : vue annuelle (toggle Mois/Année) avec KPIs totaux, taux d\'épargne, barres mensuelles' },
+      { icon: '🍩', text: 'Accueil : graphique donut SVG de répartition des dépenses variables du mois' },
+      { icon: '🔎', text: 'Dépenses variables : barre de filtre par catégorie dans chaque onglet année' },
+      { icon: '🏆', text: 'Résumé : statistiques annuelles enrichies (taux épargne, meilleur/pire mois, top catégorie)' }
+    ]
+  },
   '8.9': {
     date: 'Mai 2026',
     items: [
