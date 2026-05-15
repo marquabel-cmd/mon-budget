@@ -873,6 +873,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
           <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Libellé *</label>
           <input type="text" id="cat-m-label" placeholder="Ex: Alimentation"
             style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;background:var(--surface-alt);color:var(--text);box-sizing:border-box"
+            oninput="_autoSuggestCatIcon()"
             onkeydown="if(event.key==='Enter')submitCatModal()">
         </div>
       </div>
@@ -4465,6 +4466,65 @@ function renameVarCat(key) {
   dSave();
   getYears().forEach(y => renderYear(y));
   showToast('✅ Catégorie mise à jour');
+}
+const _CAT_ICON_MAP = [
+  {k:['aliment','course','courses','nourriture','épicerie','epicerie','supermarché','supermarche','marché','marche','colruyt','lidl','delhaize','carrefour','aldi'],i:'🛒'},
+  {k:['restaurant','resto','repas','déjeuner','dejeuner','dîner','diner','snack','fast food','fastfood','pizza','sushi'],i:'🍽️'},
+  {k:['café','cafe','bar','bière','biere','boisson'],i:'☕'},
+  {k:['boulangerie','pain','patisserie','pâtisserie'],i:'🥖'},
+  {k:['voiture','auto','véhicule','vehicule'],i:'🚗'},
+  {k:['essence','carburant','gasoil','diesel','station'],i:'⛽'},
+  {k:['transport','bus','métro','metro','train','tram','stib','sncb','tec','de lijn','mivb'],i:'🚌'},
+  {k:['parking','garage'],i:'🅿️'},
+  {k:['taxi','uber','vtc','bolt'],i:'🚕'},
+  {k:['vélo','velo','trottinette','moto','scooter'],i:'🚲'},
+  {k:['avion','vol','aéroport','aeroport','billet avion'],i:'✈️'},
+  {k:['loyer','location','appartement','logement','copropriété'],i:'🏠'},
+  {k:['électricité','electricite','gaz','énergie','energie','eau','chauffage','engie','luminus','ores'],i:'💡'},
+  {k:['internet','fibre','wifi','box','proximus','voo','telenet','orange','sfr'],i:'📶'},
+  {k:['gsm','mobile','téléphone','telephone','abonnement mobile'],i:'📱'},
+  {k:['assurance','mutuelle','hospitalisation'],i:'🛡️'},
+  {k:['santé','sante','médecin','medecin','pharmacie','médical','medical','dentiste','kiné','kine','psy'],i:'🏥'},
+  {k:['sport','fitness','gym','piscine','salle de sport','natation','running'],i:'💪'},
+  {k:['ciné','cinema','cinéma','film','spectacle','concert','théâtre','theatre'],i:'🎬'},
+  {k:['jeu','gaming','console','playstation','xbox','nintendo','steam','jeux vidéo'],i:'🎮'},
+  {k:['musique','spotify','deezer'],i:'🎵'},
+  {k:['streaming','netflix','disney','prime','hulu','rtbf','vtm'],i:'📺'},
+  {k:['livre','lecture','bibliothèque','bibliotheque','librairie'],i:'📚'},
+  {k:['vacances','hôtel','hotel','hébergement','hebergement','airbnb','camping'],i:'🏖️'},
+  {k:['vêtement','vetement','habit','mode','chaussure','shopping','zara','h&m'],i:'👕'},
+  {k:['enfant','bébé','bebe','crèche','creche','école','ecole','garderie','scolaire','fourniture'],i:'👶'},
+  {k:['jouet','jouets','lego','toy'],i:'🧸'},
+  {k:['épargne','epargne','économie','economie','investissement','placement','bourse'],i:'💰'},
+  {k:['remboursement','crédit','credit','emprunt','prêt','pret','hypothèque','hypotheque'],i:'🏦'},
+  {k:['animal','animaux','chien','chat','vétérinaire','veterinaire','croquette'],i:'🐾'},
+  {k:['beauté','beaute','coiffeur','coiffure','cosmétique','cosmetique','maquillage','soins'],i:'💅'},
+  {k:['bien-être','bien etre','spa','massage','yoga','méditation'],i:'🧘'},
+  {k:['cadeau','anniversaire','noël','noel','fête','fete'],i:'🎁'},
+  {k:['don','charité','charite','association','ong','générosité'],i:'❤️'},
+  {k:['impôt','impot','taxe','tva','fiscal','précompte','precompte','cadastre'],i:'📋'},
+  {k:['travaux','bricolage','réparation','reparation','renovation','jardinage'],i:'🔧'},
+  {k:['informatique','ordinateur','pc','mac','portable','tablette','logiciel'],i:'💻'},
+  {k:['électroménager','electromenager','appareil','machine','lave'],i:'🧺'},
+  {k:['sortie','loisir','divertissement'],i:'🎉'},
+  {k:['prévention','prevention','protection','sécurité','securite','alarme'],i:'🔒'},
+];
+function _suggestCatIcon(label) {
+  if (!label) return '';
+  const l = label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  for (const {k, i} of _CAT_ICON_MAP) {
+    if (k.some(kw => l.includes(kw.normalize('NFD').replace(/[̀-ͯ]/g,'')))) return i;
+  }
+  return '';
+}
+function _autoSuggestCatIcon() {
+  const label = document.getElementById('cat-m-label')?.value || '';
+  const iconEl = document.getElementById('cat-m-icon');
+  if (!iconEl) return;
+  // Ne suggère que si le champ icône est vide ou contient encore l'emoji par défaut
+  if (iconEl.value && iconEl.value !== '📦') return;
+  const suggested = _suggestCatIcon(label);
+  if (suggested) iconEl.value = suggested;
 }
 function openCatModal(key) {
   const m = document.getElementById('cat-modal');
