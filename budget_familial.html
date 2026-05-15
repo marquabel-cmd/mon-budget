@@ -863,20 +863,21 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
       <button onclick="document.getElementById('cat-modal').style.display='none'" style="background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="flex-shrink:0">
-          <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Icône</label>
+      <div>
+        <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Libellé *</label>
+        <input type="text" id="cat-m-label" placeholder="Ex: Alimentation"
+          style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;background:var(--surface-alt);color:var(--text);box-sizing:border-box"
+          oninput="_autoSuggestCatIcon()"
+          onkeydown="if(event.key==='Enter')submitCatModal()">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Icône</label>
+        <div style="display:flex;gap:8px;align-items:center">
           <input type="text" id="cat-m-icon" placeholder="📦" maxlength="2"
-            style="width:48px;border:1px solid var(--border);border-radius:8px;padding:8px 6px;font-size:18px;text-align:center;background:var(--surface-alt);color:var(--text);transition:box-shadow .2s">
-          <div id="cat-m-icon-hint" style="font-size:9px;color:var(--blue);text-align:center;margin-top:3px;min-height:12px"></div>
+            style="width:52px;border:1px solid var(--border);border-radius:8px;padding:8px 6px;font-size:22px;text-align:center;background:var(--surface-alt);color:var(--text);flex-shrink:0">
+          <div id="cat-m-icon-suggestions" style="display:flex;flex-wrap:wrap;gap:5px;flex:1"></div>
         </div>
-        <div style="flex:1">
-          <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Libellé *</label>
-          <input type="text" id="cat-m-label" placeholder="Ex: Alimentation"
-            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;background:var(--surface-alt);color:var(--text);box-sizing:border-box"
-            oninput="_autoSuggestCatIcon()"
-            onkeydown="if(event.key==='Enter')submitCatModal()">
-        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:4px">Cliquez une suggestion ou tapez votre propre emoji</div>
       </div>
       <div>
         <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">🎯 Budget (optionnel)</label>
@@ -4399,7 +4400,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v78</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v79</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -4522,17 +4523,30 @@ function _suggestCatIcon(label) {
 function _autoSuggestCatIcon() {
   const label = document.getElementById('cat-m-label')?.value || '';
   const iconEl = document.getElementById('cat-m-icon');
-  const hintEl = document.getElementById('cat-m-icon-hint');
-  if (!iconEl) return;
-  if (iconEl.value && iconEl.value !== '📦') { if (hintEl) hintEl.textContent = ''; return; }
-  const suggested = _suggestCatIcon(label);
-  if (suggested) {
-    iconEl.value = suggested;
-    iconEl.style.boxShadow = '0 0 0 3px rgba(91,106,240,.5)';
-    setTimeout(() => { iconEl.style.boxShadow = ''; }, 800);
-    if (hintEl) { hintEl.textContent = '💡 suggéré'; setTimeout(() => { hintEl.textContent = ''; }, 2500); }
-  } else {
-    if (hintEl) hintEl.textContent = '';
+  const suggestEl = document.getElementById('cat-m-icon-suggestions');
+  if (!iconEl || !suggestEl) return;
+
+  // Trouver toutes les correspondances (pas juste la première)
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const l = norm(label);
+  const matches = [];
+  for (const {k, i} of _CAT_ICON_MAP) {
+    if (k.some(kw => l.includes(norm(kw)))) matches.push(i);
+    if (matches.length >= 6) break;
+  }
+
+  // Afficher les boutons suggestion
+  suggestEl.innerHTML = matches.map(icon =>
+    `<button type="button" onclick="document.getElementById('cat-m-icon').value='${icon}';document.getElementById('cat-m-icon-suggestions').querySelectorAll('button').forEach(b=>b.style.background='');this.style.background='var(--blue)';this.style.color='#fff'"
+      style="font-size:20px;padding:4px 7px;border:1px solid var(--border);border-radius:8px;background:var(--surface-alt);cursor:pointer;transition:background .15s"
+      title="Utiliser ${icon}">${icon}</button>`
+  ).join('');
+
+  // Pré-sélectionner le premier si le champ est vide
+  if (matches.length > 0 && !iconEl.value) {
+    iconEl.value = matches[0];
+    suggestEl.querySelectorAll('button')[0]?.style && (suggestEl.querySelectorAll('button')[0].style.background = 'var(--blue)');
+    suggestEl.querySelectorAll('button')[0]?.style && (suggestEl.querySelectorAll('button')[0].style.color = '#fff');
   }
 }
 function openCatModal(key) {
@@ -5058,8 +5072,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '6.2';
-const SW_VERSION = 'v78';
+const APP_VERSION = '6.3';
+const SW_VERSION = 'v79';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5071,6 +5085,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '6.3': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🗂', text: 'Catégories : suggestions d\'icônes visuelles — tapez un libellé et des boutons emoji apparaissent, cliquez pour choisir' },
+      { icon: '📱', text: 'Numéro de version et SW affichés de façon fiable sur l\'écran d\'accueil, menu ? et aide.html' }
+    ]
+  },
   '6.2': {
     date: 'Mai 2026',
     items: [
