@@ -813,8 +813,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
-          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Fréquence (× par an)</label>
-          <input id="ar-freq" type="number" min="1" max="52" value="12" oninput="updateAddRowPreview()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Tous les X mois</label>
+          <input id="ar-freq" type="number" min="1" max="12" value="1" oninput="updateAddRowPreview()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
         </div>
         <div>
           <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Mois de début</label>
@@ -2786,7 +2786,7 @@ function openAddRowModal(year, type) {
   document.getElementById('ar-type').value = type;
   const labels = {revenu:'Nouveau revenu', fixed:'Nouvelle charge', occasional:'Charge occasionnelle'};
   document.getElementById('ar-label').value = labels[type] || '';
-  document.getElementById('ar-freq').value = 12;
+  document.getElementById('ar-freq').value = 1;
   const sm = document.getElementById('ar-startmonth');
   sm.innerHTML = MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
   sm.value = new Date().getMonth();
@@ -2812,28 +2812,30 @@ function updateAddRowEndDate() {
   document.getElementById('ar-enddate-fields').style.display = hide ? 'none' : 'grid';
 }
 function updateAddRowPreview() {
-  const freq = parseInt(document.getElementById('ar-freq').value) || 0;
+  const interval = parseInt(document.getElementById('ar-freq').value) || 0;
   const amount = parseFloat(document.getElementById('ar-amount').value) || 0;
   const startMonth = parseInt(document.getElementById('ar-startmonth').value) || 0;
   const prev = document.getElementById('ar-preview');
-  if (!freq || !amount) { prev.style.display = 'none'; return; }
-  const payMonths = Array.from({length: Math.min(freq,12)}, (_,i) => Math.floor(startMonth + i * 12 / freq) % 12);
-  const annual = amount * freq;
-  prev.innerHTML = `→ ${freq}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${payMonths.map(m => MONTHS[m]).join(', ')}</span>`;
+  if (!interval || !amount) { prev.style.display = 'none'; return; }
+  const payMonths = [];
+  for (let m = startMonth; m < startMonth + 12; m += interval) payMonths.push(m % 12);
+  const annual = amount * payMonths.length;
+  const label = interval === 1 ? 'mensuel' : `tous les ${interval} mois`;
+  prev.innerHTML = `→ ${label} = ${payMonths.length}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${payMonths.map(m => MONTHS[m]).join(', ')}</span>`;
   prev.style.display = 'block';
 }
 function submitAddRow() {
   const year = _arYear;
   const type = document.getElementById('ar-type').value;
   const label = document.getElementById('ar-label').value.trim() || (type==='revenu'?'Nouveau revenu':'Nouvelle charge');
-  const freq = parseInt(document.getElementById('ar-freq').value);
+  const interval = parseInt(document.getElementById('ar-freq').value);
   const amount = parseFloat(document.getElementById('ar-amount').value) || 0;
   const startMonth = parseInt(document.getElementById('ar-startmonth').value) || 0;
   const errEl = document.getElementById('ar-error');
   errEl.textContent = '';
-  if (!freq || freq < 1 || freq > 52) { errEl.textContent = '⚠️ Fréquence entre 1 et 52'; return; }
+  if (!interval || interval < 1 || interval > 12) { errEl.textContent = '⚠️ Intervalle entre 1 et 12 mois'; return; }
   const v = Array(12).fill(0);
-  Array.from({length: freq}, (_,i) => Math.floor(startMonth + i * 12 / freq) % 12).forEach(m => { v[m] += amount; });
+  for (let m = startMonth; m < startMonth + 12; m += interval) v[m % 12] += amount;
   if (type === 'occasional') {
     const noEnd = document.getElementById('ar-noend').checked;
     if (!noEnd) {
