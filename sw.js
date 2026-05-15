@@ -1,4 +1,4 @@
-const CACHE = 'mon-budget-v77';
+const CACHE = 'mon-budget-v78';
 const STATIC = [
   './manifest.json',
   './icon-192.png',
@@ -7,7 +7,11 @@ const STATIC = [
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)));
-  self.skipWaiting(); // Activer immédiatement le nouveau SW
+  self.skipWaiting();
+});
+
+self.addEventListener('message', e => {
+  if (e.data?.action === 'skipWaiting') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {

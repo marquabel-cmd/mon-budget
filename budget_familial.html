@@ -2733,7 +2733,7 @@ function renderChargeSection(year) {
   });
 
   const mths = chgTotal(year);
-  const totRow = mths.map((v,i)=>`<td style="font-weight:700;color:var(--text)" id="chmth-${year}-${i}">${fmtN(v)}</td>`).join('');
+  const totRow = mths.map((v,i)=>`<td style="font-weight:800;color:#fff;font-size:13px" id="chmth-${year}-${i}">${fmtN(v)}</td>`).join('');
   const gt = sum(mths);
 
   return `<div class="section-card collapsed" data-section="charges">
@@ -2759,9 +2759,9 @@ function renderChargeSection(year) {
         <tr class="sep-row"><td colspan="15">🔄 CHARGES RÉCURRENTES</td></tr>
         ${tbody}
         <tr class="sep-row"><td colspan="15" style="background:#2c3e50">TOTAL CHARGES</td></tr>
-        <tr style="font-weight:700;background:var(--surface-alt);color:var(--text);border-top:2px solid rgba(91,106,240,.35)">
-          <td class="lbl-col" style="color:var(--text)">TOTAL</td>${totRow}
-          <td class="tot-col" style="color:var(--blue);font-size:14px" id="chtot-${year}">${fmtN(gt)}</td><td></td>
+        <tr style="font-weight:800;background:rgba(91,106,240,.22);color:#fff;border-top:3px solid rgba(91,106,240,.5)">
+          <td class="lbl-col" style="color:#fff;font-size:13px">TOTAL</td>${totRow}
+          <td class="tot-col" style="color:#a0aaff;font-size:15px;font-weight:900" id="chtot-${year}">${fmtN(gt)}</td><td></td>
         </tr>
       </tbody></table>
     </div>
@@ -4397,7 +4397,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v77</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v78</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -4989,7 +4989,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '6.1';
+const APP_VERSION = '6.2';
 document.addEventListener('DOMContentLoaded', () => {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -4997,6 +4997,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (wv) wv.textContent = 'v' + APP_VERSION;
 });
 const CHANGELOG = {
+  '6.2': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📊', text: 'Ligne total charges : meilleure lisibilité avec fond coloré et texte blanc contrasté' },
+      { icon: '🔄', text: 'Mises à jour automatiques : le nouveau SW est activé immédiatement au chargement — plus besoin de rester bloqué sur une ancienne version' }
+    ]
+  },
   '6.1': {
     date: 'Mai 2026',
     items: [
@@ -5689,23 +5696,38 @@ window.addEventListener('message', async (e) => {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').then(reg => {
-      // Vérification automatique toutes les 30 minutes
+      // Vérifier les mises à jour immédiatement + toutes les 30 minutes
+      reg.update();
       setInterval(() => reg.update(), 30 * 60 * 1000);
+
+      // Si un nouveau SW est déjà en attente (ex: onglet resté ouvert longtemps), l'activer tout de suite
+      function _activateWaiting(worker) {
+        if (!worker) return;
+        _pendingSW = worker;
+        worker.postMessage({ action: 'skipWaiting' });
+      }
+      if (reg.waiting) _activateWaiting(reg.waiting);
 
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Nouveau SW prêt mais en attente — montrer la barre
+          if (newWorker.state === 'installed') {
+            if (navigator.serviceWorker.controller) {
+              // Nouveau SW prêt — activation automatique (skipWaiting déjà dans le SW)
+              _pendingSW = newWorker;
+              const bar = document.getElementById('update-bar');
+              if (bar) bar.style.display = 'flex';
+            }
+          }
+          // Si le SW saute directement à activating sans passer par installed (skipWaiting rapide)
+          if (newWorker.state === 'activating' && navigator.serviceWorker.controller) {
             _pendingSW = newWorker;
-            const bar = document.getElementById('update-bar');
-            if (bar) bar.style.display = 'flex';
           }
         });
       });
     }).catch(() => {});
 
-    // Rechargement quand le nouveau SW prend le contrôle (après skipWaiting)
+    // Rechargement automatique quand le nouveau SW prend le contrôle
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       sessionStorage.setItem('app-updated', '1');
       window.location.reload();
