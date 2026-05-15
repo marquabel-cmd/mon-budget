@@ -867,7 +867,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
         <div style="flex-shrink:0">
           <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Icône</label>
           <input type="text" id="cat-m-icon" placeholder="📦" maxlength="2"
-            style="width:48px;border:1px solid var(--border);border-radius:8px;padding:8px 6px;font-size:18px;text-align:center;background:var(--surface-alt);color:var(--text)">
+            style="width:48px;border:1px solid var(--border);border-radius:8px;padding:8px 6px;font-size:18px;text-align:center;background:var(--surface-alt);color:var(--text);transition:box-shadow .2s">
+          <div id="cat-m-icon-hint" style="font-size:9px;color:var(--blue);text-align:center;margin-top:3px;min-height:12px"></div>
         </div>
         <div style="flex:1">
           <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Libellé *</label>
@@ -4511,20 +4512,28 @@ const _CAT_ICON_MAP = [
 ];
 function _suggestCatIcon(label) {
   if (!label) return '';
-  const l = label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const l = norm(label);
   for (const {k, i} of _CAT_ICON_MAP) {
-    if (k.some(kw => l.includes(kw.normalize('NFD').replace(/[̀-ͯ]/g,'')))) return i;
+    if (k.some(kw => l.includes(norm(kw)))) return i;
   }
   return '';
 }
 function _autoSuggestCatIcon() {
   const label = document.getElementById('cat-m-label')?.value || '';
   const iconEl = document.getElementById('cat-m-icon');
+  const hintEl = document.getElementById('cat-m-icon-hint');
   if (!iconEl) return;
-  // Ne suggère que si le champ icône est vide ou contient encore l'emoji par défaut
-  if (iconEl.value && iconEl.value !== '📦') return;
+  if (iconEl.value && iconEl.value !== '📦') { if (hintEl) hintEl.textContent = ''; return; }
   const suggested = _suggestCatIcon(label);
-  if (suggested) iconEl.value = suggested;
+  if (suggested) {
+    iconEl.value = suggested;
+    iconEl.style.boxShadow = '0 0 0 3px rgba(91,106,240,.5)';
+    setTimeout(() => { iconEl.style.boxShadow = ''; }, 800);
+    if (hintEl) { hintEl.textContent = '💡 suggéré'; setTimeout(() => { hintEl.textContent = ''; }, 2500); }
+  } else {
+    if (hintEl) hintEl.textContent = '';
+  }
 }
 function openCatModal(key) {
   const m = document.getElementById('cat-modal');
@@ -5051,14 +5060,16 @@ const FREE_MAX_YEARS = 1;
 // ── CHANGELOG ──
 const APP_VERSION = '6.2';
 const SW_VERSION = 'v78';
-document.addEventListener('DOMContentLoaded', () => {
+function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
   const svd = document.getElementById('sw-version-display');
   if (svd) svd.textContent = SW_VERSION;
   const wv = document.getElementById('welcome-version');
   if (wv) wv.textContent = `v${APP_VERSION} · SW ${SW_VERSION}`;
-});
+}
+_setVersionDisplays(); // exécution immédiate (script en bas du body)
+document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
   '6.2': {
     date: 'Mai 2026',
@@ -5718,10 +5729,7 @@ function closeChangelog() {
   localStorage.setItem('budget_app_version_seen', APP_VERSION);
 }
 function checkChangelog() {
-  const vd = document.getElementById('app-version-display');
-  if (vd) vd.textContent = APP_VERSION;
-  const svd = document.getElementById('sw-version-display');
-  if (svd) svd.textContent = SW_VERSION;
+  _setVersionDisplays();
   const seen = localStorage.getItem('budget_app_version_seen');
   const wasUpdated = sessionStorage.getItem('app-updated');
   if (wasUpdated) sessionStorage.removeItem('app-updated');
