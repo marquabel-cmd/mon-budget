@@ -137,8 +137,9 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .tab{padding:16px 16px 14px;font-size:13px;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;user-select:none}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-/* Sélecteur mobile années : caché sur desktop */
-#year-tab-mobile{display:none}
+/* Onglets années masqués partout → remplacés par le sélecteur compact */
+.tab[data-year]{display:none!important}
+#year-tab-mobile{display:flex;align-items:center}
 
 /* ── LAYOUT ── */
 .container{max-width:1400px;margin:0 auto;padding:20px 24px}
@@ -493,9 +494,6 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   .tabs{padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab{font-size:11px;padding:8px 10px;white-space:nowrap;flex-shrink:0}
-  /* Onglets années masqués sur mobile → remplacés par sélecteur compact */
-  .tab[data-year]{display:none!important}
-  #year-tab-mobile{display:flex;align-items:center}
   .container{padding:10px 8px}
   .config-grid{grid-template-columns:1fr}
   .soldes-grid{gap:6px}
@@ -2316,10 +2314,10 @@ function renderTabs() {
     if (!years.length) { mob.innerHTML = ''; }
     else {
       const activeY = document.querySelector('#year-tabs .tab.active')?.dataset?.year || years[years.length-1];
-      mob.innerHTML = `<div style="display:flex;align-items:center;gap:3px;background:rgba(91,106,240,.15);border:1.5px solid rgba(91,106,240,.4);border-radius:8px;padding:4px 8px;cursor:pointer;align-self:center;margin:0 2px">
-        <span style="font-size:12px;pointer-events:none">📅</span>
-        <select id="year-select-mob" onchange="_switchYearMobile(this.value)" style="background:transparent;border:none;color:var(--text);font-size:12px;font-weight:700;cursor:pointer;outline:none;padding:0 2px;max-width:70px">
-          ${years.map(y => `<option value="${y}"${y==activeY?' selected':''}>${y}</option>`).join('')}
+      mob.innerHTML = `<div style="display:flex;align-items:center;gap:3px;background:rgba(91,106,240,.15);border:1.5px solid rgba(91,106,240,.4);border-radius:8px;padding:4px 10px;cursor:pointer;align-self:center;margin:0 3px">
+        <span style="font-size:13px;pointer-events:none">📅</span>
+        <select id="year-select-mob" onchange="_switchYearMobile(this.value)" style="background:#1A1D2E;border:none;color:#e0e4ff;font-size:13px;font-weight:700;cursor:pointer;outline:none;padding:0 4px;border-radius:4px">
+          ${years.map(y => `<option value="${y}" style="background:#1A1D2E;color:#e0e4ff;font-weight:700"${y==activeY?' selected':''}>${y}</option>`).join('')}
         </select>
       </div>`;
     }
@@ -4534,7 +4532,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v85</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v86</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5206,8 +5204,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '6.9';
-const SW_VERSION = 'v85';
+const APP_VERSION = '7.0';
+const SW_VERSION = 'v86';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5219,6 +5217,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '7.0': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🗂️', text: 'Barre d\'onglets unifiée : les années passent partout (desktop + mobile) en sélecteur compact 📅 ▾ — lisible, propre, scalable à l\'infini' }
+    ]
+  },
   '6.9': {
     date: 'Mai 2026',
     items: [
