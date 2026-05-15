@@ -1025,7 +1025,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
           <div class="tour-help-item" onclick="startTour();closeHelpDropdown()">🗺️ Tour guidé</div>
           <div class="tour-help-item" onclick="openAide();closeHelpDropdown()">📖 Guide complet</div>
           <div class="tour-help-item" onclick="window.location.href='dashboard.html';closeHelpDropdown()">👤 Mon compte</div>
-          <div style="padding:7px 14px;font-size:11px;color:var(--gray);border-top:1px solid var(--border);user-select:all">v<span id="app-version-display"></span></div>
+          <div style="padding:7px 14px;font-size:11px;color:var(--gray);border-top:1px solid var(--border);user-select:all">v<span id="app-version-display"></span> · SW <span id="sw-version-display"></span></div>
         </div>
       </div>
       <button class="btn" id="theme-toggle" onclick="toggleTheme()" title="Mode jour/nuit" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">🌙</button>
@@ -5050,11 +5050,14 @@ const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
 const APP_VERSION = '6.2';
+const SW_VERSION = 'v78';
 document.addEventListener('DOMContentLoaded', () => {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
+  const svd = document.getElementById('sw-version-display');
+  if (svd) svd.textContent = SW_VERSION;
   const wv = document.getElementById('welcome-version');
-  if (wv) wv.textContent = 'v' + APP_VERSION;
+  if (wv) wv.textContent = `v${APP_VERSION} · SW ${SW_VERSION}`;
 });
 const CHANGELOG = {
   '6.2': {
