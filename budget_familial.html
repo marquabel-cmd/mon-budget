@@ -2373,10 +2373,15 @@ function renderYear(year) {
   // S'assurer que vars contient toutes les catégories
   if (!DATA[year].vars) DATA[year].vars = {};
   getVarCats().forEach(c => { if (!DATA[year].vars[c.key]) DATA[year].vars[c.key] = []; });
+  // Mémoriser l'état ouvert/fermé des sections avant de reconstruire
+  const _secOpen = {};
+  wrap.querySelectorAll('.section-card').forEach(c => { const k = c.dataset.section||c.id; if(k) _secOpen[k] = !c.classList.contains('collapsed'); });
   try {
     wrap.innerHTML = '<div class="container" style="padding-top:16px;padding-bottom:0">' + renderKpiCards(year) + '</div>' +
       renderSoldes(year) + renderRevSection(year) +
       renderChargeSection(year) + renderVarSection(year) + renderMonthSummary(year);
+    // Restaurer l'état des sections
+    wrap.querySelectorAll('.section-card').forEach(c => { const k = c.dataset.section||c.id; if(k && _secOpen[k]) c.classList.remove('collapsed'); });
     updateLivretDisplay(year);
     updateCompteDisplay(year);
     setTimeout(animateBudgetBars, 60);
@@ -2573,7 +2578,7 @@ function renderRevSection(year) {
     }).join('');
     return `<tr><td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check cal-check-compte" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','compte',${ri},this.checked)" onclick="event.stopPropagation()">
-        <span style="flex:1;font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default" title="${_esc(r.label)}">${_esc(r.label)}</span>
+        <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
       <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
@@ -2677,7 +2682,7 @@ function renderChargeSection(year) {
     tbody += `<tr class="${r.cat==='occasional'?'occ-row':''}">
       <td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check ${chkClass}" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','${isLivretRow?'livret':'compte'}',${ri},this.checked,'charge')" onclick="event.stopPropagation()">
-        <span style="flex:1;font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default" title="${_esc(r.label)}">${_esc(r.label)}</span>
+        <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
       <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
@@ -4366,7 +4371,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v75</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v76</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
