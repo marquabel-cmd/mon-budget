@@ -2287,16 +2287,10 @@ function switchTab(id, el) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('tab-'+id).classList.add('active');
-  // Mettre à jour le sélecteur/boutons d'années si on bascule sur une année
+  // Mettre à jour le sélecteur d'années si on bascule sur une année
   if (id.startsWith('y')) {
-    const y = id.slice(1);
     const sel = document.getElementById('year-select-mob');
-    if (sel) sel.value = y;
-    document.querySelectorAll('.year-btn-compact').forEach(b => {
-      b.style.background = b.dataset.y === y ? 'rgba(91,106,240,.35)' : 'rgba(91,106,240,.12)';
-      b.style.color = b.dataset.y === y ? '#fff' : 'var(--text)';
-      b.style.borderColor = b.dataset.y === y ? 'rgba(91,106,240,.7)' : 'rgba(91,106,240,.3)';
-    });
+    if (sel) sel.value = id.slice(1);
   }
   if (id==='resume') renderSummary();
   else if (id==='charts') renderCharts();
@@ -2320,24 +2314,17 @@ function renderTabs() {
     if (!years.length) { mob.innerHTML = ''; }
     else {
       const activeY = document.querySelector('#year-tabs .tab.active')?.dataset?.year || years[years.length-1];
-      const desc = [...years].reverse(); // ordre décroissant : 2026, 2025, 2024…
-      if (years.length <= 5) {
-        // ≤ 5 ans : boutons individuels compacts
-        mob.innerHTML = desc.map(y =>
-          `<button class="year-btn-compact" data-y="${y}" onclick="_switchYearMobile('${y}')"
-            style="background:${y==activeY?'rgba(91,106,240,.35)':'rgba(91,106,240,.12)'};border:1.5px solid ${y==activeY?'rgba(91,106,240,.7)':'rgba(91,106,240,.3)'};color:${y==activeY?'#fff':'var(--text)'};border-radius:8px;padding:5px 11px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;margin:0 2px;transition:all .15s">
-            ${y}
-          </button>`
-        ).join('');
-      } else {
-        // > 5 ans : sélecteur dropdown
-        mob.innerHTML = `<div style="display:flex;align-items:center;gap:3px;background:rgba(91,106,240,.15);border:1.5px solid rgba(91,106,240,.4);border-radius:8px;padding:4px 10px;align-self:center;margin:0 3px">
+      const desc = [...years].reverse(); // ordre décroissant : 2026, 2025…
+      // Toujours le mode compact dropdown + bouton ✕ pour supprimer l'année active
+      mob.innerHTML = `
+        <div style="display:flex;align-items:center;gap:3px;background:rgba(91,106,240,.15);border:1.5px solid rgba(91,106,240,.4);border-radius:8px;padding:4px 10px;align-self:center;margin:0 3px">
           <span style="font-size:13px;pointer-events:none">📅</span>
           <select id="year-select-mob" onchange="_switchYearMobile(this.value)" style="background:#1A1D2E;border:none;color:#e0e4ff;font-size:13px;font-weight:700;cursor:pointer;outline:none;padding:0 4px;border-radius:4px">
             ${desc.map(y => `<option value="${y}" style="background:#1A1D2E;color:#e0e4ff;font-weight:700"${y==activeY?' selected':''}>${y}</option>`).join('')}
           </select>
-        </div>`;
-      }
+        </div>
+        ${years.length > 1 ? `<button onclick="deleteYear(document.getElementById('year-select-mob')?.value||'${activeY}')" title="Supprimer cette année" style="background:transparent;border:1px solid rgba(255,100,100,.4);color:rgba(255,120,120,.8);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;align-self:center;line-height:1;margin-left:1px;transition:all .15s" onmouseover="this.style.background='rgba(255,80,80,.15)'" onmouseout="this.style.background='transparent'">✕</button>` : ''}
+      `;
     }
   }
   const container = document.getElementById('main-container');
@@ -4550,7 +4537,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v87</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v88</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5222,8 +5209,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '7.1';
-const SW_VERSION = 'v87';
+const APP_VERSION = '7.2';
+const SW_VERSION = 'v88';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5235,6 +5222,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '7.2': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🗂️', text: 'Barre d\'onglets : sélecteur compact toujours actif (années décroissantes), bouton ✕ de suppression d\'année avec confirmation restauré' }
+    ]
+  },
   '7.1': {
     date: 'Mai 2026',
     items: [
