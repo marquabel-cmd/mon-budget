@@ -4167,6 +4167,15 @@ function _goToYear(y) {
   const tab = [...document.querySelectorAll('#year-tabs .tab')].find(t => t.textContent.trim().includes(String(y)));
   if (tab) tab.click();
 }
+function _goToTab(id) {
+  const map = { resume: "📊 Résumé", charts: "📈 Graphiques" };
+  if (id === 'resume' || id === 'charts') {
+    const tab = [...document.querySelectorAll('.tabs .tab')].find(t => t.textContent.trim().startsWith(map[id]?.slice(0,3) || ''));
+    if (tab) tab.click();
+  } else if (id.startsWith('y')) {
+    _goToYear(id.slice(1));
+  }
+}
 function renderConfigTab() {
   const wrap = document.getElementById('tab-config');
   const cfg = loadUserConfig();
@@ -4201,12 +4210,18 @@ function renderConfigTab() {
       <button class="del-btn" onclick="deleteMethod(${i})" title="Supprimer">✕</button>
     </div>`).join('');
   const years = getYears();
+  // Bandeau de navigation identique à la barre d'onglets principale
+  const navBar = `
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:20px;padding:8px 10px;background:var(--surface);border-radius:12px;box-shadow:var(--shadow-sm)">
+      <button onclick="_goToTab('resume')" style="display:flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--border);color:var(--gray);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">📊 Résumé</button>
+      ${years.map(y => `<button onclick="_goToYear(${y})" style="display:flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--border);color:var(--gray);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">📅 ${y}</button>`).join('')}
+      <button onclick="_goToTab('charts')" style="display:flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--border);color:var(--gray);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">📈 Graphiques</button>
+    </div>`;
   const yearSummary = years.length ? `
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
       ${years.map(y => {
         const rv = sum(revTotal(y)), dep = sum(depTotal(y)), bal = rv - dep;
         const balColor = bal >= 0 ? 'var(--green)' : 'var(--red)';
-        const balBg = bal >= 0 ? 'var(--green-light)' : '#fff5f5';
         return `<div style="flex:1;min-width:160px;background:var(--surface);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-sm);border-top:3px solid var(--blue);cursor:pointer" onclick="_goToYear(${y})">
           <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px">📅 ${y}</div>
           <div style="display:flex;flex-direction:column;gap:5px;font-size:12px">
@@ -4218,7 +4233,7 @@ function renderConfigTab() {
         </div>`;
       }).join('')}
     </div>` : '';
-  wrap.innerHTML = `<div class="container">${yearSummary}<div class="config-grid">
+  wrap.innerHTML = `<div class="container">${navBar}${yearSummary}<div class="config-grid">
     <div>
       <div class="config-card"><h3>👤 Utilisateurs</h3>${userList}
         <div class="add-user-form">
@@ -4482,7 +4497,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v82</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v83</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5154,8 +5169,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '6.6';
-const SW_VERSION = 'v82';
+const APP_VERSION = '6.7';
+const SW_VERSION = 'v83';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5167,6 +5182,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '6.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🗂️', text: 'Page Config : bandeau de navigation en haut pour accéder directement à Résumé, chaque année et Graphiques sans scroller' }
+    ]
+  },
   '6.6': {
     date: 'Mai 2026',
     items: [
