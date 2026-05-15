@@ -1094,6 +1094,22 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   </div>
 </div>
 
+<!-- Modal Recherche globale -->
+<div id="modal-search" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);overflow-y:auto" onclick="if(event.target===this)closeGlobalSearch()">
+  <div style="background:var(--surface);border-radius:16px;max-width:580px;margin:60px auto 40px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <div style="padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+      <span style="font-size:20px">🔍</span>
+      <input id="search-input" type="search" placeholder="Rechercher une ligne, une dépense…"
+        style="flex:1;background:transparent;border:none;outline:none;font-size:16px;color:var(--text);font-family:inherit"
+        oninput="_doSearch(this.value)">
+      <button onclick="closeGlobalSearch()" style="background:none;border:none;font-size:22px;color:var(--gray);cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div id="search-results" style="padding:16px;max-height:62vh;overflow-y:auto">
+      <p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>
+    </div>
+  </div>
+</div>
+
 <div class="tabs">
   <div class="tab" onclick="switchTab('accueil',this)">🏠 Accueil</div>
   <div class="tab active" onclick="switchTab('resume',this)">📊 Résumé</div>
@@ -1102,6 +1118,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   <button class="btn-add-year" onclick="addYear()">＋ Année</button>
   <div class="tab" onclick="switchTab('charts',this)">📈 Graphiques</div>
   <div class="tab" onclick="switchTab('config',this)">⚙️ Config</div>
+  <div class="tab" onclick="openGlobalSearch()" title="Recherche globale" style="flex-shrink:0">🔍</div>
 </div>
 
 <div class="container" id="main-container">
@@ -4369,6 +4386,74 @@ function _goToTab(id) {
   }
 }
 // ─────────────────────────────────────────────
+// 🔍 RECHERCHE GLOBALE
+// ─────────────────────────────────────────────
+function openGlobalSearch() {
+  const modal = document.getElementById('modal-search');
+  modal.style.display = 'block';
+  document.getElementById('search-results').innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>';
+  const inp = document.getElementById('search-input');
+  inp.value = '';
+  setTimeout(() => inp.focus(), 80);
+}
+function closeGlobalSearch() {
+  document.getElementById('modal-search').style.display = 'none';
+}
+function _doSearch(q) {
+  const res = document.getElementById('search-results');
+  if (!q || !q.trim()) {
+    res.innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>';
+    return;
+  }
+  const ql = q.toLowerCase().trim();
+  const years = getYears();
+  let html = '', total = 0;
+  years.forEach(yr => {
+    const hits = [];
+    // Revenus
+    (DATA[yr]?.revenus || []).forEach(r => {
+      if ((r.label||'').toLowerCase().includes(ql)) {
+        const t12 = r.v.reduce((s,v) => s+(parseFloat(v)||0), 0);
+        hits.push({icon:'💹', type:'Revenu', label:r.label, detail:'Total '+yr+' : '+fmtN(t12)+' €', action:"_scrollToSection('"+yr+"','revenus')"});
+      }
+    });
+    // Charges
+    (DATA[yr]?.charges || []).forEach(r => {
+      if ((r.label||'').toLowerCase().includes(ql)) {
+        const t12 = r.v.reduce((s,v) => s+(parseFloat(v)||0), 0);
+        hits.push({icon:'🏠', type:'Charge', label:r.label, detail:'Total '+yr+' : '+fmtN(t12)+' €', action:"_scrollToSection('"+yr+"','charges')"});
+      }
+    });
+    // Dépenses variables
+    getVarCats().forEach(cat => {
+      (DATA[yr]?.vars?.[cat.key] || []).forEach(tx => {
+        const txt = [(tx.label||''), (tx.comment||''), cat.label].join(' ').toLowerCase();
+        if (txt.includes(ql)) {
+          const mLbl = MONTHS[tx.month] || '';
+          hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmtN(tx.amount)+' €', action:"_scrollToSection('"+yr+"','variables')"});
+        }
+      });
+    });
+    if (hits.length) {
+      total += hits.length;
+      html += '<div style="margin-bottom:16px">'
+        + '<div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📅 '+yr+' — '+hits.length+' résultat'+(hits.length>1?'s':'')+'</div>'
+        + hits.slice(0,20).map(h =>
+          '<div onclick="'+h.action+';closeGlobalSearch()" style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:6px;background:var(--bg)">'
+          + '<span style="font-size:18px;flex-shrink:0">'+h.icon+'</span>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_esc(h.label)+'</div>'
+          + '<div style="font-size:11px;color:var(--gray)">'+_esc(h.type)+' · '+h.detail+'</div></div>'
+          + '<span style="color:var(--gray);font-size:16px;flex-shrink:0">→</span></div>'
+        ).join('')
+        + (hits.length > 20 ? '<div style="font-size:11px;color:var(--gray);text-align:center">… et '+(hits.length-20)+' autre'+(hits.length-20>1?'s':'')+'</div>' : '')
+        + '</div>';
+    }
+  });
+  if (!total) html = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Aucun résultat pour « '+_esc(q)+' »</p>';
+  res.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
 // 🖨️ RAPPORT PDF
 // ─────────────────────────────────────────────
 function openPdfReport() {
@@ -4414,6 +4499,7 @@ function openPdfReport() {
         </tbody>
       </table>
       ${cats.length ? `<div style="page-break-inside:avoid"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">🗂 Répartition des dépenses variables</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${cats.map(c=>`<div style="border:1px solid #eee;border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between"><span style="font-size:11px">${c.icon||'🛍️'} ${_esc(c.label)}</span><span style="font-size:11px;font-weight:700;color:#e74c3c">${fmtN(c.total)} €</span></div>`).join('')}</div></div>` : ''}
+      ${(() => { const notes = DATA[year]?.notes || {}; const noteEntries = MONTHS.map((m,i)=>({m,i,n:notes[i]})).filter(e=>e.n?.trim()); return noteEntries.length ? `<div style="page-break-inside:avoid;margin-top:12px"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">📝 Notes mensuelles</div>${noteEntries.map(e=>`<div style="display:flex;gap:10px;font-size:11px;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:700;color:#5B6AF0;white-space:nowrap;min-width:40px">${e.m}</span><span>${_esc(e.n)}</span></div>`).join('')}</div>` : ''; })()}
     </div>`;
   });
   html += `<div style="border-top:1px solid #ddd;padding-top:10px;margin-top:12px;font-size:9px;color:#aaa;text-align:center">Mon Budget v${APP_VERSION} — budget.marquabel.be — Généré le ${dateStr}</div></div>`;
@@ -4424,6 +4510,30 @@ function openPdfReport() {
 // ─────────────────────────────────────────────
 // 🏠 TABLEAU DE BORD MENSUEL
 // ─────────────────────────────────────────────
+function _sparkline(values, color, width, height) {
+  width = width || 72; height = height || 26;
+  const vals = values.map(v => parseFloat(v) || 0);
+  if (vals.every(v => v === 0)) return '';
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = max - min || 1;
+  const n = vals.length;
+  const pts = vals.map((v, i) => {
+    const x = (i / (n - 1)) * (width - 6) + 3;
+    const y = (height - 6) - ((v - min) / range) * (height - 10) + 3;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  const lastX = ((n-1)/(n-1))*(width-6)+3, lastY = (height-6)-((vals[n-1]-min)/range)*(height-10)+3;
+  return '<svg width="'+width+'" height="'+height+'" style="display:block;margin:5px auto 0;overflow:visible"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity="0.75"/><circle cx="'+lastX.toFixed(1)+'" cy="'+lastY.toFixed(1)+'" r="2.5" fill="'+color+'"/></svg>';
+}
+
+function saveMonthNote(year, mi, val) {
+  if (!DATA[year]) return;
+  DATA[year].notes = DATA[year].notes || {};
+  if (val.trim()) DATA[year].notes[mi] = val;
+  else delete DATA[year].notes[mi];
+  dSave();
+}
+
 function renderDashboard() {
   const wrap = document.getElementById('tab-accueil');
   const years = getYears();
@@ -4449,6 +4559,12 @@ function renderDashboard() {
   const bal = rv - dep;
   const cfg = loadUserConfig();
   const goal = parseFloat(cfg.savingsGoal) || 0;
+
+  // Sparklines : 12 mois de l'année courante
+  const spRv = revTotal(yr);
+  const spCh = Array.from({length:12}, (_, i) => (DATA[yr]?.charges||[]).reduce((t,r) => r.cat==='livret_out'?t:t+(parseFloat(r.v[i])||0), 0));
+  const spVr = allVarTotal(yr);
+  const spBal = spRv.map((r, i) => r - spCh[i] - spVr[i]);
 
   // Navigation
   const yIdx = years.indexOf(yr);
@@ -4570,18 +4686,22 @@ function renderDashboard() {
       <div class="section-card" style="padding:14px;text-align:center">
         <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💹 Revenus</div>
         <div style="font-size:22px;font-weight:800;color:var(--green);margin-top:6px">${fmtN(rv)} €</div>
+        ${_sparkline(spRv,'#2ECC71')}
       </div>
       <div class="section-card" style="padding:14px;text-align:center">
         <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🏠 Charges</div>
         <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(ch)} €</div>
+        ${_sparkline(spCh,'#F04F5B')}
       </div>
       <div class="section-card" style="padding:14px;text-align:center">
         <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🛒 Variables</div>
         <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(vr)} €</div>
+        ${_sparkline(spVr,'#F5A623')}
       </div>
       <div class="section-card" style="padding:14px;text-align:center;border-left:3px solid ${bal>=0?'var(--green)':'var(--red)'}">
         <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💰 Solde</div>
         <div style="font-size:22px;font-weight:800;color:${bal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmtN(bal)} €</div>
+        ${_sparkline(spBal, bal>=0?'#2ECC71':'#F04F5B')}
       </div>
     </div>
 
@@ -4613,13 +4733,21 @@ function renderDashboard() {
     })()}
 
     <!-- Dépenses variables du mois -->
-    <div class="section-card">
+    <div class="section-card" style="margin-bottom:14px">
       <div style="font-weight:700;font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
         <span>🛒 Dépenses variables</span>
         ${txList.length ? `<span style="font-size:11px;color:var(--gray);font-weight:400">${txList.length} transaction${txList.length>1?'s':''} · ${fmtN(vr)} € total</span>` : ''}
       </div>
       ${txHtml}
       ${txList.length > 8 ? `<div style="text-align:center;font-size:11px;color:var(--gray);margin-top:8px">… et ${txList.length-8} autre${txList.length-8>1?'s':''}</div>` : ''}
+    </div>
+
+    <!-- Note du mois -->
+    <div class="section-card">
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px">📝 Note du mois</div>
+      <textarea rows="3" placeholder="Ajouter une note pour ${MONTHS[mi]} ${yr}…"
+        style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;color:var(--text);resize:vertical;font-family:inherit;line-height:1.5"
+        onchange="saveMonthNote('${yr}',${mi},this.value)">${_esc((DATA[yr]?.notes||{})[mi]||'')}</textarea>
     </div>
   </div>`;
   // Swipe mobile gauche/droite
@@ -4972,7 +5100,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v104</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v105</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5655,8 +5783,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '8.8';
-const SW_VERSION = 'v104';
+const APP_VERSION = '8.9';
+const SW_VERSION = 'v105';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5668,6 +5796,14 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '8.9': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📊', text: 'Accueil : sparklines SVG sur les 4 KPIs — visualisez la tendance annuelle en un coup d\'œil' },
+      { icon: '🔍', text: 'Recherche globale : trouvez instantanément n\'importe quelle ligne, charge ou dépense dans toutes vos années' },
+      { icon: '📝', text: 'Notes mensuelles : ajoutez une note libre par mois, visible dans l\'Accueil et incluse dans le PDF' }
+    ]
+  },
   '8.8': {
     date: 'Mai 2026',
     items: [
@@ -7321,6 +7457,9 @@ function _positionCentered() {
 }
 
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('modal-search')?.style.display !== 'none') closeGlobalSearch();
+  }
   if (!_tourActive) return;
   if (e.key === 'ArrowRight' || e.key === 'Enter') tourNext();
   else if (e.key === 'ArrowLeft') tourPrev();

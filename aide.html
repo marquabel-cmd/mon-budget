@@ -148,6 +148,7 @@ a:hover{text-decoration:underline}
       <a href="#interface">🖥️ Interface</a>
       <a href="#accueil">🏠 Tableau de bord</a>
       <a href="#objectif-epargne">🎯 Objectif d'épargne</a>
+      <a href="#recherche">🔍 Recherche globale</a>
       <a href="#revenus">💼 Revenus</a>
       <a href="#charges">🏠 Charges</a>
       <a href="#variables">🛒 Dépenses variables</a>
@@ -164,8 +165,8 @@ a:hover{text-decoration:underline}
       <a href="#ajout-rapide">➕ Ajout rapide</a>
       <a href="#assistant-ia">🤖 Assistant IA</a>
       <div style="margin-top:14px;padding:8px 10px;border-top:1px solid #e8eaf6;font-size:10px;color:#9BA3C9;line-height:1.6">
-        📱 App <b id="aide-app-version">8.8</b><br>
-        🔧 SW <b id="aide-sw-version">v104</b>
+        📱 App <b id="aide-app-version">8.9</b><br>
+        🔧 SW <b id="aide-sw-version">v105</b>
       </div>
     </nav>
   </aside>
@@ -558,6 +559,7 @@ a:hover{text-decoration:underline}
       <p>Utilisez les boutons <b>←</b> et <b>→</b> pour naviguer d'un mois à l'autre. Le changement d'année s'effectue automatiquement (janvier → décembre de l'année précédente et inversement). Utilisez le sélecteur d'année pour sauter directement à une année.</p>
 
       <h3>4 indicateurs clés (KPIs)</h3>
+      <p>Chaque carte affiche la valeur du mois sélectionné et une <b>sparkline SVG</b> — une mini-courbe représentant la tendance sur les 12 mois de l'année. D'un coup d'œil, vous voyez si un indicateur monte ou descend.</p>
       <div class="feature-grid">
         <div class="feature-card" style="border-top:3px solid #27ae60">
           <div class="fc-icon">💹</div>
@@ -599,9 +601,31 @@ a:hover{text-decoration:underline}
       <h3>📱 Navigation par swipe (mobile)</h3>
       <p>Sur mobile, un <b>glissement vers la gauche</b> passe au mois suivant, un <b>glissement vers la droite</b> revient au mois précédent — sans avoir à toucher les boutons ← →.</p>
 
+      <h3>📝 Note du mois</h3>
+      <p>En bas de l'Accueil, un champ texte libre permet d'ajouter une <b>note mensuelle</b> (ex : "mois chargé, vacances", "bonus reçu"). La note est sauvegardée automatiquement et apparaît dans le <b>rapport PDF</b> dans une section dédiée.</p>
+
       <div class="tip">
         <b>💡 Astuce</b> — Commencez votre session par l'onglet Accueil pour voir rapidement où vous en êtes. Si le solde est rouge, consultez les catégories dépassées pour identifier les postes à réduire.
       </div>
+    </div>
+
+    <!-- Recherche globale -->
+    <div class="section" id="recherche">
+      <h2><span>🔍</span> Recherche globale</h2>
+      <p class="lead">Retrouvez instantanément n'importe quelle ligne de revenu, charge ou dépense variable dans toutes vos années, sans naviguer dans les tableaux.</p>
+
+      <h3>Ouvrir la recherche</h3>
+      <p>Cliquez sur l'onglet <b>🔍</b> dans la barre de navigation (tout à droite). La recherche peut aussi être fermée avec la touche <b>Échap</b>.</p>
+
+      <h3>Ce qui est indexé</h3>
+      <ul style="margin:8px 0 12px 20px;line-height:2">
+        <li><b>Libellés des revenus</b> — ex : "Salaire", "Prime"</li>
+        <li><b>Libellés des charges</b> — ex : "Loyer", "Assurance"</li>
+        <li><b>Dépenses variables</b> — libellé, catégorie et commentaire de chaque transaction</li>
+      </ul>
+
+      <h3>Résultats</h3>
+      <p>Les résultats sont groupés par année avec le type et le montant. Cliquer sur un résultat <b>navigue directement</b> vers la section correspondante et ferme la recherche.</p>
     </div>
 
     <!-- Objectif d'épargne -->
