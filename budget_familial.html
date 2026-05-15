@@ -744,7 +744,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
     <div class="welcome-logo-icon">💰</div>
     <div class="welcome-title">Mon Budget</div>
     <div class="welcome-sub">Gestion mensuelle des revenus et dépenses</div>
-    <div id="welcome-version" style="font-size:11px;color:rgba(255,255,255,.25);margin-bottom:8px"></div>
+    <div id="welcome-version" style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px"></div>
     <div class="welcome-users-grid" id="welcome-users-grid"></div>
     <hr class="welcome-divider">
     <button class="welcome-add-toggle" onclick="toggleWelcomeAddPanel()">＋ Créer un utilisateur</button>
@@ -5718,9 +5718,10 @@ function closeChangelog() {
   localStorage.setItem('budget_app_version_seen', APP_VERSION);
 }
 function checkChangelog() {
-  // Afficher la version dans le dropdown ?
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
+  const svd = document.getElementById('sw-version-display');
+  if (svd) svd.textContent = SW_VERSION;
   const seen = localStorage.getItem('budget_app_version_seen');
   const wasUpdated = sessionStorage.getItem('app-updated');
   if (wasUpdated) sessionStorage.removeItem('app-updated');
