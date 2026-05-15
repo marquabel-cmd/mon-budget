@@ -3337,10 +3337,18 @@ function _kpiActionBtn(label, onclick) {
   return `<button onclick="${onclick}" style="margin-top:8px;width:100%;padding:5px 8px;background:rgba(91,106,240,.12);border:1px solid rgba(91,106,240,.3);color:var(--blue);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;text-align:left;transition:background .15s" onmouseover="this.style.background='rgba(91,106,240,.22)'" onmouseout="this.style.background='rgba(91,106,240,.12)'">${label}</button>`;
 }
 function _scrollToSection(year, section) {
-  const el = document.querySelector(`[data-section="${section}"]`);
-  if (!el) return;
-  if (el.classList.contains('collapsed')) el.classList.remove('collapsed');
-  setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 100);
+  // S'assurer qu'on est sur le bon onglet année
+  const panel = document.getElementById('tab-y' + year);
+  if (!panel || !panel.classList.contains('active')) {
+    _switchYearMobile(year);
+  }
+  setTimeout(() => {
+    const scope = document.getElementById('tab-y' + year) || document;
+    const el = scope.querySelector(`[data-section="${section}"]`);
+    if (!el) return;
+    if (el.classList.contains('collapsed')) el.classList.remove('collapsed');
+    el.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 150);
 }
 function renderKpiCards(year) {
   const rv = revTotal(year), dep = depTotal(year), ch = chgTotal(year), bal = balance(year);
@@ -4647,7 +4655,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v94</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v95</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5319,8 +5327,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '7.8';
-const SW_VERSION = 'v94';
+const APP_VERSION = '7.9';
+const SW_VERSION = 'v95';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5332,6 +5340,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '7.9': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔧', text: 'Fix bouton "Voir les charges fixes" : navigue sur le bon onglet et déroule la section correcte' }
+    ]
+  },
   '7.8': {
     date: 'Mai 2026',
     items: [
