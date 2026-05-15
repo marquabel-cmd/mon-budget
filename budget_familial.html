@@ -3810,9 +3810,24 @@ function saveData(silent = false) {
   localStorage.setItem(bakPrefix() + dateKey, json);
   const isoNow = now.toISOString();
   localStorage.setItem('budget_lastsave_' + CURRENT_USER_ID, isoNow);
-  // Garder les 20 derniers backups
-  const allBaks = Object.keys(localStorage).filter(k=>k.startsWith(bakPrefix())).sort();
-  if (allBaks.length > 20) allBaks.slice(0, allBaks.length - 20).forEach(k => localStorage.removeItem(k));
+  // Backups quotidiens : garder les 30 derniers jours
+  const pfx = bakPrefix();
+  const dayBaks = Object.keys(localStorage)
+    .filter(k => k.startsWith(pfx) && !k.includes('pre-cloud') && !k.includes('pre-reset'))
+    .sort();
+  if (dayBaks.length > 30) dayBaks.slice(0, dayBaks.length - 30).forEach(k => localStorage.removeItem(k));
+  // Pre-cloud : garder max 3 par jour, supprimer ceux de plus de 30 jours
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+  const preCloud = Object.keys(localStorage).filter(k => k.startsWith(pfx + 'pre-cloud_')).sort();
+  const pcByDay = {};
+  preCloud.forEach(k => {
+    const m = k.match(/pre-cloud_(\d{4}-\d{2}-\d{2})/);
+    if (!m) return;
+    const d = new Date(m[1]);
+    if (d < cutoff) { localStorage.removeItem(k); return; }
+    (pcByDay[m[1]] = pcByDay[m[1]] || []).push(k);
+  });
+  Object.values(pcByDay).forEach(ks => { if (ks.length > 3) ks.sort().slice(0, ks.length - 3).forEach(k => localStorage.removeItem(k)); });
   if (!silent) showToast('✅ Sauvegardé');
   updateLastSaveDisplay();
   // ── Protections multi-couches ──
@@ -3859,46 +3874,70 @@ function toggleTheme() {
 
 function openBackups() {
   const pfx = bakPrefix();
-  const keys = Object.keys(localStorage).filter(k=>k.startsWith(pfx)).sort().reverse();
+  const keys = Object.keys(localStorage).filter(k => k.startsWith(pfx)).sort().reverse();
   const MOIS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
   const list = document.getElementById('backup-list');
   const lastSave = localStorage.getItem('budget_lastsave_' + CURRENT_USER_ID);
-  let header = '';
+  let html = '';
   if (lastSave) {
     const d = new Date(lastSave);
     const pad = n => String(n).padStart(2,'0');
-    header = `<div style="background:var(--green-light);color:var(--green);font-weight:700;font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:10px">
-      ✅ Dernière sauvegarde : ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} à ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}
+    html += `<div style="background:var(--green-light);color:var(--green);font-weight:700;font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:12px">
+      ✅ Dernière sauvegarde : ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} à ${pad(d.getHours())}:${pad(d.getMinutes())}
     </div>`;
   }
   if (!keys.length) {
-    list.innerHTML = header + '<p class="no-backup">Aucune sauvegarde disponible.</p>';
-  } else {
-    list.innerHTML = header + keys.map(k => {
+    list.innerHTML = html + '<p class="no-backup">Aucune sauvegarde disponible.</p>';
+    document.getElementById('backup-modal').classList.add('open');
+    return;
+  }
+  // Grouper par jour (YYYY-MM-DD)
+  const byDay = {};
+  keys.forEach(k => {
+    const raw = k.replace(pfx, '');
+    let day;
+    if (raw.startsWith('pre-cloud_')) {
+      const m = raw.match(/pre-cloud_(\d{4}-\d{2}-\d{2})/);
+      day = m ? m[1] : 'autres';
+    } else if (raw.startsWith('pre-reset_')) {
+      const m = raw.match(/pre-reset_(\d{4}-\d{2}-\d{2})/);
+      day = m ? m[1] : 'autres';
+    } else {
+      day = raw.substring(0, 10);
+    }
+    (byDay[day] = byDay[day] || []).push(k);
+  });
+  const days = Object.keys(byDay).sort().reverse();
+  days.forEach((day, di) => {
+    const [y, mo, d] = day.split('-');
+    const dayLabel = d ? `${parseInt(d)} ${MOIS[(parseInt(mo)||1)-1]} ${y}` : day;
+    const isToday = day === new Date().toISOString().slice(0,10);
+    html += `<div style="display:flex;align-items:center;gap:8px;margin:${di>0?'14px':0} 0 5px">
+      <span style="font-size:12px;font-weight:800;color:var(--text)">📅 ${dayLabel}${isToday?' <span style="background:var(--blue);color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;vertical-align:middle">aujourd\'hui</span>':''}</span>
+      <span style="flex:1;border-top:1px solid var(--border)"></span>
+    </div>`;
+    byDay[day].forEach(k => {
       const raw = k.replace(pfx, '');
-      const size = Math.round(localStorage.getItem(k).length / 1024);
-      let label, icon = '📅';
+      const size = Math.round((localStorage.getItem(k)||'').length / 1024);
+      let label, icon = '💾';
       if (raw.startsWith('pre-cloud_')) {
-        // Format pre-cloud_2026-05-13_10h30
-        const m = raw.match(/pre-cloud_(\d{4})-(\d{2})-(\d{2})_(\d{2})h(\d{2})/);
-        label = m ? `Avant sync — ${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : 'Avant sync cloud';
+        const m = raw.match(/pre-cloud_\d{4}-\d{2}-\d{2}_(\d{2})h(\d{2})/);
+        label = m ? `Avant sync cloud — ${m[1]}:${m[2]}` : 'Avant sync cloud';
         icon = '🔄';
       } else if (raw.startsWith('pre-reset_')) {
-        const m = raw.match(/pre-reset_(\d{4})-(\d{2})-(\d{2})/);
-        label = m ? `Avant reset — ${m[3]}/${m[2]}/${m[1]}` : 'Avant reset';
+        label = 'Avant réinitialisation';
         icon = '⚠️';
       } else {
-        const parts = raw.split('-');
-        label = parts.length >= 3
-          ? `${parts[2]} ${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}`
-          : `${MOIS[(parseInt(parts[1])||1)-1]} ${parts[0]}`;
+        label = 'Sauvegarde quotidienne';
+        icon = '💾';
       }
-      return `<div class="backup-item">
+      html += `<div class="backup-item">
         <span class="bk-date">${icon} ${label} <span style="color:var(--gray);font-size:10px">(${size} ko)</span></span>
         <button class="bk-restore" onclick="restoreBackup('${k}')">Restaurer</button>
       </div>`;
-    }).join('');
-  }
+    });
+  });
+  list.innerHTML = html;
   document.getElementById('backup-modal').classList.add('open');
 }
 
@@ -4400,7 +4439,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v79</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v80</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5072,8 +5111,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '6.3';
-const SW_VERSION = 'v79';
+const APP_VERSION = '6.4';
+const SW_VERSION = 'v80';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5085,6 +5124,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '6.4': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📦', text: 'Backups : 30 jours glissants au lieu de 20 entrées — groupés par jour avec séparateur de date, retour en arrière jusqu\'à un mois possible' },
+      { icon: '🔄', text: 'Pré-sync cloud : max 3 par jour conservés, nettoyage automatique des entrées de plus de 30 jours' }
+    ]
+  },
   '6.3': {
     date: 'Mai 2026',
     items: [
