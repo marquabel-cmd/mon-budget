@@ -146,13 +146,13 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .tab-panel{display:none}.tab-panel.active{display:block}
 
 /* ── SOLDE CARDS ── */
-.soldes-grid{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
-.solde-card{background:var(--surface);border-radius:var(--radius-lg);padding:18px 20px;min-width:155px;box-shadow:var(--shadow);border:1px solid var(--border)}
-.solde-card.computed{background:var(--surface-alt);border:1px solid var(--border)}
-.solde-card label{display:block;font-size:11px;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
-.solde-card input{width:100%;border:none;font-size:22px;font-weight:700;color:var(--text);background:transparent;outline:none;font-family:'Inter',system-ui,sans-serif}
+.soldes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.solde-card{background:var(--surface);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow-sm);border:1px solid var(--border);border-top:3px solid var(--blue);display:flex;flex-direction:column}
+.solde-card.computed{border-top-color:var(--green)}
+.solde-card label{display:block;font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;line-height:1.3}
+.solde-card input{width:100%;border:none;font-size:20px;font-weight:800;color:var(--text);background:transparent;outline:none;font-family:'Inter',system-ui,sans-serif;margin-top:auto}
 .solde-card input:focus{border-bottom:2px solid var(--blue)}
-.solde-card .computed-val{font-size:22px;font-weight:700;color:var(--text)}
+.solde-card .computed-val{font-size:20px;font-weight:800;color:var(--text);margin-top:auto}
 
 /* ── SECTION CARDS ── */
 .section-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-sm);margin-bottom:12px;border:1px solid var(--border);overflow:hidden}
@@ -496,10 +496,10 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   .tab{font-size:11px;padding:8px 10px;white-space:nowrap;flex-shrink:0}
   .container{padding:10px 8px}
   .config-grid{grid-template-columns:1fr}
-  .soldes-grid{gap:6px}
-  .solde-card{min-width:120px;padding:9px 10px}
-  .solde-card input{font-size:13px}
-  .solde-card .computed-val{font-size:13px}
+  .soldes-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+  .solde-card{padding:10px 12px}
+  .solde-card input{font-size:15px}
+  .solde-card .computed-val{font-size:15px}
   .section-header{padding:10px 12px}
   .section-title{font-size:12px}
   .badge{font-size:10px;padding:2px 6px}
@@ -511,7 +511,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   .user-switcher{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* Masquer Export CSV et Import CSV sur très petit écran */
   .btn-hide-xs{display:none!important}
-  .soldes-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .soldes-grid{grid-template-columns:1fr 1fr;gap:6px}
   .solde-card{min-width:0}
 }
 /* ── FAB AJOUT RAPIDE ── */
@@ -2333,6 +2333,13 @@ function switchTab(id, el) {
 function _switchYearMobile(year) {
   const tab = [...document.querySelectorAll('#year-tabs .tab')].find(t => t.dataset.year == year);
   if (tab) switchTab('y'+year, tab);
+  // Mettre à jour les boutons visibles
+  document.querySelectorAll('#year-tab-mobile button[data-yr]').forEach(btn => {
+    const isActive = btn.dataset.yr === String(year);
+    btn.style.background = isActive ? 'rgba(91,106,240,.3)' : 'rgba(91,106,240,.1)';
+    btn.style.color = isActive ? '#e0e4ff' : '#8892B0';
+    btn.style.borderColor = isActive ? 'rgba(91,106,240,.8)' : 'rgba(91,106,240,.4)';
+  });
 }
 
 function renderTabs() {
@@ -2347,11 +2354,12 @@ function renderTabs() {
   if (mob) {
     if (!years.length) { mob.innerHTML = ''; }
     else {
-      const activeY = document.querySelector('#year-tabs .tab.active')?.dataset?.year || years[years.length-1];
-      const desc = [...years].reverse(); // ordre décroissant : 2026, 2025…
-      // Boutons d'années en ordre décroissant (cliquables directement, même valeur active)
+      const curYTab = String(new Date().getFullYear());
+      const activeTabEl = document.querySelector('#year-tabs .tab.active');
+      const activeY = activeTabEl?.dataset?.year || (years.includes(curYTab) ? curYTab : years[years.length-1]);
+      const desc = [...years].reverse();
       mob.innerHTML = `<div style="display:flex;gap:3px;align-items:center">
-  ${desc.map(y => `<button onclick="_switchYearMobile('${y}')" style="background:${y==activeY?'rgba(91,106,240,.3)':'rgba(91,106,240,.1)'};border:1.5px solid rgba(91,106,240,.4);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;color:${y==activeY?'#e0e4ff':'#8892B0'};cursor:pointer">📅 ${y}</button>`).join('')}
+  ${desc.map(y => `<button data-yr="${y}" onclick="_switchYearMobile('${y}')" style="background:${y==activeY?'rgba(91,106,240,.3)':'rgba(91,106,240,.1)'};border:1.5px solid ${y==activeY?'rgba(91,106,240,.8)':'rgba(91,106,240,.4)'};border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;color:${y==activeY?'#e0e4ff':'#8892B0'};cursor:pointer">📅 ${y}</button>`).join('')}
 </div>`;
     }
   }
@@ -3091,20 +3099,6 @@ function renderMethodTotals(year) {
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-function _filterVarCats(year, q) {
-  const ql = q.trim().toLowerCase();
-  const varSection = document.getElementById('var-section-' + year);
-  if (!varSection) return;
-  varSection.querySelectorAll('.section-card[data-cat]').forEach(card => {
-    if (!ql) { card.style.display = ''; return; }
-    const label = (card.querySelector('.section-title')?.textContent || '').toLowerCase();
-    card.style.display = label.includes(ql) ? '' : 'none';
-  });
-  const vis = [...varSection.querySelectorAll('.section-card[data-cat]')].filter(c => c.style.display !== 'none').length;
-  const countEl = document.getElementById('var-filter-count-' + year);
-  if (countEl) countEl.textContent = ql ? vis + ' catégorie' + (vis !== 1 ? 's' : '') + ' affichée' + (vis !== 1 ? 's' : '') : '';
-}
-
 function renderVarSection(year) {
   const varMths = allVarTotal(year);
   const gt = sum(varMths);
@@ -3117,11 +3111,6 @@ function renderVarSection(year) {
       <div class="legend">
         <span style="font-weight:700;margin-right:4px">Mode de paiement :</span>
         ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${_esc(mo.label)}</span>`).join('')}
-      </div>
-      <div style="padding:10px 16px 4px">
-        <input type="search" placeholder="🔍 Filtrer les catégories…" oninput="_filterVarCats('${year}',this.value)"
-          style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text);font-family:inherit">
-        <span id="var-filter-count-${year}" style="font-size:11px;color:var(--blue);display:block;min-height:16px;margin-top:3px"></span>
       </div>
       <div class="var-section">${getVarCats().map(c => renderVarCat(year, c)).join('')}</div>
       ${renderMethodTotals(year)}
@@ -3676,31 +3665,49 @@ function renderSummary() {
   html += '</tbody>';
   table.innerHTML = html;
 
-  // Stats annuelles enrichies
-  let statsHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:20px">';
+  // Stats annuelles enrichies — tableau comparatif
+  const statRows = [
+    { label: 'Taux d\'épargne', key: 'rate' },
+    { label: 'Épargne moy./mois', key: 'avg' },
+    { label: '🏆 Meilleur mois', key: 'best' },
+    { label: '📉 Mois difficile', key: 'worst' },
+    { label: '🛒 + dépensier', key: 'bigvr' },
+    { label: '💸 Top catégorie', key: 'topcat' },
+  ];
+  const statData = {};
   years.forEach(year => {
     const rv=revTotal(year), ch=chgTotal(year), vr=allVarTotal(year);
     const bal=rv.map((r,i)=>r-ch[i]-vr[i]);
     const tRv=sum(rv), tBal=sum(bal);
     const savingsRate = tRv > 0 ? Math.round((tBal/tRv)*100) : 0;
-    const bestMi = bal.indexOf(Math.max(...bal));
-    const worstMi = bal.indexOf(Math.min(...bal));
-    const biggestVrMi = allVarTotal(year).indexOf(Math.max(...allVarTotal(year)));
-    const cats = getVarCats().map(c=>({...c,total:sum(varTotal(year,c.key))})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
-    const topCat = cats[0];
-    statsHtml += `<div class="section-card" style="padding:16px">
-      <div style="font-weight:800;font-size:13px;color:var(--blue);margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:8px">📊 Stats ${year}</div>
-      <div style="display:grid;gap:7px;font-size:12px">
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">Taux d'épargne</span><span style="font-weight:700;color:${savingsRate>=0?'var(--green)':'var(--red)'}">${savingsRate}%</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">Épargne moy./mois</span><span style="font-weight:700;color:${tBal>=0?'var(--green)':'var(--red)'}">${fmtN(tBal/12)} €</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">🏆 Meilleur mois</span><span style="font-weight:700;color:var(--green)">${MONTHS[bestMi]} (${fmtN(bal[bestMi])} €)</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">📉 Mois difficile</span><span style="font-weight:700;color:var(--red)">${MONTHS[worstMi]} (${fmtN(bal[worstMi])} €)</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">🛒 Mois le + dépensier</span><span style="font-weight:700">${MONTHS[biggestVrMi]}</span></div>
-        ${topCat?`<div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">💸 Top catégorie</span><span style="font-weight:700">${topCat.icon||'🛍️'} ${_esc(topCat.label)} (${fmtN(topCat.total)} €)</span></div>`:''}
-      </div>
-    </div>`;
+    const bestMi=bal.indexOf(Math.max(...bal)), worstMi=bal.indexOf(Math.min(...bal));
+    const biggestVrMi=vr.indexOf(Math.max(...vr));
+    const cats=getVarCats().map(c=>({...c,total:sum(varTotal(year,c.key))})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
+    const topCat=cats[0];
+    statData[year] = {
+      rate: `<span style="font-weight:800;color:${savingsRate>=0?'var(--green)':'var(--red)'}">${savingsRate}%</span>`,
+      avg: `<span style="font-weight:700;color:${tBal>=0?'var(--green)':'var(--red)'}">${fmtN(tBal/12)} €</span>`,
+      best: `<span style="color:var(--green);font-weight:700">${MONTHS[bestMi]}<br><small>${fmtN(bal[bestMi])} €</small></span>`,
+      worst: `<span style="color:var(--red);font-weight:700">${MONTHS[worstMi]}<br><small>${fmtN(bal[worstMi])} €</small></span>`,
+      bigvr: `<span style="font-weight:700">${MONTHS[biggestVrMi]}</span>`,
+      topcat: topCat ? `<span style="font-weight:700">${topCat.icon||'🛍️'} ${_esc(topCat.label)}<br><small>${fmtN(topCat.total)} €</small></span>` : '—',
+    };
   });
-  statsHtml += '</div>';
+  let statsHtml = `<div class="section-card" style="margin-top:20px;overflow:auto">
+    <div style="font-weight:800;font-size:13px;color:var(--blue);padding:14px 16px 10px;border-bottom:1px solid var(--border)">📊 Statistiques annuelles</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:var(--surface-alt)">
+        <th style="text-align:left;padding:8px 14px;color:var(--gray);font-weight:700;border-bottom:1px solid var(--border)">Indicateur</th>
+        ${years.map(y=>`<th style="text-align:center;padding:8px 14px;color:var(--blue);font-weight:700;border-bottom:1px solid var(--border)">${y}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${statRows.map((row,ri) => `<tr style="${ri%2===1?'background:var(--surface-alt)':''}">
+          <td style="padding:9px 14px;color:var(--gray);white-space:nowrap">${row.label}</td>
+          ${years.map(y=>`<td style="padding:9px 14px;text-align:center;line-height:1.4">${statData[y]?.[row.key]||'—'}</td>`).join('')}
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
   table.insertAdjacentHTML('afterend', statsHtml);
 
   const b=document.getElementById('sum-badge');
@@ -4591,7 +4598,10 @@ function renderDashboard() {
     </div>`;
     return;
   }
-  if (!_dashYear || !years.includes(String(_dashYear))) _dashYear = [...years].reverse()[0];
+  if (!_dashYear || !years.includes(String(_dashYear))) {
+    const curY = String(new Date().getFullYear());
+    _dashYear = years.includes(curY) ? curY : [...years].reverse()[0];
+  }
   const yr = String(_dashYear);
   const mi = _dashMonth;
   const rv = revTotal(yr)[mi];
@@ -5231,7 +5241,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v106</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v107</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5914,8 +5924,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '9.0';
-const SW_VERSION = 'v106';
+const APP_VERSION = '9.1';
+const SW_VERSION = 'v107';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5927,6 +5937,16 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.1': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📅', text: 'Onglets années : l\'année active est maintenant mise en évidence correctement' },
+      { icon: '🏠', text: 'Accueil : s\'ouvre sur l\'année en cours (plus la plus récente)' },
+      { icon: '📊', text: 'Résumé : statistiques en tableau comparatif (plus de répétition)' },
+      { icon: '🗑️', text: 'Suppression du filtre catégories (redondant avec la recherche globale)' },
+      { icon: '✨', text: 'Cartes soldes harmonisées : grille uniforme, border-top coloré, taille cohérente' }
+    ]
+  },
   '9.0': {
     date: 'Mai 2026',
     items: [
