@@ -795,7 +795,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 <div id="add-row-modal" style="display:none;position:fixed;inset:0;z-index:2600;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)document.getElementById('add-row-modal').style.display='none'">
   <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(400px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <h3 style="margin:0;font-size:16px;color:var(--blue)">＋ Nouvelle ligne</h3>
+      <h3 id="ar-modal-title" style="margin:0;font-size:16px;color:var(--blue)">＋ Nouvelle ligne</h3>
       <button onclick="document.getElementById('add-row-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text);line-height:1">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
@@ -836,8 +836,9 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
         </div>
       </div>
       <div id="ar-preview" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);border-left:3px solid var(--blue)"></div>
+      <div id="ar-edit-warning" style="display:none;background:#2a1f3d;border-left:3px solid #8B5CF6;border-radius:6px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,.7)">✏️ Les montants seront remplacés à partir du mois de début choisi. Les mois précédents restent inchangés.</div>
       <div id="ar-error" style="color:#ff6b6b;font-size:12px;min-height:16px"></div>
-      <button onclick="submitAddRow()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--blue),#8B5CF6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">✅ Ajouter</button>
+      <button id="ar-submit-btn" onclick="submitAddRow()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--blue),#8B5CF6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">✅ Ajouter</button>
     </div>
   </div>
 </div>
@@ -2577,7 +2578,7 @@ function renderRevSection(year) {
           value="${_esc(r.label)}" oninput="DATA['${year}'].revenus[${ri}].label=this.value">
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
-      <td><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
+      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
   }).join('');
 
   const totRow = Array(12).fill(0).map((_,i)=>`<td class="${monthTots[i]<0?'neg':'pos'}" id="revmth-${year}-${i}">${fmtN(monthTots[i])}</td>`).join('');
@@ -2591,7 +2592,7 @@ function renderRevSection(year) {
       <table class="charge-table"><thead><tr>
         <th class="lbl-col">Libellé</th>
         ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
-        <th class="tot-col">TOTAL</th><th style="width:28px"></th>
+        <th class="tot-col">TOTAL</th><th style="width:52px"></th>
       </tr></thead>
       <tbody>${tbody}
         <tr class="sep-row"><td colspan="15" style="background:#2d6a4f;font-size:10px">TOTAL REVENUS</td></tr>
@@ -2684,7 +2685,7 @@ function renderChargeSection(year) {
           value="${_esc(r.label)}" oninput="DATA['${year}'].charges[${ri}].label=this.value;dSave()">
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
-      <td><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
+      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
     </tr>`;
   });
 
@@ -2707,7 +2708,7 @@ function renderChargeSection(year) {
       <table class="charge-table"><thead><tr>
         <th class="lbl-col">Libellé</th>
         ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
-        <th class="tot-col">TOTAL</th><th style="width:28px"></th>
+        <th class="tot-col">TOTAL</th><th style="width:52px"></th>
       </tr></thead>
       <tbody>
         <tr class="sep-row"><td colspan="15">🔄 CHARGES RÉCURRENTES</td></tr>
@@ -2780,24 +2781,57 @@ function delCharge(year, ri) {
 }
 
 // ── ADD ROW MODAL ──
-let _arYear = null;
+let _arYear = null, _arEditMode = false, _arEditIdx = null, _arEditDataType = null;
+
+function _arPopulateMonths() {
+  const sm = document.getElementById('ar-startmonth');
+  sm.innerHTML = MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  const em = document.getElementById('ar-endmonth');
+  em.innerHTML = MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+}
 function openAddRowModal(year, type) {
   _arYear = year;
+  _arEditMode = false; _arEditIdx = null; _arEditDataType = null;
+  document.getElementById('ar-modal-title').textContent = '＋ Nouvelle ligne';
+  document.getElementById('ar-submit-btn').textContent = '✅ Ajouter';
+  document.getElementById('ar-edit-warning').style.display = 'none';
   document.getElementById('ar-type').value = type;
   const labels = {revenu:'Nouveau revenu', fixed:'Nouvelle charge', occasional:'Charge occasionnelle'};
   document.getElementById('ar-label').value = labels[type] || '';
   document.getElementById('ar-freq').value = 1;
-  const sm = document.getElementById('ar-startmonth');
-  sm.innerHTML = MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
-  sm.value = new Date().getMonth();
-  const em = document.getElementById('ar-endmonth');
-  em.innerHTML = MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  _arPopulateMonths();
+  document.getElementById('ar-startmonth').value = new Date().getMonth();
   document.getElementById('ar-endyear').value = year;
   document.getElementById('ar-noend').checked = true;
   document.getElementById('ar-enddate-fields').style.display = 'none';
   document.getElementById('ar-amount').value = '';
   document.getElementById('ar-error').textContent = '';
   document.getElementById('ar-preview').style.display = 'none';
+  updateAddRowModal();
+  document.getElementById('add-row-modal').style.display = 'flex';
+  setTimeout(() => { const l = document.getElementById('ar-label'); l.focus(); l.select(); }, 80);
+}
+function openEditRowModal(year, dataType, ri) {
+  const row = DATA[year][dataType][ri];
+  _arYear = year; _arEditMode = true; _arEditIdx = ri; _arEditDataType = dataType;
+  document.getElementById('ar-modal-title').textContent = '✏️ Modifier la ligne';
+  document.getElementById('ar-submit-btn').textContent = '✏️ Modifier';
+  document.getElementById('ar-edit-warning').style.display = 'block';
+  const type = dataType === 'revenus' ? 'revenu' : (row.cat || 'fixed');
+  document.getElementById('ar-type').value = type;
+  document.getElementById('ar-label').value = row.label || '';
+  const nonZero = row.v.map((v,i) => v > 0 ? i : -1).filter(i => i >= 0);
+  const firstAmt = nonZero.length ? row.v[nonZero[0]] : 0;
+  const detectedStart = nonZero[0] ?? new Date().getMonth();
+  const detectedInterval = nonZero.length >= 2 ? (nonZero[1] - nonZero[0]) : (nonZero.length === 1 ? 12 : 1);
+  _arPopulateMonths();
+  document.getElementById('ar-startmonth').value = detectedStart;
+  document.getElementById('ar-endyear').value = year;
+  document.getElementById('ar-noend').checked = true;
+  document.getElementById('ar-enddate-fields').style.display = 'none';
+  document.getElementById('ar-freq').value = Math.min(Math.max(detectedInterval, 1), 12);
+  document.getElementById('ar-amount').value = firstAmt || '';
+  document.getElementById('ar-error').textContent = '';
   updateAddRowModal();
   document.getElementById('add-row-modal').style.display = 'flex';
   setTimeout(() => { const l = document.getElementById('ar-label'); l.focus(); l.select(); }, 80);
@@ -2818,7 +2852,7 @@ function updateAddRowPreview() {
   const prev = document.getElementById('ar-preview');
   if (!interval || !amount) { prev.style.display = 'none'; return; }
   const payMonths = [];
-  for (let m = startMonth; m < startMonth + 12; m += interval) payMonths.push(m % 12);
+  for (let m = startMonth; m < 12; m += interval) payMonths.push(m);
   const annual = amount * payMonths.length;
   const label = interval === 1 ? 'mensuel' : `tous les ${interval} mois`;
   prev.innerHTML = `→ ${label} = ${payMonths.length}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${payMonths.map(m => MONTHS[m]).join(', ')}</span>`;
@@ -2835,7 +2869,7 @@ function submitAddRow() {
   errEl.textContent = '';
   if (!interval || interval < 1 || interval > 12) { errEl.textContent = '⚠️ Intervalle entre 1 et 12 mois'; return; }
   const v = Array(12).fill(0);
-  for (let m = startMonth; m < startMonth + 12; m += interval) v[m % 12] += amount;
+  for (let m = startMonth; m < 12; m += interval) v[m] += amount;
   if (type === 'occasional') {
     const noEnd = document.getElementById('ar-noend').checked;
     if (!noEnd) {
@@ -2845,8 +2879,20 @@ function submitAddRow() {
       else if (endYear < parseInt(year)) { v.fill(0); }
     }
   }
+  if (_arEditMode && _arEditIdx !== null) {
+    const row = DATA[year][_arEditDataType][_arEditIdx];
+    row.label = label;
+    if (_arEditDataType === 'charges') row.cat = type;
+    for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
+    renderYear(year);
+    dSave();
+    document.getElementById('add-row-modal').style.display = 'none';
+    showToast(`✅ "${label}" modifié`);
+    _arEditMode = false; _arEditIdx = null; _arEditDataType = null;
+    return;
+  }
   if (type === 'revenu') {
-    DATA[year].revenus.push({label, v, paid: Array(12).fill(true), inCalc: true});
+    DATA[year].revenus.push({label, v, paid: Array(12).fill(false), inCalc: true});
   } else {
     DATA[year].charges.push({label, cat: type, v, paid: Array(12).fill(false)});
   }
