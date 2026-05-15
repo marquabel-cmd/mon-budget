@@ -2314,7 +2314,7 @@ function renderTabs() {
   const years = getYears();
   // Onglets cachés (data-year → display:none via CSS) — utilisés par switchTab pour la logique interne
   cont.innerHTML = years.map(y =>
-    `<div class="tab" data-year="${y}" onclick="switchTab('y${y}',this)">📅 ${y}${years.length > 1 ? `<span class="tab-del" onclick="event.stopPropagation();deleteYear('${y}')">✕</span>` : ''}</div>`
+    `<div class="tab" data-year="${y}" onclick="switchTab('y${y}',this)">📅 ${y}</div>`
   ).join('');
   // Sélecteur/boutons visibles — années en ordre décroissant
   const mob = document.getElementById('year-tab-mobile');
@@ -2331,7 +2331,6 @@ function renderTabs() {
             ${desc.map(y => `<option value="${y}" style="background:#1A1D2E;color:#e0e4ff;font-weight:700"${y==activeY?' selected':''}>${y}</option>`).join('')}
           </select>
         </div>
-        ${years.length > 1 ? `<button onclick="deleteYear(document.getElementById('year-select-mob')?.value||'${activeY}')" title="Supprimer cette année" style="background:transparent;border:1px solid rgba(255,100,100,.4);color:rgba(255,120,120,.8);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;align-self:center;line-height:1;margin-left:1px;transition:all .15s" onmouseover="this.style.background='rgba(255,80,80,.15)'" onmouseout="this.style.background='transparent'">✕</button>` : ''}
       `;
     }
   }
@@ -2364,6 +2363,20 @@ function deleteYear(year) {
     }
     dSave(); renderSummary();
     showToast('🗑 Année ' + year + ' supprimée');
+  });
+}
+function _confirmDeleteYear() {
+  const sel = document.getElementById('cfg-del-year');
+  if (!sel) return;
+  const year = sel.value;
+  if (!year) return;
+  _showDangerConfirm({
+    title: `Supprimer l'année ${year}`,
+    subtitle: 'Action irréversible — toutes les données seront perdues',
+    items: [`Revenus de ${year}`, `Charges fixes de ${year}`, `Toutes les dépenses variables de ${year}`],
+    confirmWord: String(year),
+    buttonLabel: `🗑️ Supprimer ${year} définitivement`,
+    onConfirm: () => deleteYear(year)
   });
 }
 let _pendingDeleteFn = null;
@@ -4655,11 +4668,22 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v95</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v96</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
           <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">📦 Voir les backups</button>
+          ${years.length > 1 ? `
+          <div style="border:2px solid #F04F5B;border-radius:10px;padding:12px;background:#FEF0F1">
+            <div style="font-size:12px;font-weight:700;color:#c0392b;margin-bottom:8px">🗑️ Supprimer une année</div>
+            <div style="font-size:11px;color:#7a2020;margin-bottom:10px">⚠️ Toutes les données de l'année seront définitivement effacées. Cette action est irréversible.</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="cfg-del-year" style="flex:1;border:1px solid #F04F5B;border-radius:7px;padding:7px 10px;font-size:13px;font-weight:700;background:#fff3f3;color:#c0392b;outline:none">
+                ${[...years].reverse().map(y => `<option value="${y}">${y}</option>`).join('')}
+              </select>
+              <button onclick="_confirmDeleteYear()" style="background:#F04F5B;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">🗑️ Supprimer</button>
+            </div>
+          </div>` : `<div style="font-size:12px;color:var(--gray);padding:8px;background:var(--surface-alt);border-radius:7px">Il n'y a qu'une seule année — impossible de la supprimer.</div>`}
           <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="resetData()">🚨 Réinitialiser les données — SUPPRESSION TOTALE</button>
         </div>
       </div>
@@ -5327,8 +5351,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '7.9';
-const SW_VERSION = 'v95';
+const APP_VERSION = '8.0';
+const SW_VERSION = 'v96';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5340,6 +5364,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '8.0': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🛡️', text: 'Suppression d\'année déplacée dans Config → Données : sélecteur + confirmation danger avec saisie de l\'année — impossible de supprimer par accident' },
+      { icon: '🧹', text: 'Bouton ✕ retiré de la barre d\'onglets principale' }
+    ]
+  },
   '7.9': {
     date: 'Mai 2026',
     items: [
