@@ -825,14 +825,14 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
         <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Montant par occurrence (€)</label>
         <input id="ar-amount" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateAddRowPreview()" onkeydown="if(event.key==='Enter')submitAddRow()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
       </div>
-      <div id="ar-enddate-wrap" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
+      <div id="ar-enddate-wrap" style="background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
         <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:8px">Date de fin</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:8px;cursor:pointer">
-          <input type="checkbox" id="ar-noend" onchange="updateAddRowEndDate()" checked> Sans date de fin (jusqu'à révocation)
+          <input type="checkbox" id="ar-noend" onchange="updateAddRowEndDate()"> Sans date de fin (jusqu'à révocation)
         </label>
-        <div id="ar-enddate-fields" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
-          <select id="ar-endmonth" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px"></select>
-          <input id="ar-endyear" type="number" placeholder="2026" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px">
+        <div id="ar-enddate-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <select id="ar-endmonth" onchange="updateAddRowPreview()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px"></select>
+          <input id="ar-endyear" type="number" placeholder="2026" oninput="updateAddRowPreview()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px">
         </div>
       </div>
       <div id="ar-preview" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);border-left:3px solid var(--blue)"></div>
@@ -2797,8 +2797,8 @@ function openAddRowModal(year, type) {
   _arPopulateMonths();
   document.getElementById('ar-startmonth').value = new Date().getMonth();
   document.getElementById('ar-endyear').value = year;
-  document.getElementById('ar-noend').checked = true;
-  document.getElementById('ar-enddate-fields').style.display = 'none';
+  document.getElementById('ar-noend').checked = false;
+  document.getElementById('ar-enddate-fields').style.display = 'grid';
   document.getElementById('ar-amount').value = '';
   document.getElementById('ar-error').textContent = '';
   document.getElementById('ar-preview').style.display = 'none';
@@ -2822,8 +2822,8 @@ function openEditRowModal(year, dataType, ri) {
   _arPopulateMonths();
   document.getElementById('ar-startmonth').value = detectedStart;
   document.getElementById('ar-endyear').value = year;
-  document.getElementById('ar-noend').checked = true;
-  document.getElementById('ar-enddate-fields').style.display = 'none';
+  document.getElementById('ar-noend').checked = false;
+  document.getElementById('ar-enddate-fields').style.display = 'grid';
   document.getElementById('ar-freq').value = Math.min(Math.max(detectedInterval, 1), 12);
   document.getElementById('ar-amount').value = firstAmt || '';
   document.getElementById('ar-error').textContent = '';
@@ -2832,8 +2832,6 @@ function openEditRowModal(year, dataType, ri) {
   setTimeout(() => { const l = document.getElementById('ar-label'); l.focus(); l.select(); }, 80);
 }
 function updateAddRowModal() {
-  const isOcc = document.getElementById('ar-type').value === 'occasional';
-  document.getElementById('ar-enddate-wrap').style.display = isOcc ? 'block' : 'none';
   updateAddRowPreview();
 }
 function updateAddRowEndDate() {
@@ -2844,13 +2842,22 @@ function updateAddRowPreview() {
   const interval = parseInt(document.getElementById('ar-freq').value) || 0;
   const amount = parseFloat(document.getElementById('ar-amount').value) || 0;
   const startMonth = parseInt(document.getElementById('ar-startmonth').value) || 0;
+  const noEnd = document.getElementById('ar-noend').checked;
+  const endMonth = noEnd ? 11 : (parseInt(document.getElementById('ar-endmonth').value) || 11);
+  const endYear = noEnd ? null : (parseInt(document.getElementById('ar-endyear').value) || null);
   const prev = document.getElementById('ar-preview');
   if (!interval || !amount) { prev.style.display = 'none'; return; }
-  const payMonths = [];
+  let payMonths = [];
   for (let m = startMonth; m < 12; m += interval) payMonths.push(m);
+  if (!noEnd && endYear !== null) {
+    if (endYear < parseInt(_arYear)) { payMonths = []; }
+    else if (endYear === parseInt(_arYear)) { payMonths = payMonths.filter(m => m <= endMonth); }
+  }
   const annual = amount * payMonths.length;
-  const label = interval === 1 ? 'mensuel' : `tous les ${interval} mois`;
-  prev.innerHTML = `→ ${label} = ${payMonths.length}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${payMonths.map(m => MONTHS[m]).join(', ')}</span>`;
+  const freqLabel = interval === 1 ? 'mensuel' : `tous les ${interval} mois`;
+  const endLabel = noEnd ? '' : ` → fin ${MONTHS[endMonth]}`;
+  const monthsStr = payMonths.length ? payMonths.map(m => MONTHS[m]).join(', ') : 'Aucun paiement cette année';
+  prev.innerHTML = `→ ${freqLabel}${endLabel} = ${payMonths.length}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${monthsStr}</span>`;
   prev.style.display = 'block';
 }
 function submitAddRow() {
@@ -2865,14 +2872,12 @@ function submitAddRow() {
   if (!interval || interval < 1 || interval > 12) { errEl.textContent = '⚠️ Intervalle entre 1 et 12 mois'; return; }
   const v = Array(12).fill(0);
   for (let m = startMonth; m < 12; m += interval) v[m] += amount;
-  if (type === 'occasional') {
-    const noEnd = document.getElementById('ar-noend').checked;
-    if (!noEnd) {
-      const endMonth = parseInt(document.getElementById('ar-endmonth').value);
-      const endYear = parseInt(document.getElementById('ar-endyear').value);
-      if (endYear === parseInt(year)) { for (let m = endMonth + 1; m < 12; m++) v[m] = 0; }
-      else if (endYear < parseInt(year)) { v.fill(0); }
-    }
+  const noEnd = document.getElementById('ar-noend').checked;
+  if (!noEnd) {
+    const endMonth = parseInt(document.getElementById('ar-endmonth').value);
+    const endYear = parseInt(document.getElementById('ar-endyear').value);
+    if (endYear === parseInt(year)) { for (let m = endMonth + 1; m < 12; m++) v[m] = 0; }
+    else if (endYear < parseInt(year)) { v.fill(0); }
   }
   if (_arEditMode && _arEditIdx !== null) {
     const row = DATA[year][_arEditDataType][_arEditIdx];
