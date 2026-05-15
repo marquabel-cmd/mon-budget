@@ -706,6 +706,14 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
         <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Commentaire (optionnel)</label>
         <input id="qa-comment" type="text" placeholder="ex: Supermarché, Total..." style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
       </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">🔁 Répétition</label>
+        <select id="qa-repeat" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;background:var(--surface);color:var(--text)">
+          <option value="once">Ce mois uniquement</option>
+          <option value="rest">Tous les mois restants de l'année</option>
+          <option value="all">Tous les 12 mois de l'année</option>
+        </select>
+      </div>
       <div id="qa-budget-notice" style="display:none;background:var(--orange-light);border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:8px 10px;font-size:12px;color:#7a4f00">
         ⚠️ Pas de budget défini pour cette catégorie.
         <a href="#" onclick="event.preventDefault();openBudgetSetFromQA()" style="color:#e08800;font-weight:700;text-decoration:underline">Définir un budget →</a>
@@ -3106,11 +3114,21 @@ function renderVarCat(year, cat) {
       </td>
     </tr>`;
   }
+  const _bgt = parseFloat(DATA.budgets?.[cat.key]) || 0;
+  const _bgtPct = _bgt > 0 ? Math.round(grand / _bgt * 100) : 0;
+  const _bgtBadge = _bgt > 0
+    ? (grand > _bgt
+        ? `<span id="budget-alert-${year}-${cat.key}" data-over="1" style="font-size:10px;font-weight:800;margin-left:5px;background:rgba(240,79,91,.18);color:#F04F5B;padding:1px 6px;border-radius:4px">⚠️ ${_bgtPct}%</span>`
+        : (_bgtPct >= 80
+            ? `<span id="budget-alert-${year}-${cat.key}" data-over="0" style="font-size:10px;font-weight:800;margin-left:5px;background:rgba(245,166,35,.15);color:#F5A623;padding:1px 6px;border-radius:4px">🔔 ${_bgtPct}%</span>`
+            : `<span id="budget-alert-${year}-${cat.key}" data-over="0"></span>`))
+    : `<span id="budget-alert-${year}-${cat.key}" data-over="0"></span>`;
   return `<div class="section-card collapsed" data-cat="${cat.key}" style="margin-bottom:10px;border-radius:8px">
     <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')" style="padding:10px 14px">
       <span class="section-title" style="font-size:13px">
         ${cat.icon} ${_esc(cat.label)}
         <span class="badge badge-o" id="vartot-${year}-${cat.key}">${fmtN(grand)} €</span>
+        ${_bgtBadge}
       </span>
       <div style="display:flex;align-items:center;gap:8px">
         <button onclick="event.stopPropagation();openQuickAdd('${year}','${cat.key}')"
@@ -3212,6 +3230,7 @@ function openQuickAdd(year, catKey) {
   document.getElementById('qa-day').value = '';
   document.getElementById('qa-comment').value = '';
   document.getElementById('qa-error').textContent = '';
+  const rp = document.getElementById('qa-repeat'); if (rp) rp.value = 'once';
   overlay.style.display = 'flex';
   setTimeout(()=>document.getElementById('qa-amount').focus(), 50);
 }
@@ -3228,17 +3247,22 @@ function submitQuickAdd() {
   const method = document.getElementById('qa-method').value;
   const dayVal = document.getElementById('qa-day').value.trim();
   const comment= document.getElementById('qa-comment').value.trim();
-  // Build date string from day if provided
-  const dateStr = dayVal ? `${String(+dayVal).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${year}` : '';
-  // Ensure year exists in DATA
+  const repeat = document.getElementById('qa-repeat')?.value || 'once';
   if (!DATA[year]) { DATA[year] = {revenus:{},charges:{},vars:{}}; }
   if (!DATA[year].vars[catKey]) DATA[year].vars[catKey] = [];
-  const newTx  = {id:_id++, month, amount, date:dateStr, comment, method};
-  DATA[year].vars[catKey].push(newTx);
-  syncMonthSummary(year, catKey, month);
+  // Déterminer les mois à créer
+  let months = [month];
+  if (repeat === 'all')  months = Array.from({length:12},(_,i)=>i);
+  if (repeat === 'rest') months = Array.from({length:12-month},(_,i)=>month+i);
+  months.forEach(m => {
+    const dateStr = dayVal ? `${String(+dayVal).padStart(2,'0')}/${String(m+1).padStart(2,'0')}/${year}` : '';
+    DATA[year].vars[catKey].push({id:_id++, month:m, amount, date:dateStr, comment, method});
+    syncMonthSummary(year, catKey, m);
+  });
   dSave();
   document.getElementById('quick-add-overlay').style.display = 'none';
-  showToast(`✅ ${fmtN(amount)} € ajouté en ${MONTHS[month]} ${year}`);
+  if (repeat === 'once') showToast(`✅ ${fmtN(amount)} € ajouté en ${MONTHS[month]} ${year}`);
+  else showToast(`🔁 ${fmtN(amount)} € ajouté sur ${months.length} mois (${fmtN(amount*months.length)} € au total)`);
 }
 
 function addTxForMonth(year, catKey, m) {
@@ -3278,6 +3302,7 @@ function syncMonthSummary(year, catKey, m) {
   const allGrand = sum(allVarTotal(year));
   const vb = document.getElementById(`var-badge-${year}`);
   if (vb) vb.textContent = fmtN(allGrand) + ' €';
+  _checkBudgetAlert(year, catKey, true); // alerte si budget franchi
 }
 
 function updateTxField(year, catKey, id, field, val) {
@@ -3299,7 +3324,7 @@ function delTx(year, catKey, id, m) {
     DATA[year].vars[catKey] = DATA[year].vars[catKey].filter(t=>t.id!==id);
     const tr = document.getElementById(`vtr-${id}`);
     if (tr) tr.remove();
-    syncMonthSummary(year, catKey, m);
+    syncMonthSummary(year, catKey, m); // _checkBudgetAlert appelé dans syncMonthSummary
     refreshMonthSummary(year);
     dSave();
   });
@@ -3385,6 +3410,39 @@ function animateBudgetBars() {
     });
   }, {threshold: 0.1});
   fills.forEach(f => { f.style.width = '0'; obs.observe(f); });
+}
+// ── ALERTE DÉPASSEMENT BUDGET ──
+function _checkBudgetAlert(year, catKey, showToastOnCross = false) {
+  const budget = parseFloat(DATA.budgets?.[catKey]) || 0;
+  if (!budget) return;
+  const grand = sum((DATA[year]?.vars?.[catKey] || []).map(t => t.amount));
+  const pct = Math.round(grand / budget * 100);
+  const el = document.getElementById(`budget-alert-${year}-${catKey}`);
+  if (!el) return;
+  const wasOver = el.dataset.over === '1';
+  const isOver = grand > budget;
+  const isWarn = pct >= 80 && !isOver;
+  el.dataset.over = isOver ? '1' : '0';
+  if (isOver) {
+    el.style.cssText = 'font-size:10px;font-weight:800;margin-left:5px;background:rgba(240,79,91,.18);color:#F04F5B;padding:1px 6px;border-radius:4px';
+    el.textContent = `⚠️ ${pct}%`;
+    if (showToastOnCross && !wasOver) {
+      const cat = getVarCats().find(c => c.key === catKey);
+      showToast(`🚨 Budget "${cat?.label || catKey}" dépassé ! ${fmtN(grand)} € / ${fmtN(budget)} €/an`);
+    }
+  } else if (isWarn) {
+    el.style.cssText = 'font-size:10px;font-weight:800;margin-left:5px;background:rgba(245,166,35,.15);color:#F5A623;padding:1px 6px;border-radius:4px';
+    el.textContent = `🔔 ${pct}%`;
+    if (showToastOnCross && wasOver) {
+      // redescendu sous 100% — plus d'alerte
+    }
+  } else {
+    el.style.cssText = '';
+    el.textContent = '';
+  }
+  // Mettre à jour aussi la barre de budget
+  const barEl = document.getElementById(`budget-bar-${year}-${catKey}`);
+  if (barEl) { barEl.className = 'budget-bar-wrap'; barEl.innerHTML = renderBudgetBarInner(year, catKey); }
 }
 function updateQaBudgetNotice(catKey) {
   const notice = document.getElementById('qa-budget-notice');
@@ -4111,9 +4169,15 @@ function renderCharts() {
   const years = getYears();
   _chartYear = _chartYear && DATA[_chartYear] ? _chartYear : years[years.length-1];
   const wrap = document.getElementById('tab-charts');
+  const yearSelHtml = years.length <= 5
+    ? years.map(y=>`<button class="chart-year-btn${y===_chartYear?' active':''}" onclick="selectChartYear('${y}',this)">${y}</button>`).join('')
+    : `<select onchange="selectChartYear(this.value,this)" style="background:#1A1D2E;border:1px solid rgba(91,106,240,.4);color:#e0e4ff;font-size:13px;font-weight:700;border-radius:8px;padding:5px 10px;cursor:pointer;outline:none">
+        ${[...years].reverse().map(y=>`<option value="${y}" style="background:#1A1D2E;color:#e0e4ff"${y===_chartYear?' selected':''}>${y}</option>`).join('')}
+       </select>`;
   wrap.innerHTML = `<div class="container">
-    <div class="chart-year-sel" id="chart-year-sel">${years.map(y=>`<button class="chart-year-btn${y===_chartYear?' active':''}" onclick="selectChartYear('${y}',this)">${y}</button>`).join('')}</div>
+    <div class="chart-year-sel" id="chart-year-sel">${yearSelHtml}</div>
     <div class="charts-grid">
+      ${years.length > 1 ? `<div class="chart-card" style="grid-column:1/-1"><h4>📅 Bilan annuel — tendances multi-années</h4><canvas id="chart-annual" height="70"></canvas></div>` : ''}
       <div class="chart-card" style="grid-column:1/-1"><h4>💰 Solde mensuel — comparaison des années</h4><canvas id="chart-balance" height="80"></canvas></div>
       <div class="chart-card" style="grid-column:1/-1"><h4>📈 Taux d'épargne mensuel (%) — toutes années</h4><canvas id="chart-savings" height="80"></canvas></div>
       <div class="chart-card"><h4>📊 Revenus vs Dépenses — <span id="chart-rd-yr">${_chartYear}</span></h4><canvas id="chart-revdep"></canvas></div>
@@ -4123,6 +4187,7 @@ function renderCharts() {
     </div></div>`;
   Object.values(_charts).forEach(c=>c.destroy());
   _charts = {};
+  if (years.length > 1) buildAnnualTrendChart();
   buildBalanceChart();
   buildSavingsChart();
   buildPerYearCharts();
@@ -4134,6 +4199,28 @@ function selectChartYear(y, btn) {
   ['rd','cat','wealth','top'].forEach(id=>{const el=document.getElementById(`chart-${id}-yr`);if(el)el.textContent=y;});
   ['revdep','cat','wealth','top'].forEach(id=>{if(_charts[id]){_charts[id].destroy();delete _charts[id];}});
   buildPerYearCharts();
+}
+function buildAnnualTrendChart() {
+  const years = getYears();
+  const rv  = years.map(y => Math.round(sum(revTotal(y))*100)/100);
+  const dep = years.map(y => Math.round(sum(depTotal(y))*100)/100);
+  const bal = years.map((y,i) => Math.round((rv[i]-dep[i])*100)/100);
+  _charts.annual = new Chart(document.getElementById('chart-annual'), {
+    type: 'bar',
+    data: {
+      labels: years,
+      datasets: [
+        { label: 'Revenus',  data: rv,  backgroundColor: '#27ae6088', borderColor: '#27ae60', borderWidth: 1.5, borderRadius: 5 },
+        { label: 'Dépenses', data: dep, backgroundColor: '#c0392b88', borderColor: '#c0392b', borderWidth: 1.5, borderRadius: 5 },
+        { label: 'Balance',  data: bal, type: 'line', borderColor: '#5B6AF0', backgroundColor: '#5B6AF022', tension: .35, fill: false, pointRadius: 5, yAxisID: 'y' }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label} : ${fmtN(ctx.raw)} €` } } },
+      scales: { y: { ticks: { callback: v => fmtN(v) + ' €' } } }
+    }
+  });
 }
 function buildBalanceChart() {
   const years = getYears();
@@ -4537,7 +4624,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v89</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v90</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5209,8 +5296,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '7.3';
-const SW_VERSION = 'v89';
+const APP_VERSION = '7.4';
+const SW_VERSION = 'v90';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5222,6 +5309,14 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '7.4': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '⚠️', text: 'Alertes budget : badge rouge/orange en temps réel sur chaque catégorie (⚠️ 105% dépassé / 🔔 85% bientôt) + toast au franchissement du seuil' },
+      { icon: '📅', text: 'Graphique "Bilan annuel" : barres revenus/dépenses + courbe balance sur toutes les années — visible dans l\'onglet Graphiques' },
+      { icon: '🔁', text: 'Ajout rapide : option "Répétition" — créer une transaction sur ce mois, les mois restants, ou tous les 12 mois en un clic' }
+    ]
+  },
   '7.3': {
     date: 'Mai 2026',
     items: [
