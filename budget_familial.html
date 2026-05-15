@@ -2025,11 +2025,25 @@ function dataKey() { return `budget_data_${CURRENT_USER_ID}`; }
 function bakPrefix() { return `budget_bak_${CURRENT_USER_ID}_`; }
 // Vérifie qu'un objet budget contient au moins une année de données réelles
 function _hasYearData(d) { return d && typeof d === 'object' && Object.keys(d).some(k => /^\d{4}$/.test(k)); }
-// Crée un backup horodaté avant tout remplacement cloud
+// Crée un backup avant remplacement cloud — max 1 par heure, 5 au total
 function _backupBeforeCloudReplace() {
   if (!_hasYearData(DATA) || !CURRENT_USER_ID) return;
-  const key = bakPrefix() + 'pre-cloud_' + new Date().toISOString().slice(0,16).replace('T','_').replace(':','h');
-  if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(DATA));
+  const pfx = bakPrefix() + 'pre-cloud_';
+  const existing = Object.keys(localStorage).filter(k => k.startsWith(pfx)).sort();
+  // Throttle : pas de nouveau backup si un a été créé il y a moins de 60 minutes
+  if (existing.length > 0) {
+    const lastKey = existing[existing.length - 1];
+    const m = lastKey.match(/pre-cloud_(\d{4})-(\d{2})-(\d{2})_(\d{2})h(\d{2})/);
+    if (m) {
+      const lastTime = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00`);
+      if ((Date.now() - lastTime.getTime()) < 60 * 60 * 1000) return;
+    }
+  }
+  const key = pfx + new Date().toISOString().slice(0,16).replace('T','_').replace(':','h');
+  localStorage.setItem(key, JSON.stringify(DATA));
+  // Garder max 5 pre-cloud au total
+  const all = Object.keys(localStorage).filter(k => k.startsWith(pfx)).sort();
+  if (all.length > 5) all.slice(0, all.length - 5).forEach(k => localStorage.removeItem(k));
 }
 
 function updateUserDisplay() {
@@ -3874,6 +3888,9 @@ function toggleTheme() {
 
 function openBackups() {
   const pfx = bakPrefix();
+  // Purge des pre-cloud en excès (garder les 5 plus récents)
+  const pcKeys = Object.keys(localStorage).filter(k => k.startsWith(pfx + 'pre-cloud_')).sort();
+  if (pcKeys.length > 5) pcKeys.slice(0, pcKeys.length - 5).forEach(k => localStorage.removeItem(k));
   const keys = Object.keys(localStorage).filter(k => k.startsWith(pfx)).sort().reverse();
   const MOIS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
   const list = document.getElementById('backup-list');
@@ -4439,7 +4456,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v80</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v81</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5111,8 +5128,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '6.4';
-const SW_VERSION = 'v80';
+const APP_VERSION = '6.5';
+const SW_VERSION = 'v81';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5124,6 +5141,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '6.5': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🧹', text: 'Backups "avant sync cloud" : max 5 conservés, 1 maximum par heure — fini la liste de 20 entrées identiques en quelques minutes' }
+    ]
+  },
   '6.4': {
     date: 'Mai 2026',
     items: [
