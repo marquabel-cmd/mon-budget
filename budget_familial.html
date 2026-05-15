@@ -834,16 +834,24 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
           <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Tous les X mois</label>
-          <input id="ar-freq" type="number" min="1" max="12" value="1" oninput="updateAddRowPreview()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+          <input id="ar-freq" type="number" min="1" max="12" value="1" oninput="_arOnFreqOrStartChange()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
         </div>
         <div>
           <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Mois de début</label>
-          <select id="ar-startmonth" onchange="updateAddRowPreview()" style="width:100%;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px"></select>
+          <select id="ar-startmonth" onchange="_arOnFreqOrStartChange()" style="width:100%;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px"></select>
         </div>
       </div>
       <div>
         <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Montant par occurrence (€)</label>
         <input id="ar-amount" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateAddRowPreview()" onkeydown="if(event.key==='Enter')submitAddRow()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+      </div>
+      <div id="ar-reps-wrap">
+        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Nombre de répétitions <span style="font-weight:400">(optionnel — calcule la date de fin)</span></label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input id="ar-reps" type="number" min="1" placeholder="ex: 48" oninput="_arCalcEndFromReps()"
+            style="flex:1;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+          <span id="ar-reps-hint" style="font-size:12px;color:var(--blue);font-weight:700;white-space:nowrap;min-width:90px"></span>
+        </div>
       </div>
       <div id="ar-enddate-wrap" style="background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
         <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:8px">Date de fin</label>
@@ -2949,6 +2957,8 @@ function openAddRowModal(year, type) {
   document.getElementById('ar-amount').value = '';
   document.getElementById('ar-error').textContent = '';
   document.getElementById('ar-preview').style.display = 'none';
+  const repsEl = document.getElementById('ar-reps');
+  if (repsEl) { repsEl.value = ''; document.getElementById('ar-reps-hint').textContent = ''; }
   updateAddRowModal();
   document.getElementById('add-row-modal').style.display = 'flex';
   setTimeout(() => { const l = document.getElementById('ar-label'); l.focus(); l.select(); }, 80);
@@ -2974,6 +2984,8 @@ function openEditRowModal(year, dataType, ri) {
   document.getElementById('ar-freq').value = Math.min(Math.max(detectedInterval, 1), 12);
   document.getElementById('ar-amount').value = firstAmt || '';
   document.getElementById('ar-error').textContent = '';
+  const repsEl2 = document.getElementById('ar-reps');
+  if (repsEl2) { repsEl2.value = ''; document.getElementById('ar-reps-hint').textContent = ''; }
   updateAddRowModal();
   document.getElementById('add-row-modal').style.display = 'flex';
   setTimeout(() => { const l = document.getElementById('ar-label'); l.focus(); l.select(); }, 80);
@@ -2984,6 +2996,38 @@ function updateAddRowModal() {
 function updateAddRowEndDate() {
   const hide = document.getElementById('ar-noend').checked;
   document.getElementById('ar-enddate-fields').style.display = hide ? 'none' : 'grid';
+  if (hide) {
+    // Vider les répétitions si "sans date de fin"
+    const repsEl = document.getElementById('ar-reps');
+    if (repsEl) { repsEl.value = ''; document.getElementById('ar-reps-hint').textContent = ''; }
+  }
+  updateAddRowPreview();
+}
+function _arOnFreqOrStartChange() {
+  // Si des répétitions sont saisies, recalculer la date de fin
+  const reps = parseInt(document.getElementById('ar-reps')?.value);
+  if (reps && reps >= 1) _arCalcEndFromReps();
+  else updateAddRowPreview();
+}
+function _arCalcEndFromReps() {
+  const reps = parseInt(document.getElementById('ar-reps').value);
+  const hint = document.getElementById('ar-reps-hint');
+  if (!reps || reps < 1) { if (hint) hint.textContent = ''; updateAddRowPreview(); return; }
+  const interval = parseInt(document.getElementById('ar-freq').value) || 1;
+  const startMonth = parseInt(document.getElementById('ar-startmonth').value) || 0;
+  const startYear = parseInt(_arYear) || new Date().getFullYear();
+  // Dernière occurrence : startMonth + (reps-1)*interval
+  const lastOccOffset = (reps - 1) * interval;
+  const endMonthAbs = startMonth + lastOccOffset;
+  const endMonth = endMonthAbs % 12;
+  const endYear = startYear + Math.floor(endMonthAbs / 12);
+  // Mettre à jour les champs date de fin
+  document.getElementById('ar-noend').checked = false;
+  document.getElementById('ar-enddate-fields').style.display = 'grid';
+  document.getElementById('ar-endmonth').value = endMonth;
+  document.getElementById('ar-endyear').value = endYear;
+  if (hint) hint.textContent = `→ fin ${MONTHS[endMonth]} ${endYear}`;
+  updateAddRowPreview();
 }
 function updateAddRowPreview() {
   const interval = parseInt(document.getElementById('ar-freq').value) || 0;
@@ -3001,10 +3045,12 @@ function updateAddRowPreview() {
     else if (endYear === parseInt(_arYear)) { payMonths = payMonths.filter(m => m <= endMonth); }
   }
   const annual = amount * payMonths.length;
+  const reps = parseInt(document.getElementById('ar-reps')?.value) || 0;
   const freqLabel = interval === 1 ? 'mensuel' : `tous les ${interval} mois`;
   const endLabel = noEnd ? '' : ` → fin ${MONTHS[endMonth]}`;
+  const repsLabel = reps > 0 ? ` · <b>${reps} répétition${reps>1?'s':''}</b>` : '';
   const monthsStr = payMonths.length ? payMonths.map(m => MONTHS[m]).join(', ') : 'Aucun paiement cette année';
-  prev.innerHTML = `→ ${freqLabel}${endLabel} = ${payMonths.length}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${monthsStr}</span>`;
+  prev.innerHTML = `→ ${freqLabel}${endLabel}${repsLabel} = ${payMonths.length}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${monthsStr}</span>`;
   prev.style.display = 'block';
 }
 function submitAddRow() {
@@ -5241,7 +5287,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v107</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v108</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5924,8 +5970,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '9.1';
-const SW_VERSION = 'v107';
+const APP_VERSION = '9.2';
+const SW_VERSION = 'v108';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5937,6 +5983,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.2': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔢', text: 'Modal ajout/modif : champ "Nombre de répétitions" optionnel — calcule automatiquement la date de fin (idéal pour les crédits et financements)' }
+    ]
+  },
   '9.1': {
     date: 'Mai 2026',
     items: [
