@@ -567,13 +567,10 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   [data-theme="dark"] .summary-table tbody tr:hover td{background:transparent!important}
 }
 @media print {
-  header, .tabs, .btn-add-year, #tour-btn, #theme-toggle, #help-dropdown-btn, #install-btn, #top-bar-right { display: none !important; }
-  body { background: #fff !important; color: #000 !important; }
-  .tab-panel:not(.active) { display: none !important; }
-  .section-card { border: 1px solid #ccc !important; break-inside: avoid; box-shadow: none !important; }
-  .summary-table { font-size: 10px; }
-  .container { padding: 8px !important; }
+  body > *:not(#print-report) { display: none !important; }
+  #print-report { display: block !important; }
 }
+#print-report { display: none; }
 </style>
 </head>
 <body>
@@ -645,7 +642,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
     <div id="csv-step-2" style="display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden">
       <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap;flex-shrink:0">
         <label style="font-size:12px;font-weight:600">Année :
-          <select id="csv-year-select" style="margin-left:6px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px"></select>
+          <select id="csv-year-select" onchange="csvReCheckDuplicates(this.value)" style="margin-left:6px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px"></select>
         </label>
         <label style="font-size:12px;font-weight:600">Méthode :
           <select id="csv-method-select" style="margin-left:6px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px"></select>
@@ -1041,7 +1038,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
       <span id="last-save-info" style="font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;align-self:center"></span>
       <span id="autosave-indicator" title="Sauvegarde automatique" style="font-size:11px;color:rgba(255,255,255,0.5);white-space:nowrap;align-self:center;display:none">💾 --:--</span>
       <button class="btn btn-csv btn-hide-xs"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
-      <button class="btn btn-hide-xs" style="background:#8B5CF6;color:#fff" onclick="window.print()" title="Imprimer / Exporter PDF">🖨️ <span class="btn-label">PDF</span></button>
+      <button class="btn btn-hide-xs" style="background:#8B5CF6;color:#fff" onclick="openPdfReport()" title="Imprimer / Exporter PDF">🖨️ <span class="btn-label">PDF</span></button>
       <button class="btn btn-hide-xs" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
       <div id="tour-help-wrap" style="position:relative">
@@ -4371,6 +4368,59 @@ function _goToTab(id) {
   }
 }
 // ─────────────────────────────────────────────
+// 🖨️ RAPPORT PDF
+// ─────────────────────────────────────────────
+function openPdfReport() {
+  const years = getYears();
+  if (!years.length) { showToast('❌ Aucune donnée à imprimer'); return; }
+  const user = USERS[CURRENT_USER_ID]?.name || 'Utilisateur';
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('fr-BE', {day:'2-digit', month:'long', year:'numeric'});
+  let html = `<div style="font-family:Arial,sans-serif;color:#000;padding:24px;max-width:960px;margin:0 auto">
+    <div style="border-bottom:3px solid #5B6AF0;padding-bottom:14px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end">
+      <div>
+        <div style="font-size:22px;font-weight:800;color:#1A1D2E">💰 Mon Budget</div>
+        <div style="font-size:13px;color:#666;margin-top:2px">Rapport financier — ${_esc(user)}</div>
+      </div>
+      <div style="text-align:right;font-size:12px;color:#666">
+        <div>Généré le ${dateStr}</div>
+        <div style="color:#5B6AF0;font-weight:700">v${APP_VERSION}</div>
+      </div>
+    </div>`;
+  years.forEach(year => {
+    const rv = revTotal(year), ch = chgTotal(year), vr = allVarTotal(year), bal = balance(year);
+    const tRv=sum(rv), tCh=sum(ch), tVr=sum(vr), tBal=sum(bal);
+    const cats = getVarCats().map(c=>({...c, total:sum(varTotal(year,c.key))})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
+    html += `<div style="margin-bottom:36px;page-break-inside:avoid">
+      <h2 style="font-size:16px;font-weight:800;background:#1A1D2E;color:#fff;padding:9px 16px;border-radius:8px;margin-bottom:16px">📅 Année ${year}</h2>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+        <div style="border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">💹 Revenus</div><div style="font-size:17px;font-weight:800;color:#27ae60;margin-top:4px">${fmtN(tRv)} €</div></div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">🏠 Charges</div><div style="font-size:17px;font-weight:800;color:#333;margin-top:4px">${fmtN(tCh)} €</div></div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">🛒 Variables</div><div style="font-size:17px;font-weight:800;color:#333;margin-top:4px">${fmtN(tVr)} €</div></div>
+        <div style="border:1px solid #ddd;border-left:3px solid ${tBal>=0?'#27ae60':'#e74c3c'};border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">💰 Solde</div><div style="font-size:17px;font-weight:800;color:${tBal>=0?'#27ae60':'#e74c3c'};margin-top:4px">${fmtN(tBal)} €</div></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px">
+        <thead><tr style="background:#f4f5fa">
+          <th style="border:1px solid #ddd;padding:5px 8px;text-align:left">Indicateur</th>
+          ${MONTHS.map(m=>`<th style="border:1px solid #ddd;padding:5px 3px;text-align:right">${m}</th>`).join('')}
+          <th style="border:1px solid #ddd;padding:5px 8px;text-align:right;background:#eef0fd;font-weight:800">TOTAL</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="border:1px solid #ddd;padding:4px 8px;font-weight:700">💹 Revenus</td>${rv.map(v=>`<td style="border:1px solid #ddd;padding:4px 3px;text-align:right;color:#27ae60">${fmtN(v)}</td>`).join('')}<td style="border:1px solid #ddd;padding:4px 8px;text-align:right;font-weight:800;color:#27ae60;background:#f0fff4">${fmtN(tRv)}</td></tr>
+          <tr><td style="border:1px solid #ddd;padding:4px 8px;font-weight:700">🏠 Charges</td>${ch.map(v=>`<td style="border:1px solid #ddd;padding:4px 3px;text-align:right">${fmtN(v)}</td>`).join('')}<td style="border:1px solid #ddd;padding:4px 8px;text-align:right;font-weight:800;background:#f8f9ff">${fmtN(tCh)}</td></tr>
+          <tr><td style="border:1px solid #ddd;padding:4px 8px;font-weight:700">🛒 Variables</td>${vr.map(v=>`<td style="border:1px solid #ddd;padding:4px 3px;text-align:right">${fmtN(v)}</td>`).join('')}<td style="border:1px solid #ddd;padding:4px 8px;text-align:right;font-weight:800;background:#f8f9ff">${fmtN(tVr)}</td></tr>
+          <tr style="background:#f8f9ff"><td style="border:1px solid #ddd;padding:4px 8px;font-weight:800">💰 Solde</td>${bal.map(v=>`<td style="border:1px solid #ddd;padding:4px 3px;text-align:right;font-weight:700;color:${v>=0?'#27ae60':'#e74c3c'}">${fmtN(v)}</td>`).join('')}<td style="border:1px solid #ddd;padding:4px 8px;text-align:right;font-weight:800;color:${tBal>=0?'#27ae60':'#e74c3c'};background:#eef0fd">${fmtN(tBal)}</td></tr>
+        </tbody>
+      </table>
+      ${cats.length ? `<div style="page-break-inside:avoid"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">🗂 Répartition des dépenses variables</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${cats.map(c=>`<div style="border:1px solid #eee;border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between"><span style="font-size:11px">${c.icon||'🛍️'} ${_esc(c.label)}</span><span style="font-size:11px;font-weight:700;color:#e74c3c">${fmtN(c.total)} €</span></div>`).join('')}</div></div>` : ''}
+    </div>`;
+  });
+  html += `<div style="border-top:1px solid #ddd;padding-top:10px;margin-top:12px;font-size:9px;color:#aaa;text-align:center">Mon Budget v${APP_VERSION} — budget.marquabel.be — Généré le ${dateStr}</div></div>`;
+  document.getElementById('print-report').innerHTML = html;
+  window.print();
+}
+
+// ─────────────────────────────────────────────
 // 🏠 TABLEAU DE BORD MENSUEL
 // ─────────────────────────────────────────────
 function renderDashboard() {
@@ -4886,7 +4936,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v101</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v102</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5569,8 +5619,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '8.5';
-const SW_VERSION = 'v101';
+const APP_VERSION = '8.6';
+const SW_VERSION = 'v102';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5582,6 +5632,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '8.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🖨️', text: 'PDF amélioré : rapport structuré avec KPIs, tableau mensuel et répartition des catégories pour chaque année' },
+      { icon: '📂', text: 'Import CSV : détection automatique des doublons (badge ⚠️, pré-décochés) avec re-détection si l\'année change' }
+    ]
+  },
   '8.5': {
     date: 'Mai 2026',
     items: [
@@ -6171,17 +6228,23 @@ function parseAndReview(text, filename) {
     }
     if (!amount || amount <= 0) continue;
     const label = cols.label >= 0 ? cells[cols.label] : (cells[1]||'');
-    _csvRows.push({month:parsed.month, day:parsed.day, year:parsed.year, label, amount, catKey:_csvAutocat(label), include:true});
+    _csvRows.push({month:parsed.month, day:parsed.day, year:parsed.year, label, amount, catKey:_csvAutocat(label), include:true, isDuplicate:false});
   }
   if (!_csvRows.length) { showToast('❌ Aucune dépense détectée dans ce fichier'); return; }
-  document.getElementById('csv-filename').textContent = filename + ' — ' + _csvRows.length + ' dépenses détectées';
+  // Détection des doublons vs l'année active
+  _csvRows.forEach(row => {
+    row.isDuplicate = _csvIsDuplicate(row, activeYear);
+    if (row.isDuplicate) row.include = false;
+  });
+  const dupCount = _csvRows.filter(r=>r.isDuplicate).length;
+  document.getElementById('csv-filename').textContent = filename + ' — ' + _csvRows.length + ' dépenses' + (dupCount ? ` (${dupCount} doublon${dupCount>1?'s':''} détecté${dupCount>1?'s':''})` : '');
   document.getElementById('csv-year-select').innerHTML = getYears().map(y=>`<option value="${y}"${y==activeYear?' selected':''}>${y}</option>`).join('');
   const cats = getVarCats();
   document.getElementById('csv-tbody').innerHTML = _csvRows.map((row,i)=>`
-    <tr id="csv-row-${i}" style="border-bottom:1px solid var(--border);${row.include?'':'opacity:.35'}">
+    <tr id="csv-row-${i}" style="border-bottom:1px solid var(--border);${row.isDuplicate?'background:rgba(255,193,7,.07)':''}${!row.include?';opacity:.45':''}">
       <td style="text-align:center;padding:6px"><input type="checkbox" ${row.include?'checked':''} onchange="csvToggleRow(${i},this.checked)"></td>
       <td style="padding:6px;white-space:nowrap;color:var(--gray)">${MONTHS[row.month]} ${row.day}</td>
-      <td style="padding:6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${row.label}">${row.label}</td>
+      <td style="padding:6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${row.label}">${row.label}${row.isDuplicate?'<span style="margin-left:5px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">⚠️ doublon</span>':''}</td>
       <td style="padding:6px;text-align:right;font-weight:700;color:var(--red);white-space:nowrap">${fmtN(row.amount)} €</td>
       <td style="padding:6px"><select style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;width:100%" onchange="csvSetCat(${i},this.value)">
         ${cats.map(c=>`<option value="${c.key}"${c.key===row.catKey?' selected':''}>${c.icon} ${_esc(c.label)}</option>`).join('')}
@@ -6197,18 +6260,48 @@ function parseAndReview(text, filename) {
 function csvToggleRow(i, checked) {
   _csvRows[i].include = checked;
   const tr = document.getElementById('csv-row-'+i);
-  if (tr) tr.style.opacity = checked ? '' : '.35';
+  if (tr) tr.style.opacity = checked ? '' : '.45';
   _csvUpdateCount();
 }
 function csvSetCat(i, key) { _csvRows[i].catKey = key; }
+function _csvIsDuplicate(row, year) {
+  if (!DATA[year]?.vars?.[row.catKey]) return false;
+  return DATA[year].vars[row.catKey].some(tx =>
+    tx.month === row.month && Math.abs((parseFloat(tx.amount)||0) - row.amount) < 0.02
+  );
+}
+function csvReCheckDuplicates(year) {
+  _csvRows.forEach((row, i) => {
+    const wasDup = row.isDuplicate;
+    row.isDuplicate = _csvIsDuplicate(row, year);
+    const tr = document.getElementById('csv-row-'+i);
+    if (!tr) return;
+    // Update background
+    tr.style.background = row.isDuplicate ? 'rgba(255,193,7,.07)' : '';
+    // Update badge visibility
+    const badge = tr.querySelector('span[style*="doublon"]');
+    if (row.isDuplicate && !badge) {
+      const labelCell = tr.cells[2];
+      if (labelCell) labelCell.innerHTML += '<span style="margin-left:5px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">⚠️ doublon</span>';
+    } else if (!row.isDuplicate && badge) badge.remove();
+    // Auto-uncheck newly detected duplicates
+    if (row.isDuplicate && !wasDup) { row.include = false; csvToggleRow(i, false); }
+  });
+  _csvUpdateCount();
+}
 function csvToggleAll(checked) { _csvRows.forEach((_,i) => csvToggleRow(i, checked)); }
 function _csvUpdateCount() {
-  const n = _csvRows.filter(r=>r.include).length;
+  const selected = _csvRows.filter(r=>r.include);
+  const n = selected.length;
   const btn = document.getElementById('csv-import-btn');
   btn.textContent = `✅ Importer ${n} transaction${n>1?'s':''}`;
   btn.disabled = n === 0;
+  const dups = _csvRows.filter(r=>r.isDuplicate).length;
   const rc = document.getElementById('csv-row-count');
-  if (rc) rc.textContent = `${n} / ${_csvRows.length} sélectionnées`;
+  if (rc) rc.textContent = `${n} / ${_csvRows.length} sélectionnées${dups>0?' · ⚠️ '+dups+' doublon'+(dups>1?'s':''):''}`;
+  const total = selected.reduce((s,r)=>s+(r.amount||0),0);
+  const ta = document.getElementById('csv-total-amount');
+  if (ta) ta.textContent = total > 0 ? fmtN(total)+' €' : '';
 }
 function confirmCsvImport() {
   const year = document.getElementById('csv-year-select').value;
@@ -7922,5 +8015,6 @@ function closeCompareView() {
   </div>
 </div>
 
+<div id="print-report"></div>
 </body>
 </html>
