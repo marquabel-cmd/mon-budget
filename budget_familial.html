@@ -2586,6 +2586,7 @@ function renderRevSection(year) {
   return `<div class="section-card collapsed" data-section="revenus">
     <div class="section-header" onclick="toggleSection(this)">
       <div style="flex:1;min-width:0"><span class="section-title">💹 Revenus <span class="badge badge-g" id="rev-badge-${year}">${fmtN(grandTot)} €</span></span>${mthMiniRow(monthTots,false)}</div>
+      <button onclick="event.stopPropagation();openAddRowModal('${year}','revenu')" style="flex-shrink:0;background:rgba(46,213,115,.12);color:#2ed573;border:1px solid rgba(46,213,115,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">＋ Revenu</button>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
@@ -2601,9 +2602,6 @@ function renderRevSection(year) {
           <td class="tot-col pos" id="revtot-${year}">${fmtN(grandTot)}</td><td></td>
         </tr>
       </tbody></table>
-      <div style="padding:8px 14px">
-        <button class="add-tx-btn" onclick="openAddRowModal('${year}','revenu')">＋ Ajouter une ligne</button>
-      </div>
     </div>
   </div>`;
 }
@@ -2696,6 +2694,8 @@ function renderChargeSection(year) {
   return `<div class="section-card collapsed" data-section="charges">
     <div class="section-header" onclick="toggleSection(this)">
       <div style="flex:1;min-width:0"><span class="section-title">🏠 Charges &amp; Dépenses fixes <span class="badge badge-r" id="chg-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(mths,false)}</div>
+      <button onclick="event.stopPropagation();openAddRowModal('${year}','fixed')" style="flex-shrink:0;background:rgba(91,106,240,.12);color:#7b8ff7;border:1px solid rgba(91,106,240,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:4px">＋ Fixe</button>
+      <button onclick="event.stopPropagation();openAddRowModal('${year}','occasional')" style="flex-shrink:0;background:rgba(245,166,35,.12);color:#F5A623;border:1px solid rgba(245,166,35,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">＋ Occasion.</button>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
@@ -2719,11 +2719,6 @@ function renderChargeSection(year) {
           <td class="tot-col" id="chtot-${year}">${fmtN(gt)}</td><td></td>
         </tr>
       </tbody></table>
-      <div style="padding:8px 14px">
-        <button class="add-tx-btn" onclick="openAddRowModal('${year}','fixed')">＋ Charge récurrente</button>
-        &nbsp;
-        <button class="add-tx-btn" onclick="openAddRowModal('${year}','occasional')" style="border-color:var(--orange);color:var(--orange)">＋ Charge occasionnelle</button>
-      </div>
     </div>
   </div>`;
 }
