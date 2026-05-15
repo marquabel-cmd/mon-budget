@@ -2357,8 +2357,10 @@ function deleteYear(year) {
     renderTabs();
     const remaining = getYears();
     if (remaining.length) {
-      const firstTab = document.querySelector('#year-tabs .tab');
-      if (firstTab) switchTab('y' + remaining[0], firstTab);
+      // Aller sur l'année en cours, sinon la plus récente disponible
+      const currentYear = String(new Date().getFullYear());
+      const target = remaining.includes(currentYear) ? currentYear : remaining[remaining.length - 1];
+      _switchYearMobile(target);
     }
     dSave(); renderSummary();
     showToast('🗑 Année ' + year + ' supprimée');
@@ -4624,7 +4626,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v90</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v91</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5296,8 +5298,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '7.4';
-const SW_VERSION = 'v90';
+const APP_VERSION = '7.5';
+const SW_VERSION = 'v91';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5309,6 +5311,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '7.5': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🗑️', text: 'Suppression d\'année : retour automatique sur l\'année en cours (2026), ou la plus récente si elle n\'existe pas' }
+    ]
+  },
   '7.4': {
     date: 'Mai 2026',
     items: [
