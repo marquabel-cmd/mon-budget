@@ -3333,6 +3333,15 @@ function delTx(year, catKey, id, m) {
 }
 
 // ── KPI CARDS ──
+function _kpiActionBtn(label, onclick) {
+  return `<button onclick="${onclick}" style="margin-top:8px;width:100%;padding:5px 8px;background:rgba(91,106,240,.12);border:1px solid rgba(91,106,240,.3);color:var(--blue);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;text-align:left;transition:background .15s" onmouseover="this.style.background='rgba(91,106,240,.22)'" onmouseout="this.style.background='rgba(91,106,240,.12)'">${label}</button>`;
+}
+function _scrollToSection(year, section) {
+  const el = document.querySelector(`[data-section="${section}"]`);
+  if (!el) return;
+  if (el.classList.contains('collapsed')) el.classList.remove('collapsed');
+  setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
 function renderKpiCards(year) {
   const rv = revTotal(year), dep = depTotal(year), ch = chgTotal(year), bal = balance(year);
   const pastMonths = rv.filter(v => v > 0).length || 1;
@@ -3346,26 +3355,52 @@ function renderKpiCards(year) {
   const proj = Math.round(totalBal / pastMonths * 12);
   const cPos = (v,g,w) => v >= g ? '#00C896' : v >= w ? '#F5A623' : '#F04F5B';
   const cNeg = (v,g,w) => v <= g ? '#00C896' : v <= w ? '#F5A623' : '#F04F5B';
+
+  // Actions contextuelles selon l'état du KPI
+  const tauxAction = taux < 20
+    ? _kpiActionBtn(taux < 10 ? '📉 Voir les dépenses à réduire →' : '📊 Analyser les catégories →', `_goToTab('charts')`)
+    : '';
+  const chgAction = ratioChg > 50
+    ? _kpiActionBtn('📋 Voir les charges fixes →', `_scrollToSection('${year}','charges')`)
+    : '';
+  const resAction = typeof moisRes === 'number' && moisRes < 3
+    ? (initSolde === 0
+        ? _kpiActionBtn('💰 Renseigner vos soldes →', `document.querySelector('[data-section="soldes"]')?.scrollIntoView({behavior:'smooth'})`)
+        : _kpiActionBtn('📈 Augmenter l\'épargne mensuelle →', `_goToTab('charts')`)
+      )
+    : (typeof moisRes !== 'number' ? _kpiActionBtn('💰 Renseigner vos soldes de départ →', `document.querySelector('[data-section="soldes"]')?.scrollIntoView({behavior:'smooth'})`) : '');
+  const projAction = proj < 0
+    ? _kpiActionBtn('🔍 Identifier les dépassements →', `_scrollToSection('${year}','variables')`)
+    : '';
+
   return `<div class="kpi-cards">
     <div class="kpi-card" style="border-top-color:${cPos(taux,20,10)}">
       <div class="kpi-label">Taux d'épargne</div>
       <div class="kpi-value" style="color:${cPos(taux,20,10)}">${taux>0?'+':''}${taux}%</div>
       <div class="kpi-sub">${taux>=20?'✅ Excellent':taux>=10?'⚠️ Correct':'❌ Insuffisant'}</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Part des revenus épargnée.<br>Objectif recommandé : <b>≥ 20%</b></div>
+      ${tauxAction}
     </div>
     <div class="kpi-card" style="border-top-color:${cNeg(ratioChg,50,65)}">
       <div class="kpi-label">Charges / Revenus</div>
       <div class="kpi-value" style="color:${cNeg(ratioChg,50,65)}">${ratioChg}%</div>
       <div class="kpi-sub">${ratioChg<=50?'✅ Maîtrisé':ratioChg<=65?'⚠️ Élevé':'❌ Critique'}</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Poids des charges fixes (loyer, abonnements…).<br>Idéalement <b>≤ 50%</b> des revenus.</div>
+      ${chgAction}
     </div>
     <div class="kpi-card" style="border-top-color:${typeof moisRes==='number'?cPos(moisRes,3,1):'#ccc'}">
       <div class="kpi-label">Mois de réserve</div>
       <div class="kpi-value" style="color:${typeof moisRes==='number'?cPos(moisRes,3,1):'var(--gray)'}">${moisRes}</div>
       <div class="kpi-sub">${typeof moisRes==='number'?(moisRes>=3?'✅ Sécurisé':moisRes>=1?'⚠️ Fragile':'❌ Attention'):'Soldes non renseignés'}</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Mois de dépenses couverts par votre épargne.<br>Objectif de sécurité : <b>≥ 3 mois</b>.</div>
+      ${resAction}
     </div>
-    <div class="kpi-card" style="border-top-color:#5B6AF0">
+    <div class="kpi-card" style="border-top-color:${proj>=0?'#5B6AF0':'#F04F5B'}">
       <div class="kpi-label">Projection épargne</div>
       <div class="kpi-value" style="color:${proj>=0?'#5B6AF0':'#F04F5B'};font-size:20px">${proj>=0?'+':''}${fmtN(proj)} €</div>
-      <div class="kpi-sub">annuelle · base ${pastMonths} mois</div>
+      <div class="kpi-sub">${proj>=0?'📈 Sur bonne voie':'❌ Déficit projeté'}</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Épargne annuelle estimée sur la base des <b>${pastMonths} mois</b> enregistrés.</div>
+      ${projAction}
     </div>
   </div>`;
 }
@@ -4626,7 +4661,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v91</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v92</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5298,8 +5333,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '7.5';
-const SW_VERSION = 'v91';
+const APP_VERSION = '7.6';
+const SW_VERSION = 'v92';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5311,6 +5346,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '7.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '💡', text: 'KPI : explication courte sur chaque indicateur (taux d\'épargne, charges, réserve, projection) + bouton d\'action contextuel quand une amélioration est possible' }
+    ]
+  },
   '7.5': {
     date: 'Mai 2026',
     items: [
