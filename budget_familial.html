@@ -2701,7 +2701,7 @@ function renderRevSection(year) {
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
-      <td style="white-space:nowrap;width:76px"><button class="del-btn" style="margin-right:2px" title="Même montant tous les mois" onclick="fillRowFixed('${year}','revenus',${ri})">📌</button><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
+      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
   }).join('');
 
   const totRow = Array(12).fill(0).map((_,i)=>`<td class="${monthTots[i]<0?'neg':'pos'}" id="revmth-${year}-${i}">${fmtN(monthTots[i])}</td>`).join('');
@@ -2805,7 +2805,7 @@ function renderChargeSection(year) {
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
-      <td style="white-space:nowrap;width:76px"><button class="del-btn" style="margin-right:2px" title="Même montant tous les mois" onclick="fillRowFixed('${year}','charges',${ri})">📌</button><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
+      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
     </tr>`;
   });
 
@@ -3046,18 +3046,6 @@ function confirmPropagate(yes) {
   _propCtx = null;
 }
 
-function fillRowFixed(year, dataType, ri) {
-  const row = DATA[year][dataType][ri];
-  const nonZero = row.v.filter(v => parseFloat(v) > 0);
-  const suggested = nonZero.length ? Math.round(Math.max(...nonZero.map(v=>parseFloat(v)))*100)/100 : 0;
-  const input = prompt(`📌 Montant mensuel fixe pour "${row.label}" ?\nLaisser vide = ${fmtN(suggested)} €`, suggested || '');
-  if (input === null) return; // annulé
-  const val = parseFloat(input);
-  if (isNaN(val) || val < 0) { showToast('❌ Montant invalide'); return; }
-  row.v = Array(12).fill(val);
-  renderYear(year); dSave();
-  showToast(`📌 ${row.label} → ${fmtN(val)} €/mois sur 12 mois`);
-}
 
 // ── VARIABLE EXPENSES ──
 const DEFAULT_VAR_CATS = [
@@ -4984,7 +4972,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v103</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v104</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5667,8 +5655,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '8.7';
-const SW_VERSION = 'v103';
+const APP_VERSION = '8.8';
+const SW_VERSION = 'v104';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5680,6 +5668,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '8.8': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🗑️', text: 'Charges & Revenus : suppression du bouton 📌 (redondant avec la modal d\'ajout/modification)' }
+    ]
+  },
   '8.7': {
     date: 'Mai 2026',
     items: [
