@@ -2701,7 +2701,7 @@ function renderRevSection(year) {
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
-      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
+      <td style="white-space:nowrap;width:76px"><button class="del-btn" style="margin-right:2px" title="Même montant tous les mois" onclick="fillRowFixed('${year}','revenus',${ri})">📌</button><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
   }).join('');
 
   const totRow = Array(12).fill(0).map((_,i)=>`<td class="${monthTots[i]<0?'neg':'pos'}" id="revmth-${year}-${i}">${fmtN(monthTots[i])}</td>`).join('');
@@ -2805,7 +2805,7 @@ function renderChargeSection(year) {
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
-      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
+      <td style="white-space:nowrap;width:76px"><button class="del-btn" style="margin-right:2px" title="Même montant tous les mois" onclick="fillRowFixed('${year}','charges',${ri})">📌</button><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
     </tr>`;
   });
 
@@ -3044,6 +3044,19 @@ function confirmPropagate(yes) {
     dSave();
   }
   _propCtx = null;
+}
+
+function fillRowFixed(year, dataType, ri) {
+  const row = DATA[year][dataType][ri];
+  const nonZero = row.v.filter(v => parseFloat(v) > 0);
+  const suggested = nonZero.length ? Math.round(Math.max(...nonZero.map(v=>parseFloat(v)))*100)/100 : 0;
+  const input = prompt(`📌 Montant mensuel fixe pour "${row.label}" ?\nLaisser vide = ${fmtN(suggested)} €`, suggested || '');
+  if (input === null) return; // annulé
+  const val = parseFloat(input);
+  if (isNaN(val) || val < 0) { showToast('❌ Montant invalide'); return; }
+  row.v = Array(12).fill(val);
+  renderYear(year); dSave();
+  showToast(`📌 ${row.label} → ${fmtN(val)} €/mois sur 12 mois`);
 }
 
 // ── VARIABLE EXPENSES ──
@@ -4588,6 +4601,29 @@ function renderDashboard() {
     ${alertsHtml}
     ${compHtml}
 
+    <!-- Détail des charges du mois -->
+    ${(() => {
+      const chLines = (DATA[yr]?.charges||[]).filter(r => {
+        if (r.cat==='livret_out') return false;
+        return (parseFloat(r.v[mi])||0) > 0;
+      });
+      if (!chLines.length) return '';
+      return `<div class="section-card" style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+          <span>🏠 Charges du mois</span>
+          <span style="font-size:11px;color:var(--gray);font-weight:400">${chLines.length} ligne${chLines.length>1?'s':''} · ${fmtN(ch)} € total</span>
+        </div>
+        ${chLines.map(r => {
+          const amt = parseFloat(r.v[mi])||0;
+          const isLivret = r.cat==='livret_in';
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+            <span style="color:${isLivret?'var(--blue)':'var(--text)'}">${isLivret?'📈':''} ${_esc(r.label)}</span>
+            <span style="font-weight:700;white-space:nowrap;color:var(--text)">${fmtN(amt)} €${r.paid&&r.paid[mi]?' <span style="font-size:10px;color:var(--green)">✓</span>':''}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    })()}
+
     <!-- Dépenses variables du mois -->
     <div class="section-card">
       <div style="font-weight:700;font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
@@ -4598,6 +4634,18 @@ function renderDashboard() {
       ${txList.length > 8 ? `<div style="text-align:center;font-size:11px;color:var(--gray);margin-top:8px">… et ${txList.length-8} autre${txList.length-8>1?'s':''}</div>` : ''}
     </div>
   </div>`;
+  // Swipe mobile gauche/droite
+  _dashInitSwipe(wrap);
+}
+
+function _dashInitSwipe(el) {
+  let sx = 0, sy = 0;
+  el.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive:true});
+  el.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) _dashNav(dx < 0 ? 1 : -1);
+  }, {passive:true});
 }
 
 function _dashNav(dir) {
@@ -4936,7 +4984,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v102</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v103</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5619,8 +5667,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '8.6';
-const SW_VERSION = 'v102';
+const APP_VERSION = '8.7';
+const SW_VERSION = 'v103';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -5632,6 +5680,14 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '8.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📌', text: 'Charges & Revenus : bouton 📌 pour remplir les 12 mois avec un même montant en un clic' },
+      { icon: '🏠', text: 'Accueil : détail des charges du mois (liste des lignes avec montant et statut payé)' },
+      { icon: '📱', text: 'Accueil : swipe gauche/droite sur mobile pour naviguer entre les mois' }
+    ]
+  },
   '8.6': {
     date: 'Mai 2026',
     items: [
