@@ -2449,10 +2449,15 @@ function addYear() {
   document.getElementById('rev-dialog-year-title').textContent = newYear;
   const prev = DATA[lastYear];
   const tbody = document.getElementById('rev-dialog-tbody');
+  const newYearInt = parseInt(newYear);
   tbody.innerHTML = prev.revenus.map((r, i) => {
+    // Ne pas afficher les revenus déjà terminés avant la nouvelle année
+    if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < newYearInt) return '';
     const vals = r.v.filter(v=>v>0);
     const avg = vals.length ? Math.round(sum(vals)/vals.length*100)/100 : 0;
-    return `<tr><td style="font-weight:600">${_esc(r.label)}</td>
+    const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
+      ? ` <span style="color:#F5A623;font-size:11px">(fin ${MONTHS[r.endMonth]} ${r.endYear})</span>` : '';
+    return `<tr><td style="font-weight:600">${_esc(r.label)}${endInfo}</td>
       <td style="color:var(--gray)">${fmtN(avg)} €/mois</td>
       <td><input class="rev-dialog-input" type="number" step="0.01" id="rev-inp-${i}" placeholder="${fmtN(avg)}"></td></tr>`;
   }).join('');
@@ -2481,17 +2486,42 @@ function confirmRevDialog() {
     soldes: newSoldes,
     excludeCalcMethods: [...(prev.excludeCalcMethods || [])],
     revenus: prev.revenus.map((r, i) => {
+      const ny = parseInt(newYear);
+      // Ligne terminée avant la nouvelle année → ne pas reprendre
+      if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
       const inp = document.getElementById(`rev-inp-${i}`);
       const val = parseFloat(inp?.value);
-      const v = (!isNaN(val) && val >= 0) ? Array(12).fill(val) : [...r.v];
-      return { label: r.label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false, ...(r.accountId ? {accountId: r.accountId} : {}) };
-    }),
+      let v = (!isNaN(val) && val >= 0) ? Array(12).fill(val) : [...r.v];
+      // Ligne qui se termine dans la nouvelle année → zéroter après endMonth
+      if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === ny) {
+        for (let m = parseInt(r.endMonth) + 1; m < 12; m++) v[m] = 0;
+      }
+      const meta = {};
+      if (r.noEnd !== undefined) meta.noEnd = r.noEnd;
+      if (r.endMonth !== undefined) meta.endMonth = r.endMonth;
+      if (r.endYear !== undefined) meta.endYear = r.endYear;
+      if (r.reps !== undefined) meta.reps = r.reps;
+      return { label: r.label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false,
+        ...(r.accountId ? {accountId: r.accountId} : {}), ...meta };
+    }).filter(r => r !== null),
     charges: prev.charges.map(r => {
+      const ny = parseInt(newYear);
       const isLivret = r.cat === 'livret_in' || r.cat === 'livret_out';
-      const v = isLivret ? Array(12).fill(0) : [...r.v];
+      // Ligne terminée avant la nouvelle année → ne pas reprendre
+      if (!isLivret && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
+      let v = isLivret ? Array(12).fill(0) : [...r.v];
+      // Ligne qui se termine dans la nouvelle année → zéroter après endMonth
+      if (!isLivret && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === ny) {
+        for (let m = parseInt(r.endMonth) + 1; m < 12; m++) v[m] = 0;
+      }
+      const meta = {};
+      if (r.noEnd !== undefined) meta.noEnd = r.noEnd;
+      if (r.endMonth !== undefined) meta.endMonth = r.endMonth;
+      if (r.endYear !== undefined) meta.endYear = r.endYear;
+      if (r.reps !== undefined) meta.reps = r.reps;
       return { label: r.label, cat: r.cat, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false,
-        ...(r.accountId ? {accountId: r.accountId} : {}), ...(r.livretId ? {livretId: r.livretId} : {}) };
-    }),
+        ...(r.accountId ? {accountId: r.accountId} : {}), ...(r.livretId ? {livretId: r.livretId} : {}), ...meta };
+    }).filter(r => r !== null),
     vars: Object.fromEntries(getVarCats().map(c => [c.key, []]))
   };
   document.getElementById('rev-dialog-modal').classList.remove('open');
@@ -5304,7 +5334,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v110</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v111</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -5987,8 +6017,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '9.4';
-const SW_VERSION = 'v110';
+const APP_VERSION = '9.5';
+const SW_VERSION = 'v111';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6000,6 +6030,14 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.5': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📅', text: 'Ajout d\'année : lignes terminées avant la nouvelle année ne sont plus reprises' },
+      { icon: '✂️', text: 'Ajout d\'année : lignes se terminant dans la nouvelle année sont zérotées après leur mois de fin' },
+      { icon: '🔁', text: 'Ajout d\'année : date de fin et répétitions propagées vers la nouvelle année' }
+    ]
+  },
   '9.4': {
     date: 'Mai 2026',
     items: [
