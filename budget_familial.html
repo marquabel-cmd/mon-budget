@@ -1079,12 +1079,16 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 </div>
 
 <div class="modal-overlay" id="rev-dialog-modal" onclick="if(event.target===this)cancelRevDialog()">
-  <div class="modal-box" style="max-width:560px">
-    <h3>📅 Nouvelle année <span id="rev-dialog-year-title"></span> — Revenus</h3>
-    <p style="font-size:12px;color:var(--gray);margin:6px 0 12px">Laissez vide pour conserver les montants de l'année précédente.</p>
-    <div style="overflow:auto;max-height:52vh">
-      <table class="rev-dialog-table"><thead><tr><th>Revenu</th><th>Référence (moy. mensuelle)</th><th>Nouveau montant mensuel</th></tr></thead>
+  <div class="modal-box" style="max-width:600px">
+    <h3>📅 Nouvelle année <span id="rev-dialog-year-title"></span></h3>
+    <p style="font-size:12px;color:var(--gray);margin:6px 0 12px">Laissez vide pour reprendre le dernier montant payé. Saisissez un montant pour le modifier.</p>
+    <div style="overflow:auto;max-height:60vh">
+      <div style="font-size:12px;font-weight:700;color:var(--green);margin:0 0 6px;text-transform:uppercase;letter-spacing:.5px">💰 Revenus</div>
+      <table class="rev-dialog-table"><thead><tr><th>Revenu</th><th>Dernier montant</th><th>Nouveau montant mensuel</th></tr></thead>
       <tbody id="rev-dialog-tbody"></tbody></table>
+      <div style="font-size:12px;font-weight:700;color:#F5A623;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px">📋 Charges fixes</div>
+      <table class="rev-dialog-table"><thead><tr><th>Charge</th><th>Dernier montant</th><th>Nouveau montant mensuel</th></tr></thead>
+      <tbody id="chg-dialog-tbody"></tbody></table>
     </div>
     <div class="rev-dialog-btns">
       <button class="btn-rev-cancel" onclick="cancelRevDialog()">Annuler</button>
@@ -1416,6 +1420,13 @@ function buildDefaultsForNewUser() {
     charges.push({label:'📈 Livret — virement mensuel',       cat:'livret_in',  v:Array(12).fill(0), paid:F12b()});
     charges.push({label:'📈 Livret — versement exceptionnel', cat:'livret_in',  v:Array(12).fill(0), paid:F12b()});
     charges.push({label:'📉 Livret — retrait vers compte',    cat:'livret_out', v:Array(12).fill(0), paid:F12b()});
+  }
+  // Boite à cash lines always present
+  if (!charges.some(c => c.cat === 'boite_in')) {
+    charges.push({label:'💵 Retrait argent liquide → Boîte',  cat:'boite_in',  v:Array(12).fill(0), paid:F12b()});
+  }
+  if (!revenus.some(r => r.cat === 'boite_dep')) {
+    revenus.push({label:'💵 Dépôt Boîte → Compte',            cat:'boite_dep', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true});
   }
   const d = { methods: [...DEFAULT_METHODS], varCats: JSON.parse(JSON.stringify(DEFAULT_VAR_CATS)) };
   const varsForYear = {};
@@ -2212,6 +2223,20 @@ function loadData() {
     });
     (DATA[y].charges||[]).forEach(r => { if (r.inCalc === undefined) r.inCalc = true; });
   });
+  // Migration: ajouter lignes boite_in et boite_dep à toutes les années existantes
+  if (!localStorage.getItem('boite_lines_v1')) {
+    getYears().forEach(y => {
+      const charges = DATA[y].charges || [];
+      const revenus = DATA[y].revenus || [];
+      if (!charges.some(c => c.cat === 'boite_in')) {
+        charges.push({label:'💵 Retrait argent liquide → Boîte', cat:'boite_in', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true});
+      }
+      if (!revenus.some(r => r.cat === 'boite_dep')) {
+        revenus.push({label:'💵 Dépôt Boîte → Compte', cat:'boite_dep', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true});
+      }
+    });
+    localStorage.setItem('boite_lines_v1', '1');
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -2438,6 +2463,21 @@ function cancelDelete() {
   document.getElementById('del-confirm-modal').classList.remove('open');
 }
 
+function _lastPaidAmt(row) {
+  if (!row || !row.v) return 0;
+  // Dernier mois payé avec valeur > 0
+  for (let m = 11; m >= 0; m--) {
+    const v = parseFloat(row.v[m]) || 0;
+    if (v > 0 && row.paid && row.paid[m] !== false) return v;
+  }
+  // Fallback : dernière valeur non nulle
+  for (let m = 11; m >= 0; m--) {
+    const v = parseFloat(row.v[m]) || 0;
+    if (v > 0) return v;
+  }
+  return 0;
+}
+
 let _pendingNewYear = null;
 function addYear() {
   if (!isLicensed() && getYears().length >= FREE_MAX_YEARS) { showUpgrade('historique multi-années'); return; }
@@ -2448,19 +2488,34 @@ function addYear() {
   _pendingNewYear = { lastYear, newYear };
   document.getElementById('rev-dialog-year-title').textContent = newYear;
   const prev = DATA[lastYear];
-  const tbody = document.getElementById('rev-dialog-tbody');
   const newYearInt = parseInt(newYear);
-  tbody.innerHTML = prev.revenus.map((r, i) => {
-    // Ne pas afficher les revenus déjà terminés avant la nouvelle année
+
+  // ── Revenus ──
+  document.getElementById('rev-dialog-tbody').innerHTML = prev.revenus.map((r, i) => {
     if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < newYearInt) return '';
-    const vals = r.v.filter(v=>v>0);
-    const avg = vals.length ? Math.round(sum(vals)/vals.length*100)/100 : 0;
+    const last = _lastPaidAmt(r);
+    const isProtected = r.cat === 'boite_dep';
+    const lbl = isProtected ? `<span style="color:#5B6AF0;font-weight:700">${_esc(r.label)}</span>` : `<span style="font-weight:600">${_esc(r.label)}</span>`;
     const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
       ? ` <span style="color:#F5A623;font-size:11px">(fin ${MONTHS[r.endMonth]} ${r.endYear})</span>` : '';
-    return `<tr><td style="font-weight:600">${_esc(r.label)}${endInfo}</td>
-      <td style="color:var(--gray)">${fmtN(avg)} €/mois</td>
-      <td><input class="rev-dialog-input" type="number" step="0.01" id="rev-inp-${i}" placeholder="${fmtN(avg)}"></td></tr>`;
+    return `<tr><td>${lbl}${endInfo}</td>
+      <td style="color:var(--gray)">${last > 0 ? fmtN(last) + ' €' : '—'}</td>
+      <td><input class="rev-dialog-input" type="number" step="0.01" id="rev-inp-${i}" placeholder="${last > 0 ? fmtN(last) : '0'}"></td></tr>`;
   }).join('');
+
+  // ── Charges ──
+  document.getElementById('chg-dialog-tbody').innerHTML = prev.charges.map((r, i) => {
+    if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < newYearInt) return '';
+    const last = _lastPaidAmt(r);
+    const isProtected = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in';
+    const lbl = isProtected ? `<span style="color:#5B6AF0;font-weight:700">${_esc(r.label)}</span>` : `<span style="font-weight:600">${_esc(r.label)}</span>`;
+    const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
+      ? ` <span style="color:#F5A623;font-size:11px">(fin ${MONTHS[r.endMonth]} ${r.endYear})</span>` : '';
+    return `<tr><td>${lbl}${endInfo}</td>
+      <td style="color:var(--gray)">${last > 0 ? fmtN(last) + ' €' : '—'}</td>
+      <td><input class="rev-dialog-input" type="number" step="0.01" id="chg-inp-${i}" placeholder="${last > 0 ? fmtN(last) : '0'}"></td></tr>`;
+  }).join('');
+
   document.getElementById('rev-dialog-modal').classList.add('open');
 }
 function cancelRevDialog() {
@@ -2491,7 +2546,9 @@ function confirmRevDialog() {
       if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
       const inp = document.getElementById(`rev-inp-${i}`);
       const val = parseFloat(inp?.value);
-      let v = (!isNaN(val) && val >= 0) ? Array(12).fill(val) : [...r.v];
+      // Si valeur saisie → fill 12 mois ; sinon → dernier montant payé
+      const lastAmt = _lastPaidAmt(r);
+      let v = (!isNaN(val) && val >= 0) ? Array(12).fill(val) : Array(12).fill(lastAmt || 0);
       // Ligne qui se termine dans la nouvelle année → zéroter après endMonth
       if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === ny) {
         for (let m = parseInt(r.endMonth) + 1; m < 12; m++) v[m] = 0;
@@ -2502,16 +2559,22 @@ function confirmRevDialog() {
       if (r.endYear !== undefined) meta.endYear = r.endYear;
       if (r.reps !== undefined) meta.reps = r.reps;
       return { label: r.label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false,
-        ...(r.accountId ? {accountId: r.accountId} : {}), ...meta };
+        ...(r.cat ? {cat: r.cat} : {}), ...(r.accountId ? {accountId: r.accountId} : {}), ...meta };
     }).filter(r => r !== null),
-    charges: prev.charges.map(r => {
+    charges: prev.charges.map((r, i) => {
       const ny = parseInt(newYear);
-      const isLivret = r.cat === 'livret_in' || r.cat === 'livret_out';
-      // Ligne terminée avant la nouvelle année → ne pas reprendre
-      if (!isLivret && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
-      let v = isLivret ? Array(12).fill(0) : [...r.v];
+      const isSpecialRow = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in';
+      // Ligne terminée avant la nouvelle année → ne pas reprendre (sauf lignes protégées)
+      if (!isSpecialRow && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
+      const inp = document.getElementById(`chg-inp-${i}`);
+      const val = parseFloat(inp?.value);
+      const lastAmt = _lastPaidAmt(r);
+      // Lignes protégées (livret/boite) : reset à 0 chaque année sauf si saisie
+      let v = isSpecialRow
+        ? ((!isNaN(val) && val >= 0) ? Array(12).fill(val) : Array(12).fill(0))
+        : ((!isNaN(val) && val >= 0) ? Array(12).fill(val) : Array(12).fill(lastAmt || 0));
       // Ligne qui se termine dans la nouvelle année → zéroter après endMonth
-      if (!isLivret && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === ny) {
+      if (!isSpecialRow && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === ny) {
         for (let m = parseInt(r.endMonth) + 1; m < 12; m++) v[m] = 0;
       }
       const meta = {};
@@ -2758,12 +2821,13 @@ function renderRevSection(year) {
           oninput="DATA['${year}'].revenus[${ri}].v[${mi}]=+this.value;refreshRevTotals('${year}');dSave()"
           onblur="proposePropagate(this,'${year}','revenus',${ri},${mi})" onclick="event.stopPropagation()"></td>`;
     }).join('');
+    const isProtectedRev = r.cat === 'boite_dep';
     return `<tr><td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check cal-check-compte" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','compte',${ri},this.checked)" onclick="event.stopPropagation()">
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
-      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button><button class="del-btn" onclick="delRevRow('${year}',${ri})">✕</button></td></tr>`;
+      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button>${isProtectedRev?'':'<button class="del-btn" onclick="delRevRow(\''+year+'\','+ri+')">✕</button>'}</td></tr>`;
   }).join('');
 
   const totRow = Array(12).fill(0).map((_,i)=>`<td class="${monthTots[i]<0?'neg':'pos'}" id="revmth-${year}-${i}">${fmtN(monthTots[i])}</td>`).join('');
@@ -2860,6 +2924,7 @@ function renderChargeSection(year) {
         </div></td>`;
     }).join('');
     const isLivretRow = r.cat==='livret_in'||r.cat==='livret_out';
+    const isProtectedChg = isLivretRow || r.cat==='boite_in';
     const chkClass = isLivretRow ? 'cal-check-livret' : 'cal-check-compte';
     tbody += `<tr class="${r.cat==='occasional'?'occ-row':''}">
       <td class="lbl-col"><div class="lbl-inner">
@@ -2867,7 +2932,7 @@ function renderChargeSection(year) {
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
-      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button><button class="del-btn" onclick="delCharge('${year}',${ri})">✕</button></td>
+      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button>${isProtectedChg?'':'<button class="del-btn" onclick="delCharge(\''+year+'\','+ri+')">✕</button>'}</td>
     </tr>`;
   });
 
@@ -5334,7 +5399,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v111</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v112</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6017,8 +6082,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '9.5';
-const SW_VERSION = 'v111';
+const APP_VERSION = '9.6';
+const SW_VERSION = 'v112';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6030,6 +6095,14 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '💵', text: 'Boîte à cash : ligne "Retrait → Boîte" (charge) et "Dépôt → Compte" (revenu) ajoutées automatiquement' },
+      { icon: '🔒', text: 'Lignes livret et boîte : croix de suppression retirée (lignes protégées)' },
+      { icon: '📋', text: 'Modal nouvelle année : affiche revenus ET charges avec dernier montant payé, champs modifiables' }
+    ]
+  },
   '9.5': {
     date: 'Mai 2026',
     items: [
