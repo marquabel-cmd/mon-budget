@@ -216,6 +216,23 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 /* Accent couleur groupe Gestion */
 .nav-group-gestion .nav-btn.active{background:#8B5CF6;box-shadow:0 2px 8px rgba(139,92,246,.35)}
 
+/* ── BARRE MOBILE (toggle nav) ── */
+.nav-mobile-bar{
+  display:none; /* caché sur desktop */
+  align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 14px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:52;
+}
+.nav-mobile-title{font-size:13px;font-weight:700;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-mobile-toggle{
+  display:flex;align-items:center;gap:5px;
+  background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;
+  padding:5px 10px;color:var(--gray);font-size:12px;font-weight:700;cursor:pointer;
+  white-space:nowrap;transition:background .15s,color .15s;flex-shrink:0;
+}
+.nav-mobile-toggle:hover,.nav-mobile-toggle.open{background:var(--blue);color:#fff;border-color:var(--blue)}
+
 /* ── CONTEXT BANNER ── */
 #context-banner{
   background:var(--surface-alt);
@@ -578,7 +595,9 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   #last-sync-time{display:none!important}
   #last-save-info{display:none}
   /* ── NAV MOBILE ── */
-  .app-nav{padding:5px 8px;gap:6px}
+  .nav-mobile-bar{display:flex}
+  .app-nav{display:none;position:static;padding:5px 8px;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+  .app-nav.nav-expanded{display:flex}
   .nav-group{padding:4px 4px 5px;border-radius:10px}
   .nav-group-lbl{font-size:7px;letter-spacing:.06em}
   .nav-btn{padding:4px 8px;gap:2px;min-width:40px}
@@ -1209,7 +1228,15 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   </div>
 </div>
 
-<nav class="app-nav">
+<!-- ── BARRE MOBILE ── -->
+<div class="nav-mobile-bar" id="nav-mobile-bar">
+  <span class="nav-mobile-title" id="nav-mobile-title">📊 Résumé</span>
+  <button class="nav-mobile-toggle" id="nav-mobile-toggle" onclick="toggleMobileNav()" aria-label="Menu navigation">
+    <span id="nav-toggle-icon">☰</span> Menu
+  </button>
+</div>
+
+<nav class="app-nav" id="app-nav">
 
   <!-- ══ Groupe 1 — Données ══ -->
   <div class="nav-group nav-group-donnees">
@@ -2511,20 +2538,44 @@ function switchTab(id, el) {
   else if (id==='charts') renderCharts();
   else if (id==='config') renderConfigTab();
   updateContextBanner(id);
+  // Ferme la nav mobile après sélection
+  _closeMobileNav();
+}
+
+function toggleMobileNav() {
+  const nav = document.getElementById('app-nav');
+  const btn = document.getElementById('nav-mobile-toggle');
+  const ico = document.getElementById('nav-toggle-icon');
+  if (!nav) return;
+  const open = nav.classList.toggle('nav-expanded');
+  if (btn) btn.classList.toggle('open', open);
+  if (ico) ico.textContent = open ? '✕' : '☰';
+}
+
+function _closeMobileNav() {
+  const nav = document.getElementById('app-nav');
+  const btn = document.getElementById('nav-mobile-toggle');
+  const ico = document.getElementById('nav-toggle-icon');
+  if (nav) nav.classList.remove('nav-expanded');
+  if (btn) btn.classList.remove('open');
+  if (ico) ico.textContent = '☰';
 }
 
 function updateContextBanner(tabId) {
   const titleEl = document.getElementById('ctx-title');
   const infoEl  = document.getElementById('ctx-info');
   const sepEl   = document.getElementById('ctx-sep');
+  const mobileTitle = document.getElementById('nav-mobile-title');
   if (!titleEl || !infoEl) return;
 
   const names = {accueil:'🏠 Accueil', resume:'📊 Résumé', charts:'📈 Graphiques', config:'⚙️ Configuration'};
   let info = '';
+  let label = '';
 
   if (tabId.startsWith('y')) {
     const year = tabId.slice(1);
-    titleEl.textContent = `📅 Année ${year}`;
+    label = `📅 Année ${year}`;
+    titleEl.textContent = label;
     try {
       const rv  = sum(revTotal(year));
       const dep = sum(depTotal(year));
@@ -2533,7 +2584,8 @@ function updateContextBanner(tabId) {
       info = `Revenus&nbsp;<b>${fmtN(rv)} €</b><span class="ctx-sep">·</span>Dépenses&nbsp;<b>${fmtN(dep)} €</b><span class="ctx-sep">·</span>Solde&nbsp;<b style="color:${balColor}">${bal>=0?'+':''}${fmtN(bal)} €</b>`;
     } catch(e) {}
   } else {
-    titleEl.textContent = names[tabId] || tabId;
+    label = names[tabId] || tabId;
+    titleEl.textContent = label;
     if (tabId === 'accueil') {
       const yr = _dashYear || String(new Date().getFullYear());
       const mi = _dashMonth !== undefined ? _dashMonth : new Date().getMonth();
@@ -2554,6 +2606,9 @@ function updateContextBanner(tabId) {
     infoEl.innerHTML = '';
     if (sepEl) sepEl.style.display = 'none';
   }
+
+  // Synchronise le titre dans la barre mobile
+  if (mobileTitle) mobileTitle.textContent = label;
 }
 function _switchYearMobile(year) {
   const tab = [...document.querySelectorAll('#year-tabs .tab')].find(t => t.dataset.year == year);
@@ -5584,7 +5639,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v116</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v117</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6267,8 +6322,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '10.0';
-const SW_VERSION = 'v116';
+const APP_VERSION = '10.1';
+const SW_VERSION = 'v117';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6280,6 +6335,14 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '10.1': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📱', text: 'Mobile : barre fixe avec titre de page + bouton ☰ Menu — nav déroulable à la demande' },
+      { icon: '✨', text: 'Sélection d\'un onglet ferme automatiquement le menu mobile' },
+      { icon: '🔄', text: 'Barre mobile sur toutes les pages (budget, dashboard, aide)' }
+    ]
+  },
   '10.0': {
     date: 'Mai 2026',
     items: [
