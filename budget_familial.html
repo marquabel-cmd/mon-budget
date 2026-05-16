@@ -134,29 +134,95 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 /* ── TABS (logique interne, masqués visuellement) ── */
 .tab{display:none;user-select:none}
 .tab[data-year]{display:none!important}
-#year-tab-mobile{display:flex;align-items:center;align-self:flex-end;padding-bottom:4px}
+#year-tab-mobile{display:flex;align-items:center;gap:4px}
 
-/* ── APP NAV ── */
-.app-nav{display:flex;align-items:stretch;background:var(--surface);border-bottom:1px solid var(--border);padding:0 8px;min-height:64px;overflow-x:auto;scrollbar-width:none;gap:0;flex-shrink:0}
+/* ══════════════════════════════════════════
+   APP NAV — Toolbar segmentée 3 blocs
+   ══════════════════════════════════════════ */
+.app-nav{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:8px 16px;
+  overflow-x:auto;scrollbar-width:none;
+  flex-shrink:0;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
 .app-nav::-webkit-scrollbar{display:none}
-.nav-group{display:flex;flex-direction:column;justify-content:center;padding:4px 6px;gap:0;min-width:0}
-.nav-group-main{flex:1}
-.nav-group-lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);padding:0 4px;margin-bottom:4px;white-space:nowrap;opacity:.7}
-.nav-group-items{display:flex;align-items:flex-end;gap:1px}
-.nav-sep{width:1px;background:var(--border);margin:10px 6px;flex-shrink:0;align-self:stretch}
-.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 11px;border:none;background:transparent;cursor:pointer;border-radius:8px;font-family:'Inter',system-ui,sans-serif;transition:background .15s,color .15s;color:var(--gray);white-space:nowrap;line-height:1}
-.nav-btn:hover{background:rgba(91,106,240,.1);color:var(--blue)}
-.nav-btn.active{background:rgba(91,106,240,.15);color:var(--blue)}
-.nav-btn.active .nav-label{color:var(--blue)}
-.nav-icon{font-size:17px;line-height:1.2;display:block}
-.nav-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:1;color:inherit;display:block}
-/* Données group accent colors */
-.nav-btn.nav-data-import:hover{background:rgba(39,174,96,.1);color:#27ae60}
-.nav-btn.nav-data-export:hover{background:rgba(230,126,34,.1);color:#e67e22}
-.nav-btn.nav-data-pdf:hover{background:rgba(139,92,246,.1);color:#8B5CF6}
+
+/* ── Bloc groupe ── */
+.nav-group{
+  display:flex;flex-direction:column;gap:4px;
+  background:var(--surface-alt);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:5px 6px 6px;
+  flex-shrink:0;
+}
+.nav-group-main{flex:1;min-width:0}
+
+/* Label chapeau */
+.nav-group-lbl{
+  font-size:8px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.1em;
+  color:var(--gray);opacity:.6;
+  padding:0 4px;line-height:1;
+  white-space:nowrap;
+}
+
+/* Boutons dans le groupe */
+.nav-group-items{display:flex;align-items:center;gap:2px}
+
+/* ── Bouton individuel ── */
+.nav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 12px;
+  border:none;border-radius:8px;
+  background:transparent;cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;
+  transition:background .15s,color .15s,transform .1s;
+  color:var(--gray);white-space:nowrap;line-height:1;
+  min-width:54px;
+}
+.nav-btn:hover{
+  background:rgba(91,106,240,.1);
+  color:var(--blue);
+  transform:translateY(-1px);
+}
+.nav-btn:active{transform:translateY(0)}
+
+/* ── État actif : pill pleine ── */
+.nav-btn.active{
+  background:var(--blue);
+  color:#fff;
+  box-shadow:0 2px 8px rgba(91,106,240,.35);
+}
+.nav-btn.active .nav-label{color:#fff}
+
+/* Icône + label */
+.nav-icon{font-size:16px;line-height:1.3;display:block}
+.nav-label{
+  font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;
+  line-height:1;color:inherit;display:block;
+}
+
+/* Accents couleur groupe Données */
+.nav-group-donnees .nav-btn:hover{ color:var(--blue) }
+.nav-btn.nav-data-import:hover{background:rgba(39,174,96,.12);color:#27ae60}
+.nav-btn.nav-data-export:hover{background:rgba(230,126,34,.12);color:#e67e22}
+.nav-btn.nav-data-pdf:hover{background:rgba(139,92,246,.12);color:#8B5CF6}
+
+/* Accent couleur groupe Gestion */
+.nav-group-gestion .nav-btn.active{background:#8B5CF6;box-shadow:0 2px 8px rgba(139,92,246,.35)}
 
 /* ── CONTEXT BANNER ── */
-#context-banner{background:var(--surface-alt);border-bottom:1px solid var(--border);padding:6px 24px;font-size:12px;display:flex;align-items:center;min-height:32px;flex-shrink:0}
+#context-banner{
+  background:var(--surface-alt);
+  border-bottom:1px solid var(--border);
+  padding:6px 24px;font-size:12px;
+  display:flex;align-items:center;min-height:32px;flex-shrink:0;
+}
 .ctx-title{font-weight:700;color:var(--text);font-size:13px;margin-right:2px}
 .ctx-sep{color:var(--border);margin:0 6px;font-size:14px}
 .ctx-kpi{color:var(--gray)}
@@ -512,12 +578,13 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   #last-sync-time{display:none!important}
   #last-save-info{display:none}
   /* ── NAV MOBILE ── */
-  .app-nav{padding:0 4px;min-height:56px}
-  .nav-group-lbl{display:none}
-  .nav-btn{padding:5px 8px;gap:2px}
-  .nav-icon{font-size:15px}
-  .nav-label{font-size:8px;letter-spacing:.02em}
-  #context-banner{padding:5px 12px;font-size:11px}
+  .app-nav{padding:5px 8px;gap:6px}
+  .nav-group{padding:4px 4px 5px;border-radius:10px}
+  .nav-group-lbl{font-size:7px;letter-spacing:.06em}
+  .nav-btn{padding:4px 8px;gap:2px;min-width:40px}
+  .nav-icon{font-size:14px}
+  .nav-label{font-size:7px;letter-spacing:.02em}
+  #context-banner{padding:4px 10px;font-size:11px}
   .container{padding:10px 8px}
   .config-grid{grid-template-columns:1fr}
   .soldes-grid{gap:6px}
@@ -1143,61 +1210,68 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 </div>
 
 <nav class="app-nav">
-  <!-- ── Groupe Données ── -->
-  <div class="nav-group">
+
+  <!-- ══ Groupe 1 — Données ══ -->
+  <div class="nav-group nav-group-donnees">
     <span class="nav-group-lbl">Données</span>
     <div class="nav-group-items">
       <button class="nav-btn nav-data-import" onclick="openCsvImport()" title="Importer CSV">
-        <span class="nav-icon">📂</span><span class="nav-label">Importer</span>
+        <span class="nav-icon">📂</span>
+        <span class="nav-label">Importer</span>
       </button>
       <button class="nav-btn nav-data-export" onclick="exportCSV()" title="Exporter CSV">
-        <span class="nav-icon">📥</span><span class="nav-label">Exporter</span>
+        <span class="nav-icon">📥</span>
+        <span class="nav-label">Exporter</span>
       </button>
       <button class="nav-btn nav-data-pdf" onclick="openPdfReport()" title="PDF">
-        <span class="nav-icon">🖨️</span><span class="nav-label">PDF</span>
+        <span class="nav-icon">🖨️</span>
+        <span class="nav-label">PDF</span>
       </button>
     </div>
   </div>
 
-  <div class="nav-sep"></div>
-
-  <!-- ── Groupe Navigation ── -->
-  <div class="nav-group nav-group-main">
+  <!-- ══ Groupe 2 — Navigation ══ -->
+  <div class="nav-group nav-group-main nav-group-nav">
     <span class="nav-group-lbl">Navigation</span>
     <div class="nav-group-items">
       <button class="nav-btn tab" onclick="switchTab('accueil',this)" data-tabid="accueil">
-        <span class="nav-icon">🏠</span><span class="nav-label">Accueil</span>
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Accueil</span>
       </button>
       <button class="nav-btn tab active" onclick="switchTab('resume',this)" data-tabid="resume">
-        <span class="nav-icon">📊</span><span class="nav-label">Résumé</span>
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Résumé</span>
       </button>
       <button class="nav-btn tab" onclick="switchTab('charts',this)" data-tabid="charts">
-        <span class="nav-icon">📈</span><span class="nav-label">Graphiques</span>
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Graphiques</span>
       </button>
-      <!-- Onglets années (logique interne, masqués) -->
+      <!-- Onglets années logique interne (masqués CSS) -->
       <div id="year-tabs" style="display:contents"></div>
-      <!-- Sélecteur années visible -->
+      <!-- Sélecteur années compact visible -->
       <div id="year-tab-mobile"></div>
     </div>
   </div>
 
-  <div class="nav-sep"></div>
-
-  <!-- ── Groupe Gestion ── -->
-  <div class="nav-group">
+  <!-- ══ Groupe 3 — Gestion ══ -->
+  <div class="nav-group nav-group-gestion">
     <span class="nav-group-lbl">Gestion</span>
     <div class="nav-group-items">
       <button class="nav-btn" onclick="addYear()" title="Ajouter une année">
-        <span class="nav-icon">📅＋</span><span class="nav-label">Année</span>
+        <span class="nav-icon">📅＋</span>
+        <span class="nav-label">Année</span>
       </button>
       <button class="nav-btn tab" onclick="switchTab('config',this)" data-tabid="config">
-        <span class="nav-icon">⚙️</span><span class="nav-label">Config</span>
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Config</span>
       </button>
       <button class="nav-btn" onclick="openGlobalSearch()" title="Recherche globale">
-        <span class="nav-icon">🔍</span><span class="nav-label">Recherche</span>
+        <span class="nav-icon">🔍</span>
+        <span class="nav-label">Recherche</span>
       </button>
     </div>
   </div>
+
 </nav>
 
 <!-- ── Bandeau contextuel ── -->
@@ -5521,7 +5595,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v114</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v115</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6204,8 +6278,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '9.8';
-const SW_VERSION = 'v114';
+const APP_VERSION = '9.9';
+const SW_VERSION = 'v115';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6217,6 +6291,14 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.9': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🧭', text: 'Nav : 3 blocs-cartes distincts (Données / Navigation / Gestion) avec fond, bordure et label chapeau' },
+      { icon: '✨', text: 'Bouton actif : pill pleine bleue avec ombre — Gestion en violet' },
+      { icon: '🎨', text: 'Hover avec couleurs thématiques (vert Import, orange Export, violet PDF)' }
+    ]
+  },
   '9.8': {
     date: 'Mai 2026',
     items: [
