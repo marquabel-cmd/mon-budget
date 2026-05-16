@@ -11,20 +11,26 @@ body{font-family:Inter,sans-serif;background:#F4F5FA;color:#1A1D2E;line-height:1
 a{color:#5B6AF0;text-decoration:none}
 a:hover{text-decoration:underline}
 
-/* Header */
-.top-bar{background:linear-gradient(135deg,#1A1D2E,#2D3561);color:#fff;padding:20px 32px;display:flex;align-items:center;gap:14px}
-.top-bar-icon{font-size:32px}
-.top-bar h1{font-size:22px;font-weight:800;letter-spacing:-.3px}
-.top-bar p{font-size:13px;color:rgba(255,255,255,.55);margin-top:2px}
-.top-bar-back{margin-left:auto;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none}
-.top-bar-back:hover{background:rgba(255,255,255,.25);text-decoration:none}
+/* ── APP-NAV TOOLBAR ── */
+.app-nav{display:flex;align-items:center;gap:10px;background:#1A1D2E;border-bottom:1px solid #2C3050;padding:8px 16px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.15);position:sticky;top:0;z-index:50}
+.app-nav::-webkit-scrollbar{display:none}
+.nav-group{display:flex;flex-direction:column;gap:4px;background:#20243A;border:1px solid #2C3050;border-radius:12px;padding:5px 6px 6px;flex-shrink:0}
+.nav-group-main{flex:1;min-width:0}
+.nav-group-lbl{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#8892B0;opacity:.6;padding:0 4px;line-height:1;white-space:nowrap}
+.nav-group-items{display:flex;align-items:center;gap:2px}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s,color .15s,transform .1s;color:#8892B0;white-space:nowrap;line-height:1;min-width:54px;text-decoration:none}
+.nav-btn:hover{background:rgba(91,106,240,.1);color:#5B6AF0;transform:translateY(-1px);text-decoration:none}
+.nav-btn.active{background:#5B6AF0;color:#fff;box-shadow:0 2px 8px rgba(91,106,240,.35)}
+.nav-icon{font-size:16px;line-height:1.3;display:block}
+.nav-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:1;color:inherit;display:block}
+.nav-group-gestion .nav-btn.active{background:#8B5CF6;box-shadow:0 2px 8px rgba(139,92,246,.35)}
 
 /* Layout */
 .layout{display:flex;max-width:1100px;margin:32px auto;gap:24px;padding:0 24px 60px}
 
 /* Sidebar nav */
 .sidebar{width:220px;flex-shrink:0}
-.sidebar-nav{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:24px}
+.sidebar-nav{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:72px}
 .sidebar-nav h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#6B7394;margin-bottom:10px;padding:0 8px}
 .sidebar-nav a{display:block;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#1A1D2E;transition:all .15s}
 .sidebar-nav a:hover{background:#EEF0FD;color:#5B6AF0;text-decoration:none}
@@ -126,14 +132,35 @@ a:hover{text-decoration:underline}
 </head>
 <body>
 
-<div class="top-bar">
-  <div class="top-bar-icon">💰</div>
-  <div>
-    <h1>Aide — Mon Budget</h1>
-    <p>Guide d'utilisation complet de l'application</p>
+<!-- ── TOOLBAR ── -->
+<nav class="app-nav">
+  <div class="nav-group nav-group-donnees">
+    <span class="nav-group-lbl">Données</span>
+    <div class="nav-group-items">
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📂</span><span class="nav-label">Importer</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📥</span><span class="nav-label">Exporter</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🖨️</span><span class="nav-label">PDF</span></a>
+    </div>
   </div>
-  <a class="top-bar-back" href="budget_familial.html" onclick="if(window.parent!==window){event.preventDefault();window.parent.closeAide();}">← Retour à l'app</a>
-</div>
+  <div class="nav-group nav-group-main nav-group-nav">
+    <span class="nav-group-lbl">Navigation</span>
+    <div class="nav-group-items">
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🏠</span><span class="nav-label">Accueil</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📊</span><span class="nav-label">Résumé</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📈</span><span class="nav-label">Graphiques</span></a>
+      <a class="nav-btn active" href="aide.html"><span class="nav-icon">❓</span><span class="nav-label">Aide</span></a>
+    </div>
+  </div>
+  <div class="nav-group nav-group-gestion">
+    <span class="nav-group-lbl">Gestion</span>
+    <div class="nav-group-items">
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📅＋</span><span class="nav-label">Année</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">⚙️</span><span class="nav-label">Config</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🔍</span><span class="nav-label">Recherche</span></a>
+      <a class="nav-btn" href="dashboard.html"><span class="nav-icon">👤</span><span class="nav-label">Compte</span></a>
+    </div>
+  </div>
+</nav>
 
 <div class="layout">
 
