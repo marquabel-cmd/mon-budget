@@ -131,15 +131,36 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .btn-reset{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.55);letter-spacing:.01em}.btn-reset:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.75)}
 .btn-csv{background:#e67e22;color:#fff}.btn-csv:hover{background:#d35400}
 
-/* ── TABS ── */
-.tabs{display:flex;background:#fff;border-bottom:1px solid var(--border);padding:0 24px;gap:2px;overflow-x:auto;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{padding:16px 16px 14px;font-size:13px;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;user-select:none}
-.tab:hover{color:var(--text)}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-/* Onglets années masqués partout → remplacés par le sélecteur compact */
+/* ── TABS (logique interne, masqués visuellement) ── */
+.tab{display:none;user-select:none}
 .tab[data-year]{display:none!important}
-#year-tab-mobile{display:flex;align-items:center}
+#year-tab-mobile{display:flex;align-items:center;align-self:flex-end;padding-bottom:4px}
+
+/* ── APP NAV ── */
+.app-nav{display:flex;align-items:stretch;background:var(--surface);border-bottom:1px solid var(--border);padding:0 8px;min-height:64px;overflow-x:auto;scrollbar-width:none;gap:0;flex-shrink:0}
+.app-nav::-webkit-scrollbar{display:none}
+.nav-group{display:flex;flex-direction:column;justify-content:center;padding:4px 6px;gap:0;min-width:0}
+.nav-group-main{flex:1}
+.nav-group-lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);padding:0 4px;margin-bottom:4px;white-space:nowrap;opacity:.7}
+.nav-group-items{display:flex;align-items:flex-end;gap:1px}
+.nav-sep{width:1px;background:var(--border);margin:10px 6px;flex-shrink:0;align-self:stretch}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 11px;border:none;background:transparent;cursor:pointer;border-radius:8px;font-family:'Inter',system-ui,sans-serif;transition:background .15s,color .15s;color:var(--gray);white-space:nowrap;line-height:1}
+.nav-btn:hover{background:rgba(91,106,240,.1);color:var(--blue)}
+.nav-btn.active{background:rgba(91,106,240,.15);color:var(--blue)}
+.nav-btn.active .nav-label{color:var(--blue)}
+.nav-icon{font-size:17px;line-height:1.2;display:block}
+.nav-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:1;color:inherit;display:block}
+/* Données group accent colors */
+.nav-btn.nav-data-import:hover{background:rgba(39,174,96,.1);color:#27ae60}
+.nav-btn.nav-data-export:hover{background:rgba(230,126,34,.1);color:#e67e22}
+.nav-btn.nav-data-pdf:hover{background:rgba(139,92,246,.1);color:#8B5CF6}
+
+/* ── CONTEXT BANNER ── */
+#context-banner{background:var(--surface-alt);border-bottom:1px solid var(--border);padding:6px 24px;font-size:12px;display:flex;align-items:center;min-height:32px;flex-shrink:0}
+.ctx-title{font-weight:700;color:var(--text);font-size:13px;margin-right:2px}
+.ctx-sep{color:var(--border);margin:0 6px;font-size:14px}
+.ctx-kpi{color:var(--gray)}
+.ctx-kpi b{color:var(--text)}
 
 /* ── LAYOUT ── */
 .container{max-width:1400px;margin:0 auto;padding:20px 24px}
@@ -490,10 +511,13 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   #cloud-status{display:none}
   #last-sync-time{display:none!important}
   #last-save-info{display:none}
-  /* ── RESTE ── */
-  .tabs{padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .tabs::-webkit-scrollbar{display:none}
-  .tab{font-size:11px;padding:8px 10px;white-space:nowrap;flex-shrink:0}
+  /* ── NAV MOBILE ── */
+  .app-nav{padding:0 4px;min-height:56px}
+  .nav-group-lbl{display:none}
+  .nav-btn{padding:5px 8px;gap:2px}
+  .nav-icon{font-size:15px}
+  .nav-label{font-size:8px;letter-spacing:.02em}
+  #context-banner{padding:5px 12px;font-size:11px}
   .container{padding:10px 8px}
   .config-grid{grid-template-columns:1fr}
   .soldes-grid{gap:6px}
@@ -1044,9 +1068,6 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
       <span id="last-sync-time" style="font-size:10px;color:rgba(255,255,255,0.4);white-space:nowrap;align-self:center;display:none"></span>
       <span id="last-save-info" style="font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;align-self:center"></span>
       <span id="autosave-indicator" title="Sauvegarde automatique" style="font-size:11px;color:rgba(255,255,255,0.5);white-space:nowrap;align-self:center;display:none">💾 --:--</span>
-      <button class="btn btn-csv btn-hide-xs"  onclick="exportCSV()">📥 <span class="btn-label">Export CSV</span></button>
-      <button class="btn btn-hide-xs" style="background:#8B5CF6;color:#fff" onclick="openPdfReport()" title="Imprimer / Exporter PDF">🖨️ <span class="btn-label">PDF</span></button>
-      <button class="btn btn-hide-xs" style="background:#27ae60;color:#fff" onclick="openCsvImport()">📂 <span class="btn-label">Import CSV</span></button>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
       <div id="tour-help-wrap" style="position:relative">
         <button class="btn" onclick="toggleHelpDropdown(event)" title="Aide & Tour" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
@@ -1121,15 +1142,69 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   </div>
 </div>
 
-<div class="tabs">
-  <div class="tab" onclick="switchTab('accueil',this)">🏠 Accueil</div>
-  <div class="tab active" onclick="switchTab('resume',this)">📊 Résumé</div>
-  <div id="year-tabs" style="display:contents"></div>
-  <div id="year-tab-mobile"></div>
-  <button class="btn-add-year" onclick="addYear()">＋ Année</button>
-  <div class="tab" onclick="switchTab('charts',this)">📈 Graphiques</div>
-  <div class="tab" onclick="switchTab('config',this)">⚙️ Config</div>
-  <div class="tab" onclick="openGlobalSearch()" title="Recherche globale" style="flex-shrink:0">🔍</div>
+<nav class="app-nav">
+  <!-- ── Groupe Données ── -->
+  <div class="nav-group">
+    <span class="nav-group-lbl">Données</span>
+    <div class="nav-group-items">
+      <button class="nav-btn nav-data-import" onclick="openCsvImport()" title="Importer CSV">
+        <span class="nav-icon">📂</span><span class="nav-label">Importer</span>
+      </button>
+      <button class="nav-btn nav-data-export" onclick="exportCSV()" title="Exporter CSV">
+        <span class="nav-icon">📥</span><span class="nav-label">Exporter</span>
+      </button>
+      <button class="nav-btn nav-data-pdf" onclick="openPdfReport()" title="PDF">
+        <span class="nav-icon">🖨️</span><span class="nav-label">PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav-sep"></div>
+
+  <!-- ── Groupe Navigation ── -->
+  <div class="nav-group nav-group-main">
+    <span class="nav-group-lbl">Navigation</span>
+    <div class="nav-group-items">
+      <button class="nav-btn tab" onclick="switchTab('accueil',this)" data-tabid="accueil">
+        <span class="nav-icon">🏠</span><span class="nav-label">Accueil</span>
+      </button>
+      <button class="nav-btn tab active" onclick="switchTab('resume',this)" data-tabid="resume">
+        <span class="nav-icon">📊</span><span class="nav-label">Résumé</span>
+      </button>
+      <button class="nav-btn tab" onclick="switchTab('charts',this)" data-tabid="charts">
+        <span class="nav-icon">📈</span><span class="nav-label">Graphiques</span>
+      </button>
+      <!-- Onglets années (logique interne, masqués) -->
+      <div id="year-tabs" style="display:contents"></div>
+      <!-- Sélecteur années visible -->
+      <div id="year-tab-mobile"></div>
+    </div>
+  </div>
+
+  <div class="nav-sep"></div>
+
+  <!-- ── Groupe Gestion ── -->
+  <div class="nav-group">
+    <span class="nav-group-lbl">Gestion</span>
+    <div class="nav-group-items">
+      <button class="nav-btn" onclick="addYear()" title="Ajouter une année">
+        <span class="nav-icon">📅＋</span><span class="nav-label">Année</span>
+      </button>
+      <button class="nav-btn tab" onclick="switchTab('config',this)" data-tabid="config">
+        <span class="nav-icon">⚙️</span><span class="nav-label">Config</span>
+      </button>
+      <button class="nav-btn" onclick="openGlobalSearch()" title="Recherche globale">
+        <span class="nav-icon">🔍</span><span class="nav-label">Recherche</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Bandeau contextuel ── -->
+<div id="context-banner">
+  <span class="ctx-title" id="ctx-title">📊 Résumé</span>
+  <span class="ctx-sep" id="ctx-sep" style="display:none">·</span>
+  <span class="ctx-kpi" id="ctx-info"></span>
 </div>
 
 <div class="container" id="main-container">
@@ -2362,6 +2437,50 @@ function switchTab(id, el) {
   else if (id==='resume') renderSummary();
   else if (id==='charts') renderCharts();
   else if (id==='config') renderConfigTab();
+  updateContextBanner(id);
+}
+
+function updateContextBanner(tabId) {
+  const titleEl = document.getElementById('ctx-title');
+  const infoEl  = document.getElementById('ctx-info');
+  const sepEl   = document.getElementById('ctx-sep');
+  if (!titleEl || !infoEl) return;
+
+  const names = {accueil:'🏠 Accueil', resume:'📊 Résumé', charts:'📈 Graphiques', config:'⚙️ Configuration'};
+  let info = '';
+
+  if (tabId.startsWith('y')) {
+    const year = tabId.slice(1);
+    titleEl.textContent = `📅 Année ${year}`;
+    try {
+      const rv  = sum(revTotal(year));
+      const dep = sum(depTotal(year));
+      const bal = rv - dep;
+      const balColor = bal >= 0 ? 'var(--green)' : 'var(--red)';
+      info = `Revenus&nbsp;<b>${fmtN(rv)} €</b><span class="ctx-sep">·</span>Dépenses&nbsp;<b>${fmtN(dep)} €</b><span class="ctx-sep">·</span>Solde&nbsp;<b style="color:${balColor}">${bal>=0?'+':''}${fmtN(bal)} €</b>`;
+    } catch(e) {}
+  } else {
+    titleEl.textContent = names[tabId] || tabId;
+    if (tabId === 'accueil') {
+      const yr = _dashYear || String(new Date().getFullYear());
+      const mi = _dashMonth !== undefined ? _dashMonth : new Date().getMonth();
+      try {
+        const rv  = (revTotal(yr)||[])[mi] || 0;
+        const dep = (depTotal(yr)||[])[mi] || 0;
+        const bal = rv - dep;
+        const balColor = bal >= 0 ? 'var(--green)' : 'var(--red)';
+        info = `${MONTHS[mi]} ${yr}&nbsp;<span class="ctx-sep">·</span>&nbsp;Solde du mois&nbsp;<b style="color:${balColor}">${bal>=0?'+':''}${fmtN(bal)} €</b>`;
+      } catch(e) {}
+    }
+  }
+
+  if (info) {
+    infoEl.innerHTML = info;
+    if (sepEl) sepEl.style.display = '';
+  } else {
+    infoEl.innerHTML = '';
+    if (sepEl) sepEl.style.display = 'none';
+  }
 }
 function _switchYearMobile(year) {
   const tab = [...document.querySelectorAll('#year-tabs .tab')].find(t => t.dataset.year == year);
@@ -2373,6 +2492,9 @@ function _switchYearMobile(year) {
     btn.style.color = isActive ? '#e0e4ff' : '#8892B0';
     btn.style.borderColor = isActive ? 'rgba(91,106,240,.8)' : 'rgba(91,106,240,.4)';
   });
+  // Aucun nav-btn tab ne correspond aux années → retirer l'active des tabs nav
+  document.querySelectorAll('.app-nav .nav-btn.tab').forEach(b => b.classList.remove('active'));
+  updateContextBanner('y'+year);
 }
 
 function renderTabs() {
@@ -5399,7 +5521,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v112</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v113</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6082,8 +6204,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '9.6';
-const SW_VERSION = 'v112';
+const APP_VERSION = '9.7';
+const SW_VERSION = 'v113';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6095,6 +6217,15 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🧭', text: 'Navigation refonte : 3 groupes Données / Navigation / Gestion avec icônes + labels' },
+      { icon: '✨', text: 'Page active mise en évidence : fond pill bleu sur le bouton actif' },
+      { icon: '📋', text: 'Bandeau contextuel : titre + KPIs rapides selon la page/année active' },
+      { icon: '🎨', text: 'Header simplifié : Export/PDF/Import déplacés dans la barre de navigation' }
+    ]
+  },
   '9.6': {
     date: 'Mai 2026',
     items: [
