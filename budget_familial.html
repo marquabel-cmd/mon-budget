@@ -247,7 +247,17 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 
 /* ── LAYOUT ── */
 .container{max-width:1400px;margin:0 auto;padding:20px 24px}
-.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* Zone centrale : min-height pour que la page remplisse l'écran */
+#main-container{ min-height:calc(100vh - 150px); }
+
+/* Transition douce entre onglets */
+.tab-panel{display:none}
+.tab-panel.active{
+  display:block;
+  animation:fadeTabIn .18s ease;
+}
+@keyframes fadeTabIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── SOLDE CARDS ── */
 .soldes-grid{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
@@ -259,10 +269,19 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .solde-card .computed-val{font-size:20px;font-weight:800;color:var(--text)}
 
 /* ── SECTION CARDS ── */
-.section-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-sm);margin-bottom:12px;border:1px solid var(--border);overflow:hidden}
-.section-header{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 20px;cursor:pointer;user-select:none;background:var(--surface-alt);transition:background .15s}
+.section-card{
+  background:var(--surface);
+  border-radius:var(--radius);
+  box-shadow:0 1px 4px rgba(0,0,0,.10),0 4px 16px rgba(0,0,0,.06);
+  margin-bottom:14px;
+  border:1px solid var(--border);
+  overflow:hidden;
+  transition:box-shadow .2s;
+}
+.section-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.14),0 6px 20px rgba(0,0,0,.08)}
+.section-header{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 20px;cursor:pointer;user-select:none;background:var(--surface-alt);transition:background .15s;border-bottom:1px solid var(--border)}
 .section-header:hover{background:var(--border)}
-.section-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text)}
+.section-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text)}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.01em}
 .badge-g{background:var(--green-light);color:var(--green)}
 .badge-r{background:var(--red-light);color:var(--red)}
@@ -2647,7 +2666,7 @@ function renderTabs() {
   }
   const container = document.getElementById('main-container');
   const skeletonRows = Array(5).fill(0).map(()=>`<tr class="skeleton-row">${Array(13).fill(0).map(()=>`<td><div></div></td>`).join('')}</tr>`).join('');
-  const skeletonHTML = `<div class="container" style="padding-top:20px"><table class="charge-table"><tbody>${skeletonRows}</tbody></table></div>`;
+  const skeletonHTML = `<div style="padding-top:20px;overflow-x:auto"><table class="charge-table"><tbody>${skeletonRows}</tbody></table></div>`;
   years.forEach(y => {
     if (!document.getElementById('tab-y'+y)) {
       const div = document.createElement('div');
@@ -4717,7 +4736,7 @@ function renderCharts() {
        </select>`;
   const curYChart = String(new Date().getFullYear());
   const chartGoBtn = getYears().includes(curYChart) ? `<div style="text-align:right;margin-bottom:8px"><button onclick="_switchYearMobile('${curYChart}')" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--blue);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">📅 Aller à ${curYChart} →</button></div>` : '';
-  wrap.innerHTML = `<div class="container">
+  wrap.innerHTML = `<div>
     <div class="chart-year-sel" id="chart-year-sel">${yearSelHtml}</div>
     ${chartGoBtn}
     <div class="charts-grid">
@@ -4993,7 +5012,7 @@ function renderDashboard() {
   const wrap = document.getElementById('tab-accueil');
   const years = getYears();
   if (!years.length) {
-    wrap.innerHTML = `<div class="container" style="padding-top:40px;text-align:center;color:var(--gray)">
+    wrap.innerHTML = `<div style="padding-top:40px;text-align:center;color:var(--gray)">
       <div style="font-size:40px;margin-bottom:16px">📭</div>
       <p style="font-size:15px;margin-bottom:16px">Aucune donnée pour l'instant.</p>
       <button class="btn btn-save" onclick="addYear()">＋ Ajouter une année</button>
@@ -5133,7 +5152,7 @@ function renderDashboard() {
     const annualYearSel = years.length > 1
       ? `<select onchange="_dashSetYear(this.value)" style="font-size:14px;font-weight:700;border:1px solid var(--border);border-radius:8px;padding:5px 12px;background:var(--surface);color:var(--text);cursor:pointer;margin-bottom:16px">${years.map(y=>`<option value="${y}"${y===yr?' selected':''}>${y}</option>`).join('')}</select>`
       : `<div style="font-size:18px;font-weight:800;margin-bottom:16px">${yr}</div>`;
-    wrap.innerHTML = `<div class="container">${viewToggle}${annualYearSel}
+    wrap.innerHTML = `<div>${viewToggle}${annualYearSel}
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px">
         <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💹 Revenus</div><div style="font-size:20px;font-weight:800;color:var(--green);margin-top:6px">${fmtN(tRv)} €</div></div>
         <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🏠 Charges</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(tCh)} €</div></div>
@@ -5209,7 +5228,7 @@ function renderDashboard() {
     </div>`;
   })() : '';
 
-  wrap.innerHTML = `<div class="container">
+  wrap.innerHTML = `<div>
     ${viewToggle}
     <!-- Navigation mois -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
@@ -5365,7 +5384,7 @@ function renderConfigTab() {
       <button class="del-btn" onclick="deleteMethod(${i})" title="Supprimer">✕</button>
     </div>`).join('');
   const years = getYears();
-  wrap.innerHTML = `<div class="container"><div class="config-grid">
+  wrap.innerHTML = `<div><div class="config-grid">
     <div>
       <div class="config-card"><h3>👤 Utilisateurs</h3>${userList}
         <div class="add-user-form">
@@ -5638,7 +5657,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v118</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v119</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6321,8 +6340,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '10.2';
-const SW_VERSION = 'v118';
+const APP_VERSION = '10.3';
+const SW_VERSION = 'v119';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6334,6 +6353,14 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '10.3': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🏗️', text: 'Zone centrale : suppression des doubles wrappers .container dans tous les onglets (Accueil, Graphiques, Config, années)' },
+      { icon: '✨', text: 'Transition douce entre onglets (fade + léger translateY)' },
+      { icon: '🃏', text: 'Cartes section : ombres améliorées, effet hover subtil, bordure de header distincte' }
+    ]
+  },
   '10.2': {
     date: 'Mai 2026',
     items: [
