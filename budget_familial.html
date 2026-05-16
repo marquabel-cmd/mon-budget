@@ -5513,7 +5513,7 @@ function renderConfigTab() {
           <div style="margin-top:8px">
             <div style="font-size:11px;color:var(--gray);margin-bottom:5px">Clé personnelle — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys ↗</a></div>
             <div style="display:flex;gap:6px;align-items:center">
-              <input type="password" id="cfg-gemini-key" placeholder="gsk_… (laisse vide pour utiliser la clé par défaut)" value="${localStorage.getItem(AI_KEY_STORAGE)||''}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;background:var(--surface);color:var(--text);font-family:monospace">
+              <input type="password" id="cfg-gemini-key" placeholder="gsk_… (laisse vide pour utiliser le proxy serveur)" value="${localStorage.getItem(AI_KEY_STORAGE)||''}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;background:var(--surface);color:var(--text);font-family:monospace">
               <button onclick="saveGeminiKey(document.getElementById('cfg-gemini-key').value);renderConfigTab()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">✅</button>
             </div>
           </div>
@@ -5521,7 +5521,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v113</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v114</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6204,8 +6204,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '9.7';
-const SW_VERSION = 'v113';
+const APP_VERSION = '9.8';
+const SW_VERSION = 'v114';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6217,6 +6217,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '9.8': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🤖', text: 'Assistant IA : label "Propulsé par Groq (Llama 3.1)" corrigé (était "Gemini")' },
+      { icon: '🔑', text: 'Assistant IA : sans clé perso → proxy Cloudflare Worker (clé côté serveur, plus d\'erreur 401)' }
+    ]
+  },
   '9.7': {
     date: 'Mai 2026',
     items: [
@@ -7442,9 +7449,10 @@ let _aiOpen = false;
 let _aiTyping = false;
 
 function getGeminiKey() {
+  // Clé personnelle → utilisation directe ; null → proxy Cloudflare Worker
   return localStorage.getItem(AI_KEY_STORAGE)
       || localStorage.getItem('mbudget-gemini-key')
-      || 'AVIGgWjwNXgtnrSJ71CNPXGlHYFb3ybdGWJm2ngUjU2S8u588gxTr2_ksg'.split('').reverse().join('');
+      || null;
 }
 
 function saveGeminiKey(key) {
@@ -7792,22 +7800,28 @@ function _stopVoice(manual = false) {
 }
 
 async function _callGemini(apiKey, systemContext, userMessage) {
-  const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
-  const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
-
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      messages: [
-        { role: 'system', content: systemContext },
-        { role: 'user',   content: userMessage }
-      ],
-      temperature: 0.7,
-      max_tokens: 800
-    })
+  let endpoint, headers;
+  const body = JSON.stringify({
+    model: 'llama-3.1-8b-instant',
+    messages: [
+      { role: 'system', content: systemContext },
+      { role: 'user',   content: userMessage }
+    ],
+    temperature: 0.7,
+    max_tokens: 800
   });
+
+  if (apiKey) {
+    // Clé personnelle → appel direct à Groq
+    endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+    headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+  } else {
+    // Pas de clé → proxy Cloudflare Worker (clé côté serveur)
+    endpoint = GROQ_PROXY_URL;
+    headers = { 'Content-Type': 'application/json' };
+  }
+
+  const res = await fetch(endpoint, { method: 'POST', headers, body });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const msg = err.error?.message || `Erreur HTTP ${res.status}`;
@@ -8677,7 +8691,7 @@ function closeCompareView() {
     <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
     <div style="flex:1">
       <div style="font-weight:700;font-size:13px">Assistant Budget IA</div>
-      <div style="font-size:10px;color:var(--gray)" id="ai-chat-status">Propulsé par Gemini</div>
+      <div style="font-size:10px;color:var(--gray)" id="ai-chat-status">Propulsé par Groq (Llama 3.1)</div>
     </div>
     <button onclick="clearAiChat()" title="Effacer la conversation" style="background:none;border:none;font-size:13px;color:var(--gray);cursor:pointer;padding:2px 6px">🗑</button>
     <button onclick="toggleAiChat()" style="background:none;border:none;font-size:16px;color:var(--gray);cursor:pointer;padding:2px 6px">✕</button>
