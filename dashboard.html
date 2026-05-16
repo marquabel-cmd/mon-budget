@@ -398,7 +398,6 @@ function logout() {
   _saveUser(null);
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('top-nav-bar').style.display = 'flex';
 }
 
 // ── FIREBASE FETCH ────────────────────────────────────────────────────
@@ -412,7 +411,6 @@ async function showDashboard(u) {
   _user = u;
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = '';
-  document.getElementById('top-nav-bar').style.display = 'none';
   document.getElementById('admin-link').style.display = u.uid === ADMIN_UID ? '' : 'none';
   // Compte
   document.getElementById('dash-email').textContent = u.email;
