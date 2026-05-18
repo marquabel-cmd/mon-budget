@@ -325,6 +325,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 .skeleton-row:nth-child(even) td>div{animation-delay:.2s}
 .del-btn{background:none;border:none;color:#8a93a8;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px}
 .del-btn:hover{color:var(--red)}
+.edit-btn{background:none;border:none;color:#8a93a8;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px}
+.edit-btn:hover{color:var(--blue);background:var(--blue-light)}
 .cal-check{display:none;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--blue)}
 .cfg-compte .cal-check-compte{display:inline-block}
 .cfg-livret .cal-check-livret{display:inline-block}
@@ -811,7 +813,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 <div id="quick-add-overlay" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center" onclick="closeQuickAdd(event)">
   <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(360px,92%);box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <h3 style="margin:0;font-size:16px;color:var(--blue)">⚡ Ajout rapide</h3>
+      <h3 id="qa-modal-title" style="margin:0;font-size:16px;color:var(--blue)">⚡ Ajout rapide</h3>
       <button onclick="closeQuickAdd()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray)">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -847,20 +849,12 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
         <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Commentaire (optionnel)</label>
         <input id="qa-comment" type="text" placeholder="ex: Supermarché, Total..." style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
       </div>
-      <div>
-        <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">🔁 Répétition</label>
-        <select id="qa-repeat" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;background:var(--surface);color:var(--text)">
-          <option value="once">Ce mois uniquement</option>
-          <option value="rest">Tous les mois restants de l'année</option>
-          <option value="all">Tous les 12 mois de l'année</option>
-        </select>
-      </div>
       <div id="qa-budget-notice" style="display:none;background:var(--orange-light);border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:8px 10px;font-size:12px;color:#7a4f00">
         ⚠️ Pas de budget défini pour cette catégorie.
         <a href="#" onclick="event.preventDefault();openBudgetSetFromQA()" style="color:#e08800;font-weight:700;text-decoration:underline">Définir un budget →</a>
       </div>
       <div id="qa-error" style="color:var(--red);font-size:12px;font-weight:600;min-height:16px"></div>
-      <button onclick="submitQuickAdd()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--blue),#2980b9);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:2px">✅ Ajouter</button>
+      <button id="qa-submit-btn" onclick="submitQuickAdd()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--blue),#2980b9);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:2px">✅ Ajouter</button>
     </div>
   </div>
 </div>
@@ -3666,7 +3660,10 @@ function txRow(year, catKey, tx) {
       oninput="updateTxField('${year}','${catKey}',${tx.id},'comment',this.value)"></td>
     <td><select class="method-sel" style="background:${_txDark?'var(--surface)':m.bg};border-color:${m.color};color:var(--text)"
       onchange="updateTxMethod('${year}','${catKey}',${tx.id},this)">${opts}</select></td>
-    <td><button class="del-btn" onclick="delTx('${year}','${catKey}',${tx.id},${tx.month})">✕</button></td>
+    <td style="white-space:nowrap">
+      <button class="edit-btn" onclick="openEditTx('${year}','${catKey}',${tx.id})" title="Modifier">✏️</button>
+      <button class="del-btn" onclick="delTx('${year}','${catKey}',${tx.id},${tx.month})">✕</button>
+    </td>
   </tr>`;
 }
 
@@ -3691,7 +3688,7 @@ function toggleMonthDetail(year, catKey, m, btn) {
 }
 
 // ── QUICK ADD ──
-let _qaYear = null, _qaCat = null;
+let _qaYear = null, _qaCat = null, _qaEditTxId = null;
 let _dashYear = null, _dashMonth = new Date().getMonth(), _dashView = 'month';
 function openQuickAdd(year, catKey) {
   // Auto-detect year from active tab if not provided
@@ -3700,8 +3697,13 @@ function openQuickAdd(year, catKey) {
     if (activePanel) year = activePanel.id.replace('tab-y','');
     else { const yrs = getYears(); year = yrs.length ? yrs[yrs.length-1] : new Date().getFullYear(); }
   }
-  _qaYear = year; _qaCat = catKey;
+  _qaYear = year; _qaCat = catKey; _qaEditTxId = null;
   const overlay = document.getElementById('quick-add-overlay');
+  // Reset modal to "add" mode
+  const _tEl = document.getElementById('qa-modal-title');
+  if (_tEl) _tEl.textContent = '⚡ Ajout rapide';
+  const _bEl = document.getElementById('qa-submit-btn');
+  if (_bEl) _bEl.textContent = '✅ Ajouter';
   // Populate year selector
   const yrSel = document.getElementById('qa-year');
   const yrs = getYears();
@@ -3724,13 +3726,32 @@ function openQuickAdd(year, catKey) {
   document.getElementById('qa-day').value = '';
   document.getElementById('qa-comment').value = '';
   document.getElementById('qa-error').textContent = '';
-  const rp = document.getElementById('qa-repeat'); if (rp) rp.value = 'once';
   overlay.style.display = 'flex';
   setTimeout(()=>document.getElementById('qa-amount').focus(), 50);
 }
 function closeQuickAdd(e) {
   if (e && e.target !== document.getElementById('quick-add-overlay')) return;
   document.getElementById('quick-add-overlay').style.display = 'none';
+}
+function openEditTx(year, catKey, txId) {
+  const tx = DATA[year]?.vars[catKey]?.find(t => t.id === txId);
+  if (!tx) return;
+  // Ouvrir la modale (reset vers mode ajout, puis on surcharge)
+  openQuickAdd(year, catKey);
+  // Passer en mode édition
+  _qaEditTxId = txId;
+  // Pré-remplir les champs
+  document.getElementById('qa-month').value  = tx.month;
+  document.getElementById('qa-amount').value = tx.amount;
+  document.getElementById('qa-comment').value= tx.comment || '';
+  document.getElementById('qa-method').value = tx.method  || 'carte';
+  const rawDay = tx.date ? parseInt(tx.date.split('/')[0], 10) : '';
+  document.getElementById('qa-day').value = rawDay || '';
+  // Mettre à jour titre + bouton
+  const titleEl = document.getElementById('qa-modal-title');
+  if (titleEl) titleEl.textContent = '✏️ Modifier la dépense';
+  const btnEl = document.getElementById('qa-submit-btn');
+  if (btnEl) btnEl.textContent = '✅ Modifier';
 }
 function submitQuickAdd() {
   const amount = parseFloat(document.getElementById('qa-amount').value);
@@ -3741,22 +3762,42 @@ function submitQuickAdd() {
   const method = document.getElementById('qa-method').value;
   const dayVal = document.getElementById('qa-day').value.trim();
   const comment= document.getElementById('qa-comment').value.trim();
-  const repeat = document.getElementById('qa-repeat')?.value || 'once';
+  const dateStr = dayVal ? `${String(+dayVal).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${year}` : '';
   if (!DATA[year]) { DATA[year] = {revenus:{},charges:{},vars:{}}; }
   if (!DATA[year].vars[catKey]) DATA[year].vars[catKey] = [];
-  // Déterminer les mois à créer
-  let months = [month];
-  if (repeat === 'all')  months = Array.from({length:12},(_,i)=>i);
-  if (repeat === 'rest') months = Array.from({length:12-month},(_,i)=>month+i);
-  months.forEach(m => {
-    const dateStr = dayVal ? `${String(+dayVal).padStart(2,'0')}/${String(m+1).padStart(2,'0')}/${year}` : '';
-    DATA[year].vars[catKey].push({id:_id++, month:m, amount, date:dateStr, comment, method});
-    syncMonthSummary(year, catKey, m);
-  });
+
+  if (_qaEditTxId !== null) {
+    // Mode édition : mettre à jour la transaction existante
+    const tx = DATA[year].vars[catKey].find(t => t.id === _qaEditTxId);
+    if (tx) {
+      const oldMonth = tx.month;
+      tx.amount  = amount;
+      tx.date    = dateStr;
+      tx.comment = comment;
+      tx.method  = method;
+      tx.month   = month;
+      syncMonthSummary(year, catKey, oldMonth);
+      if (month !== oldMonth) syncMonthSummary(year, catKey, month);
+      dSave();
+      // Rafraîchir les lignes des mois concernés
+      [oldMonth, month].filter((m, i, a) => a.indexOf(m) === i).forEach(m => {
+        if (_expandedMonths[`${year}-${catKey}-${m}`]) {
+          const tbody = document.getElementById(`vbody-${year}-${catKey}-${m}`);
+          if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, m);
+        }
+      });
+    }
+    document.getElementById('quick-add-overlay').style.display = 'none';
+    showToast(`✅ Dépense modifiée — ${fmtN(amount)} €`);
+    return;
+  }
+
+  // Mode ajout
+  DATA[year].vars[catKey].push({id:_id++, month, amount, date:dateStr, comment, method});
+  syncMonthSummary(year, catKey, month);
   dSave();
   document.getElementById('quick-add-overlay').style.display = 'none';
-  if (repeat === 'once') showToast(`✅ ${fmtN(amount)} € ajouté en ${MONTHS[month]} ${year}`);
-  else showToast(`🔁 ${fmtN(amount)} € ajouté sur ${months.length} mois (${fmtN(amount*months.length)} € au total)`);
+  showToast(`✅ ${fmtN(amount)} € ajouté en ${MONTHS[month]} ${year}`);
 }
 
 function addTxForMonth(year, catKey, m) {
@@ -5680,7 +5721,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v121</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v122</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6363,8 +6404,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '10.5';
-const SW_VERSION = 'v121';
+const APP_VERSION = '10.6';
+const SW_VERSION = 'v122';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6376,6 +6417,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '10.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '✏️', text: 'Dépenses variables : bouton ✏️ sur chaque ligne — modifier montant, commentaire, date, mode de paiement et mois directement depuis la liste' },
+      { icon: '🗑️', text: 'Ajout rapide (⚡) : champ Répétition supprimé (non pertinent pour les achats ponctuels)' }
+    ]
+  },
   '10.5': {
     date: 'Mai 2026',
     items: [
