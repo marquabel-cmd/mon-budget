@@ -2514,6 +2514,154 @@ function computeCompte(year, accId) {
   return bal;
 }
 
+function showCompteDetail(year, accId) {
+  const d = DATA[year];
+  const isMain = !accId || accId === 'acc_main';
+  const excMeth = d.excludeCalcMethods || [];
+
+  // ── Reconstruit le calcul étape par étape ──
+  let bal = isMain
+    ? (parseFloat(d.soldes.compteIng) || 0)
+    : (parseFloat(d.soldes.comptes?.[accId]) || 0);
+  const initBal = bal;
+
+  // Revenus
+  const revLines = [];
+  d.revenus.forEach(r => {
+    if (r.inCalc === false) { revLines.push({label: r.label, total: 0, skipped: true, reason: 'exclu du calcul ⚙️'}); return; }
+    if (!isMain && r.accountId && r.accountId !== accId) return;
+    if (!isMain && !r.accountId) return;
+    const total = r.v.reduce((s, v, i) => (!r.paid || r.paid[i]) ? s + (parseFloat(v)||0) : s, 0);
+    const unpaid = r.v.reduce((s, v, i) => (r.paid && !r.paid[i]) ? s + (parseFloat(v)||0) : s, 0);
+    bal += total;
+    revLines.push({label: r.label, total, unpaid, skipped: false});
+  });
+  const totalRev = bal - initBal;
+
+  // Charges
+  const chgLines = [];
+  const balAfterRev = bal;
+  d.charges.forEach(r => {
+    if (r.inCalc === false) { chgLines.push({label: r.label, total: 0, skipped: true, reason: 'exclu du calcul ⚙️', cat: r.cat}); return; }
+    if (!isMain && r.accountId && r.accountId !== accId) return;
+    if (!isMain && !r.accountId) return;
+    let total = 0;
+    r.v.forEach((v, i) => {
+      if (!r.paid[i]) return;
+      const amt = parseFloat(v) || 0;
+      if (r.cat === 'livret_out') { bal += Math.abs(amt); total -= Math.abs(amt); }
+      else if (r.cat === 'livret_in') { bal -= Math.abs(amt); total += Math.abs(amt); }
+      else { bal -= amt; total += amt; }
+    });
+    const unpaid = r.v.reduce((s, v, i) => (!r.paid[i]) ? s + (parseFloat(v)||0) : s, 0);
+    chgLines.push({label: r.label, total, unpaid, skipped: false, cat: r.cat});
+  });
+  const totalChg = balAfterRev - bal;
+
+  // Variables
+  const varLines = [];
+  const balAfterChg = bal;
+  getVarCats().forEach(cat => {
+    const txs = d.vars[cat.key] || [];
+    let included = 0, excluded = 0;
+    txs.forEach(tx => {
+      if (!isMain && tx.accountId && tx.accountId !== accId) return;
+      if (!isMain && !tx.accountId) return;
+      const amt = parseFloat(tx.amount) || 0;
+      if (excMeth.includes(tx.method)) { excluded += amt; }
+      else { included += amt; bal -= amt; }
+    });
+    if (included > 0 || excluded > 0)
+      varLines.push({label: cat.icon + ' ' + cat.label, included, excluded});
+  });
+  const totalVar = balAfterChg - bal;
+
+  // ── Génère le HTML ──
+  const row = (label, amt, color, note='') =>
+    `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px">
+      <span style="color:var(--gray);flex:1">${_esc(label)}${note ? `<br><span style="font-size:10px;color:#aaa">${note}</span>` : ''}</span>
+      <span style="font-weight:700;white-space:nowrap;color:${color}">${amt >= 0 ? '+' : ''}${fmtN(amt)} €</span>
+    </div>`;
+
+  const section = (title, color, lines) => {
+    if (!lines.length) return '';
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:${color};margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid ${color}33">${title}</div>
+      ${lines}
+    </div>`;
+  };
+
+  const revHTML = section('💹 Revenus', '#2ECC71',
+    revLines.map(r => row(r.label,
+      r.skipped ? 0 : r.total,
+      r.total < 0 ? '#F04F5B' : '#2ECC71',
+      r.skipped ? r.reason : (r.unpaid > 0 ? `${fmtN(r.unpaid)} € non reçu(s) non comptés` : '')
+    )).join(''));
+
+  const chgHTML = section('🏠 Charges', '#F04F5B',
+    chgLines.map(r => {
+      const isLivOut = r.cat === 'livret_out', isLivIn = r.cat === 'livret_in';
+      const displayAmt = isLivOut ? r.total : -r.total; // livret_out adds, so show as positive
+      const color = isLivOut ? '#2ECC71' : (r.total < 0 ? '#2ECC71' : '#F04F5B');
+      const note = r.skipped ? r.reason
+        : isLivOut ? 'Retrait livret → crédit compte'
+        : isLivIn ? 'Virement livret → débit compte'
+        : (r.unpaid > 0 ? `${fmtN(r.unpaid)} € non payé(s) non comptés` : '');
+      return row(r.label, r.skipped ? 0 : displayAmt, color, note);
+    }).join(''));
+
+  const varHTML = section('🛒 Dépenses variables', '#F5A623',
+    varLines.map(r => row(r.label, -r.included,
+      '#F5A623',
+      r.excluded > 0 ? `${fmtN(r.excluded)} € exclus (mode paiement non compté)` : ''
+    )).join(''));
+
+  const finalColor = bal >= 0 ? '#2ECC71' : '#F04F5B';
+
+  const html = `
+    <div style="font-size:12px;margin-bottom:14px;background:var(--surface-alt);border-radius:8px;padding:10px 14px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">Solde initial 01/01</span><span style="font-weight:700">${fmtN(initBal)} €</span></div>
+    </div>
+    ${revHTML}${chgHTML}${varHTML}
+    <div style="background:var(--surface-alt);border-radius:8px;padding:12px 14px;border:2px solid ${finalColor}33;margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:700">= Compte actuel calculé</span>
+        <span style="font-size:20px;font-weight:800;color:${finalColor}">${fmtN(bal)} €</span>
+      </div>
+      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.6">
+        ${fmtN(initBal)} € (01/01)
+        ${totalRev >= 0 ? '<span style="color:#2ECC71">+' : '<span style="color:#F04F5B">'}${fmtN(totalRev)} € revenus</span>
+        ${-totalChg >= 0 ? '<span style="color:#2ECC71">+' : '<span style="color:#F04F5B">'}${fmtN(-totalChg)} € charges</span>
+        ${-totalVar >= 0 ? '<span style="color:#2ECC71">+' : '<span style="color:#F04F5B">'}${fmtN(-totalVar)} € variables</span>
+        = <b>${fmtN(bal)} €</b>
+      </div>
+    </div>`;
+
+  // Afficher dans une modale générique
+  _showInfoModal(`🔍 Détail du calcul — Compte ${year}`, html);
+}
+
+function _showInfoModal(title, bodyHtml) {
+  let ov = document.getElementById('info-modal-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'info-modal-overlay';
+    ov.style.cssText = 'display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);align-items:center;justify-content:center';
+    ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; };
+    ov.innerHTML = `<div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(520px,96%);max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4)" onclick="event.stopPropagation()">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 id="info-modal-title" style="margin:0;font-size:15px;color:var(--blue)"></h3>
+        <button onclick="document.getElementById('info-modal-overlay').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray)">✕</button>
+      </div>
+      <div id="info-modal-body"></div>
+    </div>`;
+    document.body.appendChild(ov);
+  }
+  document.getElementById('info-modal-title').textContent = title;
+  document.getElementById('info-modal-body').innerHTML = bodyHtml;
+  ov.style.display = 'flex';
+}
+
 // ─────────────────────────────────────────────
 // CALCS
 // ─────────────────────────────────────────────
@@ -2961,6 +3109,7 @@ function renderSoldes(year) {
         oninput="DATA['${year}'].soldes.compteIng=+this.value;updateCompteDisplay('${year}');dSave()"></div>
     <div class="solde-card computed"><label>${accName} actuel (calculé)
         <button class="calc-config-btn" data-type="compte" onclick="openCalcConfig('${year}','compte')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+        <button onclick="showCompteDetail('${year}')" title="Voir le détail du calcul" style="margin-left:4px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">🔍</button>
       </label>
       <span class="computed-val" id="compte-calc-${year}">${fmtN(computeCompte(year))} €</span></div>
     <div class="solde-card ${hasPrevYear?'computed':''}"><label>${livName} (01/01)${hasPrevYear?` <span style="font-size:10px;color:var(--gray)">(= fin ${prevYear})</span>`:''}</label>
@@ -6561,8 +6710,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '10.9';
-const SW_VERSION = 'v125';
+const APP_VERSION = '11.0';
+const SW_VERSION = 'v126';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6574,6 +6723,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '11.0': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔍', text: 'Bouton "Détail du calcul" 🔍 sur le compte actuel calculé : décomposition ligne par ligne (solde 01/01, chaque revenu, chaque charge, chaque catégorie variable) avec les montants non comptés et les exclusions' }
+    ]
+  },
   '10.9': {
     date: 'Mai 2026',
     items: [
