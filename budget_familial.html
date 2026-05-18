@@ -1562,6 +1562,21 @@ function getMethods()        { return (DATA && DATA.methods && DATA.methods.leng
 function getMethodObj(key)   { return getMethods().find(m=>m.key===key) || {key,label:key,color:'#b0bec5',bg:'#f5f5f5'}; }
 function getYears()          { return Object.keys(DATA||{}).filter(k=>/^\d{4}$/.test(k)).sort(); }
 
+// ── BUDGET MENSUEL PAR ANNÉE ──
+// Retourne le budget pour un mois donné (mensuel personnalisé ou annuel÷12)
+function getMonthlyBudget(year, catKey, m) {
+  const mb = DATA.monthlyBudgets?.[year]?.[catKey];
+  if (mb && Array.isArray(mb) && mb.length === 12) return parseFloat(mb[m]) || 0;
+  const annBgt = parseFloat(DATA.budgets?.[catKey]) || 0;
+  return annBgt > 0 ? annBgt / 12 : 0;
+}
+// Retourne le budget annuel effectif (somme des 12 mois si définis, sinon budget global)
+function getAnnualBudgetEffective(year, catKey) {
+  const mb = DATA.monthlyBudgets?.[year]?.[catKey];
+  if (mb && Array.isArray(mb) && mb.length === 12) return sum(mb.map(v => parseFloat(v) || 0));
+  return parseFloat(DATA.budgets?.[catKey]) || 0;
+}
+
 // ── ACCOUNT & LIVRET HELPERS ──
 function getAccountName() { return (DATA&&DATA.accounts&&DATA.accounts.length) ? DATA.accounts[0].name : ((DATA&&DATA._accountName)||'Compte principal'); }
 function getLivretName()  { return (DATA&&DATA.livrets&&DATA.livrets.length)   ? DATA.livrets[0].name  : ((DATA&&DATA._livretName)||'Livret A'); }
@@ -3564,12 +3579,11 @@ function renderVarSection(year) {
 function renderVarCat(year, cat) {
   const txs = DATA[year].vars[cat.key];
   const grand = sum(txs.map(t=>t.amount));
-  const _bgtAnn = parseFloat(DATA.budgets?.[cat.key]) || 0;
-  const _mBgt   = _bgtAnn > 0 ? _bgtAnn / 12 : 0;
   let summaryRows = '';
   for (let m=0; m<12; m++) {
     const mTxs = txs.filter(t=>t.month===m);
     const mTot = sum(mTxs.map(t=>t.amount));
+    const _mBgt = getMonthlyBudget(year, cat.key, m);
     summaryRows += `
     <tr id="vsumrow-${year}-${cat.key}-${m}" style="cursor:pointer"
         onclick="if(!event.target.closest('button'))toggleMonthDetail('${year}','${cat.key}',${m},document.getElementById('vexp-btn-${year}-${cat.key}-${m}'))">
@@ -3606,7 +3620,7 @@ function renderVarCat(year, cat) {
       </td>
     </tr>`;
   }
-  const _bgt = parseFloat(DATA.budgets?.[cat.key]) || 0;
+  const _bgt = getAnnualBudgetEffective(year, cat.key);
   const _bgtPct = _bgt > 0 ? Math.round(grand / _bgt * 100) : 0;
   const _bgtBadge = _bgt > 0
     ? (grand > _bgt
@@ -3622,7 +3636,10 @@ function renderVarCat(year, cat) {
         <span class="badge badge-o" id="vartot-${year}-${cat.key}">${fmtN(grand)} €</span>
         ${_bgtBadge}
       </span>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <button onclick="event.stopPropagation();openBudgetEditor('${year}','${cat.key}')"
+          title="Modifier le budget mensuel"
+          style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--gray);white-space:nowrap">🎯</button>
         <button onclick="event.stopPropagation();openQuickAdd('${year}','${cat.key}')"
           style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">⚡ +</button>
         <span class="chevron">▾</span>
@@ -3839,8 +3856,8 @@ function syncMonthSummary(year, catKey, m) {
   // Rafraîchir la mini barre mensuelle si un budget est défini
   const barEl = document.getElementById(`vsum-bar-${year}-${catKey}-${m}`);
   if (barEl) {
-    const annBgt = parseFloat(DATA.budgets?.[catKey]) || 0;
-    barEl.innerHTML = annBgt > 0 ? _monthBudgetBar(mTot, annBgt / 12) : '';
+    const mBgt = getMonthlyBudget(year, catKey, m);
+    barEl.innerHTML = mBgt > 0 ? _monthBudgetBar(mTot, mBgt) : '';
   }
   const grand = sum(DATA[year].vars[catKey].map(t=>t.amount));
   const gb = document.getElementById(`vartot-${year}-${catKey}`);
@@ -3974,14 +3991,25 @@ function _monthBudgetBar(spent, monthBgt) {
   </div>`;
 }
 function renderBudgetBarInner(year, key) {
-  const budget = DATA.budgets && DATA.budgets[key] ? parseFloat(DATA.budgets[key]) : 0;
-  if (!budget) return '';
+  const budget = getAnnualBudgetEffective(year, key);
+  const hasMonthly = !!(DATA.monthlyBudgets?.[year]?.[key]?.length === 12);
+  const editBtn = `<button onclick="event.stopPropagation();openBudgetEditor('${year}','${key}')" title="Modifier le budget mensuel"
+    style="background:none;border:1px solid var(--border);border-radius:5px;padding:1px 7px;font-size:11px;cursor:pointer;color:var(--gray);margin-left:6px">✏️</button>`;
+  if (!budget) {
+    return `<div class="budget-bar-row" style="padding:4px 16px 6px">
+      <button onclick="event.stopPropagation();openBudgetEditor('${year}','${key}')"
+        style="background:none;border:1px dashed var(--border);border-radius:6px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--gray);cursor:pointer">
+        🎯 Définir un budget mensuel
+      </button>
+    </div>`;
+  }
   const txs = DATA[year]?.vars[key] || [];
   const spent = sum(txs.map(t => t.amount));
   const pct = Math.min(100, Math.round(spent / budget * 100));
   const color = spent > budget ? '#F04F5B' : pct > 80 ? '#F5A623' : '#00C896';
+  const customLabel = hasMonthly ? ' <span style="font-size:10px;color:var(--blue);font-weight:700">(mensuel)</span>' : '';
   return `<div class="budget-bar-row">
-    <span class="budget-bar-lbl">Budget : ${fmtN(budget)} €/an</span>
+    <span class="budget-bar-lbl">Budget : ${fmtN(budget)} €/an${customLabel}${editBtn}</span>
     <span class="budget-bar-amt" style="color:${color}">${fmtN(spent)} € · ${pct}%${spent>budget?' ⚠️':''}</span>
   </div>
   <div class="budget-bar-row">
@@ -4017,7 +4045,7 @@ function animateBudgetBars() {
 }
 // ── ALERTE DÉPASSEMENT BUDGET ──
 function _checkBudgetAlert(year, catKey, showToastOnCross = false) {
-  const budget = parseFloat(DATA.budgets?.[catKey]) || 0;
+  const budget = getAnnualBudgetEffective(year, catKey);
   if (!budget) return;
   const grand = sum((DATA[year]?.vars?.[catKey] || []).map(t => t.amount));
   const pct = Math.round(grand / budget * 100);
@@ -4057,15 +4085,119 @@ function updateQaBudgetNotice(catKey) {
 function openBudgetSetFromQA() {
   const catKey = document.getElementById('qa-cat')?.value;
   if (!catKey) return;
+  const activeYear = document.getElementById('qa-year')?.value || getYears().slice(-1)[0];
+  closeQuickAdd();
+  openBudgetEditor(activeYear, catKey);
+}
+
+// ── BUDGET EDITOR ──
+let _bgtEdYear = null, _bgtEdCat = null;
+
+function openBudgetEditor(year, catKey) {
+  _bgtEdYear = year;
+  _bgtEdCat  = catKey;
   const cat = getVarCats().find(c => c.key === catKey);
-  const name = cat ? `${cat.icon} ${cat.label}` : catKey;
-  const val = prompt(`Budget mensuel pour "${name}" (€/mois) :`);
-  if (val === null) return;
-  const monthly = parseFloat(val) || 0;
-  if (monthly <= 0) return;
-  setBudget(catKey, Math.round(monthly * 12));
-  updateQaBudgetNotice(catKey);
-  showToast(`🎯 Budget ${fmtN(monthly)} €/mois (${fmtN(Math.round(monthly*12))} €/an) défini`);
+  const titleEl = document.getElementById('bgt-editor-title');
+  if (titleEl) titleEl.textContent = `🎯 Budget mensuel — ${cat ? cat.icon + ' ' + cat.label : catKey} (${year})`;
+  // Pré-remplir le champ "montant rapide" avec la valeur mensuelle actuelle
+  const annBgt = parseFloat(DATA.budgets?.[catKey]) || 0;
+  const existingMonthly = DATA.monthlyBudgets?.[year]?.[catKey];
+  const suggestedMonthly = (existingMonthly && Array.isArray(existingMonthly) && existingMonthly.length === 12)
+    ? (existingMonthly[0] || (annBgt > 0 ? annBgt / 12 : ''))
+    : (annBgt > 0 ? +(annBgt / 12).toFixed(2) : '');
+  const mSel = document.getElementById('bgt-from-month');
+  if (mSel) mSel.innerHTML = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+  const amtInp = document.getElementById('bgt-from-amount');
+  if (amtInp) amtInp.value = suggestedMonthly || '';
+  _bgtEdRenderMonths();
+  const ov = document.getElementById('budget-editor-overlay');
+  if (ov) { ov.style.display = 'flex'; }
+}
+
+function _bgtEdRenderMonths() {
+  const grid = document.getElementById('bgt-months-grid');
+  if (!grid) return;
+  const existingMonthly = DATA.monthlyBudgets?.[_bgtEdYear]?.[_bgtEdCat];
+  const annBgt = parseFloat(DATA.budgets?.[_bgtEdCat]) || 0;
+  const fallback = annBgt > 0 ? +(annBgt / 12).toFixed(2) : 0;
+  let html = '';
+  for (let m = 0; m < 12; m++) {
+    const val = (existingMonthly && Array.isArray(existingMonthly) && existingMonthly.length === 12)
+      ? (parseFloat(existingMonthly[m]) || 0)
+      : fallback;
+    html += `<div style="display:flex;flex-direction:column;gap:2px">
+      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">${MONTHS[m].substring(0,3)}</label>
+      <input id="bgt-m-${m}" type="number" step="0.01" min="0" placeholder="0,00"
+        value="${val > 0 ? val : ''}"
+        oninput="_bgtEdUpdateTotal()"
+        style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;background:var(--surface);color:var(--text);width:100%;box-sizing:border-box">
+    </div>`;
+  }
+  grid.innerHTML = html;
+  _bgtEdUpdateTotal();
+}
+
+function _bgtEdUpdateTotal() {
+  let total = 0;
+  for (let m = 0; m < 12; m++) {
+    const inp = document.getElementById(`bgt-m-${m}`);
+    if (inp) total += parseFloat(inp.value) || 0;
+  }
+  const el = document.getElementById('bgt-annual-total');
+  if (el) el.textContent = fmtN(total) + ' €';
+}
+
+function _bgtEdApply() {
+  const fromMonth = parseInt(document.getElementById('bgt-from-month')?.value ?? 0);
+  const amount    = parseFloat(document.getElementById('bgt-from-amount')?.value) || 0;
+  for (let m = fromMonth; m < 12; m++) {
+    const inp = document.getElementById(`bgt-m-${m}`);
+    if (inp) inp.value = amount > 0 ? amount : '';
+  }
+  _bgtEdUpdateTotal();
+}
+
+function saveBudgetEditor() {
+  if (!_bgtEdYear || !_bgtEdCat) return;
+  // Lire les 12 valeurs
+  const monthly = [];
+  for (let m = 0; m < 12; m++) {
+    const inp = document.getElementById(`bgt-m-${m}`);
+    monthly.push(parseFloat(inp?.value) || 0);
+  }
+  const total = monthly.reduce((a, b) => a + b, 0);
+  // Stocker dans DATA.monthlyBudgets
+  if (!DATA.monthlyBudgets) DATA.monthlyBudgets = {};
+  if (!DATA.monthlyBudgets[_bgtEdYear]) DATA.monthlyBudgets[_bgtEdYear] = {};
+  DATA.monthlyBudgets[_bgtEdYear][_bgtEdCat] = monthly;
+  // Mettre à jour le budget annuel global (somme des mensuel)
+  if (!DATA.budgets) DATA.budgets = {};
+  DATA.budgets[_bgtEdCat] = total;
+  dSave();
+  // Rafraîchir les barres dans l'UI
+  const bbrEl = document.getElementById(`budget-bar-${_bgtEdYear}-${_bgtEdCat}`);
+  if (bbrEl) bbrEl.innerHTML = renderBudgetBarInner(_bgtEdYear, _bgtEdCat);
+  animateBudgetBars();
+  // Rafraîchir les mini-barres mensuelles
+  for (let m = 0; m < 12; m++) {
+    const barEl = document.getElementById(`vsum-bar-${_bgtEdYear}-${_bgtEdCat}-${m}`);
+    if (barEl) {
+      const mTxs = (DATA[_bgtEdYear]?.vars[_bgtEdCat] || []).filter(t => t.month === m);
+      const mTot = sum(mTxs.map(t => t.amount));
+      const mBgt = monthly[m] || 0;
+      barEl.innerHTML = mBgt > 0 ? _monthBudgetBar(mTot, mBgt) : '';
+    }
+  }
+  // Fermer
+  const ov = document.getElementById('budget-editor-overlay');
+  if (ov) ov.style.display = 'none';
+  showToast(`✅ Budget mensuel enregistré — ${fmtN(total)} €/an`);
+}
+
+function closeBudgetEditor(e) {
+  if (e && e.target !== document.getElementById('budget-editor-overlay')) return;
+  const ov = document.getElementById('budget-editor-overlay');
+  if (ov) ov.style.display = 'none';
 }
 
 // ── RÉSUMÉ MENSUEL ──
@@ -5747,7 +5879,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v123</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>${SW_VERSION}</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6430,8 +6562,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '10.7';
-const SW_VERSION = 'v123';
+const APP_VERSION = '10.8';
+const SW_VERSION = 'v124';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6443,6 +6575,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '10.8': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🎯', text: 'Budget mensuel par catégorie de dépenses variables : définir un montant différent pour chaque mois (ex. après une augmentation de salaire) via l\'éditeur ✏️' },
+      { icon: '⚡', text: 'Remplissage rapide "à partir de" : sélectionner un mois de départ et un montant pour remplir tous les mois suivants en un clic' }
+    ]
+  },
   '10.7': {
     date: 'Mai 2026',
     items: [
@@ -8934,6 +9073,37 @@ function closeCompareView() {
     <iframe id="iframe-pro" src="about:blank"
       style="flex:1;border:0;background:#fff"
       sandbox="allow-scripts allow-same-origin"></iframe>
+  </div>
+</div>
+
+<!-- ── BUDGET EDITOR OVERLAY ── -->
+<div id="budget-editor-overlay" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center" onclick="closeBudgetEditor(event)">
+  <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(440px,95%);box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 id="bgt-editor-title" style="margin:0;font-size:16px;color:var(--blue)">🎯 Budget mensuel</h3>
+      <button onclick="closeBudgetEditor()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray)">✕</button>
+    </div>
+    <!-- Remplissage rapide -->
+    <div style="background:var(--surface-alt);border-radius:10px;padding:10px 14px;margin-bottom:14px;border:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⚡ Remplir à partir d'un mois</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <select id="bgt-from-month" style="flex:1;min-width:80px;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text)"></select>
+        <input id="bgt-from-amount" type="number" step="0.01" min="0" placeholder="€/mois" style="width:100px;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text)">
+        <button onclick="_bgtEdApply()" style="background:var(--blue);color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">→ Appliquer</button>
+      </div>
+    </div>
+    <!-- Grille 12 mois -->
+    <div id="bgt-months-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px"></div>
+    <!-- Total annuel -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--blue-light);border-radius:8px;margin-bottom:14px;border:1px solid rgba(91,106,240,.2)">
+      <span style="font-size:12px;font-weight:700;color:var(--blue)">Total annuel :</span>
+      <span id="bgt-annual-total" style="font-size:15px;font-weight:800;color:var(--blue)">0,00 €</span>
+    </div>
+    <!-- Boutons -->
+    <div style="display:flex;gap:8px">
+      <button onclick="saveBudgetEditor()" style="flex:1;padding:11px;background:linear-gradient(135deg,var(--blue),#2980b9);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">✅ Enregistrer</button>
+      <button onclick="closeBudgetEditor()" style="padding:11px 16px;background:var(--surface-alt);color:var(--gray);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Annuler</button>
+    </div>
   </div>
 </div>
 
