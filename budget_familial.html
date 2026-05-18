@@ -615,13 +615,17 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
   #last-save-info{display:none}
   /* ── NAV MOBILE ── */
   .nav-mobile-bar{display:flex}
-  .app-nav{display:none;position:static;padding:5px 8px;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,.18)}
-  .app-nav.nav-expanded{display:flex}
-  .nav-group{padding:4px 4px 5px;border-radius:10px}
-  .nav-group-lbl{font-size:7px;letter-spacing:.06em}
-  .nav-btn{padding:4px 8px;gap:2px;min-width:40px}
-  .nav-icon{font-size:14px}
-  .nav-label{font-size:7px;letter-spacing:.02em}
+  .app-nav{display:none;position:static;padding:8px 12px;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+  /* Groupes empilés verticalement pour tout voir sans scroller */
+  .app-nav.nav-expanded{display:flex;flex-direction:column}
+  .app-nav.nav-expanded .nav-group{width:100%;border-radius:10px}
+  .app-nav.nav-expanded .nav-group-main{flex:none}
+  .app-nav.nav-expanded .nav-group-items{flex-wrap:wrap;gap:3px}
+  .app-nav.nav-expanded .nav-btn{flex:1;min-width:60px;max-width:none;justify-content:center}
+  .nav-group-lbl{font-size:8px;letter-spacing:.08em}
+  .nav-btn{padding:6px 10px;gap:2px;min-width:40px}
+  .nav-icon{font-size:15px}
+  .nav-label{font-size:8px;letter-spacing:.02em}
   #context-banner{padding:4px 10px;font-size:11px}
   .container{padding:10px 8px}
   .config-grid{grid-template-columns:1fr}
@@ -5657,7 +5661,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v119</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v120</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6340,8 +6344,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '10.3';
-const SW_VERSION = 'v119';
+const APP_VERSION = '10.4';
+const SW_VERSION = 'v120';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6353,6 +6357,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '10.4': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📱', text: 'Nav mobile : groupes empilés verticalement — tout visible sans scroller' },
+      { icon: '🤖', text: 'Fix IA : proxy Cloudflare autorisait seulement GitHub Pages, pas budget.marquabel.be → "Failed to fetch" corrigé' }
+    ]
+  },
   '10.3': {
     date: 'Mai 2026',
     items: [

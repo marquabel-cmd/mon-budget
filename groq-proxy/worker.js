@@ -4,11 +4,18 @@
  * Ajouter la variable d'environnement secrète : GROQ_API_KEY = gsk_...
  *
  * L'app appelle ce worker, qui relaie vers Groq sans exposer la clé.
- * CORS restreint à ton domaine GitHub Pages.
+ * CORS autorisé pour tous les domaines de l'app.
  */
 
-const ALLOWED_ORIGIN = 'https://marquabel-cmd.github.io';
-const GROQ_ENDPOINT  = 'https://api.groq.com/openai/v1/chat/completions';
+const ALLOWED_ORIGINS = [
+  'https://budget.marquabel.be',
+  'https://marquabel-cmd.github.io',
+];
+const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
+
+function isAllowed(origin) {
+  return ALLOWED_ORIGINS.some(o => origin.startsWith(o));
+}
 
 export default {
   async fetch(request, env) {
@@ -24,8 +31,8 @@ export default {
       return corsResponse(JSON.stringify({ error: 'Method not allowed' }), 405, origin);
     }
 
-    // Origine autorisée (GitHub Pages uniquement)
-    if (!origin.startsWith(ALLOWED_ORIGIN)) {
+    // Origine autorisée
+    if (!isAllowed(origin)) {
       return corsResponse(JSON.stringify({ error: 'Forbidden' }), 403, origin);
     }
 
@@ -52,12 +59,13 @@ export default {
 };
 
 function corsResponse(body, status, origin) {
-  const allowed = origin.startsWith(ALLOWED_ORIGIN) ? origin : ALLOWED_ORIGIN;
+  // Renvoie l'origine exacte si elle est autorisée, sinon le domaine principal
+  const allowedOrigin = isAllowed(origin) ? origin : ALLOWED_ORIGINS[0];
   return new Response(body, {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': allowed,
+      'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
