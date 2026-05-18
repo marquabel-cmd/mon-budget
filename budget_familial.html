@@ -3961,12 +3961,16 @@ function renderKpiCards(year) {
 function _monthBudgetBar(spent, monthBgt) {
   if (!monthBgt) return '';
   const pct = Math.min(100, Math.round(spent / monthBgt * 100));
+  const realPct = Math.round(spent / monthBgt * 100); // peut dépasser 100
   const color = spent > monthBgt ? '#F04F5B' : pct > 80 ? '#F5A623' : '#00C896';
-  return `<div style="display:flex;align-items:center;gap:3px;margin-top:2px">
-    <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:38px">
-      <div style="width:${pct}%;height:100%;background:${color};border-radius:2px;transition:width .4s ease"></div>
+  return `<div style="margin-top:3px">
+    <div style="display:flex;align-items:center;gap:3px;margin-bottom:2px">
+      <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:38px">
+        <div style="width:${pct}%;height:100%;background:${color};border-radius:2px;transition:width .4s ease"></div>
+      </div>
+      <span style="font-size:10px;color:${color};font-weight:800;white-space:nowrap">${realPct}%</span>
     </div>
-    <span style="font-size:10px;color:${color};font-weight:700;white-space:nowrap">${pct}%</span>
+    <div style="font-size:10px;color:var(--gray);white-space:nowrap;text-align:right">${fmtN(spent)} / ${fmtN(monthBgt)} €</div>
   </div>`;
 }
 function renderBudgetBarInner(year, key) {
