@@ -1949,8 +1949,11 @@ function _finishLogin(id) {
         if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; }
         if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
         _backupBeforeCloudReplace();
-        DATA = cloudData;
+        const _cloudTxCount = _countAllTx(cloudData);
+        DATA = _mergeBudgetData(DATA, cloudData);
         if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+        // Si la fusion a récupéré des tx locales absentes du cloud, repousser vers Firebase
+        if (_countAllTx(DATA) > _cloudTxCount) dSave();
         document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
         renderTabs();
         getYears().forEach(y => renderYear(y));
@@ -2292,6 +2295,45 @@ function dataKey() { return `budget_data_${CURRENT_USER_ID}`; }
 function bakPrefix() { return `budget_bak_${CURRENT_USER_ID}_`; }
 // Vérifie qu'un objet budget contient au moins une année de données réelles
 function _hasYearData(d) { return d && typeof d === 'object' && Object.keys(d).some(k => /^\d{4}$/.test(k)); }
+// Compte le total de transactions variables dans un objet budget
+function _countAllTx(d) {
+  if (!d) return 0;
+  let n = 0;
+  Object.keys(d).forEach(k => { if (/^\d{4}$/.test(k) && d[k]?.vars) Object.values(d[k].vars).forEach(txs => { if (Array.isArray(txs)) n += txs.length; }); });
+  return n;
+}
+// Fusionne local + cloud : le cloud sert de base (paramètres, budgets, charges, revenus)
+// mais toute transaction locale absente du cloud est réinjectée, SAUF si elle a été supprimée
+// intentionnellement (son ID est dans DATA._deletedIds ou cloud._deletedIds)
+function _mergeBudgetData(local, cloud) {
+  if (!local || !_hasYearData(local)) return cloud;
+  if (!cloud  || !_hasYearData(cloud))  return local;
+  // Partir du cloud comme base
+  const result = JSON.parse(JSON.stringify(cloud));
+  // Liste noire des IDs supprimés intentionnellement (union local + cloud)
+  const deletedIds = new Set([
+    ...(local._deletedIds || []),
+    ...(cloud._deletedIds  || [])
+  ]);
+  // Propager la liste noire fusionnée dans le résultat
+  if (deletedIds.size > 0) result._deletedIds = [...deletedIds];
+  let rescued = 0;
+  Object.keys(local).forEach(yr => {
+    if (!/^\d{4}$/.test(yr) || !local[yr]?.vars) return;
+    if (!result[yr]) result[yr] = JSON.parse(JSON.stringify(local[yr]));
+    if (!result[yr].vars) result[yr].vars = {};
+    Object.keys(local[yr].vars).forEach(cat => {
+      if (!Array.isArray(local[yr].vars[cat])) return;
+      if (!Array.isArray(result[yr].vars[cat])) result[yr].vars[cat] = [];
+      const cloudIds = new Set(result[yr].vars[cat].map(t => t.id));
+      // Réinjecter seulement les tx locales absentes du cloud ET non supprimées intentionnellement
+      const missing = local[yr].vars[cat].filter(t => !cloudIds.has(t.id) && !deletedIds.has(t.id));
+      if (missing.length) { result[yr].vars[cat].push(...missing); rescued += missing.length; }
+    });
+  });
+  if (rescued > 0) { console.warn(`🛡️ Fusion : ${rescued} tx locale(s) réinjectée(s) (absentes du cloud, non supprimées)`); showToast(`🛡️ ${rescued} tx locales préservées`); }
+  return result;
+}
 // Crée un backup avant remplacement cloud — max 1 par heure, 5 au total
 function _backupBeforeCloudReplace() {
   if (!_hasYearData(DATA) || !CURRENT_USER_ID) return;
@@ -3217,14 +3259,28 @@ function openCalcConfig(year, type) {
   const container = document.getElementById('tab-y'+year);
   if (!container) return;
   const same = _calcCfg.year===year && _calcCfg.type===type;
-  // Remove previous mode
+  // Quitter le mode précédent
   if (_calcCfg.year) {
     const prev = document.getElementById('tab-y'+_calcCfg.year);
-    if (prev) { prev.classList.remove('cfg-compte','cfg-livret'); }
+    if (prev) {
+      prev.classList.remove('cfg-compte','cfg-livret');
+      // Refermer les sections qu'on avait ouvertes automatiquement
+      (_calcCfg._autoOpened||[]).forEach(sel => { const el = prev.querySelector(sel); if(el && !el._wasOpen) el.classList.add('collapsed'); });
+    }
   }
   if (same) { _calcCfg = {year:null,type:null}; return; }
-  _calcCfg = {year, type};
+  _calcCfg = {year, type, _autoOpened:[]};
   container.classList.add('cfg-'+type);
+  // Ouvrir automatiquement les sections revenus + charges (type compte) ou juste charges (type livret)
+  const toOpen = type==='compte'
+    ? ['[data-section="revenus"]','[data-section="charges"]','[data-section="variables"]']
+    : ['[data-section="charges"]'];
+  toOpen.forEach(sel => {
+    const el = container.querySelector(sel);
+    if (!el) return;
+    el._wasOpen = !el.classList.contains('collapsed');
+    if (el.classList.contains('collapsed')) { el.classList.remove('collapsed'); _calcCfg._autoOpened.push(sel); }
+  });
   // Scroll to first visible checkbox
   container.querySelector('.cal-check.cal-check-'+type)?.closest('tr')?.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -3422,11 +3478,13 @@ function renderChargeSection(year) {
 }
 
 function updateCharge(year, ri, mi, input) {
-  const v = parseFloat(input.value)||0;
-  DATA[year].charges[ri].v[mi] = v;
-  input.className = 'cell-amt' + (v<0?' neg':'');
+  let v = parseFloat(input.value)||0;
   const cat = DATA[year].charges[ri].cat;
   const isLivret = cat === 'livret_in' || cat === 'livret_out';
+  // Lignes livret : toujours positif (le sens débit/crédit est géré par le type de ligne)
+  if (isLivret && v < 0) { v = Math.abs(v); input.value = v; }
+  DATA[year].charges[ri].v[mi] = v;
+  input.className = 'cell-amt' + (v<0?' neg':'');
   // Auto-cocher payé si valeur non nulle dans une ligne livret, ou si valeur = 0
   if ((isLivret && v !== 0) || (v === 0 && !DATA[year].charges[ri].paid[mi])) {
     DATA[year].charges[ri].paid[mi] = isLivret ? (v !== 0) : true;
@@ -4032,6 +4090,9 @@ function updateTxMethod(year, catKey, id, sel) {
 }
 function delTx(year, catKey, id, m) {
   confirmDelete('Supprimer cette transaction ?', () => {
+    // Mémoriser l'ID comme supprimé intentionnellement (protection anti-réinjection lors des syncs)
+    if (!DATA._deletedIds) DATA._deletedIds = [];
+    if (!DATA._deletedIds.includes(id)) DATA._deletedIds.push(id);
     DATA[year].vars[catKey] = DATA[year].vars[catKey].filter(t=>t.id!==id);
     const tr = document.getElementById(`vtr-${id}`);
     if (tr) tr.remove();
@@ -4809,9 +4870,12 @@ function applyRealtimeData(d) {
   if (JSON.stringify(DATA) === JSON.stringify(budgetData)) return;
   // Backup automatique avant tout remplacement
   _backupBeforeCloudReplace();
-  DATA = budgetData;
+  const _beforeMergeTx = _countAllTx(DATA);
+  DATA = _mergeBudgetData(DATA, budgetData);
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
+  // Si la fusion a réinjecté des tx locales, repousser vers Firebase
+  if (_countAllTx(DATA) > _countAllTx(budgetData)) dSave();
   // Re-rendu complet
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
@@ -6710,8 +6774,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.0';
-const SW_VERSION = 'v126';
+const APP_VERSION = '11.2';
+const SW_VERSION = 'v129';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6723,6 +6787,18 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '11.2': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔒', text: 'Lignes livret (ordre permanent, versement, retrait) : saisie bloquée en négatif — le montant est automatiquement converti en positif, le sens débit/crédit étant géré par le type de ligne' }
+    ]
+  },
+  '11.1': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🛡️', text: 'Protection anti-perte totale : lors de chaque synchronisation Firebase, les transactions locales absentes du cloud sont automatiquement réinjectées et renvoyées vers Firebase — aucune transaction ne peut être perdue par une sync cloud' }
+    ]
+  },
   '11.0': {
     date: 'Mai 2026',
     items: [

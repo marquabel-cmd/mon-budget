@@ -747,7 +747,7 @@
       if (e) {
         if (e.comment !== undefined) t.comment = e.comment;
         if (e.method  !== undefined) t.method  = e.method;
-        if (e.day     !== undefined) t.date    = e.day;
+        if (e.day     !== undefined) t.date    = String(e.day).padStart(2,'0')+'/'+String(t.month+1).padStart(2,'0')+'/2026';
         ok++;
       } else { skip++; }
     });
