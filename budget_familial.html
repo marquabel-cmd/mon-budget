@@ -2891,6 +2891,17 @@ function renderYear(year) {
   // S'assurer que vars contient toutes les catégories
   if (!DATA[year].vars) DATA[year].vars = {};
   getVarCats().forEach(c => { if (!DATA[year].vars[c.key]) DATA[year].vars[c.key] = []; });
+
+  // ── Sauvegarder la position avant rebuild ──
+  const _scrollY = window.scrollY;
+  const _sectionScrolls = {};
+  wrap.querySelectorAll('.section-body').forEach(sb => {
+    if (sb.scrollLeft > 0) _sectionScrolls[sb.dataset.sec || sb.className] = sb.scrollLeft;
+  });
+  // Mémoriser quel section-body était scrollé en horizontal (par index)
+  const _bodies = [...wrap.querySelectorAll('.section-body')];
+  const _bodyScrolls = _bodies.map(sb => sb.scrollLeft);
+
   // Mémoriser l'état ouvert/fermé des sections avant de reconstruire
   const _secOpen = {};
   wrap.querySelectorAll('.section-card').forEach(c => { const k = c.dataset.section||c.id; if(k) _secOpen[k] = !c.classList.contains('collapsed'); });
@@ -2902,6 +2913,14 @@ function renderYear(year) {
     updateLivretDisplay(year);
     updateCompteDisplay(year);
     setTimeout(animateBudgetBars, 60);
+
+    // ── Restaurer scroll après rebuild (via rAF pour attendre le rendu) ──
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: _scrollY, behavior: 'instant' });
+      // Restaurer les scrolls horizontaux des tableaux
+      const newBodies = [...wrap.querySelectorAll('.section-body')];
+      newBodies.forEach((sb, i) => { if (_bodyScrolls[i] > 0) sb.scrollLeft = _bodyScrolls[i]; });
+    });
   } catch(e) {
     console.error('renderYear error', year, e);
     showToast('❌ Erreur rendu ' + year + ' : ' + e.message);
@@ -5661,7 +5680,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v120</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v121</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6344,8 +6363,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '10.4';
-const SW_VERSION = 'v120';
+const APP_VERSION = '10.5';
+const SW_VERSION = 'v121';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6357,6 +6376,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '10.5': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📍', text: 'Édition tableau : position de scroll conservée après ajout/modif/suppression d\'une ligne' },
+      { icon: '↔️', text: 'Scroll horizontal des tableaux restauré après rebuild (mois défilés restent en place)' }
+    ]
+  },
   '10.4': {
     date: 'Mai 2026',
     items: [
