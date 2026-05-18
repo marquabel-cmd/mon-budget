@@ -3622,12 +3622,11 @@ function renderVarCat(year, cat) {
   }
   const _bgt = getAnnualBudgetEffective(year, cat.key);
   const _bgtPct = _bgt > 0 ? Math.round(grand / _bgt * 100) : 0;
+  const _bgtBadgeColor = grand > _bgt ? '#F04F5B' : _bgtPct >= 80 ? '#F5A623' : '#8a93a8';
+  const _bgtBadgeBg    = grand > _bgt ? 'rgba(240,79,91,.18)' : _bgtPct >= 80 ? 'rgba(245,166,35,.15)' : 'rgba(138,147,168,.12)';
+  const _bgtBadgeIcon  = grand > _bgt ? '⚠️ ' : _bgtPct >= 80 ? '🔔 ' : '';
   const _bgtBadge = _bgt > 0
-    ? (grand > _bgt
-        ? `<span id="budget-alert-${year}-${cat.key}" data-over="1" style="font-size:10px;font-weight:800;margin-left:5px;background:rgba(240,79,91,.18);color:#F04F5B;padding:1px 6px;border-radius:4px">⚠️ ${_bgtPct}%</span>`
-        : (_bgtPct >= 80
-            ? `<span id="budget-alert-${year}-${cat.key}" data-over="0" style="font-size:10px;font-weight:800;margin-left:5px;background:rgba(245,166,35,.15);color:#F5A623;padding:1px 6px;border-radius:4px">🔔 ${_bgtPct}%</span>`
-            : `<span id="budget-alert-${year}-${cat.key}" data-over="0"></span>`))
+    ? `<span id="budget-alert-${year}-${cat.key}" data-over="${grand>_bgt?1:0}" style="font-size:10px;font-weight:800;margin-left:5px;background:${_bgtBadgeBg};color:${_bgtBadgeColor};padding:1px 6px;border-radius:4px">${_bgtBadgeIcon}${_bgtPct}%</span>`
     : `<span id="budget-alert-${year}-${cat.key}" data-over="0"></span>`;
   return `<div class="section-card collapsed" data-cat="${cat.key}" style="margin-bottom:10px;border-radius:8px">
     <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')" style="padding:10px 14px">
@@ -4069,8 +4068,8 @@ function _checkBudgetAlert(year, catKey, showToastOnCross = false) {
       // redescendu sous 100% — plus d'alerte
     }
   } else {
-    el.style.cssText = '';
-    el.textContent = '';
+    el.style.cssText = 'font-size:10px;font-weight:800;margin-left:5px;background:rgba(138,147,168,.12);color:#8a93a8;padding:1px 6px;border-radius:4px';
+    el.textContent = `${pct}%`;
   }
   // Mettre à jour aussi la barre de budget
   const barEl = document.getElementById(`budget-bar-${year}-${catKey}`);
@@ -6562,8 +6561,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '10.8';
-const SW_VERSION = 'v124';
+const APP_VERSION = '10.9';
+const SW_VERSION = 'v125';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6575,6 +6574,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '10.9': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🏷️', text: 'Dépenses variables : badge % budget toujours visible sur chaque catégorie fermée (gris < 80%, orange 80-99%, rouge si dépassé) — plus besoin d\'ouvrir pour voir où on en est' }
+    ]
+  },
   '10.8': {
     date: 'Mai 2026',
     items: [
