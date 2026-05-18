@@ -3564,6 +3564,8 @@ function renderVarSection(year) {
 function renderVarCat(year, cat) {
   const txs = DATA[year].vars[cat.key];
   const grand = sum(txs.map(t=>t.amount));
+  const _bgtAnn = parseFloat(DATA.budgets?.[cat.key]) || 0;
+  const _mBgt   = _bgtAnn > 0 ? _bgtAnn / 12 : 0;
   let summaryRows = '';
   for (let m=0; m<12; m++) {
     const mTxs = txs.filter(t=>t.month===m);
@@ -3573,7 +3575,10 @@ function renderVarCat(year, cat) {
         onclick="if(!event.target.closest('button'))toggleMonthDetail('${year}','${cat.key}',${m},document.getElementById('vexp-btn-${year}-${cat.key}-${m}'))">
       <td style="font-weight:600;padding-left:10px">${MONTHS[m]}</td>
       <td id="vsum-n-${year}-${cat.key}-${m}" style="color:var(--gray);text-align:center">${mTxs.length} tx</td>
-      <td id="vsum-t-${year}-${cat.key}-${m}" style="font-weight:700;text-align:right">${fmtN(mTot)} €</td>
+      <td style="text-align:right;padding:4px 6px">
+        <div id="vsum-t-${year}-${cat.key}-${m}" style="font-weight:700;font-size:12px">${fmtN(mTot)} €</div>
+        <div id="vsum-bar-${year}-${cat.key}-${m}">${_mBgt > 0 ? _monthBudgetBar(mTot, _mBgt) : ''}</div>
+      </td>
       <td style="text-align:center">
         <button class="add-tx-btn" style="padding:2px 8px;font-size:10px"
           onclick="addTxForMonth('${year}','${cat.key}',${m})">+ Ajouter</button>
@@ -3831,6 +3836,12 @@ function syncMonthSummary(year, catKey, m) {
   const tt = document.getElementById(`vsum-t-${year}-${catKey}-${m}`);
   if (nt) nt.textContent = txs.length + ' tx';
   if (tt) tt.textContent = fmtN(mTot) + ' €';
+  // Rafraîchir la mini barre mensuelle si un budget est défini
+  const barEl = document.getElementById(`vsum-bar-${year}-${catKey}-${m}`);
+  if (barEl) {
+    const annBgt = parseFloat(DATA.budgets?.[catKey]) || 0;
+    barEl.innerHTML = annBgt > 0 ? _monthBudgetBar(mTot, annBgt / 12) : '';
+  }
   const grand = sum(DATA[year].vars[catKey].map(t=>t.amount));
   const gb = document.getElementById(`vartot-${year}-${catKey}`);
   if (gb) gb.textContent = fmtN(grand) + ' €';
@@ -3947,6 +3958,17 @@ function renderKpiCards(year) {
 }
 
 // ── BUDGET BARS ──
+function _monthBudgetBar(spent, monthBgt) {
+  if (!monthBgt) return '';
+  const pct = Math.min(100, Math.round(spent / monthBgt * 100));
+  const color = spent > monthBgt ? '#F04F5B' : pct > 80 ? '#F5A623' : '#00C896';
+  return `<div style="display:flex;align-items:center;gap:3px;margin-top:2px">
+    <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:38px">
+      <div style="width:${pct}%;height:100%;background:${color};border-radius:2px;transition:width .4s ease"></div>
+    </div>
+    <span style="font-size:10px;color:${color};font-weight:700;white-space:nowrap">${pct}%</span>
+  </div>`;
+}
 function renderBudgetBarInner(year, key) {
   const budget = DATA.budgets && DATA.budgets[key] ? parseFloat(DATA.budgets[key]) : 0;
   if (!budget) return '';
@@ -5721,7 +5743,7 @@ function renderConfigTab() {
       </div>
       <div class="config-card"><h3>🗄 Données</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
-          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v122</b>
+          📱 Version <b>${APP_VERSION}</b> — SW <b>mon-budget-v123</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
@@ -6404,8 +6426,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '10.6';
-const SW_VERSION = 'v122';
+const APP_VERSION = '10.7';
+const SW_VERSION = 'v123';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6417,6 +6439,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '10.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📊', text: 'Dépenses variables : mini barre de budget mensuel sur chaque ligne de mois — voir en un coup d\'œil où on en est par rapport au budget mensuel (budget annuel ÷ 12)' }
+    ]
+  },
   '10.6': {
     date: 'Mai 2026',
     items: [
