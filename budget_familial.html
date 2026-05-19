@@ -6405,12 +6405,13 @@ function _fbSave(u) {
   if (u) {
     localStorage.setItem('mbudget-fb-uid',     u.uid);
     localStorage.setItem('mbudget-fb-email',   u.email);
-    localStorage.setItem('mbudget-fb-token',   u.idToken);
+    sessionStorage.setItem('mbudget-fb-token', u.idToken); // idToken en sessionStorage (effacé à la fermeture)
     localStorage.setItem('mbudget-fb-refresh', u.refreshToken);
     localStorage.setItem('mbudget-fb-exp',     String(u.expiresAt || 0));
     if (u.displayName) localStorage.setItem('mbudget-fb-name', u.displayName);
   } else {
-    ['uid','email','token','refresh','exp','name'].forEach(k => localStorage.removeItem('mbudget-fb-' + k));
+    ['uid','email','refresh','exp','name'].forEach(k => localStorage.removeItem('mbudget-fb-' + k));
+    sessionStorage.removeItem('mbudget-fb-token');
     localStorage.removeItem('mbudget-fb-localid');
   }
 }
@@ -6418,7 +6419,7 @@ function _fbLoad() {
   const uid = localStorage.getItem('mbudget-fb-uid');
   if (!uid) return null;
   return { uid, email: localStorage.getItem('mbudget-fb-email')||'',
-    idToken: localStorage.getItem('mbudget-fb-token')||'',
+    idToken: sessionStorage.getItem('mbudget-fb-token')||'', // idToken depuis sessionStorage
     refreshToken: localStorage.getItem('mbudget-fb-refresh')||'',
     expiresAt: parseInt(localStorage.getItem('mbudget-fb-exp')||'0'),
     displayName: localStorage.getItem('mbudget-fb-name')||'' };
@@ -6501,7 +6502,11 @@ async function fbCheckPremium(uid, idToken) {
     const r = await _fbFetch(`${LICENSE_DB}/users/${uid}/premium.json`, {}, idToken);
     const val = await r.json();
     const valid = val === true || (typeof val === 'number' && val > Date.now());
-    if (valid) { localStorage.setItem('mbudget-premium-'+uid,'1'); return true; }
+    if (valid) {
+      localStorage.setItem('mbudget-premium-'+uid,'1');
+      localStorage.setItem('mbudget-premium-exp-'+uid, String(Date.now() + 86400000)); // expire dans 24h
+      return true;
+    }
     if (typeof val === 'number' && val <= Date.now()) { showToast('⚠️ Votre licence Premium a expiré'); }
   } catch {}
   // Rétro-compat : ancienne clé de licence → migration automatique
@@ -6518,12 +6523,15 @@ async function fbCheckPremium(uid, idToken) {
         await _fbFetch(`${LICENSE_DB}/users/${uid}/premium.json`, {
           method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(premiumVal) }, idToken);
         localStorage.setItem('mbudget-premium-'+uid,'1');
+        localStorage.setItem('mbudget-premium-exp-'+uid, String(Date.now() + 86400000));
         return true;
       }
       if (keyExpired) showToast('⚠️ Votre clé de licence bêta a expiré');
     } catch {}
   }
-  localStorage.removeItem('mbudget-premium-'+uid); return false;
+  localStorage.removeItem('mbudget-premium-'+uid);
+  localStorage.removeItem('mbudget-premium-exp-'+uid);
+  return false;
 }
 async function _autoRestoreFromFirebase() {
   showToast('🔄 Restauration de votre session…');
@@ -6801,8 +6809,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.10';
-const SW_VERSION = 'v137';
+const APP_VERSION = '11.11';
+const SW_VERSION = 'v138';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -7467,7 +7475,17 @@ function isLicensed()  {
   if (_compareMode === 'pro')  return true;
   if (_compareMode === 'free') return false;
   const uid = _fbUser?.uid || localStorage.getItem('mbudget-fb-uid');
-  if (uid && localStorage.getItem('mbudget-premium-'+uid) === '1') return true;
+  if (uid && localStorage.getItem('mbudget-premium-'+uid) === '1') {
+    const exp = parseInt(localStorage.getItem('mbudget-premium-exp-'+uid) || '0');
+    if (exp && Date.now() > exp) {
+      // Cache expiré → invalider et forcer re-vérification Firebase
+      localStorage.removeItem('mbudget-premium-'+uid);
+      localStorage.removeItem('mbudget-premium-exp-'+uid);
+      if (_fbUser) fbCheckPremium(_fbUser.uid, _fbUser.idToken).then(() => renderConfigTab());
+      return false;
+    }
+    return true;
+  }
   return !!localStorage.getItem('mbudget-license'); // rétro-compat
 }
 function getLicenseKey(){
