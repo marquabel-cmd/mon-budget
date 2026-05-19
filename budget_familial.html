@@ -354,7 +354,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 /* Table détail : tout sur une ligne, scroll horizontal si besoin */
 .var-tx-table{white-space:nowrap}
 .var-tx-table td{white-space:nowrap;vertical-align:middle}
-.var-tx-table .var-input.comment{width:140px}
+.var-tx-table .var-input.comment{width:100%;min-width:120px}
 .vdetrow-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 /* method colors */
 /* method styles now applied via inline styles */
@@ -368,7 +368,7 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 .var-input:focus{border-color:var(--blue);background:var(--surface);outline:none}
 .var-input.amt{width:80px;text-align:right}
 .var-input.date{width:110px}
-.var-input.comment{width:200px}
+.var-input.comment{width:100%;min-width:150px}
 /* month group header */
 .var-month-row td{background:#e8ecf2;font-weight:700;font-size:11px;color:#3a4a5c;padding:5px 8px}
 .var-subtotal td{background:#f5f7fa;font-weight:700;font-size:11px;color:var(--gray);text-align:right;padding:4px 8px}
@@ -3938,7 +3938,7 @@ function txRow(year, catKey, tx) {
       style="${(tx.amount||0)<0?'color:var(--green);font-weight:800':''}"
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
       oninput="this.style.color=(+this.value<0?'var(--green)':'');updateTxField('${year}','${catKey}',${tx.id},'amount',+this.value);syncMonthTotals('${year}','${catKey}',${tx.id})"></td>
-    <td><input class="var-input comment" type="text" value="${tx.comment||''}" placeholder="Commentaire…"
+    <td style="width:100%"><input class="var-input comment" type="text" value="${tx.comment||''}" placeholder="Commentaire…"
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
       oninput="updateTxField('${year}','${catKey}',${tx.id},'comment',this.value)"></td>
     <td><select class="method-sel" style="background:${_txDark?'var(--surface)':m.bg};border-color:${m.color};color:var(--text)"
@@ -6920,8 +6920,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.26';
-const SW_VERSION = 'v153';
+const APP_VERSION = '11.27';
+const SW_VERSION = 'v154';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6934,6 +6934,12 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.27': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📝', text: 'Colonne commentaire : s\'étend pour occuper tout l\'espace disponible — plus de texte tronqué dans le tableau des transactions' }
+    ]
+  },
   '11.26': {
     date: 'Mai 2026',
     items: [
