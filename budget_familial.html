@@ -6833,8 +6833,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.12';
-const SW_VERSION = 'v139';
+const APP_VERSION = '11.13';
+const SW_VERSION = 'v140';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6845,6 +6845,7 @@ function _setVersionDisplays() {
 }
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
+document.addEventListener('DOMContentLoaded', () => { emailjs.init(EMAILJS_KEY); });
 const CHANGELOG = {
   '11.9': {
     date: 'Mai 2026',
@@ -7520,9 +7521,9 @@ function getLicenseKey(){
 }
 
 // ── FEEDBACK ──────────────────────────────────────────────────────────────
-const EMAILJS_SERVICE  = 'VOTRE_SERVICE_ID';   // ← à remplir après config EmailJS
-const EMAILJS_TEMPLATE = 'VOTRE_TEMPLATE_ID';  // ← à remplir après config EmailJS
-const EMAILJS_KEY      = 'VOTRE_PUBLIC_KEY';   // ← à remplir après config EmailJS
+const EMAILJS_SERVICE  = 'mon-budget';
+const EMAILJS_TEMPLATE = 'template_6wantmt';
+const EMAILJS_KEY      = 'HYssriD9mW4FVPYv4';
 
 let _feedbackCat   = 'bug';
 let _feedbackStars = 0;
