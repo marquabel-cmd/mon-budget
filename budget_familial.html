@@ -3820,6 +3820,9 @@ function renderVarSection(year) {
         ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${_esc(mo.label)}</span>`).join('')}
       </div>
       <div class="var-section">${getVarCats().map(c => renderVarCat(year, c)).join('')}</div>
+      <div style="margin:6px 0 10px;text-align:right">
+        <button onclick="openCatModal(null)" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;opacity:.85" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.85">＋ Ajouter une catégorie</button>
+      </div>
       ${renderMethodTotals(year)}
     </div>
   </div>`;
@@ -3886,6 +3889,9 @@ function renderVarCat(year, cat) {
         ${_bgtBadge}
       </span>
       <div style="display:flex;align-items:center;gap:6px">
+        <button onclick="event.stopPropagation();openCatModal('${cat.key}')"
+          title="Modifier la catégorie"
+          style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--gray);white-space:nowrap">✏️</button>
         <button onclick="event.stopPropagation();openBudgetEditor('${year}','${cat.key}')"
           title="Modifier le budget mensuel"
           style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--gray);white-space:nowrap">🎯</button>
@@ -6108,21 +6114,6 @@ function renderConfigTab() {
           </div>
         </div>`;
       })()}
-      <div class="config-card" style="margin-top:14px"><h3>🗂 Catégories de dépenses</h3>
-        <div style="margin-bottom:8px">
-          ${getVarCats().map(c=>{
-            const budget = DATA.budgets && DATA.budgets[c.key] ? fmtN(DATA.budgets[c.key])+'€/an' : '—';
-            return `<div style="display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border)">
-              <span style="font-size:18px;min-width:24px;text-align:center">${_esc(c.icon)}</span>
-              <span style="flex:1;font-size:13px;font-weight:600;color:var(--text)">${_esc(c.label)}</span>
-              <span style="font-size:11px;color:var(--gray);min-width:60px;text-align:right">🎯 ${budget}</span>
-              <button onclick="openCatModal('${c.key}')" title="Modifier" style="background:none;border:1px solid var(--border);border-radius:7px;padding:3px 8px;cursor:pointer;font-size:14px;color:var(--text)">✏️</button>
-              <button class="del-btn" onclick="removeVarCat('${c.key}')" title="Supprimer">✕</button>
-            </div>`;
-          }).join('')}
-        </div>
-        <button class="btn btn-save" style="width:100%;padding:9px;font-size:13px;margin-top:4px" onclick="openCatModal(null)">＋ Nouvelle catégorie</button>
-      </div>
       <div class="config-card" style="margin-top:14px"><h3>🤖 Assistant IA (Groq)</h3>
         <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--green-light);border-radius:8px;margin-bottom:10px">
           <span>✅</span><span style="font-size:12px;color:var(--green);font-weight:700">Assistant actif — disponible pour tous les utilisateurs</span>
@@ -6842,8 +6833,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.19';
-const SW_VERSION = 'v146';
+const APP_VERSION = '11.20';
+const SW_VERSION = 'v147';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6856,6 +6847,13 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.20': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🛒', text: 'Dépenses variables : bouton "＋ Ajouter une catégorie" directement dans la section — plus besoin de passer par la Config. Bouton ✏️ sur chaque catégorie pour modifier icône, nom et budget.' },
+      { icon: '🧹', text: 'Config allégée : section catégories supprimée de la Config (tout se gère maintenant depuis les Dépenses variables)' }
+    ]
+  },
   '11.19': {
     date: 'Mai 2026',
     items: [
