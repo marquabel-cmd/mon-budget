@@ -8271,9 +8271,12 @@ function adminRenderFeedback() {
           <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px">${FB_CAT_ICON[f.category]||'💬'} ${_esc(f.subject||'Sans sujet')}</div>
           <div style="font-size:12px;color:rgba(255,255,255,.5)">👤 ${_esc(f.email||'Anonyme')} · 📅 ${f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-BE') : ''} ${f.stars ? '· '+'⭐'.repeat(f.stars) : ''}</div>
         </div>
-        <select onchange="adminUpdateFeedbackStatus('${id}',this.value)" style="background:#1a1d2e;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0">
-          ${FB_STATUSES.map(s=>`<option value="${s}" ${(f.status||'nouveau')===s?'selected':''}>${s}</option>`).join('')}
-        </select>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+          <select onchange="adminUpdateFeedbackStatus('${id}',this.value)" style="background:#1a1d2e;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer">
+            ${FB_STATUSES.map(s=>`<option value="${s}" ${(f.status||'nouveau')===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+          <button onclick="adminDeleteFeedback('${id}')" title="Supprimer" style="background:rgba(231,76,60,.2);color:#e74c3c;border:1px solid rgba(231,76,60,.4);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;line-height:1" onmouseover="this.style.background='rgba(231,76,60,.4)'" onmouseout="this.style.background='rgba(231,76,60,.2)'">🗑️</button>
+        </div>
       </div>
       <!-- Message original -->
       <div style="font-size:14px;color:rgba(255,255,255,.8);line-height:1.6;white-space:pre-wrap;background:rgba(255,255,255,.05);border-radius:8px;padding:10px 12px;margin-bottom:8px">${_esc(f.message||'')}</div>
@@ -8337,6 +8340,15 @@ async function adminUpdateFeedbackStatus(id, status) {
     method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(status)
   }, token);
   if (_feedbackData[id]) { _feedbackData[id].status = status; adminRenderFeedback(); }
+}
+
+async function adminDeleteFeedback(id) {
+  if (!confirm('Supprimer ce feedback définitivement ?')) return;
+  const token = await fbGetToken();
+  await _fbFetch(`${LICENSE_DB}/feedback/${id}.json`, { method:'DELETE' }, token);
+  delete _feedbackData[id];
+  adminRenderFeedback();
+  showToast('🗑️ Feedback supprimé');
 }
 
 async function enterAdminMode() {
