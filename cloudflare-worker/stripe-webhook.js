@@ -2,14 +2,10 @@
  * Cloudflare Worker — Stripe Webhook → Firebase Premium License
  * Mon Budget — marquabel.be
  *
- * Événements Stripe gérés :
- *   - checkout.session.completed  → active Premium
- *   - customer.subscription.deleted → désactive Premium
- *   - invoice.payment_succeeded    → renouvellement (keepalive)
- *
  * Variables d'environnement (Cloudflare secrets) :
- *   STRIPE_WEBHOOK_SECRET  — whsec_... (depuis Stripe Dashboard > Webhooks)
- *   FIREBASE_DB_SECRET     — secret Firebase (Project settings > Service accounts > Database secrets)
+ *   STRIPE_WEBHOOK_SECRET   — whsec_... (Stripe Dashboard > Webhooks)
+ *   FIREBASE_SA_EMAIL       — service account email (xxx@mon-budget-licences.iam.gserviceaccount.com)
+ *   FIREBASE_SA_PRIVATE_KEY — clé privée RSA du service account (-----BEGIN PRIVATE KEY-----)
  */
 
 const FIREBASE_DB = 'https://mon-budget-licences-default-rtdb.europe-west1.firebasedatabase.app';
@@ -19,92 +15,181 @@ async function verifyStripeSignature(body, sigHeader, secret) {
   const parts = sigHeader.split(',');
   let timestamp = '';
   const sigs = [];
-
   for (const part of parts) {
     const [k, v] = part.trim().split('=');
     if (k === 't') timestamp = v;
     if (k === 'v1') sigs.push(v);
   }
-
   if (!timestamp || sigs.length === 0) return false;
-
-  // Protection replay attack : max 5 minutes de tolérance
   const now = Math.floor(Date.now() / 1000);
   if (Math.abs(now - parseInt(timestamp)) > 300) return false;
 
   const enc = new TextEncoder();
-  const signedPayload = `${timestamp}.${body}`;
-
   const key = await crypto.subtle.importKey(
     'raw', enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false, ['sign']
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
-
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(signedPayload));
-  const computed = Array.from(new Uint8Array(sig))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`${timestamp}.${body}`));
+  const computed = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
   return sigs.some(s => s === computed);
 }
 
-// ── Firebase REST API helpers ──────────────────────────────────────────────
-async function fbWrite(path, data, secret) {
-  const res = await fetch(`${FIREBASE_DB}/${path}.json?auth=${secret}`, {
+// ── Firebase Custom Token → ID Token (pour ?auth= europe-west1) ───────────
+const FIREBASE_API_KEY = 'AIzaSyBB0h8ENURTDyndoVBtsu1i94l_mVZZ23o';
+const WEBHOOK_UID = 'webhook-service';
+
+function b64url(data) {
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+async function importKey(pemBody) {
+  const keyBytes = Uint8Array.from(atob(pemBody.trim().replace(/\s+/g, '')), c => c.charCodeAt(0));
+  return crypto.subtle.importKey(
+    'pkcs8', keyBytes,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false, ['sign']
+  );
+}
+
+async function getFirebaseIdToken(saEmail, saKeyBody) {
+  // 1. Créer un Firebase Custom Token signé avec la clé privée
+  const now = Math.floor(Date.now() / 1000);
+  const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const payload = b64url(JSON.stringify({
+    iss: saEmail,
+    sub: saEmail,
+    aud: 'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit',
+    uid: WEBHOOK_UID,
+    iat: now,
+    exp: now + 3600,
+  }));
+
+  const data = `${header}.${payload}`;
+  const cryptoKey = await importKey(saKeyBody);
+  const sigBytes = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(data));
+  const customToken = `${data}.${b64url(new Uint8Array(sigBytes))}`;
+
+  // 2. Échanger le Custom Token contre un Firebase ID Token
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${FIREBASE_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: customToken, returnSecureToken: true }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Firebase signIn error: ${res.status} ${err}`);
+  }
+
+  const json = await res.json();
+  if (!json.idToken) throw new Error(`No idToken in response: ${JSON.stringify(json)}`);
+  return json.idToken; // ID Token utilisable avec ?auth= en europe-west1
+}
+
+// ── Firebase REST API ──────────────────────────────────────────────────────
+async function fbWrite(path, data, accessToken) {
+  const res = await fetch(`${FIREBASE_DB}/${path}.json?auth=${accessToken}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) {
-    const text = await res.text();
-    console.error(`fbWrite error ${path}: ${res.status} ${text}`);
-  }
+  const text = await res.text();
+  if (!res.ok) console.error(`fbWrite error [${path}]: ${res.status} ${text}`);
+  else console.log(`fbWrite OK [${path}]`);
   return res.ok;
 }
 
-async function fbGet(path, secret) {
-  const res = await fetch(`${FIREBASE_DB}/${path}.json?auth=${secret}`);
+async function fbGet(path, accessToken) {
+  const res = await fetch(`${FIREBASE_DB}/${path}.json?auth=${accessToken}`);
   if (!res.ok) return null;
   return res.json();
+}
+
+// ── Email relay (EmailJS via clé privée serveur) ───────────────────────────
+const EMAILJS_API = 'https://api.emailjs.com/api/v1.0/email/send';
+const EMAILJS_PUBLIC_KEY = 'HYssriD9mW4FVPYv4';
+const EMAILJS_SERVICE_ID = 'mon-budget';
+const CORS_ORIGIN = 'https://budget.marquabel.be';
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': CORS_ORIGIN,
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+async function handleEmail(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS });
+  if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: CORS_HEADERS });
+
+  // Vérifier token Firebase (l'utilisateur doit être connecté)
+  const authHeader = request.headers.get('Authorization') || '';
+  const idToken = authHeader.replace('Bearer ', '').trim();
+  if (!idToken) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS });
+
+  const verifyRes = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`,
+    { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ idToken }) }
+  );
+  if (!verifyRes.ok) return new Response('Invalid token', { status: 401, headers: CORS_HEADERS });
+
+  let body;
+  try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400, headers: CORS_HEADERS }); }
+
+  const ejsRes = await fetch(EMAILJS_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      service_id:     EMAILJS_SERVICE_ID,
+      template_id:    body.template_id,
+      user_id:        EMAILJS_PUBLIC_KEY,
+      accessToken:    env.EMAILJS_PRIVATE_KEY,
+      template_params: body.template_params,
+    }),
+  });
+
+  const text = await ejsRes.text();
+  return new Response(text, { status: ejsRes.ok ? 200 : ejsRes.status, headers: CORS_HEADERS });
 }
 
 // ── Handler principal ──────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
-    // CORS preflight (au cas où)
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204 });
-    }
+    const url = new URL(request.url);
 
-    if (request.method !== 'POST') {
-      return new Response('Method Not Allowed', { status: 405 });
-    }
+    // Route /email → relay EmailJS avec clé privée
+    if (url.pathname === '/email') return handleEmail(request, env);
 
-    // Lire le body en texte (nécessaire pour la vérification de signature)
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+    if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+
     const body = await request.text();
     const sigHeader = request.headers.get('stripe-signature');
+    if (!sigHeader) return new Response('Missing signature', { status: 400 });
 
-    if (!sigHeader) {
-      console.error('Missing stripe-signature header');
-      return new Response('Missing signature', { status: 400 });
-    }
-
-    // Vérifier la signature Stripe
     const isValid = await verifyStripeSignature(body, sigHeader, env.STRIPE_WEBHOOK_SECRET);
-    if (!isValid) {
-      console.error('Invalid Stripe signature');
-      return new Response('Invalid signature', { status: 400 });
-    }
+    if (!isValid) return new Response('Invalid signature', { status: 400 });
 
     let event;
-    try {
-      event = JSON.parse(body);
-    } catch {
-      return new Response('Invalid JSON', { status: 400 });
-    }
+    try { event = JSON.parse(body); }
+    catch { return new Response('Invalid JSON', { status: 400 }); }
 
     const obj = event.data?.object;
     const now = Math.floor(Date.now() / 1000);
+
+    // Firebase ID Token via Custom Token signé (fonctionne avec ?auth= en europe-west1)
+    let accessToken;
+    try {
+      accessToken = await getFirebaseIdToken(env.FIREBASE_SA_EMAIL, env.FIREBASE_SA_PRIVATE_KEY);
+    } catch (e) {
+      console.error('Firebase token error:', e.message);
+      return new Response(`Auth error: ${e.message}`, { status: 500 });
+    }
 
     console.log(`Stripe event: ${event.type}`);
 
@@ -113,75 +198,48 @@ export default {
       const uid = obj.client_reference_id;
 
       if (!uid) {
-        // Paiement sans UID Firebase (user non connecté au moment du clic)
-        // On stocke par email pour résolution manuelle ou future
         const email = obj.customer_details?.email;
         if (email) {
           const safeEmail = email.replace(/\./g, '_').replace(/@/g, '__at__');
           await fbWrite(`pending_premiums/${safeEmail}`, {
-            email,
-            stripeCustomer: obj.customer || null,
-            stripeSubscription: obj.subscription || null,
-            paidAt: now,
-          }, env.FIREBASE_DB_SECRET);
-          console.log(`Premium pending (no UID) for email=${email}`);
+            email, stripeCustomer: obj.customer, paidAt: now,
+          }, accessToken);
         }
         return new Response('OK (pending)', { status: 200 });
       }
 
-      // Déterminer le plan (montant en centimes : 299 = mensuel, 2499 = annuel)
-      const amount = obj.amount_total || 0;
-      const plan = amount <= 350 ? 'monthly' : 'yearly';
+      const plan = (obj.amount_total || 0) <= 350 ? 'monthly' : 'yearly';
 
-      // Activer Premium : /users/{uid}/premium = true
-      await fbWrite(`users/${uid}/premium`, true, env.FIREBASE_DB_SECRET);
-
-      // Stocker les infos Stripe pour gestion future (annulation, etc.)
+      await fbWrite(`users/${uid}/premium`, true, accessToken);
       await fbWrite(`users/${uid}/stripe`, {
         customer: obj.customer || null,
         subscription: obj.subscription || null,
-        plan,
-        activatedAt: now,
+        plan, activatedAt: now,
         email: obj.customer_details?.email || '',
-      }, env.FIREBASE_DB_SECRET);
+      }, accessToken);
 
-      // Mapping inverse customer → uid (pour gérer l'annulation)
       if (obj.customer) {
-        await fbWrite(`stripe_customers/${obj.customer}`, uid, env.FIREBASE_DB_SECRET);
+        await fbWrite(`stripe_customers/${obj.customer}`, uid, accessToken);
       }
-
-      console.log(`✅ Premium activated uid=${uid} plan=${plan} customer=${obj.customer}`);
+      console.log(`✅ Premium activated uid=${uid} plan=${plan}`);
     }
 
-    // ── customer.subscription.deleted → Désactivation Premium ────────────
+    // ── customer.subscription.deleted → Désactivation ────────────────────
     if (event.type === 'customer.subscription.deleted') {
-      const customerId = obj.customer;
-      const uid = await fbGet(`stripe_customers/${customerId}`, env.FIREBASE_DB_SECRET);
-
+      const uid = await fbGet(`stripe_customers/${obj.customer}`, accessToken);
       if (uid && typeof uid === 'string') {
-        // Désactiver Premium : /users/{uid}/premium = false
-        await fbWrite(`users/${uid}/premium`, false, env.FIREBASE_DB_SECRET);
-
-        // Mettre à jour les infos Stripe
-        await fbWrite(`users/${uid}/stripe/cancelledAt`, now, env.FIREBASE_DB_SECRET);
-        await fbWrite(`users/${uid}/stripe/active`, false, env.FIREBASE_DB_SECRET);
-
-        console.log(`❌ Premium cancelled uid=${uid} customer=${customerId}`);
-      } else {
-        console.warn(`subscription.deleted: no uid found for customer=${customerId}`);
+        await fbWrite(`users/${uid}/premium`, false, accessToken);
+        await fbWrite(`users/${uid}/stripe/cancelledAt`, now, accessToken);
+        console.log(`❌ Premium cancelled uid=${uid}`);
       }
     }
 
-    // ── invoice.payment_succeeded → Renouvellement abonnement ────────────
-    if (event.type === 'invoice.payment_succeeded') {
-      const customerId = obj.customer;
-      if (!customerId) return new Response('OK', { status: 200 });
-
-      const uid = await fbGet(`stripe_customers/${customerId}`, env.FIREBASE_DB_SECRET);
+    // ── invoice.payment_succeeded → Renouvellement ────────────────────────
+    if (event.type === 'invoice.payment_succeeded' && obj.customer) {
+      const uid = await fbGet(`stripe_customers/${obj.customer}`, accessToken);
       if (uid && typeof uid === 'string') {
-        // S'assurer que Premium est toujours actif après renouvellement
-        await fbWrite(`users/${uid}/premium`, true, env.FIREBASE_DB_SECRET);
-        await fbWrite(`users/${uid}/stripe/renewedAt`, now, env.FIREBASE_DB_SECRET);
+        await fbWrite(`users/${uid}/premium`, true, accessToken);
+        await fbWrite(`users/${uid}/stripe/renewedAt`, now, accessToken);
         console.log(`🔄 Premium renewed uid=${uid}`);
       }
     }

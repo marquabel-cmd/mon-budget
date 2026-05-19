@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Mon Budget">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<!-- EmailJS SDK supprimé — emails relayés via Cloudflare Worker avec clé privée -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -6842,8 +6842,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.18';
-const SW_VERSION = 'v145';
+const APP_VERSION = '11.19';
+const SW_VERSION = 'v146';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6854,8 +6854,14 @@ function _setVersionDisplays() {
 }
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
-document.addEventListener('DOMContentLoaded', () => { emailjs.init(EMAILJS_KEY); });
+// EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.19': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔐', text: 'Sécurité : emails feedback relayés via Cloudflare Worker avec clé privée EmailJS côté serveur — la clé publique n\'est plus exposée dans le code de l\'app' }
+    ]
+  },
   '11.18': {
     date: 'Mai 2026',
     items: [
@@ -7543,9 +7549,19 @@ function getLicenseKey(){
 }
 
 // ── FEEDBACK ──────────────────────────────────────────────────────────────
-const EMAILJS_SERVICE  = 'mon-budget';
-const EMAILJS_TEMPLATE = 'template_6wantmt';
-const EMAILJS_KEY      = 'HYssriD9mW4FVPYv4';
+// Emails relayés via Cloudflare Worker (clé privée EmailJS côté serveur)
+const EMAIL_WORKER_URL    = 'https://stripe-webhook-mon-budget.marquabel.workers.dev/email';
+const EMAILJS_TEMPLATE    = 'template_6wantmt';
+
+async function sendEmailViaWorker(templateId, templateParams) {
+  const token = await fbGetToken();
+  if (!token) return; // pas de token = pas d'email
+  await fetch(EMAIL_WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify({ template_id: templateId, template_params: templateParams }),
+  });
+}
 
 let _feedbackCat   = 'bug';
 let _feedbackStars = 0;
@@ -7611,19 +7627,17 @@ async function submitFeedback() {
     await _fbFetch(`${LICENSE_DB}/feedback/${fbId}.json`, {
       method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(feedbackData)
     }, token);
-    // 2. Envoyer email via EmailJS
-    if (EMAILJS_KEY !== 'VOTRE_PUBLIC_KEY') {
-      await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
-        category: {bug:'🐛 Bug',idea:'💡 Idée',question:'❓ Question',other:'💬 Autre'}[_feedbackCat],
-        subject,
-        message,
-        stars:    _feedbackStars ? '⭐'.repeat(_feedbackStars) : 'Non renseigné',
-        email:    feedbackData.email || 'Non connecté',
-        name:     feedbackData.name  || 'Anonyme',
-        uid:      feedbackData.uid   || '—',
-        date:     new Date(now).toLocaleString('fr-BE'),
-      }, EMAILJS_KEY);
-    }
+    // 2. Envoyer email via Cloudflare Worker (clé privée serveur)
+    await sendEmailViaWorker(EMAILJS_TEMPLATE, {
+      category: {bug:'🐛 Bug',idea:'💡 Idée',question:'❓ Question',other:'💬 Autre'}[_feedbackCat],
+      subject,
+      message,
+      stars:    _feedbackStars ? '⭐'.repeat(_feedbackStars) : 'Non renseigné',
+      email:    feedbackData.email || 'Non connecté',
+      name:     feedbackData.name  || 'Anonyme',
+      uid:      feedbackData.uid   || '—',
+      date:     new Date(now).toLocaleString('fr-BE'),
+    });
     result.style.color = 'var(--green)';
     result.textContent = '✅ Merci ! Votre suggestion a bien été envoyée.';
     btn.textContent = '✅ Envoyé !';
@@ -8294,14 +8308,14 @@ async function adminSendReply(id, email, subject) {
     }, token);
     // Changer le statut en "répondu"
     await adminUpdateFeedbackStatus(id, 'répondu');
-    // Envoyer l'email au client
-    if (email && EMAILJS_REPLY_TEMPLATE !== 'REPLY_TEMPLATE_ID') {
-      await emailjs.send(EMAILJS_SERVICE, EMAILJS_REPLY_TEMPLATE, {
+    // Envoyer l'email au client via Cloudflare Worker
+    if (email) {
+      await sendEmailViaWorker(EMAILJS_REPLY_TEMPLATE, {
         to_email: email,
         subject:  'Re: ' + subject,
         message,
         date: new Date().toLocaleString('fr-BE'),
-      }, EMAILJS_KEY);
+      });
     }
     // Mettre à jour le cache local
     if (!_feedbackData[id].replies) _feedbackData[id].replies = {};
