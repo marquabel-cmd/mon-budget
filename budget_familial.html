@@ -1072,6 +1072,11 @@ body.auth-locked #context-banner {
         </div>
         <div style="font-size:10px;color:var(--gray);margin-top:4px">Laissez vide pour ne pas définir de budget.</div>
       </div>
+      <div>
+        <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:6px">🎨 Couleur</label>
+        <div id="cat-m-colors" style="display:flex;flex-wrap:wrap;gap:7px"></div>
+        <input type="hidden" id="cat-m-color" value="#5B9BD5">
+      </div>
       <div id="cat-m-error" style="display:none;color:#ffb3b3;font-size:12px;padding:6px 10px;background:rgba(255,80,80,.1);border-radius:6px"></div>
       <input type="hidden" id="cat-m-key">
       <button id="cat-m-submit" onclick="submitCatModal()"
@@ -3881,8 +3886,10 @@ function renderVarCat(year, cat) {
   const _bgtBadge = _bgt > 0
     ? `<span id="budget-alert-${year}-${cat.key}" data-over="${grand>_bgt?1:0}" style="font-size:10px;font-weight:800;margin-left:5px;background:${_bgtBadgeBg};color:${_bgtBadgeColor};padding:1px 6px;border-radius:4px">${_bgtBadgeIcon}${_bgtPct}%</span>`
     : `<span id="budget-alert-${year}-${cat.key}" data-over="0"></span>`;
+  const _cc = getCatColor(cat);
+  const _cbg = _catBg(_cc);
   return `<div class="section-card collapsed" data-cat="${cat.key}" style="margin-bottom:10px;border-radius:8px">
-    <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')" style="padding:10px 14px">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')" style="padding:10px 14px;background:${_cbg};border-left:4px solid ${_cc}">
       <span class="section-title" style="font-size:13px">
         ${cat.icon} ${_esc(cat.label)}
         <span class="badge badge-o" id="vartot-${year}-${cat.key}">${fmtN(grand)} €</span>
@@ -6299,6 +6306,25 @@ function _autoSuggestCatIcon() {
     suggestEl.querySelectorAll('button')[0]?.style && (suggestEl.querySelectorAll('button')[0].style.color = '#fff');
   }
 }
+const CAT_PALETTE = ['#5B9BD5','#3CB371','#9B59B6','#F0A500','#E74C3C','#1ABC9C','#E67E22','#E91E63','#2980B9','#00BCD4','#FF5722','#607D8B','#8BC34A','#FF9800','#673AB7'];
+const CAT_DEFAULT_COLORS = { carburant:'#5B9BD5', courses:'#3CB371', divers:'#9B59B6', chien:'#F0A500' };
+
+function getCatColor(cat) {
+  return cat.color || CAT_DEFAULT_COLORS[cat.key] || '#8892B0';
+}
+function _catBg(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},0.10)`;
+}
+function _renderColorPicker(selected) {
+  const el = document.getElementById('cat-m-colors');
+  if (!el) return;
+  el.innerHTML = CAT_PALETTE.map(c => `
+    <div onclick="document.getElementById('cat-m-color').value='${c}';_renderColorPicker('${c}')"
+      style="width:26px;height:26px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${c===selected?'#fff':'transparent'};box-shadow:${c===selected?'0 0 0 2px '+c:'none'};transition:all .15s;flex-shrink:0"></div>
+  `).join('');
+}
+
 function openCatModal(key) {
   const m = document.getElementById('cat-modal');
   const errEl = document.getElementById('cat-m-error');
@@ -6314,6 +6340,9 @@ function openCatModal(key) {
     document.getElementById('cat-m-budget').value = budgetVal;
     document.getElementById('cat-m-period').value = 'year';
     document.getElementById('cat-m-submit').textContent = '✅ Enregistrer les modifications';
+    const col = getCatColor(cat);
+    document.getElementById('cat-m-color').value = col;
+    setTimeout(() => _renderColorPicker(col), 0);
   } else {
     document.getElementById('cat-modal-title').textContent = 'Nouvelle catégorie';
     document.getElementById('cat-m-key').value = '';
@@ -6322,6 +6351,11 @@ function openCatModal(key) {
     document.getElementById('cat-m-budget').value = '';
     document.getElementById('cat-m-period').value = 'month';
     document.getElementById('cat-m-submit').textContent = '＋ Ajouter la catégorie';
+    // Auto-choisir la prochaine couleur non utilisée
+    const usedColors = getVarCats().map(c => getCatColor(c));
+    const nextColor = CAT_PALETTE.find(c => !usedColors.includes(c)) || CAT_PALETTE[getVarCats().length % CAT_PALETTE.length];
+    document.getElementById('cat-m-color').value = nextColor;
+    setTimeout(() => _renderColorPicker(nextColor), 0);
   }
   m.style.display = 'flex';
   setTimeout(() => document.getElementById('cat-m-label').focus(), 100);
@@ -6333,6 +6367,7 @@ function submitCatModal() {
   const budgetRaw = parseFloat(document.getElementById('cat-m-budget').value) || 0;
   const period = document.getElementById('cat-m-period').value;
   const errEl = document.getElementById('cat-m-error');
+  const color = document.getElementById('cat-m-color').value || '#8892B0';
   const showErr = msg => { errEl.textContent = msg; errEl.style.display = 'block'; };
   if (!label) { showErr('⚠️ Le libellé est obligatoire.'); return; }
   const annualBudget = budgetRaw > 0 ? (period === 'month' ? Math.round(budgetRaw * 12) : Math.round(budgetRaw)) : 0;
@@ -6342,6 +6377,7 @@ function submitCatModal() {
     if (!cat) return;
     cat.icon = icon;
     cat.label = label;
+    cat.color = color;
     DATA.varCats = cats;
     if (!DATA.budgets) DATA.budgets = {};
     if (annualBudget > 0) DATA.budgets[existingKey] = annualBudget;
@@ -6356,7 +6392,7 @@ function submitCatModal() {
     if (!key) { showErr('⚠️ Libellé invalide (utilisez des lettres ou chiffres).'); return; }
     if (getVarCats().find(c => c.key === key)) { showErr('⚠️ Une catégorie avec ce nom existe déjà.'); return; }
     DATA.varCats = getVarCats();
-    DATA.varCats.push({key, icon, label});
+    DATA.varCats.push({key, icon, label, color});
     getYears().forEach(y => { if (DATA[y] && DATA[y].vars) DATA[y].vars[key] = DATA[y].vars[key] || []; });
     if (annualBudget > 0) { if (!DATA.budgets) DATA.budgets = {}; DATA.budgets[key] = annualBudget; }
     dSave();
@@ -6833,8 +6869,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.20';
-const SW_VERSION = 'v147';
+const APP_VERSION = '11.21';
+const SW_VERSION = 'v148';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6847,6 +6883,12 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.21': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🎨', text: 'Catégories de dépenses : sélecteur de couleur dans le modal — chaque catégorie a sa propre couleur (bordure + fond). Couleur auto-assignée à la création, modifiable à tout moment via ✏️' }
+    ]
+  },
   '11.20': {
     date: 'Mai 2026',
     items: [
