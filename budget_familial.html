@@ -7555,12 +7555,17 @@ const EMAILJS_TEMPLATE    = 'template_6wantmt';
 
 async function sendEmailViaWorker(templateId, templateParams) {
   const token = await fbGetToken();
-  if (!token) return; // pas de token = pas d'email
-  await fetch(EMAIL_WORKER_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: JSON.stringify({ template_id: templateId, template_params: templateParams }),
-  });
+  if (!token) { console.warn('[Email] Pas de token Firebase, email non envoyé'); return; }
+  try {
+    const res = await fetch(EMAIL_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ template_id: templateId, template_params: templateParams }),
+    });
+    const text = await res.text();
+    if (!res.ok) console.error('[Email] Worker erreur', res.status, text);
+    else console.log('[Email] Envoyé via Worker ✅', templateId);
+  } catch(e) { console.error('[Email] Fetch échoué:', e.message); }
 }
 
 let _feedbackCat   = 'bug';

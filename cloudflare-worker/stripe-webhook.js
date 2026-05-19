@@ -115,46 +115,61 @@ async function fbGet(path, accessToken) {
 const EMAILJS_API = 'https://api.emailjs.com/api/v1.0/email/send';
 const EMAILJS_PUBLIC_KEY = 'HYssriD9mW4FVPYv4';
 const EMAILJS_SERVICE_ID = 'mon-budget';
-const CORS_ORIGIN = 'https://budget.marquabel.be';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': CORS_ORIGIN,
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+function getCorsHeaders(request) {
+  // Accepte budget.marquabel.be ET marquabel-cmd.github.io (dev/test)
+  const origin = request.headers.get('Origin') || '';
+  const allowed = ['https://budget.marquabel.be', 'https://marquabel-cmd.github.io'];
+  const allowedOrigin = allowed.includes(origin) ? origin : allowed[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
 
 async function handleEmail(request, env) {
-  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS });
-  if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: CORS_HEADERS });
+  const cors = getCorsHeaders(request);
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: cors });
 
   // Vérifier token Firebase (l'utilisateur doit être connecté)
   const authHeader = request.headers.get('Authorization') || '';
   const idToken = authHeader.replace('Bearer ', '').trim();
-  if (!idToken) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS });
+  if (!idToken) return new Response('Unauthorized', { status: 401, headers: cors });
 
   const verifyRes = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`,
     { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ idToken }) }
   );
-  if (!verifyRes.ok) return new Response('Invalid token', { status: 401, headers: CORS_HEADERS });
+  if (!verifyRes.ok) {
+    console.error('Firebase token invalid:', await verifyRes.text());
+    return new Response('Invalid token', { status: 401, headers: cors });
+  }
 
   let body;
-  try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400, headers: CORS_HEADERS }); }
+  try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400, headers: cors }); }
+
+  if (!env.EMAILJS_PRIVATE_KEY) {
+    console.error('EMAILJS_PRIVATE_KEY secret manquant !');
+    return new Response('Server config error', { status: 500, headers: cors });
+  }
 
   const ejsRes = await fetch(EMAILJS_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      service_id:     EMAILJS_SERVICE_ID,
-      template_id:    body.template_id,
-      user_id:        EMAILJS_PUBLIC_KEY,
-      accessToken:    env.EMAILJS_PRIVATE_KEY,
+      service_id:      EMAILJS_SERVICE_ID,
+      template_id:     body.template_id,
+      user_id:         EMAILJS_PUBLIC_KEY,
+      accessToken:     env.EMAILJS_PRIVATE_KEY,
       template_params: body.template_params,
     }),
   });
 
   const text = await ejsRes.text();
-  return new Response(text, { status: ejsRes.ok ? 200 : ejsRes.status, headers: CORS_HEADERS });
+  console.log(`EmailJS response [${body.template_id}]: ${ejsRes.status} ${text}`);
+  return new Response(text, { status: ejsRes.ok ? 200 : ejsRes.status, headers: cors });
 }
 
 // ── Handler principal ──────────────────────────────────────────────────────
