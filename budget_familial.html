@@ -3817,6 +3817,7 @@ function renderVarSection(year) {
   return `<div class="section-card" id="var-section-${year}" data-section="variables">
     <div class="section-header" onclick="toggleSection(this)">
       <div style="flex:1;min-width:0"><span class="section-title">🛒 Dépenses variables <span class="badge badge-o" id="var-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(varMths,false)}</div>
+      <button onclick="event.stopPropagation();openCatModal(null)" style="flex-shrink:0;background:rgba(0,200,150,.12);color:#00C896;border:1px solid rgba(0,200,150,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">＋ Catégorie</button>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
@@ -3825,9 +3826,6 @@ function renderVarSection(year) {
         ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${_esc(mo.label)}</span>`).join('')}
       </div>
       <div class="var-section">${getVarCats().map(c => renderVarCat(year, c)).join('')}</div>
-      <div style="margin:6px 0 10px">
-        <button onclick="openCatModal(null)" style="background:rgba(0,200,150,.12);color:#00C896;border:1px solid rgba(0,200,150,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">＋ Catégorie</button>
-      </div>
       ${renderMethodTotals(year)}
     </div>
   </div>`;
@@ -6882,8 +6880,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.22';
-const SW_VERSION = 'v149';
+const APP_VERSION = '11.23';
+const SW_VERSION = 'v150';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6896,6 +6894,18 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.23': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🗂', text: 'Dépenses variables : bouton ＋ Catégorie déplacé dans l\'en-tête de section — cohérent avec ＋ Fixe et ＋ Occasion. dans les charges' }
+    ]
+  },
+  '11.22': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔀', text: 'Modification de transaction : possibilité de changer la catégorie lors de l\'édition — la dépense est déplacée automatiquement dans la bonne catégorie' }
+    ]
+  },
   '11.21': {
     date: 'Mai 2026',
     items: [
