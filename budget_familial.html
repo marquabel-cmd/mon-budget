@@ -1142,9 +1142,9 @@ body.auth-locked #context-banner {
     <!-- Tabs -->
     <div id="admin-tabs-wrap">
       <div style="display:flex;gap:3px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px;margin-bottom:16px">
-        <button id="admin-tab-btn-view"     onclick="adminSwitchTab('view')"     style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Clients</button>
-        <button id="admin-tab-btn-license"  onclick="adminSwitchTab('license')"  style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licences</button>
-        <button id="admin-tab-btn-feedback" onclick="adminSwitchTab('feedback')" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">💬 Feedback</button>
+        <button id="admin-tab-btn-view"     onclick="adminSwitchTab('view')"     style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Clients</button>
+        <button id="admin-tab-btn-license"  onclick="adminSwitchTab('license')"  style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licences</button>
+        <button id="admin-tab-btn-feedback" onclick="adminSwitchTab('feedback')" style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">💬 Feedback</button>
       </div>
 
       <!-- TAB: View client data -->
@@ -6833,8 +6833,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.14';
-const SW_VERSION = 'v141';
+const APP_VERSION = '11.15';
+const SW_VERSION = 'v142';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -8155,9 +8155,9 @@ function adminSwitchTab(tab) {
   document.getElementById('admin-tab-feedback').style.display = tab === 'feedback' ? '' : 'none';
   const active = 'background:rgba(255,255,255,.2);color:#fff';
   const idle   = 'background:transparent;color:rgba(255,255,255,.5)';
-  document.getElementById('admin-tab-btn-view').style.cssText     = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='view'     ? active : idle);
-  document.getElementById('admin-tab-btn-license').style.cssText  = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='license'  ? active : idle);
-  document.getElementById('admin-tab-btn-feedback').style.cssText = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='feedback' ? active : idle);
+  document.getElementById('admin-tab-btn-view').style.cssText     = 'flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;' + (tab==='view'     ? active : idle);
+  document.getElementById('admin-tab-btn-license').style.cssText  = 'flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;' + (tab==='license'  ? active : idle);
+  document.getElementById('admin-tab-btn-feedback').style.cssText = 'flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;' + (tab==='feedback' ? active : idle);
 }
 
 // ── ADMIN FEEDBACK ────────────────────────────────────────────────────────
