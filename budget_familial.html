@@ -6842,8 +6842,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.16';
-const SW_VERSION = 'v143';
+const APP_VERSION = '11.17';
+const SW_VERSION = 'v144';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6856,6 +6856,13 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 document.addEventListener('DOMContentLoaded', () => { emailjs.init(EMAILJS_KEY); });
 const CHANGELOG = {
+  '11.17': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '💬', text: 'Système de feedback client complet : conversations avec suivi, filtres par statut (nouveau / lu / en cours / répondu / clôturé), réponses admin par email via EmailJS' },
+      { icon: '🔒', text: 'Fix sécurité : token Firebase lu depuis sessionStorage dans trackVisit (cohérent avec le reste de l\'app)' }
+    ]
+  },
   '11.9': {
     date: 'Mai 2026',
     items: [
@@ -7911,7 +7918,7 @@ initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
       localStorage.setItem('mbudget-visitor-id', vid);
     }
     const now = Date.now();
-    const token = localStorage.getItem('mbudget-fb-token') || null;
+    const token = sessionStorage.getItem('mbudget-fb-token') || null;
     if (!token) return; // pas d'analytics sans auth
     const base = LICENSE_DB + '/analytics/visitors/' + vid + '.json?auth=' + token;
     const ex = await fetch(base).then(r => r.ok ? r.json() : null).catch(() => null);
@@ -8170,7 +8177,7 @@ function adminSwitchTab(tab) {
 }
 
 // ── ADMIN FEEDBACK ────────────────────────────────────────────────────────
-const EMAILJS_REPLY_TEMPLATE = 'REPLY_TEMPLATE_ID'; // ← à remplir après création du template
+const EMAILJS_REPLY_TEMPLATE = 'template_wbmh293';
 let _feedbackData = {}; // cache local
 let _feedbackFilter = 'tous';
 
