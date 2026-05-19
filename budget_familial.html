@@ -1175,12 +1175,12 @@ body.auth-locked #context-banner {
       <div id="admin-tab-feedback" style="display:none">
         <!-- Filtres -->
         <div id="admin-feedback-filters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
-          <button onclick="adminFilterFeedback('tous')"     class="fb-filter fb-filter-active" data-f="tous"     style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.25);color:#fff">Tous</button>
-          <button onclick="adminFilterFeedback('nouveau')"  class="fb-filter" data-f="nouveau"  style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">🟠 Nouveau</button>
-          <button onclick="adminFilterFeedback('lu')"       class="fb-filter" data-f="lu"       style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">🔵 Lu</button>
-          <button onclick="adminFilterFeedback('en cours')" class="fb-filter" data-f="en cours" style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">🟣 En cours</button>
-          <button onclick="adminFilterFeedback('répondu')"  class="fb-filter" data-f="répondu"  style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">🟢 Répondu</button>
-          <button onclick="adminFilterFeedback('clôturé')"  class="fb-filter" data-f="clôturé"  style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">⚫ Clôturé</button>
+          <button onclick="adminFilterFeedback('tous')"     class="fb-filter fb-filter-active" data-f="tous"     style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.25);color:#fff">Tous <span id="fbc-tous"   style="background:rgba(255,255,255,.3);border-radius:10px;padding:1px 7px;font-size:11px"></span></button>
+          <button onclick="adminFilterFeedback('nouveau')"  class="fb-filter" data-f="nouveau"  style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">🟠 Nouveau <span id="fbc-nouveau" style="background:#F5A623;color:#000;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span></button>
+          <button onclick="adminFilterFeedback('lu')"       class="fb-filter" data-f="lu"       style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">🔵 Lu <span id="fbc-lu"      style="background:#5B6AF0;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span></button>
+          <button onclick="adminFilterFeedback('en cours')" class="fb-filter" data-f="en cours" style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">🟣 En cours <span id="fbc-encours" style="background:#8B5CF6;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span></button>
+          <button onclick="adminFilterFeedback('répondu')"  class="fb-filter" data-f="répondu"  style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">🟢 Répondu <span id="fbc-repondu" style="background:#00C896;color:#000;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span></button>
+          <button onclick="adminFilterFeedback('clôturé')"  class="fb-filter" data-f="clôturé"  style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">⚫ Clôturé <span id="fbc-cloture" style="background:#6B7394;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span></button>
         </div>
         <button onclick="adminLoadFeedback()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px">📋 Charger les suggestions</button>
         <div id="admin-feedback-list" style="display:flex;flex-direction:column;gap:12px;max-height:420px;overflow-y:auto;padding-right:4px"></div>
@@ -6842,8 +6842,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.17';
-const SW_VERSION = 'v144';
+const APP_VERSION = '11.18';
+const SW_VERSION = 'v145';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6856,6 +6856,12 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 document.addEventListener('DOMContentLoaded', () => { emailjs.init(EMAILJS_KEY); });
 const CHANGELOG = {
+  '11.18': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔢', text: 'Admin feedback : badges de comptage sur chaque filtre (Nouveau / Lu / En cours / Répondu / Clôturé) — visible d\'un coup d\'œil sans ouvrir chaque catégorie' }
+    ]
+  },
   '11.17': {
     date: 'Mai 2026',
     items: [
@@ -8206,7 +8212,25 @@ function adminFilterFeedback(filter) {
   adminRenderFeedback();
 }
 
+function adminUpdateFeedbackBadges() {
+  const counts = { tous:0, nouveau:0, lu:0, 'en cours':0, répondu:0, clôturé:0 };
+  Object.values(_feedbackData).forEach(f => {
+    const s = f.status || 'nouveau';
+    counts.tous++;
+    if (counts[s] !== undefined) counts[s]++;
+  });
+  const map = { tous:'tous', nouveau:'nouveau', lu:'lu', 'en cours':'encours', répondu:'repondu', clôturé:'cloture' };
+  Object.entries(map).forEach(([key, id]) => {
+    const el = document.getElementById('fbc-' + id);
+    if (!el) return;
+    const n = counts[key] || 0;
+    if (n > 0) { el.textContent = n; el.style.display = 'inline'; }
+    else { el.style.display = 'none'; }
+  });
+}
+
 function adminRenderFeedback() {
+  adminUpdateFeedbackBadges();
   const list = document.getElementById('admin-feedback-list');
   let items = Object.entries(_feedbackData).sort((a,b) => (b[1].createdAt||0)-(a[1].createdAt||0));
   if (_feedbackFilter !== 'tous') items = items.filter(([,f]) => (f.status||'nouveau') === _feedbackFilter);
