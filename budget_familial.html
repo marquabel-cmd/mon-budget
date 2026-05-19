@@ -6395,7 +6395,8 @@ function submitCatModal() {
     else delete DATA.budgets[existingKey];
     dSave();
     renderConfigTab();
-    getYears().forEach(y => renderYear(y));
+    // Mise à jour chirurgicale : remplace uniquement la carte de la catégorie dans chaque année
+    _patchVarCatInDOM(existingKey, false);
     showToast(`✅ Catégorie "${label}" mise à jour`);
   } else {
     if (!isLicensed() && getVarCats().length >= FREE_MAX_CATS) { showUpgrade(`catégories illimitées (max ${FREE_MAX_CATS} en gratuit)`); return; }
@@ -6408,11 +6409,42 @@ function submitCatModal() {
     if (annualBudget > 0) { if (!DATA.budgets) DATA.budgets = {}; DATA.budgets[key] = annualBudget; }
     dSave();
     renderConfigTab();
-    getYears().forEach(y => renderYear(y));
+    // Ajout chirurgical : insère la nouvelle carte dans chaque année sans reconstruire
+    _patchVarCatInDOM(key, true);
     const budgetMsg = annualBudget > 0 ? ` · Budget ${fmtN(annualBudget)} €/an` : '';
     showToast(`Catégorie "${label}" ajoutée${budgetMsg}`);
   }
   document.getElementById('cat-modal').style.display = 'none';
+}
+
+// Met à jour ou insère la carte d'une catégorie dans le DOM sans reconstruire tout le rendu
+function _patchVarCatInDOM(catKey, isNew) {
+  const cat = getVarCats().find(c => c.key === catKey);
+  if (!cat) return;
+  getYears().forEach(y => {
+    const varSecEl = document.getElementById('var-section-' + y);
+    if (!varSecEl) return;
+    const varList = varSecEl.querySelector('.var-section');
+    if (!varList) return;
+    const newHtml = renderVarCat(y, cat);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = newHtml;
+    const newEl = tmp.firstElementChild;
+    if (isNew) {
+      varList.appendChild(newEl);
+    } else {
+      const existing = varList.querySelector(`.section-card[data-cat="${catKey}"]`);
+      if (existing) {
+        // Préserver l'état ouvert/fermé de la carte
+        const wasOpen = !existing.classList.contains('collapsed');
+        if (wasOpen) newEl.classList.remove('collapsed');
+        existing.replaceWith(newEl);
+      } else {
+        varList.appendChild(newEl);
+      }
+    }
+  });
+  setTimeout(animateBudgetBars, 60);
 }
 function addMethodFromForm() {
   const key = document.getElementById('new-method-key').value.trim().replace(/\s+/g,'_').toLowerCase();
@@ -6880,8 +6912,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.23';
-const SW_VERSION = 'v150';
+const APP_VERSION = '11.24';
+const SW_VERSION = 'v151';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6894,6 +6926,12 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.24': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '⚡', text: 'Modifier/ajouter une catégorie : mise à jour instantanée sans rechargement de page — le scroll et l\'état des sections sont préservés' }
+    ]
+  },
   '11.23': {
     date: 'Mai 2026',
     items: [
