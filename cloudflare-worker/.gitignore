@@ -1,0 +1,5 @@
+# Fichiers avec secrets — NE JAMAIS commiter
+test-webhook.mjs
+
+# Wrangler cache & state
+.wrangler/

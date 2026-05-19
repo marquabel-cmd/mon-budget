@@ -1124,14 +1124,8 @@ body.auth-locked #context-banner {
       <h3 style="margin:0;font-size:16px">🔐 Mode Admin</h3>
       <button onclick="closeAdminPanel()" style="background:none;border:none;font-size:20px;cursor:pointer;color:rgba(255,255,255,.5)">✕</button>
     </div>
-    <!-- Password row (always visible) -->
-    <div style="margin-bottom:16px">
-      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">Mot de passe admin</div>
-      <input type="password" id="admin-password-input" placeholder="••••••••" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')adminUnlock()">
-    </div>
-    <div id="admin-locked-msg" style="color:rgba(255,200,0,.8);font-size:12px;margin-bottom:12px;display:none">⚠️ Entrez le mot de passe admin pour accéder aux fonctions ci-dessous.</div>
-    <!-- Tabs (shown after unlock) -->
-    <div id="admin-tabs-wrap" style="display:none">
+    <!-- Tabs -->
+    <div id="admin-tabs-wrap">
       <div style="display:flex;gap:3px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px;margin-bottom:16px">
         <button id="admin-tab-btn-view"    onclick="adminSwitchTab('view')"    style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Données client</button>
         <button id="admin-tab-btn-license" onclick="adminSwitchTab('license')" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licences</button>
@@ -6138,6 +6132,13 @@ function renderConfigTab() {
           <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="uninstallApp()">🚨 Désinstaller l'application — EFFACE TOUT</button>
         </div>
       </div>
+      ${_isFbAdmin() ? `
+      <div class="config-card" style="margin-top:14px;border:2px solid #F5A623;background:var(--orange-light)">
+        <h3 style="color:#c07800">🔐 Administration</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn" style="background:#F5A623;color:#1A1D2E;font-weight:700;border:none" onclick="openAdminPanel()">👁️ Panneau admin — Clients &amp; Licences</button>
+        </div>
+      </div>` : ''}
     </div>
   </div></div>`;
 }
@@ -6800,8 +6801,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.9';
-const SW_VERSION = 'v136';
+const APP_VERSION = '11.10';
+const SW_VERSION = 'v137';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -7764,7 +7765,9 @@ initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
       localStorage.setItem('mbudget-visitor-id', vid);
     }
     const now = Date.now();
-    const base = LICENSE_DB + '/analytics/visitors/' + vid + '.json';
+    const token = localStorage.getItem('mbudget-fb-token') || null;
+    if (!token) return; // pas d'analytics sans auth
+    const base = LICENSE_DB + '/analytics/visitors/' + vid + '.json?auth=' + token;
     const ex = await fetch(base).then(r => r.ok ? r.json() : null).catch(() => null);
     const data = {
       lastSeen:  now,
@@ -7986,56 +7989,28 @@ if ('serviceWorker' in navigator) {
 }
 
 // ── ADMIN MODE ──
-// Le mot de passe n'est jamais stocké en clair — uniquement son hash SHA-256.
-const ADMIN_SECRET_HASH = '6e7cb0d40d9926cedb472db259828d25cf4db1fe6c749dede0d8aee8c0a8474b';
+// Accès réservé au compte Firebase admin (UID vérifié côté serveur via les règles Firebase)
+const ADMIN_UID = 'CmpMFxHYsdPzRQ3JpU48w8F9eIm1';
 let _adminClickCount = 0, _adminClickTimer = null;
 let _adminSavedData = null, _isAdminMode = false, _adminLabel = '';
-let _adminUnlocked = false;
 
-async function _sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
+function _isFbAdmin() { return _fbUser?.uid === ADMIN_UID; }
 
 function adminTitleClick() {
+  if (!_isFbAdmin()) return;
   _adminClickCount++;
   clearTimeout(_adminClickTimer);
   if (_adminClickCount >= 5) { _adminClickCount = 0; openAdminPanel(); }
   else { _adminClickTimer = setTimeout(() => { _adminClickCount = 0; }, 2000); }
 }
 function openAdminPanel() {
+  if (!_isFbAdmin()) { showToast('⛔ Accès réservé à l\'administrateur'); return; }
   document.getElementById('admin-modal').style.display = 'flex';
   document.getElementById('admin-license-input').value = '';
-  document.getElementById('admin-password-input').value = '';
-  if (_adminUnlocked) {
-    document.getElementById('admin-tabs-wrap').style.display = '';
-    document.getElementById('admin-locked-msg').style.display = 'none';
-    setTimeout(() => document.getElementById('admin-license-input').focus(), 100);
-  } else {
-    document.getElementById('admin-tabs-wrap').style.display = 'none';
-    document.getElementById('admin-locked-msg').style.display = 'none';
-    setTimeout(() => document.getElementById('admin-password-input').focus(), 100);
-  }
+  adminSwitchTab('view');
+  setTimeout(() => document.getElementById('admin-license-input').focus(), 100);
 }
 function closeAdminPanel() { document.getElementById('admin-modal').style.display = 'none'; }
-
-async function adminUnlock() {
-  const pwd = document.getElementById('admin-password-input').value.trim();
-  const hash = await _sha256(pwd);
-  if (hash !== ADMIN_SECRET_HASH) {
-    document.getElementById('admin-locked-msg').style.display = '';
-    document.getElementById('admin-locked-msg').textContent = '❌ Mot de passe incorrect';
-    return;
-  }
-  _adminUnlocked = true;
-  document.getElementById('admin-tabs-wrap').style.display = '';
-  document.getElementById('admin-locked-msg').style.display = 'none';
-  adminSwitchTab('view');
-}
-document.addEventListener('DOMContentLoaded', () => {
-  const pwdInput = document.getElementById('admin-password-input');
-  if (pwdInput) pwdInput.addEventListener('keydown', e => { if(e.key==='Enter') adminUnlock(); });
-});
 
 function adminSwitchTab(tab) {
   document.getElementById('admin-tab-view').style.display    = tab === 'view'    ? '' : 'none';
@@ -8047,7 +8022,7 @@ function adminSwitchTab(tab) {
 }
 
 async function enterAdminMode() {
-  if (!_adminUnlocked) { adminUnlock(); return; }
+  if (!_isFbAdmin()) { showToast('⛔ Accès réservé à l\'administrateur'); return; }
   const key = document.getElementById('admin-license-input').value.trim().replace(/[^A-Za-z0-9_-]/g,'');
   if (!key) { showToast('⚠️ Entrez une clé ou UID'); return; }
   showToast('🔄 Chargement…');
