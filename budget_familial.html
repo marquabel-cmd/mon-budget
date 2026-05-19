@@ -3868,7 +3868,7 @@ function renderVarCat(year, cat) {
 // Build transaction rows for one month (called lazily)
 function buildMonthTxRows(year, catKey, m) {
   const txs = DATA[year].vars[catKey].filter(t=>t.month===m)
-    .sort((a,b)=>(a.date||99)-(b.date||99));
+    .sort((a,b)=>(txDay(a.date)||99)-(txDay(b.date)||99));
   return txs.map(tx => txRow(year, catKey, tx)).join('');
 }
 function txRow(year, catKey, tx) {
@@ -6781,8 +6781,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.5';
-const SW_VERSION = 'v132';
+const APP_VERSION = '11.6';
+const SW_VERSION = 'v133';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6794,6 +6794,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '11.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📅', text: 'Tri automatique par date : les achats s\'affichent toujours dans l\'ordre chronologique du mois (fix sort avec txDay)' }
+    ]
+  },
   '11.5': {
     date: 'Mai 2026',
     items: [
