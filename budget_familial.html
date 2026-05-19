@@ -4066,8 +4066,15 @@ function submitQuickAdd() {
         syncMonthSummary(year, catKey, month);
         refreshMonthSummary(year);
         dSave();
-        // Rafraîchir les deux catégories
-        renderYear(year);
+        // Mise à jour ciblée : retirer la tx du mois source, l'ajouter dans le mois destination
+        if (_expandedMonths[`${year}-${origCat}-${oldMonth}`]) {
+          const tbody = document.getElementById(`vbody-${year}-${origCat}-${oldMonth}`);
+          if (tbody) tbody.innerHTML = buildMonthTxRows(year, origCat, oldMonth);
+        }
+        if (_expandedMonths[`${year}-${catKey}-${month}`]) {
+          const tbody = document.getElementById(`vbody-${year}-${catKey}-${month}`);
+          if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, month);
+        }
         showToast(`✅ Dépense déplacée vers "${getVarCats().find(c=>c.key===catKey)?.label||catKey}"`);
       } else {
         tx.amount  = amount; tx.date = dateStr; tx.comment = comment; tx.method = method; tx.month = month;
@@ -6913,8 +6920,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.25';
-const SW_VERSION = 'v152';
+const APP_VERSION = '11.26';
+const SW_VERSION = 'v153';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6927,6 +6934,12 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.26': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📌', text: 'Déplacement de transaction entre catégories : plus de rechargement complet — seuls les totaux et listes concernés sont mis à jour, le scroll reste en place' }
+    ]
+  },
   '11.25': {
     date: 'Mai 2026',
     items: [
