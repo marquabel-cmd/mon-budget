@@ -211,12 +211,13 @@ a:hover{text-decoration:underline}
       <a href="#github-gist" style="background:#e8f8f0;color:#27ae60;border-color:#27ae60">🐙 GitHub Gist gratuit</a>
       <a href="#dark">🌙 Mode nuit</a>
       <a href="#annee">📅 Nouvelle année</a>
-      <a href="#connexion">🔐 Connexion Google</a>
+      <a href="#connexion">🔐 Connexion &amp; Compte</a>
       <a href="#ajout-rapide">➕ Ajout rapide</a>
       <a href="#assistant-ia">🤖 Assistant IA</a>
+      <a href="#feedback">💬 Feedback & Suggestions</a>
       <div style="margin-top:14px;padding:8px 10px;border-top:1px solid #e8eaf6;font-size:10px;color:#9BA3C9;line-height:1.6">
-        📱 App <b id="aide-app-version">9.1</b><br>
-        🔧 SW <b id="aide-sw-version">v107</b>
+        📱 App <b>11.19</b><br>
+        🔧 SW <b>v146</b>
       </div>
     </nav>
   </aside>
@@ -478,7 +479,7 @@ a:hover{text-decoration:underline}
         <div class="compare-col premium">
           <div class="compare-col-badge">⭐ RECOMMANDÉ</div>
           <div class="compare-col-title">✨ Version Premium</div>
-          <div class="compare-col-price">14,90 € / an — paiement sécurisé Stripe</div>
+          <div class="compare-col-price">2,99 €/mois &nbsp;·&nbsp; 24,99 €/an — paiement sécurisé Stripe</div>
 
           <div class="compare-row">
             <div class="cr-icon">✅</div>
@@ -525,18 +526,23 @@ a:hover{text-decoration:underline}
         </div>
       </div>
 
-      <a class="buy-btn" href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank">
-        💳 Passer à Premium — 14,90 € / an
-      </a>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">
+        <a class="buy-btn" href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank" style="flex:1;min-width:200px">
+          💳 Mensuel — 2,99 € / mois
+        </a>
+        <a class="buy-btn" href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank" style="flex:1;min-width:200px;background:linear-gradient(135deg,#5B6AF0,#3b4cd0);box-shadow:0 6px 20px rgba(91,106,240,.4)">
+          💳 Annuel — 24,99 € / an <span style="font-size:11px;opacity:.8">(économisez 30%)</span>
+        </a>
+      </div>
 
-      <h3>Activer votre licence</h3>
+      <h3>Activation automatique après paiement</h3>
       <div class="activate-box">
-        <p>Après l'achat, vous recevez une clé de licence par e-mail. Voici comment l'activer :</p>
+        <p>L'activation est <b>entièrement automatique</b>. Aucune clé à saisir, aucun email à attendre.</p>
         <ol class="activate-steps">
-          <li>Ouvrez l'application et allez dans l'onglet <b>⚙️ Paramètres</b></li>
-          <li>Descendez jusqu'à la section <b>🔑 Licence</b></li>
-          <li>Collez votre clé dans le champ prévu et cliquez sur <b>Activer</b></li>
-          <li>Le statut passe à <b>⭐ Licence active</b> et toutes les fonctionnalités se déverrouillent immédiatement</li>
+          <li>Cliquez sur un bouton Premium dans l'app (⚙️ Paramètres ou l'overlay Premium)</li>
+          <li>Vous êtes redirigé vers la page de paiement sécurisée <b>Stripe</b></li>
+          <li>Renseignez votre carte bancaire et validez le paiement</li>
+          <li>Retournez dans l'app — le statut passe automatiquement à <b>✨ Premium actif</b></li>
         </ol>
       </div>
 
@@ -1124,36 +1130,35 @@ a:hover{text-decoration:underline}
       <p>Survolez l'onglet de l'année → cliquez sur le <b>✕</b> qui apparaît. Une confirmation est demandée avec option de backup automatique.</p>
     </div>
 
-    <!-- Connexion Google -->
+    <!-- Connexion -->
     <div class="section" id="connexion">
-      <h2><span>🔐</span> Connexion Google &amp; Compte Cloud</h2>
-      <p class="lead">Connectez-vous avec votre compte Google pour accéder à la synchronisation cloud et au compte Premium.</p>
+      <h2><span>🔐</span> Connexion &amp; Compte Cloud</h2>
+      <p class="lead">Créez un compte avec votre adresse email pour accéder à la synchronisation cloud et activer le Premium.</p>
 
       <h3>Pourquoi se connecter ?</h3>
-      <p>Sans connexion, vos données sont stockées uniquement dans votre navigateur. Avec un compte Google connecté :</p>
+      <p>Sans connexion, vos données sont stockées uniquement dans votre navigateur. Avec un compte connecté :</p>
       <ul>
         <li>✅ Synchronisation automatique dans le cloud Firebase (Premium)</li>
         <li>✅ Accès depuis plusieurs appareils (PC, téléphone, tablette)</li>
         <li>✅ Vos données sont récupérables si vous changez de navigateur</li>
+        <li>✅ Activation Premium automatique après paiement Stripe</li>
       </ul>
 
-      <h3>Comment se connecter</h3>
+      <h3>Comment créer un compte / se connecter</h3>
       <ol>
         <li>Allez dans l'onglet <b>⚙️ Paramètres</b> et cliquez sur <b>🔐 Se connecter</b></li>
-        <li>Cliquez sur le bouton <b>Continuer avec Google</b></li>
-        <li>Une fenêtre popup Google s'ouvre — choisissez votre compte Gmail</li>
-        <li>La connexion est automatique — votre email apparaît dans Paramètres</li>
+        <li>Saisissez votre <b>adresse email</b> et un <b>mot de passe</b></li>
+        <li>Si c'est la première fois : cliquez <b>Créer un compte</b> — un email de vérification est envoyé</li>
+        <li>Si vous avez déjà un compte : cliquez <b>Se connecter</b></li>
+        <li>Votre email apparaît dans Paramètres — vous êtes connecté ✅</li>
       </ol>
 
       <div class="tip">
-        <b>💡 Connexion persistante</b> — Une fois connecté, vous restez connecté sur cet appareil même après fermeture du navigateur.
+        <b>💡 Connexion persistante</b> — Vous restez connecté sur cet appareil. Le token de session est effacé automatiquement à la fermeture du navigateur pour plus de sécurité.
       </div>
 
-      <h3>Limite de 3 appareils</h3>
-      <p>Pour des raisons de sécurité, un compte Premium peut être utilisé sur <b>3 appareils maximum</b>. Si vous dépassez cette limite, la synchronisation est désactivée sur le nouvel appareil mais les données locales restent accessibles.</p>
-
       <div class="warn">
-        <b>⚠️ Premium requis pour la sync</b> — La connexion Google est disponible à tous gratuitement, mais la synchronisation cloud automatique nécessite une licence Premium active.
+        <b>⚠️ Premium requis pour la sync</b> — La connexion est disponible gratuitement, mais la synchronisation cloud automatique nécessite une licence Premium active.
       </div>
     </div>
 
@@ -1244,6 +1249,39 @@ a:hover{text-decoration:underline}
 
       <div class="warn">
         <b>⚠️ Ne partagez pas votre clé API</b> — Si vous partagez l'accès à votre navigateur, supprimez la clé dans Paramètres → Assistant IA.
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="section" id="feedback">
+      <h2><span>💬</span> Feedback &amp; Suggestions</h2>
+      <p class="lead">Envoyez vos idées, signalements de bugs ou questions directement depuis l'application. Chaque message est lu et traité personnellement.</p>
+
+      <h3>Envoyer un message</h3>
+      <ol>
+        <li>Cliquez sur l'icône <b>💬</b> en bas à droite de l'application</li>
+        <li>Choisissez la catégorie : 🐛 Bug, 💡 Idée, ❓ Question ou 💬 Autre</li>
+        <li>Saisissez un sujet et votre message</li>
+        <li>Donnez une note ⭐ optionnelle</li>
+        <li>Cliquez sur <b>📤 Envoyer</b></li>
+      </ol>
+
+      <div class="tip">
+        <b>💡 Connexion requise</b> — Vous devez être connecté pour envoyer un feedback. Cela permet de vous répondre directement par email.
+      </div>
+
+      <h3>Suivi de votre demande</h3>
+      <p>Chaque feedback reçoit un statut qui évolue au fil du traitement :</p>
+      <ul>
+        <li>🟠 <b>Nouveau</b> — reçu, pas encore lu</li>
+        <li>🔵 <b>Lu</b> — pris en compte</li>
+        <li>🟣 <b>En cours</b> — en cours de traitement</li>
+        <li>🟢 <b>Répondu</b> — une réponse vous a été envoyée par email</li>
+        <li>⚫ <b>Clôturé</b> — traitement terminé</li>
+      </ul>
+
+      <div class="tip">
+        <b>💡 Réponse par email</b> — Si une réponse vous est envoyée, vous la recevez directement dans votre boîte mail. L'expéditeur est <b>Mon Budget</b>.
       </div>
     </div>
 
