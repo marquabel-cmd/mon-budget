@@ -864,8 +864,8 @@ body.auth-locked #context-banner {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
-          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Montant (€)</label>
-          <input id="qa-amount" type="number" step="0.01" min="0" placeholder="0,00" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:15px;font-weight:700;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
+          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Montant (€) <span style="font-weight:400;font-size:9px;opacity:.6">négatif = remboursement</span></label>
+          <input id="qa-amount" type="number" step="0.01" placeholder="0,00" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:15px;font-weight:700;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
         </div>
         <div>
           <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Paiement</label>
@@ -3935,8 +3935,9 @@ function txRow(year, catKey, tx) {
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
       oninput="updateTxField('${year}','${catKey}',${tx.id},'date',this.value?+this.value:'');dSave()"></td>
     <td><input class="var-input amt" type="number" step="0.01" value="${tx.amount}"
+      style="${(tx.amount||0)<0?'color:var(--green);font-weight:800':''}"
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
-      oninput="updateTxField('${year}','${catKey}',${tx.id},'amount',+this.value);syncMonthTotals('${year}','${catKey}',${tx.id})"></td>
+      oninput="this.style.color=(+this.value<0?'var(--green)':'');updateTxField('${year}','${catKey}',${tx.id},'amount',+this.value);syncMonthTotals('${year}','${catKey}',${tx.id})"></td>
     <td><input class="var-input comment" type="text" value="${tx.comment||''}" placeholder="Commentaire…"
       onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
       oninput="updateTxField('${year}','${catKey}',${tx.id},'comment',this.value)"></td>
@@ -4039,7 +4040,7 @@ function openEditTx(year, catKey, txId) {
 }
 function submitQuickAdd() {
   const amount = parseFloat(document.getElementById('qa-amount').value);
-  if (!amount || amount <= 0) { document.getElementById('qa-error').textContent = '⚠️ Entrez un montant valide'; return; }
+  if (isNaN(amount) || amount === 0) { document.getElementById('qa-error').textContent = '⚠️ Entrez un montant valide (négatif pour un remboursement)'; return; }
   const year   = document.getElementById('qa-year').value;
   const catKey = document.getElementById('qa-cat').value;
   const month  = +document.getElementById('qa-month').value;
@@ -6912,8 +6913,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.24';
-const SW_VERSION = 'v151';
+const APP_VERSION = '11.25';
+const SW_VERSION = 'v152';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6926,6 +6927,12 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.25': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '↩️', text: 'Remboursements : montant négatif autorisé dans le modal — saisir -50 réduit le total de la catégorie. Les remboursements s\'affichent en vert dans le tableau.' }
+    ]
+  },
   '11.24': {
     date: 'Mai 2026',
     items: [
