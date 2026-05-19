@@ -3703,9 +3703,9 @@ function submitAddRow() {
     return;
   }
   if (type === 'revenu') {
-    DATA[year].revenus.push({label, v, paid: Array(12).fill(false), inCalc: true, ...rowMeta});
+    DATA[year].revenus.push({label, v, paid: v.map(x => x !== 0), inCalc: true, ...rowMeta});
   } else {
-    DATA[year].charges.push({label, cat: type, v, paid: Array(12).fill(false), ...rowMeta});
+    DATA[year].charges.push({label, cat: type, v, paid: v.map(x => x !== 0), ...rowMeta});
   }
   renderYear(year);
   dSave();
@@ -6774,8 +6774,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.2';
-const SW_VERSION = 'v129';
+const APP_VERSION = '11.3';
+const SW_VERSION = 'v130';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6787,6 +6787,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '11.3': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '✅', text: 'Ajout ligne revenu/charge : les montants non nuls sont automatiquement marqués comme payés à la création — plus besoin de cocher manuellement chaque mois après l\'ajout' }
+    ]
+  },
   '11.2': {
     date: 'Mai 2026',
     items: [
