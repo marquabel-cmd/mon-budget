@@ -1133,7 +1133,7 @@ body.auth-locked #context-banner {
 
 <!-- ADMIN MODAL -->
 <div id="admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#1A1D2E;border-radius:16px;padding:24px;width:min(420px,95vw);max-height:90vh;overflow-y:auto;color:#fff">
+  <div style="background:#1A1D2E;border-radius:16px;padding:24px;width:min(640px,95vw);max-height:90vh;overflow-y:auto;color:#fff">
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <h3 style="margin:0;font-size:16px">🔐 Mode Admin</h3>
@@ -6833,8 +6833,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.13';
-const SW_VERSION = 'v140';
+const APP_VERSION = '11.14';
+const SW_VERSION = 'v141';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -8172,17 +8172,18 @@ async function adminLoadFeedback() {
   const catIcon = {bug:'🐛',idea:'💡',question:'❓',other:'💬'};
   const statusColor = {nouveau:'#F5A623',lu:'#5B6AF0',répondu:'#00C896'};
   list.innerHTML = items.map(([id, f]) => `
-    <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:12px;border-left:3px solid ${statusColor[f.status||'nouveau']||'#F5A623'}">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:11px;font-weight:700;color:#fff">${catIcon[f.category]||'💬'} ${_esc(f.subject||'Sans sujet')}</span>
-        <select onchange="adminUpdateFeedbackStatus('${id}',this.value)" style="background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:6px;padding:3px 6px;font-size:10px;cursor:pointer">
+    <div style="background:rgba(255,255,255,.1);border-radius:12px;padding:16px;border-left:4px solid ${statusColor[f.status||'nouveau']||'#F5A623'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px">
+        <span style="font-size:15px;font-weight:700;color:#fff;line-height:1.3">${catIcon[f.category]||'💬'} ${_esc(f.subject||'Sans sujet')}</span>
+        <select onchange="adminUpdateFeedbackStatus('${id}',this.value)" style="background:#2a2f45;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 10px;font-size:13px;cursor:pointer;flex-shrink:0">
           ${['nouveau','lu','répondu'].map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('')}
         </select>
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:6px;line-height:1.5">${_esc(f.message||'')}</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.4)">
-        ${f.stars ? '⭐'.repeat(f.stars)+' · ' : ''}
-        ${_esc(f.email||'Anonyme')} · ${f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-BE') : ''}
+      <div style="font-size:14px;color:rgba(255,255,255,.85);margin-bottom:10px;line-height:1.6;white-space:pre-wrap">${_esc(f.message||'')}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.5);display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        ${f.stars ? `<span>${'⭐'.repeat(f.stars)}</span>` : ''}
+        <span>👤 ${_esc(f.email||'Anonyme')}</span>
+        <span>📅 ${f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-BE') : ''}</span>
       </div>
     </div>`).join('');
 }
