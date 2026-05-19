@@ -4006,6 +4006,7 @@ function submitQuickAdd() {
       tx.month   = month;
       syncMonthSummary(year, catKey, oldMonth);
       if (month !== oldMonth) syncMonthSummary(year, catKey, month);
+      refreshMonthSummary(year);
       dSave();
       // Rafraîchir les lignes des mois concernés
       [oldMonth, month].filter((m, i, a) => a.indexOf(m) === i).forEach(m => {
@@ -4023,6 +4024,12 @@ function submitQuickAdd() {
   // Mode ajout
   DATA[year].vars[catKey].push({id:_id++, month, amount, date:dateStr, comment, method});
   syncMonthSummary(year, catKey, month);
+  // Rafraîchir la liste des transactions si le mois est déjà ouvert
+  if (_expandedMonths[`${year}-${catKey}-${month}`]) {
+    const tbody = document.getElementById(`vbody-${year}-${catKey}-${month}`);
+    if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, month);
+  }
+  refreshMonthSummary(year);
   dSave();
   document.getElementById('quick-add-overlay').style.display = 'none';
   showToast(`✅ ${fmtN(amount)} € ajouté en ${MONTHS[month]} ${year}`);
@@ -6774,8 +6781,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.3';
-const SW_VERSION = 'v130';
+const APP_VERSION = '11.4';
+const SW_VERSION = 'v131';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6787,6 +6794,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '11.4': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '⚡', text: 'Ajout rapide : la transaction apparaît immédiatement dans la liste et les totaux sans avoir à rafraîchir la page' }
+    ]
+  },
   '11.3': {
     date: 'Mai 2026',
     items: [
