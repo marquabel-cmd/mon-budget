@@ -1310,6 +1310,10 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
         <span class="nav-icon">🔍</span>
         <span class="nav-label">Recherche</span>
       </button>
+      <button class="nav-btn" onclick="openInstallModal();_closeMobileNav()" title="Installer l'application">
+        <span class="nav-icon">📲</span>
+        <span class="nav-label">Installer</span>
+      </button>
     </div>
   </div>
 
@@ -6781,8 +6785,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.6';
-const SW_VERSION = 'v133';
+const APP_VERSION = '11.7';
+const SW_VERSION = 'v134';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6794,6 +6798,13 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '11.7': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📲', text: 'Bouton "Installer" ajouté dans le menu ☰ mobile — plus besoin de chercher dans le menu ❓' },
+      { icon: '🖼️', text: 'Fix icône PWA : manifest séparé "any" / "maskable" — l\'icône carte bancaire s\'affiche correctement sur l\'écran d\'accueil du téléphone' }
+    ]
+  },
   '11.6': {
     date: 'Mai 2026',
     items: [
