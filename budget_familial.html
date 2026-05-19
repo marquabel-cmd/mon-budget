@@ -3825,8 +3825,8 @@ function renderVarSection(year) {
         ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${_esc(mo.label)}</span>`).join('')}
       </div>
       <div class="var-section">${getVarCats().map(c => renderVarCat(year, c)).join('')}</div>
-      <div style="margin:6px 0 10px;text-align:right">
-        <button onclick="openCatModal(null)" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;opacity:.85" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.85">＋ Ajouter une catégorie</button>
+      <div style="margin:6px 0 10px">
+        <button onclick="openCatModal(null)" style="background:rgba(0,200,150,.12);color:#00C896;border:1px solid rgba(0,200,150,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">＋ Catégorie</button>
       </div>
       ${renderMethodTotals(year)}
     </div>
