@@ -3972,7 +3972,7 @@ function toggleMonthDetail(year, catKey, m, btn) {
 }
 
 // ── QUICK ADD ──
-let _qaYear = null, _qaCat = null, _qaEditTxId = null;
+let _qaYear = null, _qaCat = null, _qaEditTxId = null, _qaOrigCatKey = null;
 let _dashYear = null, _dashMonth = new Date().getMonth(), _dashView = 'month';
 function openQuickAdd(year, catKey) {
   // Auto-detect year from active tab if not provided
@@ -4024,11 +4024,13 @@ function openEditTx(year, catKey, txId) {
   openQuickAdd(year, catKey);
   // Passer en mode édition
   _qaEditTxId = txId;
+  _qaOrigCatKey = catKey; // mémoriser la catégorie d'origine
   // Pré-remplir les champs
   document.getElementById('qa-month').value  = tx.month;
   document.getElementById('qa-amount').value = tx.amount;
   document.getElementById('qa-comment').value= tx.comment || '';
   document.getElementById('qa-method').value = tx.method  || 'carte';
+  document.getElementById('qa-cat').value    = catKey; // pré-sélectionner la bonne catégorie
   const rawDay = tx.date ? parseInt(tx.date.split('/')[0], 10) : '';
   document.getElementById('qa-day').value = rawDay || '';
   // Mettre à jour titre + bouton
@@ -4051,29 +4053,40 @@ function submitQuickAdd() {
   if (!DATA[year].vars[catKey]) DATA[year].vars[catKey] = [];
 
   if (_qaEditTxId !== null) {
-    // Mode édition : mettre à jour la transaction existante
-    const tx = DATA[year].vars[catKey].find(t => t.id === _qaEditTxId);
+    const origCat = _qaOrigCatKey || catKey;
+    const tx = DATA[year].vars[origCat]?.find(t => t.id === _qaEditTxId);
     if (tx) {
       const oldMonth = tx.month;
-      tx.amount  = amount;
-      tx.date    = dateStr;
-      tx.comment = comment;
-      tx.method  = method;
-      tx.month   = month;
-      syncMonthSummary(year, catKey, oldMonth);
-      if (month !== oldMonth) syncMonthSummary(year, catKey, month);
-      refreshMonthSummary(year);
-      dSave();
-      // Rafraîchir les lignes des mois concernés
-      [oldMonth, month].filter((m, i, a) => a.indexOf(m) === i).forEach(m => {
-        if (_expandedMonths[`${year}-${catKey}-${m}`]) {
-          const tbody = document.getElementById(`vbody-${year}-${catKey}-${m}`);
-          if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, m);
-        }
-      });
+      if (catKey !== origCat) {
+        // Déplacer la transaction vers la nouvelle catégorie
+        DATA[year].vars[origCat] = DATA[year].vars[origCat].filter(t => t.id !== _qaEditTxId);
+        if (!DATA[year].vars[catKey]) DATA[year].vars[catKey] = [];
+        tx.amount = amount; tx.date = dateStr; tx.comment = comment; tx.method = method; tx.month = month;
+        DATA[year].vars[catKey].push(tx);
+        syncMonthSummary(year, origCat, oldMonth);
+        syncMonthSummary(year, catKey, month);
+        refreshMonthSummary(year);
+        dSave();
+        // Rafraîchir les deux catégories
+        renderYear(year);
+        showToast(`✅ Dépense déplacée vers "${getVarCats().find(c=>c.key===catKey)?.label||catKey}"`);
+      } else {
+        tx.amount  = amount; tx.date = dateStr; tx.comment = comment; tx.method = method; tx.month = month;
+        syncMonthSummary(year, catKey, oldMonth);
+        if (month !== oldMonth) syncMonthSummary(year, catKey, month);
+        refreshMonthSummary(year);
+        dSave();
+        [oldMonth, month].filter((m, i, a) => a.indexOf(m) === i).forEach(m => {
+          if (_expandedMonths[`${year}-${catKey}-${m}`]) {
+            const tbody = document.getElementById(`vbody-${year}-${catKey}-${m}`);
+            if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, m);
+          }
+        });
+        showToast(`✅ Dépense modifiée — ${fmtN(amount)} €`);
+      }
     }
+    _qaOrigCatKey = null;
     document.getElementById('quick-add-overlay').style.display = 'none';
-    showToast(`✅ Dépense modifiée — ${fmtN(amount)} €`);
     return;
   }
 
@@ -6869,8 +6882,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.21';
-const SW_VERSION = 'v148';
+const APP_VERSION = '11.22';
+const SW_VERSION = 'v149';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
