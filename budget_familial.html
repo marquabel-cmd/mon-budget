@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Mon Budget">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -528,6 +529,7 @@ body.auth-locked #main-container,
 body.auth-locked header,
 body.auth-locked .fab,
 body.auth-locked .ai-fab,
+body.auth-locked .feedback-fab,
 body.auth-locked #context-banner {
   filter: blur(10px) brightness(0.4);
   pointer-events: none;
@@ -669,6 +671,19 @@ body.auth-locked #context-banner {
 .ai-fab:hover{transform:scale(1.1);box-shadow:0 6px 22px rgba(91,106,240,.65)}
 .ai-fab:active{transform:scale(.96)}
 @media(max-width:700px){.ai-fab{bottom:76px;right:16px;width:44px;height:44px;font-size:20px}}
+/* ── FEEDBACK FAB ── */
+.feedback-fab{position:fixed;bottom:22px;left:22px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#F5A623,#e8960a);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(245,166,35,.5);z-index:900;display:flex;align-items:center;justify-content:center;transition:transform .18s,box-shadow .18s}
+.feedback-fab:hover{transform:scale(1.1);box-shadow:0 6px 22px rgba(245,166,35,.65)}
+.feedback-fab:active{transform:scale(.96)}
+@media(max-width:700px){.feedback-fab{bottom:16px;left:16px;width:44px;height:44px;font-size:20px}}
+/* ── FEEDBACK MODAL ── */
+.feedback-cat{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.feedback-cat-btn{padding:6px 12px;border-radius:20px;border:2px solid var(--border);background:var(--surface);color:var(--gray);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.feedback-cat-btn.active{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
+.feedback-stars{display:flex;gap:4px;margin-bottom:14px}
+.feedback-star{font-size:24px;cursor:pointer;transition:transform .1s;opacity:.3}
+.feedback-star.active{opacity:1}
+.feedback-star:hover{transform:scale(1.2)}
 .ai-chat-panel{position:fixed;bottom:152px;right:18px;width:340px;height:480px;background:var(--surface);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.25);border:1px solid var(--border);display:flex;flex-direction:column;z-index:950;transition:opacity .2s,transform .2s;transform-origin:bottom right}
 .ai-chat-panel.hidden{opacity:0;transform:scale(.92);pointer-events:none}
 .ai-chat-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
@@ -1127,8 +1142,9 @@ body.auth-locked #context-banner {
     <!-- Tabs -->
     <div id="admin-tabs-wrap">
       <div style="display:flex;gap:3px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px;margin-bottom:16px">
-        <button id="admin-tab-btn-view"    onclick="adminSwitchTab('view')"    style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Données client</button>
-        <button id="admin-tab-btn-license" onclick="adminSwitchTab('license')" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licences</button>
+        <button id="admin-tab-btn-view"     onclick="adminSwitchTab('view')"     style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Clients</button>
+        <button id="admin-tab-btn-license"  onclick="adminSwitchTab('license')"  style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licences</button>
+        <button id="admin-tab-btn-feedback" onclick="adminSwitchTab('feedback')" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">💬 Feedback</button>
       </div>
 
       <!-- TAB: View client data -->
@@ -1153,6 +1169,12 @@ body.auth-locked #context-banner {
           <button onclick="adminRevokePremium()" style="flex:1;background:#F04F5B;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">✕ Révoquer</button>
         </div>
         <div id="admin-license-result" style="font-size:12px;min-height:36px;padding:8px;background:rgba(255,255,255,.05);border-radius:6px;color:rgba(255,255,255,.8)">Sélectionne un client ou entre un UID.</div>
+      </div>
+
+      <!-- TAB: Feedback -->
+      <div id="admin-tab-feedback" style="display:none">
+        <button onclick="adminLoadFeedback()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer;margin-bottom:8px">📋 Charger les suggestions</button>
+        <div id="admin-feedback-list" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto"></div>
       </div>
     </div>
 
@@ -2000,6 +2022,8 @@ function _finishLogin(id) {
   if (fab) fab.style.display = 'flex';
   const aiFab = document.getElementById('ai-chat-fab');
   if (aiFab) aiFab.style.display = 'flex';
+  const feedbackFab = document.getElementById('feedback-fab');
+  if (feedbackFab) feedbackFab.style.display = 'flex';
   const years = getYears();
   const lastYear = years[years.length - 1];
   if (lastYear) setTimeout(() => {
@@ -6809,8 +6833,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.11';
-const SW_VERSION = 'v138';
+const APP_VERSION = '11.12';
+const SW_VERSION = 'v139';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -7495,6 +7519,100 @@ function getLicenseKey(){
   return localStorage.getItem('mbudget-license') || null;
 }
 
+// ── FEEDBACK ──────────────────────────────────────────────────────────────
+const EMAILJS_SERVICE  = 'VOTRE_SERVICE_ID';   // ← à remplir après config EmailJS
+const EMAILJS_TEMPLATE = 'VOTRE_TEMPLATE_ID';  // ← à remplir après config EmailJS
+const EMAILJS_KEY      = 'VOTRE_PUBLIC_KEY';   // ← à remplir après config EmailJS
+
+let _feedbackCat   = 'bug';
+let _feedbackStars = 0;
+
+function openFeedback() {
+  const modal = document.getElementById('feedback-modal');
+  modal.style.display = 'flex';
+  document.getElementById('feedback-subject').value  = '';
+  document.getElementById('feedback-message').value  = '';
+  document.getElementById('feedback-result').textContent = '';
+  document.getElementById('feedback-submit-btn').disabled = false;
+  document.getElementById('feedback-submit-btn').textContent = '📤 Envoyer ma suggestion';
+  selectFeedbackCat(document.querySelector('.feedback-cat-btn[data-cat="bug"]'));
+  selectFeedbackStar(0);
+  // Afficher les infos du compte
+  const info = document.getElementById('feedback-user-info');
+  if (_fbUser) {
+    info.innerHTML = `👤 Envoyé depuis : <b>${_esc(_fbUser.email)}</b> — nous pourrons vous répondre directement.`;
+  } else {
+    info.innerHTML = `💡 <a href="#" onclick="openAuthModal('login');return false" style="color:var(--blue)">Connectez-vous</a> pour que nous puissions vous répondre.`;
+  }
+}
+function closeFeedback() { document.getElementById('feedback-modal').style.display = 'none'; }
+
+function selectFeedbackCat(btn) {
+  document.querySelectorAll('.feedback-cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _feedbackCat = btn.dataset.cat;
+}
+function selectFeedbackStar(n) {
+  _feedbackStars = n;
+  document.querySelectorAll('.feedback-star').forEach((s, i) => {
+    s.classList.toggle('active', i < n);
+  });
+}
+
+async function submitFeedback() {
+  const subject = document.getElementById('feedback-subject').value.trim();
+  const message = document.getElementById('feedback-message').value.trim();
+  const result  = document.getElementById('feedback-result');
+  const btn     = document.getElementById('feedback-submit-btn');
+  if (!subject) { result.style.color='var(--red)'; result.textContent='⚠️ Veuillez entrer un sujet.'; return; }
+  if (!message) { result.style.color='var(--red)'; result.textContent='⚠️ Veuillez entrer un message.'; return; }
+  btn.disabled = true;
+  btn.textContent = '⏳ Envoi en cours…';
+  result.textContent = '';
+  const now = Date.now();
+  const feedbackData = {
+    category:  _feedbackCat,
+    subject,
+    message,
+    stars:     _feedbackStars || null,
+    uid:       _fbUser?.uid   || null,
+    email:     _fbUser?.email || null,
+    name:      _fbUser?.displayName || localStorage.getItem('mbudget-fb-name') || null,
+    createdAt: now,
+    status:    'nouveau',
+  };
+  try {
+    // 1. Sauvegarder dans Firebase
+    const token = await fbGetToken();
+    const fbId  = 'fb_' + now.toString(36) + '_' + Math.random().toString(36).slice(2,7);
+    await _fbFetch(`${LICENSE_DB}/feedback/${fbId}.json`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(feedbackData)
+    }, token);
+    // 2. Envoyer email via EmailJS
+    if (EMAILJS_KEY !== 'VOTRE_PUBLIC_KEY') {
+      await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+        category: {bug:'🐛 Bug',idea:'💡 Idée',question:'❓ Question',other:'💬 Autre'}[_feedbackCat],
+        subject,
+        message,
+        stars:    _feedbackStars ? '⭐'.repeat(_feedbackStars) : 'Non renseigné',
+        email:    feedbackData.email || 'Non connecté',
+        name:     feedbackData.name  || 'Anonyme',
+        uid:      feedbackData.uid   || '—',
+        date:     new Date(now).toLocaleString('fr-BE'),
+      }, EMAILJS_KEY);
+    }
+    result.style.color = 'var(--green)';
+    result.textContent = '✅ Merci ! Votre suggestion a bien été envoyée.';
+    btn.textContent = '✅ Envoyé !';
+    setTimeout(() => closeFeedback(), 2000);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '📤 Envoyer ma suggestion';
+    result.style.color = 'var(--red)';
+    result.textContent = '❌ Erreur lors de l\'envoi. Réessayez.';
+  }
+}
+
 function showUpgrade(reason) {
   document.getElementById('upgrade-reason').textContent = 'Fonctionnalité Premium requise : ' + reason + '.';
   document.getElementById('upgrade-key-input').value = '';
@@ -8031,12 +8149,48 @@ function openAdminPanel() {
 function closeAdminPanel() { document.getElementById('admin-modal').style.display = 'none'; }
 
 function adminSwitchTab(tab) {
-  document.getElementById('admin-tab-view').style.display    = tab === 'view'    ? '' : 'none';
-  document.getElementById('admin-tab-license').style.display = tab === 'license' ? '' : 'none';
+  document.getElementById('admin-tab-view').style.display     = tab === 'view'     ? '' : 'none';
+  document.getElementById('admin-tab-license').style.display  = tab === 'license'  ? '' : 'none';
+  document.getElementById('admin-tab-feedback').style.display = tab === 'feedback' ? '' : 'none';
   const active = 'background:rgba(255,255,255,.2);color:#fff';
   const idle   = 'background:transparent;color:rgba(255,255,255,.5)';
-  document.getElementById('admin-tab-btn-view').style.cssText    = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='view'    ? active : idle);
-  document.getElementById('admin-tab-btn-license').style.cssText = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='license' ? active : idle);
+  document.getElementById('admin-tab-btn-view').style.cssText     = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='view'     ? active : idle);
+  document.getElementById('admin-tab-btn-license').style.cssText  = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='license'  ? active : idle);
+  document.getElementById('admin-tab-btn-feedback').style.cssText = 'flex:1;padding:7px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;' + (tab==='feedback' ? active : idle);
+}
+
+// ── ADMIN FEEDBACK ────────────────────────────────────────────────────────
+async function adminLoadFeedback() {
+  const list = document.getElementById('admin-feedback-list');
+  list.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:12px;padding:8px">⏳ Chargement…</div>';
+  const token = await fbGetToken();
+  const r = await _fbFetch(`${LICENSE_DB}/feedback.json`, {}, token);
+  const data = r.ok ? await r.json() : null;
+  if (!data) { list.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:12px;padding:8px">Aucun feedback pour l\'instant.</div>'; return; }
+  const items = Object.entries(data).sort((a,b) => (b[1].createdAt||0)-(a[1].createdAt||0));
+  const catIcon = {bug:'🐛',idea:'💡',question:'❓',other:'💬'};
+  const statusColor = {nouveau:'#F5A623',lu:'#5B6AF0',répondu:'#00C896'};
+  list.innerHTML = items.map(([id, f]) => `
+    <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:12px;border-left:3px solid ${statusColor[f.status||'nouveau']||'#F5A623'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:700;color:#fff">${catIcon[f.category]||'💬'} ${_esc(f.subject||'Sans sujet')}</span>
+        <select onchange="adminUpdateFeedbackStatus('${id}',this.value)" style="background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:6px;padding:3px 6px;font-size:10px;cursor:pointer">
+          ${['nouveau','lu','répondu'].map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:6px;line-height:1.5">${_esc(f.message||'')}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.4)">
+        ${f.stars ? '⭐'.repeat(f.stars)+' · ' : ''}
+        ${_esc(f.email||'Anonyme')} · ${f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-BE') : ''}
+      </div>
+    </div>`).join('');
+}
+
+async function adminUpdateFeedbackStatus(id, status) {
+  const token = await fbGetToken();
+  await _fbFetch(`${LICENSE_DB}/feedback/${id}/status.json`, {
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(status)
+  }, token);
 }
 
 async function enterAdminMode() {
@@ -9419,6 +9573,62 @@ function closeCompareView() {
 
 <!-- ── FAB : Ajout rapide ── -->
 <button class="fab" id="main-fab" onclick="openQuickAdd()" title="Ajout rapide" style="display:none">➕</button>
+
+<!-- FEEDBACK FAB -->
+<button class="feedback-fab" id="feedback-fab" onclick="openFeedback()" title="Suggestion / Feedback" style="display:none">💬</button>
+
+<!-- FEEDBACK MODAL -->
+<div id="feedback-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeFeedback()">
+  <div style="background:var(--surface);border-radius:20px;width:min(480px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.4)">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#F5A623,#e8960a);border-radius:20px 20px 0 0;padding:20px 24px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:18px;font-weight:800;color:#fff">💬 Votre avis compte !</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.85);margin-top:2px">Bug, idée, question — on vous répond !</div>
+        </div>
+        <button onclick="closeFeedback()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+    </div>
+    <!-- Body -->
+    <div style="padding:20px 24px 24px">
+      <!-- Catégorie -->
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Catégorie</div>
+      <div class="feedback-cat">
+        <button class="feedback-cat-btn active" data-cat="bug" onclick="selectFeedbackCat(this)">🐛 Bug</button>
+        <button class="feedback-cat-btn" data-cat="idea" onclick="selectFeedbackCat(this)">💡 Idée</button>
+        <button class="feedback-cat-btn" data-cat="question" onclick="selectFeedbackCat(this)">❓ Question</button>
+        <button class="feedback-cat-btn" data-cat="other" onclick="selectFeedbackCat(this)">💬 Autre</button>
+      </div>
+      <!-- Sujet -->
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Sujet</div>
+      <input id="feedback-subject" type="text" placeholder="Ex: Problème avec la synchronisation..." maxlength="100"
+        style="width:100%;border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box;margin-bottom:14px;font-family:inherit;outline:none;transition:border-color .15s"
+        onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+      <!-- Message -->
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Message</div>
+      <textarea id="feedback-message" placeholder="Décrivez votre suggestion ou problème en détail..." maxlength="2000" rows="5"
+        style="width:100%;border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box;margin-bottom:14px;font-family:inherit;resize:vertical;outline:none;transition:border-color .15s"
+        onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      <!-- Satisfaction -->
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Satisfaction générale <span style="font-weight:400;text-transform:none">(optionnel)</span></div>
+      <div class="feedback-stars" id="feedback-stars">
+        <span class="feedback-star active" data-n="1" onclick="selectFeedbackStar(1)">⭐</span>
+        <span class="feedback-star" data-n="2" onclick="selectFeedbackStar(2)">⭐</span>
+        <span class="feedback-star" data-n="3" onclick="selectFeedbackStar(3)">⭐</span>
+        <span class="feedback-star" data-n="4" onclick="selectFeedbackStar(4)">⭐</span>
+        <span class="feedback-star" data-n="5" onclick="selectFeedbackStar(5)">⭐</span>
+      </div>
+      <!-- Compte lié -->
+      <div id="feedback-user-info" style="background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--gray);margin-bottom:16px"></div>
+      <!-- Bouton -->
+      <button id="feedback-submit-btn" onclick="submitFeedback()" style="width:100%;background:linear-gradient(135deg,#F5A623,#e8960a);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s">
+        📤 Envoyer ma suggestion
+      </button>
+      <div id="feedback-result" style="margin-top:10px;text-align:center;font-size:13px;font-weight:600;min-height:20px"></div>
+    </div>
+  </div>
+</div>
 
 <!-- ── INSTALL MODAL ── -->
 <div class="install-modal-overlay" id="install-modal-overlay" style="display:none" onclick="if(event.target===this)closeInstallModal()">
