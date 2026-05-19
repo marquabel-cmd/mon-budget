@@ -747,8 +747,8 @@ body.auth-locked #context-banner {
       <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:8px">Premium inclut :</div>
       <div style="font-size:13px;line-height:2;color:var(--text)">✅ Utilisateurs illimités<br>✅ Historique multi-années<br>✅ Catégories de dépenses illimitées<br>✅ Synchronisation Firebase cloud</div>
     </div>
-    <a id="upgrade-stripe-btn" href="https://buy.stripe.com/dRm00j1t6eOv0qD8Axg7e01" target="_blank" style="display:block;background:var(--blue);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:8px">💳 Premium mensuel — 2,99 €/mois</a>
-    <a href="https://buy.stripe.com/14A14nc7K5dV2yLdURg7e02" target="_blank" style="display:block;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:16px">⭐ Premium annuel — 24,99 €/an <span style="font-size:11px;opacity:.85">(−40%)</span></a>
+    <a id="upgrade-stripe-btn" href="#" onclick="openStripeCheckout('monthly');return false;" style="display:block;background:var(--blue);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:8px;cursor:pointer">💳 Premium mensuel — 2,99 €/mois</a>
+    <a href="#" onclick="openStripeCheckout('yearly');return false;" style="display:block;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:16px;cursor:pointer">⭐ Premium annuel — 24,99 €/an <span style="font-size:11px;opacity:.85">(−40%)</span></a>
     <div style="border-top:1px solid var(--border);padding-top:14px">
       <div style="font-size:12px;color:var(--gray);margin-bottom:8px">Déjà une clé de licence ?</div>
       <div style="display:flex;gap:8px">
@@ -6387,7 +6387,8 @@ function deleteTplChg(i) { const cfg=loadUserConfig(); cfg.tplChgs=(cfg.tplChgs|
 
 // ── LICENCE ──
 const LICENSE_DB  = 'https://mon-budget-licences-default-rtdb.europe-west1.firebasedatabase.app';
-const STRIPE_LINK = 'https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00';
+const STRIPE_LINK         = 'https://buy.stripe.com/dRm00j1t6eOv0qD8Axg7e01'; // mensuel 2,99€
+const STRIPE_LINK_YEARLY  = 'https://buy.stripe.com/14A14nc7K5dV2yLdURg7e02'; // annuel 24,99€
 const FB_API_KEY  = 'AIzaSyBB0h8ENURTDyndoVBtsu1i94l_mVZZ23o';
 const FB_AUTH     = 'https://identitytoolkit.googleapis.com/v1/accounts';
 const FB_TOKEN    = 'https://securetoken.googleapis.com/v1/token';
@@ -6799,8 +6800,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.8';
-const SW_VERSION = 'v135';
+const APP_VERSION = '11.9';
+const SW_VERSION = 'v136';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6812,6 +6813,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '11.9': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '💳', text: 'Paiement Premium intégré : boutons Stripe mensuel (2,99€) et annuel (24,99€) dans l\'overlay Premium — activation automatique après paiement via Cloudflare Webhook' }
+    ]
+  },
   '11.8': {
     date: 'Mai 2026',
     items: [
@@ -7471,11 +7478,23 @@ function getLicenseKey(){
 
 function showUpgrade(reason) {
   document.getElementById('upgrade-reason').textContent = 'Fonctionnalité Premium requise : ' + reason + '.';
-  document.getElementById('upgrade-stripe-btn').href = STRIPE_LINK;
   document.getElementById('upgrade-key-input').value = '';
   document.getElementById('upgrade-overlay').style.display = 'flex';
 }
 function closeUpgrade() { document.getElementById('upgrade-overlay').style.display = 'none'; }
+
+// Ouvre Stripe avec client_reference_id = Firebase UID (pour activation automatique via webhook)
+function openStripeCheckout(plan) {
+  const base = plan === 'yearly' ? STRIPE_LINK_YEARLY : STRIPE_LINK;
+  let url = base;
+  if (_fbUser && _fbUser.uid) {
+    const p = new URLSearchParams();
+    p.set('client_reference_id', _fbUser.uid);
+    if (_fbUser.email) p.set('prefilled_email', _fbUser.email);
+    url += '?' + p.toString();
+  }
+  window.open(url, '_blank');
+}
 
 async function activateLicense(key) {
   key = (key||'').trim().replace(/[^A-Za-z0-9_-]/g,'');

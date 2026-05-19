@@ -1,0 +1,14 @@
+name = "stripe-webhook-mon-budget"
+main = "stripe-webhook.js"
+compatibility_date = "2024-09-23"
+
+# Remplace par ton Account ID Cloudflare (dashboard.cloudflare.com → ton compte → ID en haut à droite)
+# account_id = "VOTRE_CLOUDFLARE_ACCOUNT_ID"
+
+[vars]
+# Variable publique (non-sensible)
+FIREBASE_DB = "https://mon-budget-licences-default-rtdb.europe-west1.firebasedatabase.app"
+
+# Secrets à configurer via CLI (ne jamais mettre ici en clair) :
+#   wrangler secret put STRIPE_WEBHOOK_SECRET
+#   wrangler secret put FIREBASE_DB_SECRET
