@@ -523,6 +523,17 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 #tour-help-dropdown.open{display:block}
 .tour-help-item{display:flex;align-items:center;gap:9px;padding:11px 14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:background .15s}
 .tour-help-item:hover{background:var(--blue-light)}
+/* ── PROTECTION DONNÉES : flou quand modal auth ouverte ── */
+body.auth-locked #main-container,
+body.auth-locked header,
+body.auth-locked .fab,
+body.auth-locked .ai-fab,
+body.auth-locked #context-banner {
+  filter: blur(10px) brightness(0.4);
+  pointer-events: none;
+  user-select: none;
+  transition: filter .3s ease;
+}
 /* ── INSTALL MODAL ── */
 .install-modal-overlay{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}
 .install-modal{background:var(--surface);border-radius:20px;max-width:480px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.4);overflow:hidden;max-height:90vh;display:flex;flex-direction:column}
@@ -6725,10 +6736,12 @@ function openAuthModal(tab='login') {
   if (!el) return;
   el.style.display = 'flex';
   authShowTab(tab);
+  document.body.classList.add('auth-locked');
 }
 function closeAuthModal() {
   const el = document.getElementById('auth-overlay');
   if (el) el.style.display = 'none';
+  document.body.classList.remove('auth-locked');
 }
 function authShowTab(tab) {
   document.getElementById('auth-tab-login').style.display  = tab==='login'    ? '' : 'none';
@@ -6785,8 +6798,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.7';
-const SW_VERSION = 'v134';
+const APP_VERSION = '11.8';
+const SW_VERSION = 'v135';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6798,6 +6811,12 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 const CHANGELOG = {
+  '11.8': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔒', text: 'Sécurité : les données sont masquées (flou) tant que la connexion n\'est pas confirmée — aucune donnée visible derrière la modal d\'authentification' }
+    ]
+  },
   '11.7': {
     date: 'Mai 2026',
     items: [
