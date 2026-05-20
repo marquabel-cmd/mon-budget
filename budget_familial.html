@@ -830,51 +830,57 @@ body.auth-locked #context-banner {
     </div>
     <!-- Étape 1 : Salaire -->
     <div id="wiz-s1">
+      <div id="wiz-lang-picker" style="display:flex;gap:8px;justify-content:center;margin-bottom:20px">
+        <button id="lang-btn-fr" onclick="setLang('fr')" style="padding:6px 16px;border-radius:8px;border:2px solid var(--blue);background:var(--blue);color:#fff;font-weight:700;cursor:pointer">🇫🇷 Français</button>
+        <button id="lang-btn-en" onclick="setLang('en')" style="padding:6px 16px;border-radius:8px;border:2px solid var(--border);background:none;color:var(--text);font-weight:600;cursor:pointer">🇬🇧 English</button>
+      </div>
       <div style="font-size:28px;text-align:center;margin-bottom:8px">💰</div>
-      <div style="font-size:18px;font-weight:800;color:var(--text);text-align:center;margin-bottom:6px">Quel est votre revenu mensuel ?</div>
-      <div style="font-size:13px;color:var(--gray);text-align:center;margin-bottom:20px">Salaire net, allocations, tout ce qui rentre chaque mois</div>
+      <div id="wiz-s1-title" style="font-size:18px;font-weight:800;color:var(--text);text-align:center;margin-bottom:6px">Quel est votre revenu mensuel ?</div>
+      <div id="wiz-s1-sub" style="font-size:13px;color:var(--gray);text-align:center;margin-bottom:20px">Salaire net, allocations, tout ce qui rentre chaque mois</div>
       <input id="wiz-salary" type="number" step="0.01" placeholder="ex: 2500" style="width:100%;border:2px solid var(--border);border-radius:10px;padding:14px;font-size:18px;font-weight:700;text-align:center;box-sizing:border-box;background:var(--surface-alt);color:var(--text);outline:none" oninput="this.style.borderColor=this.value?'var(--blue)':'var(--border)'">
-      <div style="font-size:11px;color:var(--gray);text-align:center;margin-top:8px">Vous pourrez ajuster ça à tout moment</div>
-      <button onclick="wizNext(1)" style="width:100%;margin-top:20px;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer">Suivant →</button>
-      <button onclick="closeWizard()" style="width:100%;margin-top:8px;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Passer cette étape</button>
+      <div id="wiz-s1-hint" style="font-size:11px;color:var(--gray);text-align:center;margin-top:8px">Vous pourrez ajuster ça à tout moment</div>
+      <button onclick="wizNext(1)" data-i18n-wiz="wiz.next" style="width:100%;margin-top:20px;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer">Suivant →</button>
+      <button onclick="closeWizard()" data-i18n-wiz="wiz.skip" style="width:100%;margin-top:8px;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Passer cette étape</button>
     </div>
     <!-- Étape 2 : Charges -->
     <div id="wiz-s2" style="display:none">
       <div style="font-size:28px;text-align:center;margin-bottom:8px">🏠</div>
-      <div style="font-size:18px;font-weight:800;color:var(--text);text-align:center;margin-bottom:6px">Vos charges fixes principales</div>
-      <div style="font-size:13px;color:var(--gray);text-align:center;margin-bottom:16px">Loyer, électricité, abonnements… (ajoutez-en jusqu'à 3)</div>
+      <div id="wiz-s2-title" style="font-size:18px;font-weight:800;color:var(--text);text-align:center;margin-bottom:6px">Vos charges fixes principales</div>
+      <div id="wiz-s2-sub" style="font-size:13px;color:var(--gray);text-align:center;margin-bottom:16px">Loyer, électricité, abonnements… (ajoutez-en jusqu'à 3)</div>
       <div id="wiz-charges-list" style="display:flex;flex-direction:column;gap:8px">
         <div style="display:flex;gap:8px">
-          <input class="wiz-chg-lbl" type="text" placeholder="🏠 Loyer / Prêt" style="flex:2;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);outline:none">
+          <input class="wiz-chg-lbl" id="wiz-chg-lbl-1" type="text" placeholder="🏠 Loyer / Prêt" style="flex:2;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);outline:none">
           <input class="wiz-chg-amt" type="number" placeholder="€" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);outline:none;text-align:right">
         </div>
         <div style="display:flex;gap:8px">
-          <input class="wiz-chg-lbl" type="text" placeholder="⚡ Énergie" style="flex:2;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);outline:none">
+          <input class="wiz-chg-lbl" id="wiz-chg-lbl-2" type="text" placeholder="⚡ Énergie" style="flex:2;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);outline:none">
           <input class="wiz-chg-amt" type="number" placeholder="€" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);outline:none;text-align:right">
         </div>
         <div style="display:flex;gap:8px">
-          <input class="wiz-chg-lbl" type="text" placeholder="📱 Téléphone / Internet" style="flex:2;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);outline:none">
+          <input class="wiz-chg-lbl" id="wiz-chg-lbl-3" type="text" placeholder="📱 Téléphone / Internet" style="flex:2;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);outline:none">
           <input class="wiz-chg-amt" type="number" placeholder="€" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);outline:none;text-align:right">
         </div>
       </div>
-      <button onclick="wizNext(2)" style="width:100%;margin-top:20px;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer">Suivant →</button>
-      <button onclick="closeWizard()" style="width:100%;margin-top:8px;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Passer cette étape</button>
+      <button onclick="wizNext(2)" data-i18n-wiz="wiz.next" style="width:100%;margin-top:20px;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer">Suivant →</button>
+      <button onclick="closeWizard()" data-i18n-wiz="wiz.skip" style="width:100%;margin-top:8px;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Passer cette étape</button>
     </div>
     <!-- Étape 3 : Résultat AHA -->
     <div id="wiz-s3" style="display:none;text-align:center">
       <div style="font-size:40px;margin-bottom:8px">🎉</div>
-      <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">Votre budget est prêt !</div>
-      <div style="font-size:13px;color:var(--gray);margin-bottom:20px">Voici une première estimation de votre solde mensuel</div>
+      <div id="wiz-s3-title" style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">Votre budget est prêt !</div>
+      <div id="wiz-s3-sub" style="font-size:13px;color:var(--gray);margin-bottom:20px">Voici une première estimation de votre solde mensuel</div>
       <div id="wiz-result" style="background:var(--blue-light);border-radius:14px;padding:20px;margin-bottom:20px">
-        <div style="font-size:12px;color:var(--gray);margin-bottom:4px">Revenus estimés</div>
+        <div id="wiz-s3-rev-lbl" style="font-size:12px;color:var(--gray);margin-bottom:4px">Revenus estimés</div>
         <div id="wiz-r-rev" style="font-size:22px;font-weight:800;color:var(--green);margin-bottom:12px"></div>
-        <div style="font-size:12px;color:var(--gray);margin-bottom:4px">Charges fixes</div>
+        <div id="wiz-s3-chg-lbl" style="font-size:12px;color:var(--gray);margin-bottom:4px">Charges fixes</div>
         <div id="wiz-r-chg" style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:12px"></div>
-        <div style="border-top:1px solid var(--border);padding-top:12px;font-size:12px;color:var(--gray);margin-bottom:4px">Solde disponible / mois</div>
-        <div id="wiz-r-bal" style="font-size:28px;font-weight:800"></div>
+        <div style="border-top:1px solid var(--border);padding-top:12px">
+          <div id="wiz-s3-bal-lbl" style="font-size:12px;color:var(--gray);margin-bottom:4px">Solde disponible / mois</div>
+          <div id="wiz-r-bal" style="font-size:28px;font-weight:800"></div>
+        </div>
       </div>
-      <div style="font-size:12px;color:var(--gray);margin-bottom:16px">Ces données ont été ajoutées à votre budget. Complétez-les dans l'app !</div>
-      <button onclick="closeWizard()" style="width:100%;background:linear-gradient(135deg,var(--blue),#8B5CF6);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer">🚀 Découvrir mon budget</button>
+      <div id="wiz-s3-hint" style="font-size:12px;color:var(--gray);margin-bottom:16px">Ces données ont été ajoutées à votre budget. Complétez-les dans l'app !</div>
+      <button id="wiz-s3-cta" onclick="closeWizard()" style="width:100%;background:linear-gradient(135deg,var(--blue),#8B5CF6);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer">🚀 Découvrir mon budget</button>
     </div>
   </div>
 </div>
@@ -1013,43 +1019,51 @@ body.auth-locked #context-banner {
 <!-- ── ONBOARDING SCREEN ── -->
 <div id="onboarding-screen">
   <div class="ob-box">
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-bottom:8px">
+      <button onclick="setLang('fr')" id="ob-lang-fr" style="padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;cursor:pointer">🇫🇷</button>
+      <button onclick="setLang('en')" id="ob-lang-en" style="padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-weight:600;cursor:pointer">🇬🇧</button>
+    </div>
     <div class="ob-logo">💰</div>
     <div class="ob-title">Mon Budget</div>
-    <div class="ob-sub">Bienvenue ! Comment souhaitez-vous démarrer ?</div>
+    <div class="ob-sub" data-i18n="onboarding.subtitle">Bienvenue ! Comment souhaitez-vous démarrer ?</div>
     <div class="ob-cards">
       <div class="ob-card ob-demo" onclick="startDemoModeFromOnboarding()">
         <div class="ob-card-icon">🎮</div>
-        <div class="ob-card-title">Mode Démo</div>
-        <div class="ob-card-desc">Explorez l'application avec des données fictives. Aucune info personnelle requise.</div>
+        <div class="ob-card-title" data-i18n="onboarding.demo.title">Mode Démo</div>
+        <div class="ob-card-desc" data-i18n="onboarding.demo.desc">Explorez l'application avec des données fictives. Aucune info personnelle requise.</div>
       </div>
       <div class="ob-card ob-create" onclick="goToCreateAccountFromOnboarding()">
         <div class="ob-card-icon">➕</div>
-        <div class="ob-card-title">Créer mon compte</div>
-        <div class="ob-card-desc">Configurez votre profil et commencez à gérer votre budget réel.</div>
+        <div class="ob-card-title" data-i18n="onboarding.create.title">Créer mon compte</div>
+        <div class="ob-card-desc" data-i18n="onboarding.create.desc">Configurez votre profil et commencez à gérer votre budget réel.</div>
       </div>
     </div>
     <div style="margin-bottom:16px">
-      <button onclick="openAuthModal('login')" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:#fff;padding:10px 28px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">🔑 J'ai déjà un compte</button>
+      <button data-i18n="welcome.have_account" onclick="openAuthModal('login')" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:#fff;padding:10px 28px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">🔑 J'ai déjà un compte</button>
     </div>
-    <div class="ob-help" onclick="openAide()">❓ Aide &amp; documentation</div>
+    <div class="ob-help" data-i18n="welcome.help" onclick="openAide()">❓ Aide &amp; documentation</div>
   </div>
 </div>
 
 <!-- ── WELCOME SCREEN ── -->
 <div id="welcome-screen">
   <div class="welcome-box">
+    <div style="position:absolute;top:16px;right:16px;display:flex;gap:6px">
+      <button onclick="setLang('fr')" id="ws-lang-fr" style="padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;cursor:pointer">🇫🇷</button>
+      <button onclick="setLang('en')" id="ws-lang-en" style="padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-weight:600;cursor:pointer">🇬🇧</button>
+    </div>
     <div id="inapp-banner" style="display:none;background:rgba(255,165,0,.18);border:1px solid rgba(255,165,0,.5);border-radius:12px;padding:14px 16px;margin-bottom:22px;text-align:left">
       <div style="font-size:13px;font-weight:700;color:#FFB347;margin-bottom:6px">📱 Ouvre dans ton navigateur pour rester connecté</div>
       <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:10px">Le navigateur Instagram ne sauvegarde pas ta session. Ouvre l'app dans Chrome ou Safari pour ne pas perdre tes données.</div>
       <div style="font-size:11px;color:rgba(255,255,255,.5)">👉 Tape les <b style="color:rgba(255,255,255,.7)">⋮</b> en haut à droite → <b style="color:rgba(255,255,255,.7)">Ouvrir dans le navigateur</b></div>
     </div>
     <div class="welcome-logo-icon">💰</div>
-    <div class="welcome-title">Mon Budget</div>
-    <div class="welcome-sub">Gestion mensuelle des revenus et dépenses</div>
+    <div class="welcome-title" data-i18n="welcome.title">Mon Budget</div>
+    <div class="welcome-sub" data-i18n="welcome.subtitle">Gestion mensuelle des revenus et dépenses</div>
     <div id="welcome-version" style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px"></div>
     <div class="welcome-users-grid" id="welcome-users-grid"></div>
     <hr class="welcome-divider">
-    <button class="welcome-add-toggle" onclick="toggleWelcomeAddPanel()">＋ Créer un utilisateur</button>
+    <button class="welcome-add-toggle" data-i18n="welcome.add_user" onclick="toggleWelcomeAddPanel()">＋ Créer un utilisateur</button>
     <div class="welcome-add-panel" id="welcome-add-panel">
       <div id="wizard-content"></div>
     </div>
@@ -1083,12 +1097,12 @@ body.auth-locked #context-banner {
 <div id="changelog-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeChangelog()">
   <div style="background:#1e2235;border-radius:18px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.08);overflow:hidden">
     <div style="background:linear-gradient(135deg,#5B6AF0,#8B5CF6);padding:22px 24px 18px;position:relative">
-      <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px">🆕 Nouveautés</div>
+      <div id="changelog-title" style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px">🆕 Nouveautés</div>
       <div id="changelog-version" style="font-size:13px;color:rgba(255,255,255,.7)"></div>
     </div>
     <div id="changelog-items" style="padding:20px 24px;display:flex;flex-direction:column;gap:12px;max-height:340px;overflow-y:auto"></div>
     <div style="padding:16px 24px;border-top:1px solid rgba(255,255,255,.07)">
-      <button onclick="closeChangelog()" style="width:100%;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer">✓ Super, merci !</button>
+      <button id="changelog-close-btn" onclick="closeChangelog()" style="width:100%;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer">✓ Super, merci !</button>
     </div>
   </div>
 </div>
@@ -2999,7 +3013,7 @@ function updateContextBanner(tabId) {
         const dep = (depTotal(yr)||[])[mi] || 0;
         const bal = rv - dep;
         const balColor = bal >= 0 ? 'var(--green)' : 'var(--red)';
-        info = `${MONTHS[mi]} ${yr}&nbsp;<span class="ctx-sep">·</span>&nbsp;Solde du mois&nbsp;<b style="color:${balColor}">${bal>=0?'+':''}${fmtN(bal)} €</b>`;
+        info = `${getMonths()[mi]} ${yr}&nbsp;<span class="ctx-sep">·</span>&nbsp;Solde du mois&nbsp;<b style="color:${balColor}">${bal>=0?'+':''}${fmtN(bal)} €</b>`;
       } catch(e) {}
     }
   }
@@ -3152,7 +3166,7 @@ function addYear() {
     const isProtected = r.cat === 'boite_dep';
     const lbl = isProtected ? `<span style="color:#5B6AF0;font-weight:700">${_esc(r.label)}</span>` : `<span style="font-weight:600">${_esc(r.label)}</span>`;
     const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
-      ? ` <span style="color:#F5A623;font-size:11px">(fin ${MONTHS[r.endMonth]} ${r.endYear})</span>` : '';
+      ? ` <span style="color:#F5A623;font-size:11px">(fin ${getMonths()[r.endMonth]} ${r.endYear})</span>` : '';
     return `<tr><td>${lbl}${endInfo}</td>
       <td style="color:var(--gray)">${last > 0 ? fmtN(last) + ' €' : '—'}</td>
       <td><input class="rev-dialog-input" type="number" step="0.01" id="rev-inp-${i}" placeholder="${last > 0 ? fmtN(last) : '0'}"></td></tr>`;
@@ -3165,7 +3179,7 @@ function addYear() {
     const isProtected = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in';
     const lbl = isProtected ? `<span style="color:#5B6AF0;font-weight:700">${_esc(r.label)}</span>` : `<span style="font-weight:600">${_esc(r.label)}</span>`;
     const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
-      ? ` <span style="color:#F5A623;font-size:11px">(fin ${MONTHS[r.endMonth]} ${r.endYear})</span>` : '';
+      ? ` <span style="color:#F5A623;font-size:11px">(fin ${getMonths()[r.endMonth]} ${r.endYear})</span>` : '';
     return `<tr><td>${lbl}${endInfo}</td>
       <td style="color:var(--gray)">${last > 0 ? fmtN(last) + ' €' : '—'}</td>
       <td><input class="rev-dialog-input" type="number" step="0.01" id="chg-inp-${i}" placeholder="${last > 0 ? fmtN(last) : '0'}"></td></tr>`;
@@ -3380,9 +3394,9 @@ function renderSoldes(year) {
 
   html += `</div>
   <div style="padding:10px 14px 4px;border-top:1px solid var(--border)">
-    <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">💵 Budget disponible / mois <span style="font-weight:400;text-transform:none">(Revenus − Charges fixes)</span></div>
+    <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${t('budget.available')} <span style="font-weight:400;text-transform:none">${t('budget.available_sub')}</span></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${MONTHS.map((m,i)=>{const bud=revTotal(year)[i]-chgTotal(year)[i];const c=bud>=0?'var(--green)':'var(--red)';const bg=bud>=0?'var(--green-light)':'#fff5f5';return`<div style="background:${bg};border-left:3px solid ${c};border-radius:7px;padding:5px 8px;min-width:60px;box-shadow:var(--shadow)"><div style="font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase">${m}</div><div style="font-size:12px;font-weight:800;color:${c}">${fmtN(bud)}</div></div>`;}).join('')}
+      ${getMonths().map((m,i)=>{const bud=revTotal(year)[i]-chgTotal(year)[i];const c=bud>=0?'var(--green)':'var(--red)';const bg=bud>=0?'var(--green-light)':'#fff5f5';return`<div style="background:${bg};border-left:3px solid ${c};border-radius:7px;padding:5px 8px;min-width:60px;box-shadow:var(--shadow)"><div style="font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase">${m}</div><div style="font-size:12px;font-weight:800;color:${c}">${fmtN(bud)}</div></div>`;}).join('')}
     </div>
   </div>
   ${renderMethodPaymentSummary(year)}`;
@@ -3405,8 +3419,8 @@ function renderMethodPaymentSummary(year) {
   }).join('');
   return `<div style="padding:8px 14px 12px;border-top:1px solid var(--border);margin-top:4px">
     <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">
-      Dépenses variables par mode de paiement
-      <span style="font-size:10px;color:var(--gray);margin-left:8px;font-weight:400;text-transform:none">Cocher = inclure dans Compte calculé</span>
+      ${t('budget.var_by_method')}
+      <span style="font-size:10px;color:var(--gray);margin-left:8px;font-weight:400;text-transform:none">${t('budget.var_include')}</span>
     </div>
     <div id="method-summary-${year}">${pills}</div>
   </div>`;
@@ -3523,20 +3537,20 @@ function renderRevSection(year) {
 
   return `<div class="section-card collapsed" data-section="revenus">
     <div class="section-header" onclick="toggleSection(this)">
-      <div style="flex:1;min-width:0"><span class="section-title">💹 Revenus <span class="badge badge-g" id="rev-badge-${year}">${fmtN(grandTot)} €</span></span>${mthMiniRow(monthTots,false)}</div>
-      <button onclick="event.stopPropagation();openAddRowModal('${year}','revenu')" style="flex-shrink:0;background:rgba(46,213,115,.12);color:#2ed573;border:1px solid rgba(46,213,115,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">＋ Revenu</button>
+      <div style="flex:1;min-width:0"><span class="section-title">💹 ${t('section.revenus')} <span class="badge badge-g" id="rev-badge-${year}">${fmtN(grandTot)} €</span></span>${mthMiniRow(monthTots,false)}</div>
+      <button onclick="event.stopPropagation();openAddRowModal('${year}','revenu')" style="flex-shrink:0;background:rgba(46,213,115,.12);color:#2ed573;border:1px solid rgba(46,213,115,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">${t('btn.add_revenu')}</button>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
       <table class="charge-table"><thead><tr>
-        <th class="lbl-col">Libellé</th>
-        ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
-        <th class="tot-col">TOTAL</th><th style="width:52px"></th>
+        <th class="lbl-col">${t('th.label')}</th>
+        ${getMonths().map(m=>`<th>${m}</th>`).join('')}
+        <th class="tot-col">${t('th.total')}</th><th style="width:52px"></th>
       </tr></thead>
       <tbody>${tbody}
-        <tr class="sep-row"><td colspan="15" style="background:#2d6a4f;font-size:10px">TOTAL REVENUS</td></tr>
+        <tr class="sep-row"><td colspan="15" style="background:#2d6a4f;font-size:10px">${t('row.total_revenus_sep')}</td></tr>
         <tr style="background:var(--row-success);font-weight:700">
-          <td class="lbl-col">REVENU TOTAL</td>${totRow}
+          <td class="lbl-col">${t('row.total_revenus')}</td>${totRow}
           <td class="tot-col pos" id="revtot-${year}">${fmtN(grandTot)}</td><td></td>
         </tr>
       </tbody></table>
@@ -3597,7 +3611,7 @@ function renderChargeSection(year) {
 
   rows.forEach((r, ri) => {
     if (r.cat === 'occasional' && !sepDone) {
-      tbody += `<tr class="sep-row"><td colspan="15">📌 CHARGES OCCASIONNELLES</td></tr>`;
+      tbody += `<tr class="sep-row"><td colspan="15">${t('row.occasional_charges')}</td></tr>`;
       sepDone = true;
     }
     const rowTot = sum(r.v);
@@ -3631,29 +3645,29 @@ function renderChargeSection(year) {
 
   return `<div class="section-card collapsed" data-section="charges">
     <div class="section-header" onclick="toggleSection(this)">
-      <div style="flex:1;min-width:0"><span class="section-title">🏠 Charges &amp; Dépenses fixes <span class="badge badge-r" id="chg-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(mths,false)}</div>
-      <button onclick="event.stopPropagation();openAddRowModal('${year}','fixed')" style="flex-shrink:0;background:rgba(91,106,240,.12);color:#7b8ff7;border:1px solid rgba(91,106,240,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:4px">＋ Fixe</button>
-      <button onclick="event.stopPropagation();openAddRowModal('${year}','occasional')" style="flex-shrink:0;background:rgba(245,166,35,.12);color:#F5A623;border:1px solid rgba(245,166,35,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">＋ Occasion.</button>
+      <div style="flex:1;min-width:0"><span class="section-title">🏠 ${t('section.charges')} <span class="badge badge-r" id="chg-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(mths,false)}</div>
+      <button onclick="event.stopPropagation();openAddRowModal('${year}','fixed')" style="flex-shrink:0;background:rgba(91,106,240,.12);color:#7b8ff7;border:1px solid rgba(91,106,240,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:4px">${t('btn.add_fixed')}</button>
+      <button onclick="event.stopPropagation();openAddRowModal('${year}','occasional')" style="flex-shrink:0;background:rgba(245,166,35,.12);color:#F5A623;border:1px solid rgba(245,166,35,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">${t('btn.add_occasional')}</button>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
       <div class="legend">
-        <span style="font-weight:700;margin-right:4px">Statut :</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#c8e6c9;border:1px solid #81c784"></span>✓ Payé (cliquer ○ pour marquer)</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#fff;border:1px solid #ddd"></span>Non payé</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#fffde7;border:1px solid #fff176"></span>📌 Charge occasionnelle</span>
+        <span style="font-weight:700;margin-right:4px">${t('legend.status')}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#c8e6c9;border:1px solid #81c784"></span>${t('legend.paid')}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#fff;border:1px solid #ddd"></span>${t('legend.unpaid')}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#fffde7;border:1px solid #fff176"></span>${t('legend.occasional')}</span>
       </div>
       <table class="charge-table"><thead><tr>
-        <th class="lbl-col">Libellé</th>
-        ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
-        <th class="tot-col">TOTAL</th><th style="width:52px"></th>
+        <th class="lbl-col">${t('th.label')}</th>
+        ${getMonths().map(m=>`<th>${m}</th>`).join('')}
+        <th class="tot-col">${t('th.total')}</th><th style="width:52px"></th>
       </tr></thead>
       <tbody>
-        <tr class="sep-row"><td colspan="15">🔄 CHARGES RÉCURRENTES</td></tr>
+        <tr class="sep-row"><td colspan="15">${t('row.recurring_charges')}</td></tr>
         ${tbody}
-        <tr class="sep-row"><td colspan="15" style="background:#2c3e50">TOTAL CHARGES</td></tr>
+        <tr class="sep-row"><td colspan="15" style="background:#2c3e50">${t('row.total_charges_sep')}</td></tr>
         <tr style="font-weight:800;background:rgba(91,106,240,.22);color:#fff;border-top:3px solid rgba(91,106,240,.5)">
-          <td class="lbl-col" style="color:#fff;font-size:13px">TOTAL</td>${totRow}
+          <td class="lbl-col" style="color:#fff;font-size:13px">${t('row.total_charges')}</td>${totRow}
           <td class="tot-col" style="color:#a0aaff;font-size:15px;font-weight:900" id="chtot-${year}">${fmtN(gt)}</td><td></td>
         </tr>
       </tbody></table>
@@ -3719,10 +3733,11 @@ function delCharge(year, ri) {
 let _arYear = null, _arEditMode = false, _arEditIdx = null, _arEditDataType = null;
 
 function _arPopulateMonths() {
+  const _mths = getMonths();
   const sm = document.getElementById('ar-startmonth');
-  sm.innerHTML = MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  sm.innerHTML = _mths.map((m,i) => `<option value="${i}">${m}</option>`).join('');
   const em = document.getElementById('ar-endmonth');
-  em.innerHTML = MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  em.innerHTML = _mths.map((m,i) => `<option value="${i}">${m}</option>`).join('');
 }
 function openAddRowModal(year, type) {
   _arYear = year;
@@ -3781,7 +3796,7 @@ function openEditRowModal(year, dataType, ri) {
     repsEl2.value = row.reps || '';
     const hint = document.getElementById('ar-reps-hint');
     if (hint) hint.textContent = (row.reps && row.endMonth !== undefined && row.endYear !== undefined)
-      ? `→ fin ${MONTHS[row.endMonth]} ${row.endYear}` : '';
+      ? `→ fin ${getMonths()[row.endMonth]} ${row.endYear}` : '';
   }
   updateAddRowModal();
   document.getElementById('add-row-modal').style.display = 'flex';
@@ -3823,7 +3838,7 @@ function _arCalcEndFromReps() {
   document.getElementById('ar-enddate-fields').style.display = 'grid';
   document.getElementById('ar-endmonth').value = endMonth;
   document.getElementById('ar-endyear').value = endYear;
-  if (hint) hint.textContent = `→ fin ${MONTHS[endMonth]} ${endYear}`;
+  if (hint) hint.textContent = `→ fin ${getMonths()[endMonth]} ${endYear}`;
   updateAddRowPreview();
 }
 function updateAddRowPreview() {
@@ -3844,9 +3859,9 @@ function updateAddRowPreview() {
   const annual = amount * payMonths.length;
   const reps = parseInt(document.getElementById('ar-reps')?.value) || 0;
   const freqLabel = interval === 1 ? 'mensuel' : `tous les ${interval} mois`;
-  const endLabel = noEnd ? '' : ` → fin ${MONTHS[endMonth]}`;
+  const endLabel = noEnd ? '' : ` → fin ${getMonths()[endMonth]}`;
   const repsLabel = reps > 0 ? ` · <b>${reps} répétition${reps>1?'s':''}</b>` : '';
-  const monthsStr = payMonths.length ? payMonths.map(m => MONTHS[m]).join(', ') : 'Aucun paiement cette année';
+  const monthsStr = payMonths.length ? payMonths.map(m => getMonths()[m]).join(', ') : 'Aucun paiement cette année';
   prev.innerHTML = `→ ${freqLabel}${endLabel}${repsLabel} = ${payMonths.length}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${monthsStr}</span>`;
   prev.style.display = 'block';
 }
@@ -3905,7 +3920,7 @@ function proposePropagate(el, year, dataType, ri, mi) {
   if (isNaN(prev) || newVal === prev || mi >= 11) return;
   _propCtx = {year, dataType, ri, mi, val: newVal};
   document.getElementById('prop-amount').textContent = fmtN(newVal);
-  document.getElementById('prop-from').textContent = MONTHS[mi + 1];
+  document.getElementById('prop-from').textContent = getMonths()[mi + 1];
   document.getElementById('propagate-modal').style.display = 'flex';
 }
 function confirmPropagate(yes) {
@@ -3952,13 +3967,13 @@ function renderVarSection(year) {
   const gt = sum(varMths);
   return `<div class="section-card" id="var-section-${year}" data-section="variables">
     <div class="section-header" onclick="toggleSection(this)">
-      <div style="flex:1;min-width:0"><span class="section-title">🛒 Dépenses variables <span class="badge badge-o" id="var-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(varMths,false)}</div>
-      <button onclick="event.stopPropagation();openCatModal(null)" style="flex-shrink:0;background:rgba(0,200,150,.12);color:#00C896;border:1px solid rgba(0,200,150,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">＋ Catégorie</button>
+      <div style="flex:1;min-width:0"><span class="section-title">🛒 ${t('section.vars')} <span class="badge badge-o" id="var-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(varMths,false)}</div>
+      <button onclick="event.stopPropagation();openCatModal(null)" style="flex-shrink:0;background:rgba(0,200,150,.12);color:#00C896;border:1px solid rgba(0,200,150,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">${t('btn.add_category')}</button>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
       <div class="legend">
-        <span style="font-weight:700;margin-right:4px">Mode de paiement :</span>
+        <span style="font-weight:700;margin-right:4px">${t('legend.payment_mode')}</span>
         ${getMethods().map(mo=>`<span class="legend-item"><span class="legend-dot" style="background:${mo.bg};border-left:3px solid ${mo.color}"></span>${_esc(mo.label)}</span>`).join('')}
       </div>
       <div class="var-section">${getVarCats().map(c => renderVarCat(year, c)).join('')}</div>
@@ -3972,6 +3987,7 @@ function renderVarCat(year, cat) {
   const txs = DATA[year].vars[cat.key];
   const grand = sum(txs.map(t=>t.amount));
   let summaryRows = '';
+  const _mths = getMonths();
   for (let m=0; m<12; m++) {
     const mTxs = txs.filter(t=>t.month===m);
     const mTot = sum(mTxs.map(t=>t.amount));
@@ -3979,7 +3995,7 @@ function renderVarCat(year, cat) {
     summaryRows += `
     <tr id="vsumrow-${year}-${cat.key}-${m}" style="cursor:pointer"
         onclick="if(!event.target.closest('button'))toggleMonthDetail('${year}','${cat.key}',${m},document.getElementById('vexp-btn-${year}-${cat.key}-${m}'))">
-      <td style="font-weight:600;padding-left:10px">${MONTHS[m]}</td>
+      <td style="font-weight:600;padding-left:10px">${_mths[m]}</td>
       <td id="vsum-n-${year}-${cat.key}-${m}" style="color:var(--gray);text-align:center">${mTxs.length} tx</td>
       <td style="text-align:right;padding:4px 6px">
         <div id="vsum-t-${year}-${cat.key}-${m}" style="font-weight:700;font-size:12px">${fmtN(mTot)} €</div>
@@ -4000,10 +4016,10 @@ function renderVarCat(year, cat) {
         <div class="vdetrow-wrap">
         <table class="var-table var-tx-table" style="margin:0">
           <thead><tr>
-            <th style="width:55px">Jour</th>
-            <th style="width:90px">Montant €</th>
-            <th>Commentaire</th>
-            <th style="width:155px">Mode de paiement</th>
+            <th style="width:55px">${t('th.day')}</th>
+            <th style="width:90px">${t('th.amount')}</th>
+            <th>${t('th.comment')}</th>
+            <th style="width:155px">${t('th.payment_method')}</th>
             <th style="width:30px"></th>
           </tr></thead>
           <tbody id="vbody-${year}-${cat.key}-${m}"></tbody>
@@ -4046,13 +4062,13 @@ function renderVarCat(year, cat) {
       ${txs.length === 0 ? `
       <div style="text-align:center;padding:18px 12px;color:var(--gray)">
         <div style="font-size:28px;margin-bottom:6px">${cat.icon}</div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Aucune dépense en ${year}</div>
-        <div style="font-size:12px;margin-bottom:12px">Ajoutez votre première dépense pour cette catégorie</div>
-        <button onclick="openQuickAdd('${year}','${cat.key}')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">⚡ Ajouter une dépense</button>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">${t('empty.no_expenses', year)}</div>
+        <div style="font-size:12px;margin-bottom:12px">${t('empty.add_first')}</div>
+        <button onclick="openQuickAdd('${year}','${cat.key}')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">${t('empty.add_cta')}</button>
       </div>` : `
       <table class="var-table">
         <thead><tr>
-          <th>Mois</th><th style="width:60px">Nb</th>
+          <th>${t('th.month')}</th><th style="width:60px">${t('th.nb')}</th>
           <th style="width:110px">Total</th>
           <th style="width:110px"></th><th style="width:90px"></th>
         </tr></thead>
@@ -4142,7 +4158,7 @@ function openQuickAdd(year, catKey) {
   // Populate months
   const mSel = document.getElementById('qa-month');
   const curM = new Date().getMonth();
-  mSel.innerHTML = MONTHS.map((m,i)=>`<option value="${i}"${i===curM?' selected':''}>${m}</option>`).join('');
+  mSel.innerHTML = getMonths().map((m,i)=>`<option value="${i}"${i===curM?' selected':''}>${m}</option>`).join('');
   // Populate payment methods
   const methSel = document.getElementById('qa-method');
   methSel.innerHTML = getMethods().map(mo=>`<option value="${mo.key}">${_esc(mo.label)}</option>`).join('');
@@ -4249,7 +4265,7 @@ function submitQuickAdd() {
   refreshMonthSummary(year);
   dSave();
   document.getElementById('quick-add-overlay').style.display = 'none';
-  showToast(`✅ ${fmtN(amount)} € ajouté en ${MONTHS[month]} ${year}`);
+  showToast(`✅ ${fmtN(amount)} € ajouté en ${getMonths()[month]} ${year}`);
 }
 
 function addTxForMonth(year, catKey, m) {
@@ -4559,7 +4575,7 @@ function _bgtEdRenderMonths() {
       ? (parseFloat(existingMonthly[m]) || 0)
       : fallback;
     html += `<div style="display:flex;flex-direction:column;gap:2px">
-      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">${MONTHS[m].substring(0,3)}</label>
+      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">${getMonths()[m].substring(0,3)}</label>
       <input id="bgt-m-${m}" type="number" step="0.01" min="0" placeholder="0,00"
         value="${val > 0 ? val : ''}"
         oninput="_bgtEdUpdateTotal()"
@@ -4657,14 +4673,14 @@ function renderMonthSummary(year) {
       <span class="chevron">▾</span>
     </div>
     <div class="section-body"><table class="charge-table"><thead><tr>
-      <th class="lbl-col">Indicateur</th>
-      ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
-      <th class="tot-col">TOTAL</th><th style="width:28px"></th>
+      <th class="lbl-col">${t('summary.indicator')}</th>
+      ${getMonths().map(m=>`<th>${m}</th>`).join('')}
+      <th class="tot-col">${t('th.total')}</th><th style="width:28px"></th>
     </tr></thead><tbody>
-      ${row('💹 Revenus totaux',rv,'rev')}
-      ${row('🏠 Charges récurrentes & occasionnelles',ch,'chg')}
-      ${row('🛒 Dépenses variables',vr,'var')}
-      ${row('📉 Dépenses totales',dep,'dep')}
+      ${row(t('summary.total_revenues'),rv,'rev')}
+      ${row(t('summary.recurring_charges'),ch,'chg')}
+      ${row(t('summary.variable_expenses'),vr,'var')}
+      ${row(t('summary.total_expenses'),dep,'dep')}
       ${row('🔴 Reste à payer (charges non payées)',rap,'rap','var(--row-warn)')}
       ${(()=>{const bud=rv.map((v,i)=>v-ch[i]);const bt=sum(bud);return`<tr style="background:var(--row-info);font-weight:800;font-size:13px"><td class="lbl-col">💰 Disponible avant dépenses</td>${bud.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bud-${i}">${fmtN(v)}</td>`).join('')}<td class="tot-col ${bt<0?'neg':'pos'}" id="sm-${year}-bud-tot">${fmtN(bt)}</td><td></td></tr>`;})()}
       <tr style="background:var(--row-success);font-weight:800;font-size:13px">
@@ -4714,9 +4730,9 @@ function renderSummary() {
   const table = document.getElementById('summary-table');
   const years = getYears();
   let html = `<thead><tr>
-    <th class="lbl-col">Indicateur</th>
-    ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
-    <th class="tot-col">TOTAL</th>
+    <th class="lbl-col">${t('summary.indicator')}</th>
+    ${getMonths().map(m=>`<th>${m}</th>`).join('')}
+    <th class="tot-col">${t('th.total')}</th>
   </tr></thead><tbody>`;
 
   years.forEach(year => {
@@ -4729,16 +4745,16 @@ function renderSummary() {
         <td class="tot-col ${t<0?'neg':'pos'}">${fmtN(t)}</td></tr>`;
     };
     const carte=varTotalByMethod(year,'carte'), liquide=varTotalByMethod(year,'liquide'), repas=varTotalByMethod(year,'repas');
-    html+=`<tr class="yr-hdr"><td colspan="15">📅 ANNÉE ${year}</td></tr>`;
-    addRow('💹 Revenus totaux',rv);
-    addRow('🏠 Charges récurrentes & occasionnelles',ch);
-    addRow('🛒 Dépenses variables',vr);
-    addRow('&nbsp;&nbsp;&nbsp;💳 dont Carte bancaire',carte);
-    addRow('&nbsp;&nbsp;&nbsp;💵 dont Liquide',liquide);
-    addRow('&nbsp;&nbsp;&nbsp;🎟 dont Chèque repas',repas);
-    addRow('📉 Dépenses totales',dep);
+    html+=`<tr class="yr-hdr"><td colspan="15">📅 ${t('summary.year')} ${year}</td></tr>`;
+    addRow(t('summary.total_revenues'),rv);
+    addRow(t('summary.recurring_charges'),ch);
+    addRow(t('summary.variable_expenses'),vr);
+    addRow(t('summary.card'),carte);
+    addRow(t('summary.cash'),liquide);
+    addRow(t('summary.meal_voucher'),repas);
+    addRow(t('summary.total_expenses'),dep);
     const bt=sum(bal);
-    html+=`<tr class="bal-row"><td class="lbl-col">💰 Solde ${year}</td>
+    html+=`<tr class="bal-row"><td class="lbl-col">${t('summary.balance')} ${year}</td>
       ${bal.map(v=>`<td class="${v<0?'neg':'pos'}">${fmtN(v)}</td>`).join('')}
       <td class="tot-col ${bt<0?'neg':'pos'}">${fmtN(bt)}</td></tr>`;
   });
@@ -4747,12 +4763,12 @@ function renderSummary() {
 
   // Stats annuelles enrichies — tableau comparatif
   const statRows = [
-    { label: 'Taux d\'épargne', key: 'rate' },
-    { label: 'Épargne moy./mois', key: 'avg' },
-    { label: '🏆 Meilleur mois', key: 'best' },
-    { label: '📉 Mois difficile', key: 'worst' },
-    { label: '🛒 + dépensier', key: 'bigvr' },
-    { label: '💸 Top catégorie', key: 'topcat' },
+    { label: t('summary.savings_rate'), key: 'rate' },
+    { label: t('summary.avg_savings'), key: 'avg' },
+    { label: t('summary.best_month'), key: 'best' },
+    { label: t('summary.worst_month'), key: 'worst' },
+    { label: t('summary.biggest_spending'), key: 'bigvr' },
+    { label: t('summary.top_category'), key: 'topcat' },
   ];
   const statData = {};
   years.forEach(year => {
@@ -4764,20 +4780,21 @@ function renderSummary() {
     const biggestVrMi=vr.indexOf(Math.max(...vr));
     const cats=getVarCats().map(c=>({...c,total:sum(varTotal(year,c.key))})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
     const topCat=cats[0];
+    const _sm = getMonths();
     statData[year] = {
       rate: `<span style="font-weight:800;color:${savingsRate>=0?'var(--green)':'var(--red)'}">${savingsRate}%</span>`,
       avg: `<span style="font-weight:700;color:${tBal>=0?'var(--green)':'var(--red)'}">${fmtN(tBal/12)} €</span>`,
-      best: `<span style="color:var(--green);font-weight:700">${MONTHS[bestMi]}<br><small>${fmtN(bal[bestMi])} €</small></span>`,
-      worst: `<span style="color:var(--red);font-weight:700">${MONTHS[worstMi]}<br><small>${fmtN(bal[worstMi])} €</small></span>`,
-      bigvr: `<span style="font-weight:700">${MONTHS[biggestVrMi]}</span>`,
+      best: `<span style="color:var(--green);font-weight:700">${_sm[bestMi]}<br><small>${fmtN(bal[bestMi])} €</small></span>`,
+      worst: `<span style="color:var(--red);font-weight:700">${_sm[worstMi]}<br><small>${fmtN(bal[worstMi])} €</small></span>`,
+      bigvr: `<span style="font-weight:700">${_sm[biggestVrMi]}</span>`,
       topcat: topCat ? `<span style="font-weight:700">${topCat.icon||'🛍️'} ${_esc(topCat.label)}<br><small>${fmtN(topCat.total)} €</small></span>` : '—',
     };
   });
   let statsHtml = `<div class="section-card" style="margin-top:20px;overflow:auto">
-    <div style="font-weight:800;font-size:13px;color:var(--blue);padding:14px 16px 10px;border-bottom:1px solid var(--border)">📊 Statistiques annuelles</div>
+    <div style="font-weight:800;font-size:13px;color:var(--blue);padding:14px 16px 10px;border-bottom:1px solid var(--border)">${t('summary.annual_stats')}</div>
     <table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr style="background:var(--surface-alt)">
-        <th style="text-align:left;padding:8px 14px;color:var(--gray);font-weight:700;border-bottom:1px solid var(--border)">Indicateur</th>
+        <th style="text-align:left;padding:8px 14px;color:var(--gray);font-weight:700;border-bottom:1px solid var(--border)">${t('summary.indicator')}</th>
         ${years.map(y=>`<th style="text-align:center;padding:8px 14px;color:var(--blue);font-weight:700;border-bottom:1px solid var(--border)">${y}</th>`).join('')}
       </tr></thead>
       <tbody>
@@ -5561,7 +5578,7 @@ function _doSearch(q) {
       (DATA[yr]?.vars?.[cat.key] || []).forEach(tx => {
         const txt = [(tx.label||''), (tx.comment||''), cat.label].join(' ').toLowerCase();
         if (txt.includes(ql)) {
-          const mLbl = MONTHS[tx.month] || '';
+          const mLbl = getMonths()[tx.month] || '';
           hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmtN(tx.amount)+' €', action:"_scrollToSection('"+yr+"','variables')"});
         }
       });
@@ -5770,7 +5787,7 @@ function renderDashboard() {
     };
     compHtml = `
       <div class="section-card" style="margin-bottom:14px">
-        <div style="font-weight:700;font-size:13px;margin-bottom:10px">🔄 vs ${MONTHS[mi]} ${prevYr}</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px">🔄 vs ${getMonths()[mi]} ${prevYr}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
           <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>💹 Revenus</span>${delta(rv,pRv)}</div>
           <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>🏠 Charges</span>${delta(ch,pCh,true)}</div>
@@ -5822,8 +5839,8 @@ function renderDashboard() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Taux d'épargne</div><div style="font-weight:800;font-size:20px;color:${savingsRate>=0?'var(--green)':'var(--red)'};margin-top:4px">${savingsRate}%</div></div>
           <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Épargne moy./mois</div><div style="font-weight:800;font-size:18px;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:4px">${fmtN(tBal/12)} €</div></div>
-          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">🏆 Meilleur mois</div><div style="font-weight:700;font-size:13px;color:var(--green);margin-top:4px">${MONTHS[bestMi]} · ${fmtN(balArr[bestMi])} €</div></div>
-          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">📉 Mois difficile</div><div style="font-weight:700;font-size:13px;color:var(--red);margin-top:4px">${MONTHS[worstMi]} · ${fmtN(balArr[worstMi])} €</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.best_month')}</div><div style="font-weight:700;font-size:13px;color:var(--green);margin-top:4px">${getMonths()[bestMi]} · ${fmtN(balArr[bestMi])} €</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.worst_month')}</div><div style="font-weight:700;font-size:13px;color:var(--red);margin-top:4px">${getMonths()[worstMi]} · ${fmtN(balArr[worstMi])} €</div></div>
         </div>
       </div>
       <div class="section-card">
@@ -5832,7 +5849,7 @@ function renderDashboard() {
           const pct = Math.round((Math.abs(v)/maxAbs)*100);
           const col = v>=0?'var(--green)':'var(--red)';
           return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <div style="width:28px;text-align:right;color:var(--gray);font-size:11px;flex-shrink:0">${MONTHS[i].slice(0,3)}</div>
+            <div style="width:28px;text-align:right;color:var(--gray);font-size:11px;flex-shrink:0">${getMonths()[i].slice(0,3)}</div>
             <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:4px"></div></div>
             <div style="width:70px;text-align:right;font-weight:700;color:${col};font-size:11px">${fmtN(v)} €</div>
           </div>`;
@@ -5892,7 +5909,7 @@ function renderDashboard() {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
       <button onclick="_dashNav(-1)" ${canPrev?'':'disabled'} style="${btnStyle(canPrev,'var(--blue)')}">←</button>
       <div style="text-align:center">
-        <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:.5px">${MONTHS[mi]}</div>
+        <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:.5px">${getMonths()[mi]}</div>
         ${yearSel}
       </div>
       <button onclick="_dashNav(1)" ${canNext?'':'disabled'} style="${btnStyle(canNext,'var(--blue)')}">→</button>
@@ -5965,7 +5982,7 @@ function renderDashboard() {
     <!-- Note du mois -->
     <div class="section-card">
       <div style="font-weight:700;font-size:13px;margin-bottom:8px">📝 Note du mois</div>
-      <textarea rows="3" placeholder="Ajouter une note pour ${MONTHS[mi]} ${yr}…"
+      <textarea rows="3" placeholder="Ajouter une note pour ${getMonths()[mi]} ${yr}…"
         style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;color:var(--text);resize:vertical;font-family:inherit;line-height:1.5"
         onchange="saveMonthNote('${yr}',${mi},this.value)">${_esc((DATA[yr]?.notes||{})[mi]||'')}</textarea>
     </div>
@@ -6317,6 +6334,12 @@ function renderConfigTab() {
             </div>
           </div>` : `<div style="font-size:12px;color:var(--gray);padding:8px;background:var(--surface-alt);border-radius:7px">Il n'y a qu'une seule année — impossible de la supprimer.</div>`}
           <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="resetData()">🚨 Réinitialiser les données — SUPPRESSION TOTALE</button>
+        </div>
+      </div>
+      <div class="config-card" style="margin-top:14px"><h3>🌐 ${t('settings.language')}</h3>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button onclick="setLang('fr')" id="cfg-lang-btn-fr" style="flex:1;padding:9px;border-radius:8px;border:2px solid ${_lang==='fr'?'var(--blue)':'var(--border)'};background:${_lang==='fr'?'var(--blue)':'none'};color:${_lang==='fr'?'#fff':'var(--text)'};font-weight:${_lang==='fr'?'700':'600'};cursor:pointer;font-size:13px">🇫🇷 Français</button>
+          <button onclick="setLang('en')" id="cfg-lang-btn-en" style="flex:1;padding:9px;border-radius:8px;border:2px solid ${_lang==='en'?'var(--blue)':'var(--border)'};background:${_lang==='en'?'var(--blue)':'none'};color:${_lang==='en'?'#fff':'var(--text)'};font-weight:${_lang==='en'?'700':'600'};cursor:pointer;font-size:13px">🇬🇧 English</button>
         </div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>⚙️ Application</h3>
@@ -7062,8 +7085,528 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.32';
-const SW_VERSION = 'v159';
+const APP_VERSION = '11.33';
+const SW_VERSION = 'v160';
+
+// ── INTERNATIONALISATION ──
+const TRANSLATIONS = {
+  fr: {
+    // Welcome screen
+    'welcome.title': 'Mon Budget',
+    'welcome.subtitle': 'Gestion mensuelle des revenus et dépenses',
+    'welcome.add_user': '＋ Créer un utilisateur',
+    'welcome.have_account': '🔑 J\'ai déjà un compte',
+    'welcome.help': '❓ Aide & documentation',
+    // Onboarding screen
+    'onboarding.subtitle': 'Bienvenue ! Comment souhaitez-vous démarrer ?',
+    'onboarding.demo.title': 'Mode Démo',
+    'onboarding.demo.desc': 'Explorez l\'application avec des données fictives. Aucune info personnelle requise.',
+    'onboarding.create.title': 'Créer mon compte',
+    'onboarding.create.desc': 'Configurez votre profil et commencez à gérer votre budget réel.',
+    // Wizard
+    'wiz.lang_picker': 'Choisissez votre langue / Choose your language',
+    'wiz.step': 'Étape',
+    'wiz.of': '/',
+    'wiz.s1.title': 'Quel est votre revenu mensuel ?',
+    'wiz.s1.sub': 'Salaire net, allocations, tout ce qui rentre chaque mois',
+    'wiz.s1.hint': 'Vous pourrez ajuster ça à tout moment',
+    'wiz.s1.placeholder': 'ex: 2500',
+    'wiz.s2.title': 'Vos charges fixes principales',
+    'wiz.s2.sub': 'Loyer, électricité, abonnements… (ajoutez-en jusqu\'à 3)',
+    'wiz.s2.placeholder1': '🏠 Loyer / Prêt',
+    'wiz.s2.placeholder2': '⚡ Énergie',
+    'wiz.s2.placeholder3': '📱 Téléphone / Internet',
+    'wiz.s3.title': 'Votre budget est prêt !',
+    'wiz.s3.sub': 'Voici une première estimation de votre solde mensuel',
+    'wiz.s3.revenues': 'Revenus estimés',
+    'wiz.s3.charges': 'Charges fixes',
+    'wiz.s3.balance': 'Solde disponible / mois',
+    'wiz.s3.hint': 'Ces données ont été ajoutées à votre budget. Complétez-les dans l\'app !',
+    'wiz.s3.cta': '🚀 Découvrir mon budget',
+    'wiz.next': 'Suivant →',
+    'wiz.skip': 'Passer cette étape',
+    // Sections
+    'section.revenus': 'Revenus',
+    'section.charges': 'Charges & Dépenses fixes',
+    'section.vars': 'Dépenses variables',
+    'section.summary': 'Résumé',
+    // Section header badges / buttons
+    'btn.add_revenu': '＋ Revenu',
+    'btn.add_fixed': '＋ Fixe',
+    'btn.add_occasional': '＋ Occasion.',
+    'btn.add_category': '＋ Catégorie',
+    // Table headers
+    'th.label': 'Libellé',
+    'th.total': 'TOTAL',
+    'th.annual': 'Annuel',
+    'th.paid': 'Payé',
+    'th.category': 'Catégorie',
+    'th.comment': 'Commentaire',
+    'th.day': 'Jour',
+    'th.amount': 'Montant €',
+    'th.payment_method': 'Mode de paiement',
+    'th.month': 'Mois',
+    'th.nb': 'Nb',
+    // Row labels
+    'row.total_revenus': 'REVENU TOTAL',
+    'row.total_charges': 'TOTAL',
+    'row.recurring_charges': '🔄 CHARGES RÉCURRENTES',
+    'row.occasional_charges': '📌 CHARGES OCCASIONNELLES',
+    'row.total_charges_sep': 'TOTAL CHARGES',
+    'row.total_revenus_sep': 'TOTAL REVENUS',
+    // Months abbreviations
+    'month.1': 'JAN', 'month.2': 'FÉV', 'month.3': 'MAR', 'month.4': 'AVR',
+    'month.5': 'MAI', 'month.6': 'JUIN', 'month.7': 'JUIL', 'month.8': 'AOÛT',
+    'month.9': 'SEPT', 'month.10': 'OCT', 'month.11': 'NOV', 'month.12': 'DÉC',
+    // Month long names (for stats)
+    'month.long.1': 'Janvier', 'month.long.2': 'Février', 'month.long.3': 'Mars', 'month.long.4': 'Avril',
+    'month.long.5': 'Mai', 'month.long.6': 'Juin', 'month.long.7': 'Juillet', 'month.long.8': 'Août',
+    'month.long.9': 'Septembre', 'month.long.10': 'Octobre', 'month.long.11': 'Novembre', 'month.long.12': 'Décembre',
+    // Buttons
+    'btn.add': 'Ajouter',
+    'btn.save': 'Enregistrer',
+    'btn.cancel': 'Annuler',
+    'btn.close': 'Fermer',
+    'btn.delete': 'Supprimer',
+    'btn.edit': 'Modifier',
+    'btn.export': 'Exporter',
+    'btn.import': 'Importer',
+    'btn.paid': 'Payé',
+    'btn.unpaid': 'Non payé',
+    'btn.next': 'Suivant',
+    'btn.back': 'Retour',
+    'btn.confirm': 'Confirmer',
+    // Summary
+    'summary.indicator': 'Indicateur',
+    'summary.year': 'ANNÉE',
+    'summary.total_revenues': '💹 Revenus totaux',
+    'summary.recurring_charges': '🏠 Charges récurrentes & occasionnelles',
+    'summary.variable_expenses': '🛒 Dépenses variables',
+    'summary.card': '&nbsp;&nbsp;&nbsp;💳 dont Carte bancaire',
+    'summary.cash': '&nbsp;&nbsp;&nbsp;💵 dont Liquide',
+    'summary.meal_voucher': '&nbsp;&nbsp;&nbsp;🎟 dont Chèque repas',
+    'summary.total_expenses': '📉 Dépenses totales',
+    'summary.balance': '💰 Solde',
+    'summary.savings_rate': 'Taux d\'épargne',
+    'summary.avg_savings': 'Épargne moy./mois',
+    'summary.best_month': '🏆 Meilleur mois',
+    'summary.worst_month': '📉 Mois difficile',
+    'summary.biggest_spending': '🛒 + dépensier',
+    'summary.top_category': '💸 Top catégorie',
+    'summary.annual_stats': '📊 Statistiques annuelles',
+    // Settings / Config
+    'settings.title': 'Paramètres',
+    'settings.language': 'Langue / Language',
+    'settings.theme': 'Thème',
+    'settings.users': '👤 Utilisateurs',
+    'settings.account': '👤 Compte & Licence',
+    'settings.pin': '🔒 Code PIN',
+    'settings.payment_methods': '💳 Modes de paiement',
+    'settings.savings_goal': '🎯 Objectif d\'épargne mensuel',
+    'settings.accounts_livrets': '🏦 Comptes & Livrets',
+    'settings.cloud_sync': '☁️ Synchronisation Cloud',
+    'settings.data_protection': '🛡 Protection des données',
+    'settings.ai': '🤖 Assistant IA (Groq)',
+    'settings.data': '🗄 Données',
+    'settings.app': '⚙️ Application',
+    'settings.sign_out': 'Se déconnecter',
+    // Toast messages
+    'toast.saved': '✅ Sauvegardé',
+    'toast.deleted': '🗑 Supprimé',
+    'toast.copied': '✅ Copié',
+    'toast.error': '❌ Erreur',
+    'toast.demo_mode': '🎮 Mode démo activé — explorez librement !',
+    // Empty states
+    'empty.no_expenses': 'Aucune dépense en {0}',
+    'empty.add_first': 'Ajoutez votre première dépense pour cette catégorie',
+    'empty.add_cta': '⚡ Ajouter une dépense',
+    // Paywall
+    'paywall.title': '⭐ Passer à Premium',
+    'paywall.free_limit': 'Version gratuite · 1 an · {0} catégories',
+    // Share modal
+    'share.title': 'Invitez un ami',
+    'share.subtitle': 'Partagez Mon Budget — c\'est gratuit et vos données restent privées',
+    'share.copy': '📋 Copier le message',
+    'share.close': 'Fermer',
+    // Legend
+    'legend.status': 'Statut :',
+    'legend.paid': '✓ Payé (cliquer ○ pour marquer)',
+    'legend.unpaid': 'Non payé',
+    'legend.occasional': '📌 Charge occasionnelle',
+    'legend.payment_mode': 'Mode de paiement :',
+    // Budget
+    'budget.available': '💵 Budget disponible / mois',
+    'budget.available_sub': '(Revenus − Charges fixes)',
+    'budget.var_by_method': 'Dépenses variables par mode de paiement',
+    'budget.var_include': 'Cocher = inclure dans Compte calculé',
+    // Auth
+    'auth.login': '🔐 Se connecter',
+    'auth.register': '✨ Créer un compte',
+    'auth.logout': 'Déconnexion',
+    'auth.connected': 'Connecté',
+    // Changelog
+    'changelog.title': '🆕 Nouveautés',
+    'changelog.close': '✓ Super, merci !',
+    // Confirm / delete
+    'confirm.delete_year': 'Supprimer l\'année {0} ?',
+    'confirm.apply_months': 'Oui, appliquer',
+    // Add row modal
+    'modal.new_row': '＋ Nouvelle ligne',
+    'modal.type': 'Type',
+    'modal.label': 'Libellé',
+    'modal.amount_occurrence': 'Montant par occurrence (€)',
+    'modal.no_end': 'Sans date de fin (jusqu\'à révocation)',
+    'modal.end_date': 'Date de fin',
+    'modal.frequency': 'Tous les X mois',
+    'modal.start_month': 'Mois de début',
+    // Propagate modal
+    'propagate.title': '↘ Appliquer aux mois suivants ?',
+    'propagate.confirm': '✅ Oui, appliquer',
+    'propagate.cancel': 'Non, juste ce mois',
+    // Nav tabs
+    'tab.home': '🏠 Accueil',
+    'tab.summary': '📊 Résumé',
+    'tab.charts': '📈 Graphiques',
+    'tab.config': '⚙️ Paramètres',
+    // Update bar
+    'update.available': 'Mise à jour disponible',
+    'update.ready': 'Une nouvelle version de l\'application est prête',
+    'update.btn': '↻ Mettre à jour',
+    // Type options
+    'type.revenu': '💰 Revenu',
+    'type.fixed': '🔒 Charge fixe récurrente',
+    'type.occasional': '📌 Charge occasionnelle',
+  },
+  en: {
+    // Welcome screen
+    'welcome.title': 'Mon Budget',
+    'welcome.subtitle': 'Monthly revenues and expenses tracker',
+    'welcome.add_user': '＋ Create a user',
+    'welcome.have_account': '🔑 I already have an account',
+    'welcome.help': '❓ Help & documentation',
+    // Onboarding screen
+    'onboarding.subtitle': 'Welcome! How would you like to get started?',
+    'onboarding.demo.title': 'Demo Mode',
+    'onboarding.demo.desc': 'Explore the app with sample data. No personal info required.',
+    'onboarding.create.title': 'Create my account',
+    'onboarding.create.desc': 'Set up your profile and start managing your real budget.',
+    // Wizard
+    'wiz.lang_picker': 'Choisissez votre langue / Choose your language',
+    'wiz.step': 'Step',
+    'wiz.of': '/',
+    'wiz.s1.title': 'What is your monthly income?',
+    'wiz.s1.sub': 'Net salary, benefits, anything that comes in each month',
+    'wiz.s1.hint': 'You can adjust this at any time',
+    'wiz.s1.placeholder': 'e.g. 2500',
+    'wiz.s2.title': 'Your main fixed costs',
+    'wiz.s2.sub': 'Rent, electricity, subscriptions… (add up to 3)',
+    'wiz.s2.placeholder1': '🏠 Rent / Mortgage',
+    'wiz.s2.placeholder2': '⚡ Energy',
+    'wiz.s2.placeholder3': '📱 Phone / Internet',
+    'wiz.s3.title': 'Your budget is ready!',
+    'wiz.s3.sub': 'Here is a first estimate of your monthly balance',
+    'wiz.s3.revenues': 'Estimated revenues',
+    'wiz.s3.charges': 'Fixed costs',
+    'wiz.s3.balance': 'Available balance / month',
+    'wiz.s3.hint': 'This data has been added to your budget. Complete it in the app!',
+    'wiz.s3.cta': '🚀 Discover my budget',
+    'wiz.next': 'Next →',
+    'wiz.skip': 'Skip this step',
+    // Sections
+    'section.revenus': 'Revenues',
+    'section.charges': 'Fixed Costs',
+    'section.vars': 'Variable Expenses',
+    'section.summary': 'Summary',
+    // Section header badges / buttons
+    'btn.add_revenu': '＋ Revenue',
+    'btn.add_fixed': '＋ Fixed',
+    'btn.add_occasional': '＋ One-time',
+    'btn.add_category': '＋ Category',
+    // Table headers
+    'th.label': 'Label',
+    'th.total': 'TOTAL',
+    'th.annual': 'Annual',
+    'th.paid': 'Paid',
+    'th.category': 'Category',
+    'th.comment': 'Comment',
+    'th.day': 'Day',
+    'th.amount': 'Amount €',
+    'th.payment_method': 'Payment method',
+    'th.month': 'Month',
+    'th.nb': 'Qty',
+    // Row labels
+    'row.total_revenus': 'TOTAL REVENUES',
+    'row.total_charges': 'TOTAL',
+    'row.recurring_charges': '🔄 RECURRING COSTS',
+    'row.occasional_charges': '📌 ONE-TIME COSTS',
+    'row.total_charges_sep': 'TOTAL COSTS',
+    'row.total_revenus_sep': 'TOTAL REVENUES',
+    // Months abbreviations
+    'month.1': 'JAN', 'month.2': 'FEB', 'month.3': 'MAR', 'month.4': 'APR',
+    'month.5': 'MAY', 'month.6': 'JUN', 'month.7': 'JUL', 'month.8': 'AUG',
+    'month.9': 'SEP', 'month.10': 'OCT', 'month.11': 'NOV', 'month.12': 'DEC',
+    // Month long names (for stats)
+    'month.long.1': 'January', 'month.long.2': 'February', 'month.long.3': 'March', 'month.long.4': 'April',
+    'month.long.5': 'May', 'month.long.6': 'June', 'month.long.7': 'July', 'month.long.8': 'August',
+    'month.long.9': 'September', 'month.long.10': 'October', 'month.long.11': 'November', 'month.long.12': 'December',
+    // Buttons
+    'btn.add': 'Add',
+    'btn.save': 'Save',
+    'btn.cancel': 'Cancel',
+    'btn.close': 'Close',
+    'btn.delete': 'Delete',
+    'btn.edit': 'Edit',
+    'btn.export': 'Export',
+    'btn.import': 'Import',
+    'btn.paid': 'Paid',
+    'btn.unpaid': 'Unpaid',
+    'btn.next': 'Next',
+    'btn.back': 'Back',
+    'btn.confirm': 'Confirm',
+    // Summary
+    'summary.indicator': 'Indicator',
+    'summary.year': 'YEAR',
+    'summary.total_revenues': '💹 Total revenues',
+    'summary.recurring_charges': '🏠 Fixed & one-time costs',
+    'summary.variable_expenses': '🛒 Variable expenses',
+    'summary.card': '&nbsp;&nbsp;&nbsp;💳 of which Credit card',
+    'summary.cash': '&nbsp;&nbsp;&nbsp;💵 of which Cash',
+    'summary.meal_voucher': '&nbsp;&nbsp;&nbsp;🎟 of which Meal vouchers',
+    'summary.total_expenses': '📉 Total expenses',
+    'summary.balance': '💰 Balance',
+    'summary.savings_rate': 'Savings rate',
+    'summary.avg_savings': 'Avg. savings/month',
+    'summary.best_month': '🏆 Best month',
+    'summary.worst_month': '📉 Toughest month',
+    'summary.biggest_spending': '🛒 Highest spend',
+    'summary.top_category': '💸 Top category',
+    'summary.annual_stats': '📊 Annual statistics',
+    // Settings / Config
+    'settings.title': 'Settings',
+    'settings.language': 'Langue / Language',
+    'settings.theme': 'Theme',
+    'settings.users': '👤 Users',
+    'settings.account': '👤 Account & License',
+    'settings.pin': '🔒 PIN Code',
+    'settings.payment_methods': '💳 Payment methods',
+    'settings.savings_goal': '🎯 Monthly savings goal',
+    'settings.accounts_livrets': '🏦 Accounts & Savings',
+    'settings.cloud_sync': '☁️ Cloud synchronization',
+    'settings.data_protection': '🛡 Data protection',
+    'settings.ai': '🤖 AI Assistant (Groq)',
+    'settings.data': '🗄 Data',
+    'settings.app': '⚙️ Application',
+    'settings.sign_out': 'Sign out',
+    // Toast messages
+    'toast.saved': '✅ Saved',
+    'toast.deleted': '🗑 Deleted',
+    'toast.copied': '✅ Copied',
+    'toast.error': '❌ Error',
+    'toast.demo_mode': '🎮 Demo mode activated — explore freely!',
+    // Empty states
+    'empty.no_expenses': 'No expenses in {0}',
+    'empty.add_first': 'Add your first expense for this category',
+    'empty.add_cta': '⚡ Add an expense',
+    // Paywall
+    'paywall.title': '⭐ Go Premium',
+    'paywall.free_limit': 'Free version · 1 year · {0} categories',
+    // Share modal
+    'share.title': 'Invite a friend',
+    'share.subtitle': 'Share Mon Budget — it\'s free and your data stays private',
+    'share.copy': '📋 Copy message',
+    'share.close': 'Close',
+    // Legend
+    'legend.status': 'Status:',
+    'legend.paid': '✓ Paid (click ○ to mark)',
+    'legend.unpaid': 'Unpaid',
+    'legend.occasional': '📌 One-time cost',
+    'legend.payment_mode': 'Payment method:',
+    // Budget
+    'budget.available': '💵 Available budget / month',
+    'budget.available_sub': '(Revenues − Fixed costs)',
+    'budget.var_by_method': 'Variable expenses by payment method',
+    'budget.var_include': 'Check = include in calculated account',
+    // Auth
+    'auth.login': '🔐 Sign in',
+    'auth.register': '✨ Create an account',
+    'auth.logout': 'Sign out',
+    'auth.connected': 'Connected',
+    // Changelog
+    'changelog.title': '🆕 What\'s new',
+    'changelog.close': '✓ Great, thanks!',
+    // Confirm / delete
+    'confirm.delete_year': 'Delete year {0}?',
+    'confirm.apply_months': 'Yes, apply',
+    // Add row modal
+    'modal.new_row': '＋ New row',
+    'modal.type': 'Type',
+    'modal.label': 'Label',
+    'modal.amount_occurrence': 'Amount per occurrence (€)',
+    'modal.no_end': 'No end date (until revoked)',
+    'modal.end_date': 'End date',
+    'modal.frequency': 'Every X months',
+    'modal.start_month': 'Start month',
+    // Propagate modal
+    'propagate.title': '↘ Apply to following months?',
+    'propagate.confirm': '✅ Yes, apply',
+    'propagate.cancel': 'No, just this month',
+    // Nav tabs
+    'tab.home': '🏠 Home',
+    'tab.summary': '📊 Summary',
+    'tab.charts': '📈 Charts',
+    'tab.config': '⚙️ Settings',
+    // Update bar
+    'update.available': 'Update available',
+    'update.ready': 'A new version of the app is ready',
+    'update.btn': '↻ Update',
+    // Type options
+    'type.revenu': '💰 Revenue',
+    'type.fixed': '🔒 Recurring fixed cost',
+    'type.occasional': '📌 One-time cost',
+  }
+};
+
+// ── Language management ──
+let _lang = localStorage.getItem('mbudget-lang') || 'fr';
+
+function t(key, ...args) {
+  const translations = TRANSLATIONS[_lang] || TRANSLATIONS['fr'];
+  let str = translations[key] || TRANSLATIONS['fr'][key] || key;
+  args.forEach((arg, i) => { str = str.replace(`{${i}}`, arg); });
+  return str;
+}
+
+function setLang(code) {
+  _lang = code;
+  localStorage.setItem('mbudget-lang', code);
+  // Update lang attribute on html element
+  document.documentElement.lang = code;
+  // Update static elements with data-i18n attribute
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  // Update lang button styles (wizard buttons)
+  ['fr','en'].forEach(c => {
+    const btn = document.getElementById('lang-btn-' + c);
+    if (btn) {
+      btn.style.background = c === code ? 'var(--blue)' : 'none';
+      btn.style.color = c === code ? '#fff' : 'var(--text)';
+      btn.style.borderColor = c === code ? 'var(--blue)' : 'var(--border)';
+      btn.style.fontWeight = c === code ? '700' : '600';
+    }
+    // Welcome screen lang buttons
+    const wsbtn = document.getElementById('ws-lang-' + c);
+    if (wsbtn) {
+      wsbtn.style.background = c === code ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.08)';
+      wsbtn.style.fontWeight = c === code ? '700' : '600';
+    }
+    // Config tab lang buttons
+    const cfgbtn = document.getElementById('cfg-lang-btn-' + c);
+    if (cfgbtn) {
+      cfgbtn.style.background = c === code ? 'var(--blue)' : 'none';
+      cfgbtn.style.color = c === code ? '#fff' : 'var(--text)';
+      cfgbtn.style.borderColor = c === code ? 'var(--blue)' : 'var(--border)';
+      cfgbtn.style.fontWeight = c === code ? '700' : '600';
+    }
+    // Onboarding screen lang buttons
+    const obbtn = document.getElementById('ob-lang-' + c);
+    if (obbtn) {
+      obbtn.style.background = c === code ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.08)';
+      obbtn.style.fontWeight = c === code ? '700' : '600';
+    }
+  });
+  // Re-render dynamic content
+  if (typeof CURRENT_USER_ID !== 'undefined' && CURRENT_USER_ID) {
+    if (typeof getYears === 'function') getYears().forEach(y => renderYear(y));
+    if (typeof renderSummary === 'function') renderSummary();
+    if (typeof renderConfigTab === 'function') renderConfigTab();
+  }
+  if (typeof renderWelcomeScreen === 'function') renderWelcomeScreen();
+  // Re-render onboarding screen if visible
+  _updateOnboardingLang();
+  // Re-render wizard if visible
+  _updateWizardLang();
+  // Update update bar
+  const ubar = document.getElementById('update-bar');
+  if (ubar) {
+    const uTitle = ubar.querySelector('div > div > div:first-child');
+    const uSub = ubar.querySelector('div > div > div:last-child');
+    const uBtn = ubar.querySelector('button');
+    if (uTitle) uTitle.textContent = t('update.available');
+    if (uSub) uSub.textContent = t('update.ready');
+    if (uBtn) uBtn.textContent = t('update.btn');
+  }
+}
+
+function _updateOnboardingLang() {
+  const sub = document.querySelector('#onboarding-screen .ob-sub');
+  if (sub) sub.textContent = t('onboarding.subtitle');
+  const demoTitle = document.querySelector('#onboarding-screen .ob-demo .ob-card-title');
+  if (demoTitle) demoTitle.textContent = t('onboarding.demo.title');
+  const demoDesc = document.querySelector('#onboarding-screen .ob-demo .ob-card-desc');
+  if (demoDesc) demoDesc.textContent = t('onboarding.demo.desc');
+  const createTitle = document.querySelector('#onboarding-screen .ob-create .ob-card-title');
+  if (createTitle) createTitle.textContent = t('onboarding.create.title');
+  const createDesc = document.querySelector('#onboarding-screen .ob-create .ob-card-desc');
+  if (createDesc) createDesc.textContent = t('onboarding.create.desc');
+  // Login button
+  const loginBtns = document.querySelectorAll('#onboarding-screen button');
+  loginBtns.forEach(btn => {
+    if (btn.textContent.includes('J\'ai déjà') || btn.textContent.includes('already have')) {
+      btn.textContent = t('welcome.have_account');
+    }
+  });
+}
+
+function _updateWizardLang() {
+  // Update wizard text elements regardless of visibility (in case it opens later)
+  const _upd = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
+  _upd('wiz-s1-title', 'wiz.s1.title');
+  _upd('wiz-s1-sub', 'wiz.s1.sub');
+  _upd('wiz-s1-hint', 'wiz.s1.hint');
+  _upd('wiz-s2-title', 'wiz.s2.title');
+  _upd('wiz-s2-sub', 'wiz.s2.sub');
+  _upd('wiz-s3-title', 'wiz.s3.title');
+  _upd('wiz-s3-sub', 'wiz.s3.sub');
+  _upd('wiz-s3-rev-lbl', 'wiz.s3.revenues');
+  _upd('wiz-s3-chg-lbl', 'wiz.s3.charges');
+  _upd('wiz-s3-bal-lbl', 'wiz.s3.balance');
+  _upd('wiz-s3-hint', 'wiz.s3.hint');
+  _upd('wiz-s3-cta', 'wiz.s3.cta');
+  // Placeholders
+  const p1 = document.getElementById('wiz-chg-lbl-1'); if (p1) p1.placeholder = t('wiz.s2.placeholder1');
+  const p2 = document.getElementById('wiz-chg-lbl-2'); if (p2) p2.placeholder = t('wiz.s2.placeholder2');
+  const p3 = document.getElementById('wiz-chg-lbl-3'); if (p3) p3.placeholder = t('wiz.s2.placeholder3');
+  const sal = document.getElementById('wiz-salary'); if (sal) sal.placeholder = t('wiz.s1.placeholder');
+  // Buttons with data-i18n-wiz attribute
+  document.querySelectorAll('[data-i18n-wiz]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n-wiz'));
+  });
+  // Lang buttons state
+  ['fr','en'].forEach(c => {
+    const btn = document.getElementById('lang-btn-' + c);
+    if (btn) {
+      btn.style.background = c === _lang ? 'var(--blue)' : 'none';
+      btn.style.color = c === _lang ? '#fff' : 'var(--text)';
+      btn.style.borderColor = c === _lang ? 'var(--blue)' : 'var(--border)';
+      btn.style.fontWeight = c === _lang ? '700' : '600';
+    }
+  });
+}
+
+// Returns MONTHS array in current language
+function getMonths() {
+  return Array.from({length: 12}, (_, i) => t('month.' + (i + 1)));
+}
+
+function _langPicker(idSuffix) {
+  return `<div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px">
+    <button id="lang-btn-fr${idSuffix||''}" onclick="setLang('fr')" style="padding:6px 16px;border-radius:8px;border:2px solid ${_lang==='fr'?'var(--blue)':'var(--border)'};background:${_lang==='fr'?'var(--blue)':'none'};color:${_lang==='fr'?'#fff':'var(--text)'};font-weight:${_lang==='fr'?'700':'600'};cursor:pointer">🇫🇷 Français</button>
+    <button id="lang-btn-en${idSuffix||''}" onclick="setLang('en')" style="padding:6px 16px;border-radius:8px;border:2px solid ${_lang==='en'?'var(--blue)':'var(--border)'};background:${_lang==='en'?'var(--blue)':'none'};color:${_lang==='en'?'#fff':'var(--text)'};font-weight:${_lang==='en'?'700':'600'};cursor:pointer">🇬🇧 English</button>
+  </div>`;
+}
+
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -7073,7 +7616,28 @@ function _setVersionDisplays() {
   if (wv) wv.textContent = `v${APP_VERSION} · SW ${SW_VERSION}`;
 }
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
-document.addEventListener('DOMContentLoaded', _setVersionDisplays);
+document.addEventListener('DOMContentLoaded', () => {
+  _setVersionDisplays();
+  // Apply saved language on load
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  _updateWizardLang();
+  _updateOnboardingLang();
+  // Update welcome screen lang button states
+  ['fr','en'].forEach(c => {
+    const wsbtn = document.getElementById('ws-lang-' + c);
+    if (wsbtn) {
+      wsbtn.style.background = c === _lang ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.08)';
+      wsbtn.style.fontWeight = c === _lang ? '700' : '600';
+    }
+    const obbtn = document.getElementById('ob-lang-' + c);
+    if (obbtn) {
+      obbtn.style.background = c === _lang ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.08)';
+      obbtn.style.fontWeight = c === _lang ? '700' : '600';
+    }
+  });
+});
 
 // ── Détection navigateur in-app Instagram/Facebook ──
 (function() {
@@ -7086,6 +7650,12 @@ document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.33': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🌐', text: 'Internationalisation : choix de la langue français/anglais lors de l\'inscription et dans les paramètres' }
+    ]
+  },
   '11.32': {
     date: 'Mai 2026',
     items: [
@@ -8459,6 +9029,10 @@ function showChangelog() {
   if (!log) return;
   const overlay = document.getElementById('changelog-overlay');
   if (!overlay) return;
+  const titleEl = document.getElementById('changelog-title');
+  if (titleEl) titleEl.textContent = t('changelog.title');
+  const closeBtnEl = document.getElementById('changelog-close-btn');
+  if (closeBtnEl) closeBtnEl.textContent = t('changelog.close');
   document.getElementById('changelog-version').textContent = 'Version ' + APP_VERSION + ' — ' + log.date;
   const container = document.getElementById('changelog-items');
   container.innerHTML = log.items.map(it =>
