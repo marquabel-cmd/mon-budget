@@ -3,7 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon Budget</title>
+<title>Mon Budget — App budget familial gratuite | Sans pub ni tracking</title>
+<meta name="description" content="Gérez vos revenus, charges et dépenses variables par catégorie. Gratuit, fonctionne hors-ligne, vos données restent chez vous. Alternative simple à Bankin' et Excel.">
+<meta name="keywords" content="budget familial, app budget gratuit, gestion budget mensuel, budget belgique, alternative bankin, dépenses mensuelles, budget personnel">
+<meta name="author" content="Mon Budget — marquabel.be">
+<meta property="og:title" content="Mon Budget — App budget familial gratuite">
+<meta property="og:description" content="Vos revenus, charges et dépenses en un coup d'œil. Gratuit, sans pub, sans tracking. Vos données restent chez vous.">
+<meta property="og:image" content="https://budget.marquabel.be/icon-512.png">
+<meta property="og:url" content="https://budget.marquabel.be">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mon Budget — App budget familial gratuite">
+<meta name="twitter:description" content="Gratuit, hors-ligne, vos données restent chez vous. Alternative à Bankin' et Excel.">
+<meta name="twitter:image" content="https://budget.marquabel.be/icon-512.png">
+<link rel="canonical" href="https://budget.marquabel.be/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Mon Budget",
+  "description": "Application de gestion de budget familial. Gratuite, sans pub, vos données restent sur votre appareil.",
+  "url": "https://budget.marquabel.be",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Web, Android, iOS",
+  "offers": [
+    {"@type": "Offer", "price": "0", "priceCurrency": "EUR", "name": "Gratuit"},
+    {"@type": "Offer", "price": "2.99", "priceCurrency": "EUR", "name": "Premium mensuel"},
+    {"@type": "Offer", "price": "24.99", "priceCurrency": "EUR", "name": "Premium annuel"}
+  ],
+  "inLanguage": "fr",
+  "author": {"@type": "Person", "name": "Pascal Evrard", "url": "https://marquabel.be"}
+}
+</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1A1D2E">
 <meta name="mobile-web-app-capable" content="yes">
@@ -756,15 +787,25 @@ body.auth-locked #context-banner {
 <!-- ── UPGRADE OVERLAY ── -->
 <div id="upgrade-overlay" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center" onclick="if(event.target===this)closeUpgrade()">
   <div style="background:#fff;border-radius:20px;width:min(420px,94%);padding:28px 28px 24px;box-shadow:0 24px 64px rgba(0,0,0,.3);text-align:center">
-    <div style="font-size:40px;margin-bottom:6px">⭐</div>
-    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px">Passez à Premium</div>
-    <div id="upgrade-reason" style="font-size:13px;color:var(--gray);margin-bottom:18px"></div>
-    <div style="background:var(--blue-light);border-radius:10px;padding:14px 16px;margin-bottom:20px;text-align:left">
-      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:8px">Premium inclut :</div>
-      <div style="font-size:13px;line-height:2;color:var(--text)">✅ Utilisateurs illimités<br>✅ Historique multi-années<br>✅ Catégories de dépenses illimitées<br>✅ Synchronisation Firebase cloud</div>
+    <div style="font-size:36px;margin-bottom:4px">⭐</div>
+    <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px">Débloquez tout — moins qu'un café</div>
+    <div id="upgrade-reason" style="font-size:12px;color:var(--gray);margin-bottom:14px;background:rgba(245,166,35,.1);border-radius:6px;padding:6px 10px;display:inline-block"></div>
+    <div style="background:var(--blue-light);border-radius:10px;padding:12px 16px;margin-bottom:16px;text-align:left">
+      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:8px">✨ Avec Premium :</div>
+      <div style="font-size:13px;line-height:1.9;color:var(--text)">
+        📅 Historique illimité — gardez toutes vos années<br>
+        🗂️ Catégories illimitées — organisez comme vous voulez<br>
+        👥 Plusieurs utilisateurs sur un même compte<br>
+        ☁️ Sync cloud — retrouvez tout sur chaque appareil<br>
+        🔒 Vos données restent privées — toujours
+      </div>
     </div>
-    <a id="upgrade-stripe-btn" href="#" onclick="openStripeCheckout('monthly');return false;" style="display:block;background:var(--blue);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:8px;cursor:pointer">💳 Premium mensuel — 2,99 €/mois</a>
-    <a href="#" onclick="openStripeCheckout('yearly');return false;" style="display:block;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:16px;cursor:pointer">⭐ Premium annuel — 24,99 €/an <span style="font-size:11px;opacity:.85">(−40%)</span></a>
+    <a href="#" onclick="openStripeCheckout('yearly');return false;" style="display:block;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:8px;cursor:pointer;position:relative">
+      ⭐ Annuel — 24,99 €/an
+      <span style="display:block;font-size:11px;font-weight:400;opacity:.9">= 2,08 €/mois · Économisez 11€ · Le plus populaire</span>
+      <span style="position:absolute;top:-8px;right:12px;background:#F5A623;color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px">−30%</span>
+    </a>
+    <a id="upgrade-stripe-btn" href="#" onclick="openStripeCheckout('monthly');return false;" style="display:block;background:rgba(91,106,240,.1);color:var(--blue);border:1px solid rgba(91,106,240,.3);border-radius:10px;padding:11px;font-size:13px;font-weight:600;text-decoration:none;margin-bottom:16px;cursor:pointer">💳 Mensuel — 2,99 €/mois</a>
     <div style="border-top:1px solid var(--border);padding-top:14px">
       <div style="font-size:12px;color:var(--gray);margin-bottom:8px">Déjà une clé de licence ?</div>
       <div style="display:flex;gap:8px">
@@ -773,6 +814,26 @@ body.auth-locked #context-banner {
       </div>
     </div>
     <button onclick="closeUpgrade()" style="margin-top:14px;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Continuer en version gratuite</button>
+  </div>
+</div>
+
+<!-- ── SHARE / INVITE MODAL ── -->
+<div id="share-modal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center" onclick="if(event.target===this)closeShareModal()">
+  <div style="background:var(--surface);border-radius:20px;width:min(400px,94%);padding:28px;box-shadow:0 24px 64px rgba(0,0,0,.3);text-align:center">
+    <div style="font-size:36px;margin-bottom:8px">🎁</div>
+    <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">Invitez un ami</div>
+    <div style="font-size:13px;color:var(--gray);margin-bottom:20px">Partagez Mon Budget — c'est gratuit et vos données restent privées</div>
+    <div style="background:var(--surface-alt);border-radius:10px;padding:14px;margin-bottom:16px;text-align:left">
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:8px">Message prêt à copier :</div>
+      <div id="share-text" style="font-size:12px;color:var(--text);line-height:1.7">J'utilise Mon Budget pour gérer mes finances 💰 C'est gratuit, sans pub, et mes données restent chez moi. Essaie : budget.marquabel.be</div>
+    </div>
+    <button onclick="copyShareText()" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">📋 Copier le message</button>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <a href="https://wa.me/?text=J%27utilise%20Mon%20Budget%20pour%20g%C3%A9rer%20mes%20finances%20%F0%9F%92%B0%20C%27est%20gratuit%2C%20sans%20pub%2C%20et%20mes%20donn%C3%A9es%20restent%20chez%20moi.%20Essaie%20%3A%20budget.marquabel.be" target="_blank" style="flex:1;background:#25D366;color:#fff;border-radius:8px;padding:10px;font-size:12px;font-weight:700;text-decoration:none;text-align:center">💬 WhatsApp</a>
+      <a href="mailto:?subject=Une app budget gratuite&body=J%27utilise%20Mon%20Budget%20pour%20g%C3%A9rer%20mes%20finances.%20C%27est%20gratuit%2C%20sans%20pub%2C%20et%20mes%20donn%C3%A9es%20restent%20chez%20moi.%20Essaie%20%3A%20budget.marquabel.be" style="flex:1;background:var(--blue);color:#fff;border-radius:8px;padding:10px;font-size:12px;font-weight:700;text-decoration:none;text-align:center">✉️ Email</a>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://budget.marquabel.be" target="_blank" style="flex:1;background:#1877F2;color:#fff;border-radius:8px;padding:10px;font-size:12px;font-weight:700;text-decoration:none;text-align:center">👍 Facebook</a>
+    </div>
+    <button onclick="closeShareModal()" style="background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Fermer</button>
   </div>
 </div>
 
@@ -1227,6 +1288,7 @@ body.auth-locked #context-banner {
           <div class="tour-help-item" onclick="startTour();closeHelpDropdown()">🗺️ Tour guidé</div>
           <div class="tour-help-item" onclick="openAide();closeHelpDropdown()">📖 Guide complet</div>
           <div class="tour-help-item" onclick="window.location.href='dashboard.html';closeHelpDropdown()">👤 Mon compte</div>
+          <div class="tour-help-item" onclick="openShareModal();closeHelpDropdown()" style="color:#00C896;font-weight:700">🎁 Inviter un ami</div>
           <div style="padding:7px 14px;font-size:11px;color:var(--gray);border-top:1px solid var(--border);user-select:all">v<span id="app-version-display"></span> · SW <span id="sw-version-display"></span></div>
         </div>
       </div>
@@ -6927,8 +6989,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.30';
-const SW_VERSION = 'v157';
+const APP_VERSION = '11.31';
+const SW_VERSION = 'v158';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6951,6 +7013,14 @@ document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.31': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔍', text: 'SEO : meta tags complets (description, og:image, Twitter Card) + Schema.org SoftwareApplication pour le référencement Google' },
+      { icon: '⭐', text: 'Paywall repensé : message personnalisé avec nb de jours d\'utilisation, annuel mis en avant avec badge -30%, copywriting orienté valeur' },
+      { icon: '🎁', text: 'Bouton "Inviter un ami" dans le menu ❓ — partage rapide via WhatsApp, Email ou Facebook avec message prêt à l\'emploi' }
+    ]
+  },
   '11.30': {
     date: 'Mai 2026',
     items: [
@@ -7818,11 +7888,21 @@ async function submitFeedback() {
 }
 
 function showUpgrade(reason) {
-  document.getElementById('upgrade-reason').textContent = 'Fonctionnalité Premium requise : ' + reason + '.';
+  const days = Math.floor((Date.now() - (parseInt(localStorage.getItem('budget_first_use')) || Date.now())) / 86400000);
+  const daysTxt = days > 7 ? `Vous gérez votre budget depuis ${days} jours — ` : '';
+  document.getElementById('upgrade-reason').textContent = daysTxt + 'Pour débloquer : ' + reason + '.';
+  if (!localStorage.getItem('budget_first_use')) localStorage.setItem('budget_first_use', Date.now());
   document.getElementById('upgrade-key-input').value = '';
   document.getElementById('upgrade-overlay').style.display = 'flex';
 }
 function closeUpgrade() { document.getElementById('upgrade-overlay').style.display = 'none'; }
+
+function openShareModal() { document.getElementById('share-modal').style.display = 'flex'; }
+function closeShareModal() { document.getElementById('share-modal').style.display = 'none'; }
+function copyShareText() {
+  const txt = document.getElementById('share-text').textContent;
+  navigator.clipboard.writeText(txt).then(() => showToast('✅ Message copié — collez-le où vous voulez !')).catch(() => showToast('Copiez manuellement le texte'));
+}
 
 // Ouvre Stripe avec client_reference_id = Firebase UID (pour activation automatique via webhook)
 function openStripeCheckout(plan) {
