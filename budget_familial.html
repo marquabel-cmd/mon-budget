@@ -1685,8 +1685,10 @@ function buildDefaultsForNewUser() {
   const varsForYear = {};
   DEFAULT_VAR_CATS.forEach(c => { varsForYear[c.key] = []; });
   d[year] = { soldes:{compteIng:0,comptePro:0,livretInitial:0,boite:0}, revenus, charges, vars: varsForYear };
-  Object.keys(d).filter(k=>/^\d{4}$/.test(k)).forEach(y =>
-    d[y].charges.forEach(r => r.v.forEach((v,i) => { if((parseFloat(v)||0)===0) r.paid[i]=true; })));
+  Object.keys(d).filter(k=>/^\d{4}$/.test(k)).forEach(y => {
+    d[y].charges.forEach(r => r.v.forEach((v,i) => { if((parseFloat(v)||0)===0) r.paid[i]=true; }));
+    (d[y].revenus||[]).forEach(r => r.v.forEach((v,i) => { if((parseFloat(v)||0)===0) r.paid[i]=true; }));
+  });
   return d;
 }
 
@@ -3752,9 +3754,9 @@ function submitAddRow() {
     return;
   }
   if (type === 'revenu') {
-    DATA[year].revenus.push({label, v, paid: v.map(x => x !== 0), inCalc: true, ...rowMeta});
+    DATA[year].revenus.push({label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: true, ...rowMeta});
   } else {
-    DATA[year].charges.push({label, cat: type, v, paid: v.map(x => x !== 0), ...rowMeta});
+    DATA[year].charges.push({label, cat: type, v, paid: v.map(x => (parseFloat(x)||0) === 0), ...rowMeta});
   }
   renderYear(year);
   dSave();
@@ -6920,8 +6922,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.28';
-const SW_VERSION = 'v155';
+const APP_VERSION = '11.29';
+const SW_VERSION = 'v156';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6934,6 +6936,12 @@ _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.29': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '✅', text: 'Fix : nouveaux revenus/charges — les mois à 0 sont automatiquement cochés à l\'ajout (logique paid inversée corrigée)' }
+    ]
+  },
   '11.28': {
     date: 'Mai 2026',
     items: [
