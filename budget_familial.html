@@ -989,7 +989,7 @@ body.auth-locked #context-banner {
         </div>
       </div>
       <div>
-        <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Catégorie</label>
+        <label data-i18n="th.category" style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Catégorie</label>
         <select id="qa-cat" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1003,7 +1003,7 @@ body.auth-locked #context-banner {
         </div>
       </div>
       <div>
-        <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Commentaire (optionnel)</label>
+        <label data-i18n="th.comment" style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Commentaire (optionnel)</label>
         <input id="qa-comment" type="text" placeholder="ex: Supermarché, Total..." style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
       </div>
       <div id="qa-budget-notice" style="display:none;background:var(--orange-light);border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:8px 10px;font-size:12px;color:#7a4f00">
@@ -1011,7 +1011,7 @@ body.auth-locked #context-banner {
         <a href="#" onclick="event.preventDefault();openBudgetSetFromQA()" style="color:#e08800;font-weight:700;text-decoration:underline">Définir un budget →</a>
       </div>
       <div id="qa-error" style="color:var(--red);font-size:12px;font-weight:600;min-height:16px"></div>
-      <button id="qa-submit-btn" onclick="submitQuickAdd()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--blue),#2980b9);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:2px">✅ Ajouter</button>
+      <button id="qa-submit-btn" data-i18n="btn.add" onclick="submitQuickAdd()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--blue),#2980b9);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:2px">✅ Ajouter</button>
     </div>
   </div>
 </div>
@@ -1116,7 +1116,7 @@ body.auth-locked #context-banner {
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
       <div>
-        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Type</label>
+        <label data-i18n="modal.type" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Type</label>
         <select id="ar-type" onchange="updateAddRowModal()" style="width:100%;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
           <option value="revenu">💰 Revenu</option>
           <option value="fixed">🔒 Charge fixe récurrente</option>
@@ -1124,21 +1124,21 @@ body.auth-locked #context-banner {
         </select>
       </div>
       <div>
-        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Libellé</label>
+        <label data-i18n="th.label" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Libellé</label>
         <input id="ar-label" type="text" placeholder="Ex : Salaire, Loyer, Assurance…" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
-          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Tous les X mois</label>
+          <label data-i18n="modal.frequency" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Tous les X mois</label>
           <input id="ar-freq" type="number" min="1" max="12" value="1" oninput="_arOnFreqOrStartChange()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
         </div>
         <div>
-          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Mois de début</label>
+          <label data-i18n="modal.start_month" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Mois de début</label>
           <select id="ar-startmonth" onchange="_arOnFreqOrStartChange()" style="width:100%;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px"></select>
         </div>
       </div>
       <div>
-        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Montant par occurrence (€)</label>
+        <label data-i18n="modal.amount_occurrence" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Montant par occurrence (€)</label>
         <input id="ar-amount" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateAddRowPreview()" onkeydown="if(event.key==='Enter')submitAddRow()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
       </div>
       <div id="ar-reps-wrap">
@@ -1150,9 +1150,9 @@ body.auth-locked #context-banner {
         </div>
       </div>
       <div id="ar-enddate-wrap" style="background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
-        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:8px">Date de fin</label>
+        <label data-i18n="modal.end_date" style="font-size:12px;color:var(--gray);display:block;margin-bottom:8px">Date de fin</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:8px;cursor:pointer">
-          <input type="checkbox" id="ar-noend" onchange="updateAddRowEndDate()"> Sans date de fin (jusqu'à révocation)
+          <input type="checkbox" id="ar-noend" onchange="updateAddRowEndDate()"> <span data-i18n="modal.no_end">Sans date de fin (jusqu'à révocation)</span>
         </label>
         <div id="ar-enddate-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <select id="ar-endmonth" onchange="updateAddRowPreview()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px"></select>
@@ -1162,7 +1162,7 @@ body.auth-locked #context-banner {
       <div id="ar-preview" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);border-left:3px solid var(--blue)"></div>
       <div id="ar-edit-warning" style="display:none;background:#2a1f3d;border-left:3px solid #8B5CF6;border-radius:6px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,.7)">✏️ Les montants seront remplacés à partir du mois de début choisi. Les mois précédents restent inchangés.</div>
       <div id="ar-error" style="color:#ff6b6b;font-size:12px;min-height:16px"></div>
-      <button id="ar-submit-btn" onclick="submitAddRow()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--blue),#8B5CF6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">✅ Ajouter</button>
+      <button id="ar-submit-btn" data-i18n="btn.add" onclick="submitAddRow()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--blue),#8B5CF6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">✅ Ajouter</button>
     </div>
   </div>
 </div>
@@ -6032,14 +6032,14 @@ function renderConfigTab() {
   const userList = Object.entries(USERS).map(([id,u])=>`
     <div class="user-card">
       ${u.photo
-        ? `<img src="${u.photo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer;border:2px solid ${u.color}" onclick="uploadUserPhoto('${id}')" title="Changer la photo">`
-        : `<span style="width:28px;height:28px;border-radius:50%;background:${u.color};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer" onclick="uploadUserPhoto('${id}')" title="Ajouter une photo">${u.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase()}</span>`}
-      <span class="user-card-name">${_esc(u.name)}${u.admin?' <span style="font-size:10px;color:#e67e22;font-weight:700" title="Administrateur">👑</span>':''}${id===CURRENT_USER_ID?' <span style="font-size:10px;color:var(--green);font-weight:400">(actif)</span>':''}</span>
-      <span style="font-size:10px;color:${u.pin?'var(--blue)':'#ccc'};margin-right:4px" title="${u.pin?'PIN activé':'Sans PIN'}">${u.pin?'🔒':'🔓'}</span>
+        ? `<img src="${u.photo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer;border:2px solid ${u.color}" onclick="uploadUserPhoto('${id}')" title="${t('cfg.photo')}">`
+        : `<span style="width:28px;height:28px;border-radius:50%;background:${u.color};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer" onclick="uploadUserPhoto('${id}')" title="${t('cfg.photo')}">${u.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase()}</span>`}
+      <span class="user-card-name">${_esc(u.name)}${u.admin?' <span style="font-size:10px;color:#e67e22;font-weight:700" title="'+t('cfg.admin')+'">👑</span>':''}${id===CURRENT_USER_ID?' <span style="font-size:10px;color:var(--green);font-weight:400">'+t('cfg.active')+'</span>':''}</span>
+      <span style="font-size:10px;color:${u.pin?'var(--blue)':'#ccc'};margin-right:4px" title="${u.pin?t('cfg.pin_on'):t('cfg.pin_off')}">${u.pin?'🔒':'🔓'}</span>
       <div class="user-card-actions">
-        <button class="btn-sm" style="background:#f0f4ff;color:var(--blue);border:1px solid var(--blue)" onclick="uploadUserPhoto('${id}')" title="Photo de profil">📷</button>
-        <button class="btn-sm" style="background:transparent;color:var(--gray);border:1px solid var(--border)" onclick="renameUser('${id}')" title="Renommer">✏️</button>
-        ${id!==CURRENT_USER_ID?`<button class="btn-sm btn-sm-edit" onclick="switchUser('${id}')">Activer</button>`:''}
+        <button class="btn-sm" style="background:#f0f4ff;color:var(--blue);border:1px solid var(--blue)" onclick="uploadUserPhoto('${id}')" title="${t('cfg.photo')}">📷</button>
+        <button class="btn-sm" style="background:transparent;color:var(--gray);border:1px solid var(--border)" onclick="renameUser('${id}')" title="${t('cfg.rename')}">✏️</button>
+        ${id!==CURRENT_USER_ID?`<button class="btn-sm btn-sm-edit" onclick="switchUser('${id}')">${t('cfg.activate')}</button>`:''}
         ${isAdmin && Object.keys(USERS).length>1?`<button class="btn-sm btn-sm-del" onclick="confirmDeleteUser('${id}')">✕</button>`:''}
       </div>
     </div>`).join('');
@@ -6061,19 +6061,19 @@ function renderConfigTab() {
   const years = getYears();
   wrap.innerHTML = `<div><div class="config-grid">
     <div>
-      <div class="config-card"><h3>👤 Utilisateurs</h3>${userList}
+      <div class="config-card"><h3>${t('cfg.users')}</h3>${userList}
         <div class="add-user-form">
-          <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="openUserWizardFromConfig()">＋ Ajouter un utilisateur</button>
+          <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="openUserWizardFromConfig()">＋ ${t('cfg.add_user')}</button>
         </div>
       </div>
-      <div class="config-card" style="margin-top:14px"><h3>🔒 Code PIN — ${USERS[CURRENT_USER_ID]?.name||''}</h3>
-        <div style="font-size:12px;color:var(--gray);margin-bottom:12px">${curPin?'✅ Code PIN activé — vos données sont protégées':'⚠️ Aucun code PIN — tout le monde peut accéder à vos données'}</div>
+      <div class="config-card" style="margin-top:14px"><h3>${t('cfg.pin_title')} — ${USERS[CURRENT_USER_ID]?.name||''}</h3>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:12px">${curPin?t('cfg.pin_active_msg'):t('cfg.pin_none_msg')}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="showPinOverlay('${CURRENT_USER_ID}','set')">${curPin?'✏️ Modifier le PIN':'🔒 Définir un PIN'}</button>
-          ${curPin?`<button class="btn" style="background:var(--red-light);color:var(--red);border:1px solid var(--red);padding:5px 12px;font-size:12px" onclick="removePIN()">🔓 Supprimer le PIN</button>`:''}
+          <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="showPinOverlay('${CURRENT_USER_ID}','set')">${curPin?'✏️ '+t('cfg.pin_edit'):'🔒 '+t('cfg.pin_set')}</button>
+          ${curPin?`<button class="btn" style="background:var(--red-light);color:var(--red);border:1px solid var(--red);padding:5px 12px;font-size:12px" onclick="removePIN()">🔓 ${t('cfg.pin_del')}</button>`:''}
         </div>
       </div>
-      <div class="config-card" style="margin-top:14px"><h3>💳 Modes de paiement</h3>
+      <div class="config-card" style="margin-top:14px"><h3>${t('cfg.methods')}</h3>
         <div style="margin-bottom:8px">${methodList}</div>
         <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
           <input type="text" id="new-method-key" placeholder="Clé (ex: virement)" style="flex:1;min-width:90px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
@@ -6141,37 +6141,37 @@ function renderConfigTab() {
     </div>
     <div>
       <div class="config-card" style="margin-bottom:14px">
-        <h3>👤 Compte &amp; Licence</h3>
+        <h3>${t('settings.account')}</h3>
         ${_fbUser ? `
           <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface-alt);border-radius:8px;margin-bottom:10px;border:1px solid var(--border)">
             <span style="font-size:20px">👤</span>
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_fbUser.email}</div>
-              <div style="font-size:11px;color:var(--gray)">Connecté</div>
+              <div style="font-size:11px;color:var(--gray)">${t('auth.connected')}</div>
             </div>
-            <button onclick="fbLogout()" style="font-size:11px;color:var(--red);background:none;border:1px solid var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap">Déconnexion</button>
+            <button onclick="fbLogout()" style="font-size:11px;color:var(--red);background:none;border:1px solid var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap">${t('cfg.logout')}</button>
           </div>
           ${isLicensed() ? `
             <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--green-light);border-radius:8px;margin-bottom:10px">
               <span style="font-size:22px">⭐</span>
-              <div><div style="font-weight:700;color:var(--green);font-size:13px">Premium actif</div></div>
+              <div><div style="font-weight:700;color:var(--green);font-size:13px">${t('cfg.premium_active')}</div></div>
             </div>
-            <button onclick="deactivateLicense()" style="font-size:11px;color:var(--gray);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer">Révoquer la licence</button>
+            <button onclick="deactivateLicense()" style="font-size:11px;color:var(--gray);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer">${t('cfg.revoke_license')}</button>
           ` : `
-            <div style="font-size:12px;color:var(--gray);margin-bottom:12px;line-height:1.6">Version gratuite · 1 an · ${FREE_MAX_CATS} catégories</div>
-            <a href="${STRIPE_LINK}" target="_blank" style="display:block;background:var(--blue);color:#fff;border-radius:8px;padding:10px;font-size:13px;font-weight:700;text-decoration:none;text-align:center;margin-bottom:12px">⭐ Passer à Premium — 14,90 €</a>
-            <div style="font-size:12px;color:var(--gray);margin-bottom:6px">Déjà une clé de licence ?</div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:12px;line-height:1.6">${t('cfg.free_version', FREE_MAX_CATS)}</div>
+            <a href="${STRIPE_LINK}" target="_blank" style="display:block;background:var(--blue);color:#fff;border-radius:8px;padding:10px;font-size:13px;font-weight:700;text-decoration:none;text-align:center;margin-bottom:12px">⭐ ${t('cfg.go_premium')}</a>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:6px">${t('cfg.have_license')}</div>
             <div style="display:flex;gap:6px">
               <input id="cfg-license-input" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;letter-spacing:1px">
-              <button onclick="activateLicense(document.getElementById('cfg-license-input').value)" style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">Activer</button>
+              <button onclick="activateLicense(document.getElementById('cfg-license-input').value)" style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">${t('cfg.activate_license')}</button>
             </div>
           `}
         ` : `
           <div style="font-size:12px;color:var(--gray);margin-bottom:12px;line-height:1.6">
-            Connectez-vous pour accéder à Premium et synchroniser vos données sur tous vos appareils.
+            ${t('cfg.login_prompt')}
           </div>
-          <button onclick="openAuthModal('login')" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">🔐 Se connecter</button>
-          <button onclick="openAuthModal('register')" style="width:100%;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">✨ Créer un compte</button>
+          <button onclick="openAuthModal('login')" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">🔐 ${t('cfg.login')}</button>
+          <button onclick="openAuthModal('register')" style="width:100%;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">✨ ${t('cfg.register')}</button>
         `}
       </div>
       <div class="config-card"><h3>☁️ Synchronisation Cloud</h3>
@@ -6315,7 +6315,7 @@ function renderConfigTab() {
           </div>
         </details>
       </div>
-      <div class="config-card"><h3>🗄 Données</h3>
+      <div class="config-card"><h3>${t('settings.data')}</h3>
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding:6px 10px;background:var(--surface-alt);border-radius:6px;border:1px solid var(--border)">
           📱 Version <b>${APP_VERSION}</b> — SW <b>${SW_VERSION}</b>
         </div>
@@ -6342,9 +6342,9 @@ function renderConfigTab() {
           <button onclick="setLang('en')" id="cfg-lang-btn-en" style="flex:1;padding:9px;border-radius:8px;border:2px solid ${_lang==='en'?'var(--blue)':'var(--border)'};background:${_lang==='en'?'var(--blue)':'none'};color:${_lang==='en'?'#fff':'var(--text)'};font-weight:${_lang==='en'?'700':'600'};cursor:pointer;font-size:13px">🇬🇧 English</button>
         </div>
       </div>
-      <div class="config-card" style="margin-top:14px"><h3>⚙️ Application</h3>
+      <div class="config-card" style="margin-top:14px"><h3>${t('settings.app')}</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="uninstallApp()">🚨 Désinstaller l'application — EFFACE TOUT</button>
+          <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="uninstallApp()">🚨 ${t('cfg.uninstall')}</button>
         </div>
       </div>
       ${_isFbAdmin() ? `
@@ -7085,8 +7085,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.33';
-const SW_VERSION = 'v160';
+const APP_VERSION = '11.34';
+const SW_VERSION = 'v161';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -7210,6 +7210,34 @@ const TRANSLATIONS = {
     'settings.data': '🗄 Données',
     'settings.app': '⚙️ Application',
     'settings.sign_out': 'Se déconnecter',
+    // Config tab specific
+    'cfg.users': '👤 Utilisateurs',
+    'cfg.add_user': 'Ajouter un utilisateur',
+    'cfg.active': '(actif)',
+    'cfg.admin': 'Administrateur',
+    'cfg.pin_on': 'PIN activé',
+    'cfg.pin_off': 'Sans PIN',
+    'cfg.photo': 'Photo de profil',
+    'cfg.rename': 'Renommer',
+    'cfg.activate': 'Activer',
+    'cfg.pin_title': '🔒 Code PIN',
+    'cfg.pin_active_msg': '✅ Code PIN activé — vos données sont protégées',
+    'cfg.pin_none_msg': '⚠️ Aucun code PIN — tout le monde peut accéder à vos données',
+    'cfg.pin_edit': 'Modifier le PIN',
+    'cfg.pin_set': 'Définir un PIN',
+    'cfg.pin_del': 'Supprimer le PIN',
+    'cfg.methods': '💳 Modes de paiement',
+    'cfg.logout': 'Déconnexion',
+    'cfg.login': 'Se connecter',
+    'cfg.register': 'Créer un compte',
+    'cfg.login_prompt': 'Connectez-vous pour accéder à Premium et synchroniser vos données sur tous vos appareils.',
+    'cfg.premium_active': 'Premium actif',
+    'cfg.revoke_license': 'Révoquer la licence',
+    'cfg.free_version': 'Version gratuite · 1 an · {0} catégories',
+    'cfg.go_premium': 'Passer à Premium — 14,90 €',
+    'cfg.have_license': 'Déjà une clé de licence ?',
+    'cfg.activate_license': 'Activer',
+    'cfg.uninstall': 'Désinstaller l\'application — EFFACE TOUT',
     // Toast messages
     'toast.saved': '✅ Sauvegardé',
     'toast.deleted': '🗑 Supprimé',
@@ -7397,6 +7425,34 @@ const TRANSLATIONS = {
     'settings.data': '🗄 Data',
     'settings.app': '⚙️ Application',
     'settings.sign_out': 'Sign out',
+    // Config tab specific
+    'cfg.users': '👤 Users',
+    'cfg.add_user': 'Add a user',
+    'cfg.active': '(active)',
+    'cfg.admin': 'Administrator',
+    'cfg.pin_on': 'PIN enabled',
+    'cfg.pin_off': 'No PIN',
+    'cfg.photo': 'Profile photo',
+    'cfg.rename': 'Rename',
+    'cfg.activate': 'Activate',
+    'cfg.pin_title': '🔒 PIN Code',
+    'cfg.pin_active_msg': '✅ PIN code enabled — your data is protected',
+    'cfg.pin_none_msg': '⚠️ No PIN — anyone can access your data',
+    'cfg.pin_edit': 'Edit PIN',
+    'cfg.pin_set': 'Set a PIN',
+    'cfg.pin_del': 'Remove PIN',
+    'cfg.methods': '💳 Payment methods',
+    'cfg.logout': 'Sign out',
+    'cfg.login': 'Sign in',
+    'cfg.register': 'Create account',
+    'cfg.login_prompt': 'Sign in to access Premium and sync your data across all your devices.',
+    'cfg.premium_active': 'Premium active',
+    'cfg.revoke_license': 'Revoke license',
+    'cfg.free_version': 'Free version · 1 year · {0} categories',
+    'cfg.go_premium': 'Go Premium — 14.90 €',
+    'cfg.have_license': 'Already have a license key?',
+    'cfg.activate_license': 'Activate',
+    'cfg.uninstall': 'Uninstall app — WIPES EVERYTHING',
     // Toast messages
     'toast.saved': '✅ Saved',
     'toast.deleted': '🗑 Deleted',
@@ -7650,6 +7706,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.34': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🌐', text: 'i18n complétée : paramètres et modals traduits EN/FR — onglet Paramètres entièrement internationalisé, modals d\'ajout avec data-i18n' }
+    ]
+  },
   '11.33': {
     date: 'Mai 2026',
     items: [
