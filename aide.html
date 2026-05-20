@@ -216,8 +216,8 @@ a:hover{text-decoration:underline}
       <a href="#assistant-ia">🤖 Assistant IA</a>
       <a href="#feedback">💬 Feedback & Suggestions</a>
       <div style="margin-top:14px;padding:8px 10px;border-top:1px solid #e8eaf6;font-size:10px;color:#9BA3C9;line-height:1.6">
-        📱 App <b>11.19</b><br>
-        🔧 SW <b>v146</b>
+        📱 App <b>11.35</b><br>
+        🔧 SW <b>v162</b>
       </div>
     </nav>
   </aside>
@@ -1289,6 +1289,7 @@ a:hover{text-decoration:underline}
 </div>
 
 <script>
+// ── Intersection observer for sidebar active state ──
 const sections = document.querySelectorAll('.section');
 const navLinks = document.querySelectorAll('.sidebar-nav a');
 const observer = new IntersectionObserver(entries => {
@@ -1301,6 +1302,175 @@ const observer = new IntersectionObserver(entries => {
   });
 }, { threshold: 0.3 });
 sections.forEach(s => observer.observe(s));
+
+// ── i18n — reads language from main app localStorage ──
+const AIDE_TRANSLATIONS = {
+  fr: {
+    pageTitle: '❓ Aide',
+    menuTitle: '❓ Aide',
+    sidebarTitle: 'Sommaire',
+    langBtn: '🇬🇧 English',
+    // Nav toolbar
+    nav_data: 'Données', nav_import: 'Importer', nav_export: 'Exporter', nav_pdf: 'PDF',
+    nav_nav: 'Navigation', nav_home: 'Accueil', nav_summary: 'Résumé', nav_charts: 'Graphiques', nav_help: 'Aide',
+    nav_manage: 'Gestion', nav_year: 'Année', nav_config: 'Config', nav_search: 'Recherche', nav_account: 'Compte',
+    // Sidebar
+    sb_guide: '📋 Guide d\'installation', sb_start: '🚀 Démarrage', sb_premium: '⭐ Gratuit vs Premium',
+    sb_demo: '🎮 Mode démo', sb_interface: '🖥️ Interface', sb_home: '🏠 Tableau de bord',
+    sb_savings: '🎯 Objectif d\'épargne', sb_search: '🔍 Recherche globale', sb_revenues: '💼 Revenus',
+    sb_charges: '🏠 Charges', sb_variables: '🛒 Dépenses variables', sb_budgets: '🎯 Budgets par catégorie',
+    sb_livret: '💰 Livret d\'épargne', sb_indicators: '📈 Indicateurs financiers', sb_summary: '📊 Résumé mensuel',
+    sb_charts: '📉 Graphiques', sb_backup: '💾 Sauvegarde', sb_gist: '🐙 GitHub Gist gratuit',
+    sb_dark: '🌙 Mode nuit', sb_year: '📅 Nouvelle année', sb_login: '🔐 Connexion & Compte',
+    sb_quick: '➕ Ajout rapide', sb_ai: '🤖 Assistant IA', sb_feedback: '💬 Feedback & Suggestions',
+    frBanner: null,
+  },
+  en: {
+    pageTitle: '❓ Help',
+    menuTitle: '❓ Help',
+    sidebarTitle: 'Contents',
+    langBtn: '🇫🇷 Français',
+    // Nav toolbar
+    nav_data: 'Data', nav_import: 'Import', nav_export: 'Export', nav_pdf: 'PDF',
+    nav_nav: 'Navigation', nav_home: 'Home', nav_summary: 'Summary', nav_charts: 'Charts', nav_help: 'Help',
+    nav_manage: 'Manage', nav_year: 'Year', nav_config: 'Settings', nav_search: 'Search', nav_account: 'Account',
+    // Sidebar
+    sb_guide: '📋 Installation guide', sb_start: '🚀 Getting started', sb_premium: '⭐ Free vs Premium',
+    sb_demo: '🎮 Demo mode', sb_interface: '🖥️ Interface', sb_home: '🏠 Dashboard',
+    sb_savings: '🎯 Savings goal', sb_search: '🔍 Global search', sb_revenues: '💼 Revenues',
+    sb_charges: '🏠 Fixed costs', sb_variables: '🛒 Variable expenses', sb_budgets: '🎯 Category budgets',
+    sb_livret: '💰 Savings account', sb_indicators: '📈 Financial indicators', sb_summary: '📊 Monthly summary',
+    sb_charts: '📉 Charts', sb_backup: '💾 Backup', sb_gist: '🐙 GitHub Gist (free)',
+    sb_dark: '🌙 Dark mode', sb_year: '📅 New year', sb_login: '🔐 Login & Account',
+    sb_quick: '➕ Quick add', sb_ai: '🤖 AI Assistant', sb_feedback: '💬 Feedback & Suggestions',
+    frBanner: '🇫🇷 This page is currently in French. English translation is in progress.',
+  }
+};
+
+// Section h2 translations
+const SECTION_TITLES = {
+  guide:          { fr: 'Guide d\'installation pas à pas', en: 'Step-by-step installation guide' },
+  demarrage:      { fr: 'Démarrage rapide', en: 'Quick start' },
+  premium:        { fr: 'Gratuit vs Premium — Que choisir ?', en: 'Free vs Premium — Which to choose?' },
+  demo:           { fr: 'Mode Démo', en: 'Demo Mode' },
+  interface:      { fr: 'Interface', en: 'Interface' },
+  accueil:        { fr: 'Tableau de bord (Accueil)', en: 'Dashboard (Home)' },
+  'objectif-epargne': { fr: 'Objectif d\'épargne mensuel', en: 'Monthly savings goal' },
+  recherche:      { fr: 'Recherche globale', en: 'Global search' },
+  revenus:        { fr: 'Revenus', en: 'Revenues' },
+  charges:        { fr: 'Charges & Dépenses fixes', en: 'Fixed costs' },
+  variables:      { fr: 'Dépenses variables', en: 'Variable expenses' },
+  'budget-cible': { fr: 'Budgets par catégorie', en: 'Category budgets' },
+  livret:         { fr: 'Livret d\'épargne', en: 'Savings account' },
+  indicateurs:    { fr: 'Indicateurs financiers', en: 'Financial indicators' },
+  resume:         { fr: 'Résumé mensuel', en: 'Monthly summary' },
+  graphiques:     { fr: 'Graphiques', en: 'Charts' },
+  sauvegarde:     { fr: 'Sauvegarde & Cloud', en: 'Backup & Cloud' },
+  'github-gist':  { fr: 'Sync gratuite via GitHub Gist', en: 'Free sync via GitHub Gist' },
+  dark:           { fr: 'Mode nuit', en: 'Dark mode' },
+  annee:          { fr: 'Nouvelle année', en: 'New year' },
+  connexion:      { fr: 'Connexion & Compte', en: 'Login & Account' },
+  'ajout-rapide': { fr: 'Ajout rapide', en: 'Quick add' },
+  'assistant-ia': { fr: 'Assistant IA', en: 'AI Assistant' },
+  feedback:       { fr: 'Feedback & Suggestions', en: 'Feedback & Suggestions' },
+};
+
+function _aideLang() { return localStorage.getItem('mbudget-lang') || 'fr'; }
+function _aideSetLang(code) {
+  localStorage.setItem('mbudget-lang', code);
+  applyAideLang(code);
+}
+
+function applyAideLang(lang) {
+  const T = AIDE_TRANSLATIONS[lang] || AIDE_TRANSLATIONS.fr;
+  document.documentElement.lang = lang;
+
+  // Page title
+  document.title = T.pageTitle + ' — Mon Budget';
+
+  // Mobile nav title
+  const mobileTitle = document.querySelector('.nav-mobile-title');
+  if (mobileTitle) mobileTitle.textContent = T.menuTitle;
+
+  // Toolbar nav labels
+  const navMap = {
+    nav_data: '.nav-group-donnees .nav-group-lbl',
+    nav_nav: '.nav-group-nav .nav-group-lbl',
+    nav_manage: '.nav-group-gestion .nav-group-lbl',
+  };
+  Object.entries(navMap).forEach(([k, sel]) => {
+    const el = document.querySelector(sel);
+    if (el) el.textContent = T[k];
+  });
+
+  // Toolbar nav button labels (by position)
+  const navBtns = document.querySelectorAll('.nav-btn .nav-label');
+  const navKeys = ['nav_import','nav_export','nav_pdf','nav_home','nav_summary','nav_charts','nav_help','nav_year','nav_config','nav_search','nav_account'];
+  navBtns.forEach((el, i) => { if (navKeys[i]) el.textContent = T[navKeys[i]]; });
+
+  // Sidebar title
+  const sbTitle = document.querySelector('.sidebar-nav h4');
+  if (sbTitle) sbTitle.textContent = T.sidebarTitle;
+
+  // Sidebar links
+  const sbMap = {
+    '#guide': 'sb_guide', '#demarrage': 'sb_start', '#premium': 'sb_premium',
+    '#demo': 'sb_demo', '#interface': 'sb_interface', '#accueil': 'sb_home',
+    '#objectif-epargne': 'sb_savings', '#recherche': 'sb_search', '#revenus': 'sb_revenues',
+    '#charges': 'sb_charges', '#variables': 'sb_variables', '#budget-cible': 'sb_budgets',
+    '#livret': 'sb_livret', '#indicateurs': 'sb_indicators', '#resume': 'sb_summary',
+    '#graphiques': 'sb_charts', '#sauvegarde': 'sb_backup', '#github-gist': 'sb_gist',
+    '#dark': 'sb_dark', '#annee': 'sb_year', '#connexion': 'sb_login',
+    '#ajout-rapide': 'sb_quick', '#assistant-ia': 'sb_ai', '#feedback': 'sb_feedback',
+  };
+  Object.entries(sbMap).forEach(([href, key]) => {
+    const el = document.querySelector(`.sidebar-nav a[href="${href}"]`);
+    if (el) el.textContent = T[key];
+  });
+
+  // Section h2 titles
+  Object.entries(SECTION_TITLES).forEach(([id, titles]) => {
+    const sec = document.getElementById(id);
+    if (!sec) return;
+    const h2 = sec.querySelector('h2');
+    if (!h2) return;
+    const icon = h2.querySelector('span');
+    const iconText = icon ? icon.outerHTML + ' ' : '';
+    h2.innerHTML = iconText + (titles[lang] || titles.fr);
+  });
+
+  // French content banner
+  let banner = document.getElementById('fr-content-banner');
+  if (lang === 'en' && T.frBanner) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'fr-content-banner';
+      banner.style.cssText = 'background:#FEF6E6;border-left:4px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 16px;font-size:13px;color:#7a4f00;margin:0 0 16px;font-weight:600';
+      const mainContent = document.querySelector('.content');
+      if (mainContent) mainContent.insertBefore(banner, mainContent.firstChild);
+    }
+    banner.textContent = T.frBanner;
+  } else if (banner) {
+    banner.remove();
+  }
+
+  // Lang button
+  const btn = document.getElementById('aide-lang-btn');
+  if (btn) btn.textContent = T.langBtn;
+}
+
+// Add language switcher button to sidebar
+(function() {
+  const sidebar = document.querySelector('.sidebar-nav');
+  if (!sidebar) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'margin-top:10px;padding:8px 10px;border-top:1px solid #e8eaf6';
+  div.innerHTML = '<button id="aide-lang-btn" onclick="_aideSetLang(_aideLang()===\"fr\"?\"en\":\"fr\")" style="width:100%;background:#EEF0FD;border:1px solid #C5CAEE;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;color:#5B6AF0;cursor:pointer"></button>';
+  sidebar.appendChild(div);
+})();
+
+// Apply on load
+applyAideLang(_aideLang());
 </script>
 </body>
 </html>

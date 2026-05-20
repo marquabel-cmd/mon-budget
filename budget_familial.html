@@ -6772,6 +6772,12 @@ function fbLogout() {
   showToast('👋 Déconnecté');
 }
 async function fbCheckPremium(uid, idToken) {
+  // Le compte admin est toujours Premium
+  if (uid === ADMIN_UID) {
+    localStorage.setItem('mbudget-premium-'+uid,'1');
+    localStorage.setItem('mbudget-premium-exp-'+uid, String(Date.now() + 86400000 * 365));
+    return true;
+  }
   // Enregistre l'appareil en arrière-plan (non-bloquant)
   fbRegisterDevice(uid, _fbUser?.email || localStorage.getItem('mbudget-fb-email') || '', idToken).catch(()=>{});
   try {
