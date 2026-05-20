@@ -4669,7 +4669,7 @@ function renderMonthSummary(year) {
 
   return `<div class="section-card" data-section="resume">
     <div class="section-header" onclick="toggleSection(this)">
-      <div style="flex:1;min-width:0"><span class="section-title">📊 Résumé mensuel <span class="badge ${balTot<0?'badge-r':'badge-g'}" id="bal-badge-${year}">${fmtN(balTot)} €</span></span>${mthMiniRow(bal,true)}</div>
+      <div style="flex:1;min-width:0"><span class="section-title">${t('summary.monthly_title')} <span class="badge ${balTot<0?'badge-r':'badge-g'}" id="bal-badge-${year}">${fmtN(balTot)} €</span></span>${mthMiniRow(bal,true)}</div>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body"><table class="charge-table"><thead><tr>
@@ -5835,16 +5835,16 @@ function renderDashboard() {
         <div class="section-card" style="padding:14px;text-align:center;border-left:3px solid ${tBal>=0?'var(--green)':'var(--red)'}"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.balance')}</div><div style="font-size:20px;font-weight:800;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmtN(tBal)} €</div></div>
       </div>
       <div class="section-card" style="margin-bottom:14px">
-        <div style="font-weight:700;font-size:13px;margin-bottom:12px">📈 Indicateurs</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px">${t('summary.annual_indicators')}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('dash.savings_rate')}</div><div style="font-weight:800;font-size:20px;color:${savingsRate>=0?'var(--green)':'var(--red)'};margin-top:4px">${savingsRate}%</div></div>
-          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Épargne moy./mois</div><div style="font-weight:800;font-size:18px;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:4px">${fmtN(tBal/12)} €</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.avg_savings')}</div><div style="font-weight:800;font-size:18px;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:4px">${fmtN(tBal/12)} €</div></div>
           <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.best_month')}</div><div style="font-weight:700;font-size:13px;color:var(--green);margin-top:4px">${getMonths()[bestMi]} · ${fmtN(balArr[bestMi])} €</div></div>
           <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.worst_month')}</div><div style="font-weight:700;font-size:13px;color:var(--red);margin-top:4px">${getMonths()[worstMi]} · ${fmtN(balArr[worstMi])} €</div></div>
         </div>
       </div>
       <div class="section-card">
-        <div style="font-weight:700;font-size:13px;margin-bottom:12px">📊 Solde mois par mois</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:12px">${t('summary.monthly_balance')}</div>
         ${balArr.map((v,i) => {
           const pct = Math.round((Math.abs(v)/maxAbs)*100);
           const col = v>=0?'var(--green)':'var(--red)';
@@ -6237,15 +6237,15 @@ function renderConfigTab() {
           </div>
           <details style="margin-bottom:10px">
             <summary style="font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;padding:6px 0;list-style:none;display:flex;align-items:center;gap:6px">
-              <span>📖</span> <span>Comment créer un compte GitHub et un token ? (guide pas à pas)</span>
+              <span>📖</span> <span>${t('gist.guide_title')}</span>
             </summary>
             <div style="margin-top:8px;font-size:11px;color:var(--text);line-height:1.9;background:var(--surface-alt);border-radius:7px;padding:10px 12px">
-              <div style="font-weight:700;color:var(--text);margin-bottom:6px">Étape 1 — Créer un compte GitHub (si tu n'en as pas)</div>
+              <div style="font-weight:700;color:var(--text);margin-bottom:6px">${t('gist.step1_title')}</div>
               <div>🌐 Va sur <a href="https://github.com/join" target="_blank" style="color:var(--blue);font-weight:600">github.com/join</a></div>
               <div>✏️ Remplis : adresse e-mail, mot de passe, nom d'utilisateur</div>
               <div>📧 Confirme ton adresse e-mail (vérifie ta boîte mail)</div>
               <div style="color:var(--green,#27ae60);font-weight:600">→ C'est gratuit, aucune carte bancaire demandée !</div>
-              <div style="margin-top:10px;font-weight:700;color:var(--text);margin-bottom:6px">Étape 2 — Créer le token de sécurité</div>
+              <div style="margin-top:10px;font-weight:700;color:var(--text);margin-bottom:6px">${t('gist.step2_title')}</div>
               <div>🔐 Connecte-toi sur GitHub puis clique sur ta <b>photo de profil</b> (en haut à droite)</div>
               <div>⚙️ Clique sur <b>Settings</b> (Paramètres)</div>
               <div>📜 Tout en bas du menu gauche : clique <b>Developer settings</b></div>
@@ -6261,10 +6261,10 @@ function renderConfigTab() {
               <div style="margin-top:8px;font-style:italic;color:var(--gray)">💡 Besoin d'images ? Consulte le <a href="aide.html#github-gist" target="_blank" style="color:var(--blue)">guide illustré dans l'Aide</a>.</div>
             </div>
           </details>
-          <div style="font-size:11px;color:var(--gray);margin-bottom:6px">Colle ton token <b>ghp_…</b> ici :</div>
+          <div style="font-size:11px;color:var(--gray);margin-bottom:6px">${t('gist.token_label')}</div>
           <div style="display:flex;gap:6px;align-items:center">
             <input type="password" id="gist-token-inp" placeholder="ghp_xxxxxxxxxxxx" style="flex:1;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:11px;background:var(--surface);color:var(--text);font-family:monospace">
-            <button class="btn btn-save" style="font-size:11px;white-space:nowrap" onclick="gistTest()">✅ Connecter</button>
+            <button class="btn btn-save" style="font-size:11px;white-space:nowrap" onclick="gistTest()">${t('gist.connect')}</button>
           </div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
             <span class="gist-status-dot off" id="gist-status-dot"></span>
@@ -7426,6 +7426,168 @@ const TRANSLATIONS = {
     // Var section
     'btn.add_tx': '+ Ajouter',
     'btn.detail': '▾ Détail',
+    // Header
+    'header.subtitle': 'Gestion mensuelle des revenus et dépenses',
+    'header.auto_save': 'Sauvegarde automatique',
+    'header.backups': '📦 Backups',
+    'header.help_tour': 'Aide & Tour',
+    // Update bar
+    'update.never_exported': '⚠️ Jamais exporté',
+    'update.exported_today': '✅ Exporté aujourd\'hui',
+    'update.exported_days_ago': 'il y a {0} jour{1}',
+    'update.export_reminder': 'Dernier export JSON : <b>{0}</b> — Vos données ne sont pas sauvegardées hors du navigateur.',
+    'update.export_now': '⬇️ Exporter maintenant',
+    // PIN overlay
+    'pin.title': 'Entrez votre code PIN',
+    'pin.cancel': 'Annuler',
+    // Upgrade overlay
+    'upgrade.title': 'Débloquez tout — moins qu\'un café',
+    'upgrade.with_premium': '✨ Avec Premium :',
+    'upgrade.annual': '⭐ Annuel — 24,99 €/an',
+    'upgrade.annual_sub': '= 2,08 €/mois · Économisez 11€ · Le plus populaire',
+    'upgrade.monthly': '💳 Mensuel — 2,99 €/mois',
+    'upgrade.have_key': 'Déjà une clé de licence ?',
+    'upgrade.activate': 'Activer',
+    'upgrade.continue_free': 'Continuer en version gratuite',
+    'upgrade.f1': '📅 Historique illimité (toutes les années)',
+    'upgrade.f2': '☁️ Sync temps réel sur 3 appareils',
+    'upgrade.f3': '🗂️ Catégories illimitées — organisez comme vous voulez',
+    'upgrade.f4': '🔒 Sync cloud chiffrée',
+    'upgrade.f5': '✅ Annulation possible à tout moment',
+    // Wizard
+    'wiz.step_label': 'Étape',
+    'wiz.s1.input_placeholder': 'ex: 2500',
+    'wiz.s2.title': 'Vos charges fixes principales',
+    'wiz.s2.sub': 'Loyer, électricité, abonnements… (ajoutez-en jusqu\'à 3)',
+    'wiz.s2.rent': '🏠 Loyer / Prêt',
+    'wiz.s2.energy': '⚡ Énergie',
+    'wiz.s2.phone': '📱 Téléphone / Internet',
+    'wiz.s3.ready': 'Votre budget est prêt !',
+    'wiz.s3.estimate': 'Voici une première estimation de votre solde mensuel',
+    'wiz.s3.added': 'Ces données ont été ajoutées à votre budget. Complétez-les dans l\'app !',
+    'wiz.s3.cta': '🚀 Découvrir mon budget',
+    // Share modal
+    'share.invited': '🎁 Invitez un ami',
+    'share.ready_msg': 'Message prêt à copier :',
+    'share.default_msg': 'J\'utilise Mon Budget pour gérer mes finances 💰 C\'est gratuit, sans pub, et mes données restent chez moi. Essaie : budget.marquabel.be',
+    // CSV import modal
+    'csv.title': '📂 Import relevé bancaire',
+    'csv.drop': 'Glissez votre fichier CSV ici',
+    'csv.or_click': 'ou cliquez pour choisir un fichier',
+    'csv.compatible': 'Compatible : Crédit Agricole, BNP, Société Générale, CIC, LCL, Boursorama…',
+    'csv.method': 'Méthode :',
+    'csv.back': '← Retour',
+    'csv.import': '✅ Importer',
+    // Quick add modal
+    'quick.title': '⚡ Ajout rapide',
+    'quick.no_budget': '⚠️ Pas de budget défini pour cette catégorie.',
+    'quick.set_budget': 'Définir un budget →',
+    'quick.add': '✅ Ajouter',
+    // Add row modal
+    'modal.example': 'Ex : Salaire, Loyer, Assurance…',
+    'modal.repetitions': 'Nombre de répétitions <span style="font-weight:400">(optionnel — calcule la date de fin)</span>',
+    'modal.rep_example': 'ex: 48',
+    // Category modal
+    'cat.new': 'Nouvelle catégorie',
+    'cat.edit': 'Modifier la catégorie',
+    'cat.label': 'Libellé *',
+    'cat.label_ex': 'Ex: Alimentation',
+    'cat.emoji_hint': 'Cliquez une suggestion ou tapez votre propre emoji',
+    'cat.budget_title': '🎯 Budget (optionnel)',
+    'cat.budget_month': '€/mois → annualisé',
+    'cat.budget_year': '€/an',
+    'cat.budget_hint': 'Laissez vide pour ne pas définir de budget.',
+    'cat.color': '🎨 Couleur',
+    'cat.save': 'Enregistrer',
+    'cat.required': '⚠️ Le libellé est obligatoire.',
+    // Demo banner
+    'demo.banner': '🎮 MODE DÉMO — Les données affichées sont fictives',
+    'demo.quit': '✕ Quitter le mode démo',
+    // Tour
+    'tour.skip': 'Passer ✕',
+    'tour.prev': '← Préc.',
+    'tour.next': 'Suivant →',
+    // New year dialog
+    'dialog.new_year': '📅 Nouvelle année',
+    'dialog.new_year_hint': 'Laissez vide pour reprendre le dernier montant payé. Saisissez un montant pour le modifier.',
+    'dialog.revenues': '💰 Revenus',
+    'dialog.revenue': 'Revenu',
+    'dialog.last_amount': 'Dernier montant',
+    'dialog.new_amount': 'Nouveau montant mensuel',
+    'dialog.fixed_costs': '📋 Charges fixes',
+    'dialog.charge': 'Charge',
+    // Delete confirm
+    'delete.title': '⚠️ Confirmer la suppression',
+    'delete.backup_first': 'Créer une sauvegarde avant de supprimer',
+    'delete.cancel': 'Annuler',
+    'delete.confirm': 'Supprimer',
+    // Admin modal
+    'admin.title': '🔐 Mode Admin',
+    'admin.tab_clients': '👁️ Clients',
+    'admin.tab_licenses': '⭐ Licences',
+    'admin.tab_feedback': '💬 Feedback',
+    'admin.uid_placeholder': 'UID ou clé de licence client',
+    'admin.load_demo': '🎭 Charger données de démo',
+    'admin.view_data': '👁️ Voir les données',
+    'admin.load_clients': '📋 Charger la liste des clients',
+    'admin.uid_label': 'UID sélectionné / saisi manuellement',
+    'admin.uid_input': 'uid Firebase (ex: abc123xyz…)',
+    'admin.check': '🔍 Vérifier',
+    'admin.grant': '⭐ Accorder',
+    'admin.revoke': '✕ Révoquer',
+    'admin.select_client': 'Sélectionne un client ou entre un UID.',
+    'admin.load_feedback': '📋 Charger les suggestions',
+    'admin.close': 'Fermer',
+    'admin.fb_all': 'Tous',
+    'admin.fb_new': '🟠 Nouveau',
+    'admin.fb_read': '🔵 Lu',
+    'admin.fb_ongoing': '🟣 En cours',
+    'admin.fb_answered': '🟢 Répondu',
+    'admin.fb_closed': '⚫ Clôturé',
+    'admin.banner_compare': '🔍 Comparer',
+    'admin.banner_change': '🔄 Changer',
+    'admin.banner_exit': '✕ Mes données',
+    // Help modal
+    'help.modal_title': '📖 Aide & documentation',
+    // Changelog modal
+    'changelog.title2': '🆕 Nouveautés',
+    // Onboarding screen
+    'onboarding.have_account': '🔑 J\'ai déjà un compte',
+    'onboarding.help': '❓ Aide & documentation',
+    // Propagate modal
+    'propagate.apply_btn': 'Appliquer',
+    // Toast messages
+    'toast.saved': '💾 Sauvegardé',
+    'toast.logout': '👋 Déconnecté',
+    'toast.deleted': '🗑️ Supprimé',
+    'toast.copied': '✅ Copié !',
+    'toast.error': '❌ Erreur',
+    'toast.label_required': '⚠️ Libellé requis',
+    'toast.label_invalid': '⚠️ Libellé invalide',
+    'toast.cat_exists': '⚠️ Cette catégorie existe déjà',
+    'toast.savings_goal_saved': '🎯 Objectif : {0} €/mois enregistré',
+    'toast.savings_goal_deleted': '🎯 Objectif supprimé',
+    'toast.tx_moved': '✅ Dépense déplacée vers "{0}"',
+    // Gist guide
+    'gist.guide_title': '📖 Comment créer un compte GitHub et un token ? (guide pas à pas)',
+    'gist.step1_title': 'Étape 1 — Créer un compte GitHub (si tu n\'en as pas)',
+    'gist.step2_title': 'Étape 2 — Créer le token de sécurité',
+    'gist.token_label': 'Colle ton token <b>ghp_…</b> ici :',
+    'gist.connect': '✅ Connecter',
+    // Summary section
+    'summary.monthly_title': '📊 Résumé mensuel',
+    // Var section description
+    'var.desc': 'Les dépenses variables (courses, carburant, divers...) sont saisies sous forme de transactions individuelles.',
+    // Welcome screen
+    'welcome.instagram_warn': '📱 Ouvre dans ton navigateur pour rester connecté',
+    'welcome.instagram_desc': 'Le navigateur Instagram ne sauvegarde pas ta session. Ouvre l\'app dans Chrome ou Safari pour ne pas perdre tes données.',
+    'welcome.instagram_hint': 'Tape les <b style="color:rgba(255,255,255,.7)">⋮</b> en haut à droite → <b style="color:rgba(255,255,255,.7)">Ouvrir dans le navigateur</b>',
+    'welcome.create_user': '＋ Créer un utilisateur',
+    // Summary annuelle labels
+    'summary.annual_indicators': '📈 Indicateurs',
+    'summary.avg_savings': 'Épargne moy./mois',
+    'summary.monthly_balance': '📊 Solde mois par mois',
+    'summary.annual_balance': 'Solde annuel',
   },
   en: {
     // Welcome screen
@@ -7757,6 +7919,168 @@ const TRANSLATIONS = {
     // Var section
     'btn.add_tx': '+ Add',
     'btn.detail': '▾ Detail',
+    // Header
+    'header.subtitle': 'Monthly income and expense tracker',
+    'header.auto_save': 'Auto-save',
+    'header.backups': '📦 Backups',
+    'header.help_tour': 'Help & Tour',
+    // Update bar
+    'update.never_exported': '⚠️ Never exported',
+    'update.exported_today': '✅ Exported today',
+    'update.exported_days_ago': '{0} day{1} ago',
+    'update.export_reminder': 'Last JSON export: <b>{0}</b> — Your data is not saved outside the browser.',
+    'update.export_now': '⬇️ Export now',
+    // PIN overlay
+    'pin.title': 'Enter your PIN code',
+    'pin.cancel': 'Cancel',
+    // Upgrade overlay
+    'upgrade.title': 'Unlock everything — less than a coffee',
+    'upgrade.with_premium': '✨ With Premium:',
+    'upgrade.annual': '⭐ Annual — €24.99/year',
+    'upgrade.annual_sub': '= €2.08/month · Save €11 · Most popular',
+    'upgrade.monthly': '💳 Monthly — €2.99/month',
+    'upgrade.have_key': 'Already have a license key?',
+    'upgrade.activate': 'Activate',
+    'upgrade.continue_free': 'Continue with free version',
+    'upgrade.f1': '📅 Unlimited history (all years)',
+    'upgrade.f2': '☁️ Real-time sync on 3 devices',
+    'upgrade.f3': '🗂️ Unlimited categories — organize as you like',
+    'upgrade.f4': '🔒 Encrypted cloud sync',
+    'upgrade.f5': '✅ Cancel anytime',
+    // Wizard
+    'wiz.step_label': 'Step',
+    'wiz.s1.input_placeholder': 'e.g. 2500',
+    'wiz.s2.title': 'Your main fixed costs',
+    'wiz.s2.sub': 'Rent, electricity, subscriptions… (add up to 3)',
+    'wiz.s2.rent': '🏠 Rent / Mortgage',
+    'wiz.s2.energy': '⚡ Energy',
+    'wiz.s2.phone': '📱 Phone / Internet',
+    'wiz.s3.ready': 'Your budget is ready!',
+    'wiz.s3.estimate': 'Here is a first estimate of your monthly balance',
+    'wiz.s3.added': 'This data has been added to your budget. Complete it in the app!',
+    'wiz.s3.cta': '🚀 Discover my budget',
+    // Share modal
+    'share.invited': '🎁 Invite a friend',
+    'share.ready_msg': 'Ready to copy:',
+    'share.default_msg': 'I use Mon Budget to manage my finances 💰 It\'s free, no ads, and my data stays with me. Try it: budget.marquabel.be',
+    // CSV import modal
+    'csv.title': '📂 Import bank statement',
+    'csv.drop': 'Drop your CSV file here',
+    'csv.or_click': 'or click to choose a file',
+    'csv.compatible': 'Compatible: Crédit Agricole, BNP, Société Générale, CIC, LCL, Boursorama…',
+    'csv.method': 'Method:',
+    'csv.back': '← Back',
+    'csv.import': '✅ Import',
+    // Quick add modal
+    'quick.title': '⚡ Quick add',
+    'quick.no_budget': '⚠️ No budget set for this category.',
+    'quick.set_budget': 'Set a budget →',
+    'quick.add': '✅ Add',
+    // Add row modal
+    'modal.example': 'E.g. Salary, Rent, Insurance…',
+    'modal.repetitions': 'Number of repetitions <span style="font-weight:400">(optional — calculates end date)</span>',
+    'modal.rep_example': 'e.g. 48',
+    // Category modal
+    'cat.new': 'New category',
+    'cat.edit': 'Edit category',
+    'cat.label': 'Label *',
+    'cat.label_ex': 'E.g. Groceries',
+    'cat.emoji_hint': 'Click a suggestion or type your own emoji',
+    'cat.budget_title': '🎯 Budget (optional)',
+    'cat.budget_month': '€/month → annualized',
+    'cat.budget_year': '€/year',
+    'cat.budget_hint': 'Leave empty for no budget.',
+    'cat.color': '🎨 Color',
+    'cat.save': 'Save',
+    'cat.required': '⚠️ Label is required.',
+    // Demo banner
+    'demo.banner': '🎮 DEMO MODE — Data shown is fictional',
+    'demo.quit': '✕ Exit demo mode',
+    // Tour
+    'tour.skip': 'Skip ✕',
+    'tour.prev': '← Prev.',
+    'tour.next': 'Next →',
+    // New year dialog
+    'dialog.new_year': '📅 New year',
+    'dialog.new_year_hint': 'Leave empty to carry over the last paid amount. Enter an amount to change it.',
+    'dialog.revenues': '💰 Revenues',
+    'dialog.revenue': 'Revenue',
+    'dialog.last_amount': 'Last amount',
+    'dialog.new_amount': 'New monthly amount',
+    'dialog.fixed_costs': '📋 Fixed costs',
+    'dialog.charge': 'Cost',
+    // Delete confirm
+    'delete.title': '⚠️ Confirm deletion',
+    'delete.backup_first': 'Create a backup before deleting',
+    'delete.cancel': 'Cancel',
+    'delete.confirm': 'Delete',
+    // Admin modal
+    'admin.title': '🔐 Admin Mode',
+    'admin.tab_clients': '👁️ Clients',
+    'admin.tab_licenses': '⭐ Licenses',
+    'admin.tab_feedback': '💬 Feedback',
+    'admin.uid_placeholder': 'UID or client license key',
+    'admin.load_demo': '🎭 Load demo data',
+    'admin.view_data': '👁️ View data',
+    'admin.load_clients': '📋 Load client list',
+    'admin.uid_label': 'Selected / manually entered UID',
+    'admin.uid_input': 'Firebase UID (e.g. abc123xyz…)',
+    'admin.check': '🔍 Check',
+    'admin.grant': '⭐ Grant',
+    'admin.revoke': '✕ Revoke',
+    'admin.select_client': 'Select a client or enter a UID.',
+    'admin.load_feedback': '📋 Load suggestions',
+    'admin.close': 'Close',
+    'admin.fb_all': 'All',
+    'admin.fb_new': '🟠 New',
+    'admin.fb_read': '🔵 Read',
+    'admin.fb_ongoing': '🟣 In progress',
+    'admin.fb_answered': '🟢 Answered',
+    'admin.fb_closed': '⚫ Closed',
+    'admin.banner_compare': '🔍 Compare',
+    'admin.banner_change': '🔄 Change',
+    'admin.banner_exit': '✕ My data',
+    // Help modal
+    'help.modal_title': '📖 Help & documentation',
+    // Changelog modal
+    'changelog.title2': '🆕 What\'s new',
+    // Onboarding screen
+    'onboarding.have_account': '🔑 I already have an account',
+    'onboarding.help': '❓ Help & documentation',
+    // Propagate modal
+    'propagate.apply_btn': 'Apply',
+    // Toast messages
+    'toast.saved': '💾 Saved',
+    'toast.logout': '👋 Signed out',
+    'toast.deleted': '🗑️ Deleted',
+    'toast.copied': '✅ Copied!',
+    'toast.error': '❌ Error',
+    'toast.label_required': '⚠️ Label required',
+    'toast.label_invalid': '⚠️ Invalid label',
+    'toast.cat_exists': '⚠️ This category already exists',
+    'toast.savings_goal_saved': '🎯 Goal: {0} €/month saved',
+    'toast.savings_goal_deleted': '🎯 Goal removed',
+    'toast.tx_moved': '✅ Expense moved to "{0}"',
+    // Gist guide
+    'gist.guide_title': '📖 How to create a GitHub account and token? (step-by-step guide)',
+    'gist.step1_title': 'Step 1 — Create a GitHub account (if you don\'t have one)',
+    'gist.step2_title': 'Step 2 — Create the security token',
+    'gist.token_label': 'Paste your <b>ghp_…</b> token here:',
+    'gist.connect': '✅ Connect',
+    // Summary section
+    'summary.monthly_title': '📊 Monthly summary',
+    // Var section
+    'var.desc': 'Variable expenses (groceries, fuel, misc...) are entered as individual transactions.',
+    // Welcome screen
+    'welcome.instagram_warn': '📱 Open in your browser to stay connected',
+    'welcome.instagram_desc': 'The Instagram browser does not save your session. Open the app in Chrome or Safari to avoid losing your data.',
+    'welcome.instagram_hint': 'Tap the <b style="color:rgba(255,255,255,.7)">⋮</b> at the top right → <b style="color:rgba(255,255,255,.7)">Open in browser</b>',
+    'welcome.create_user': '＋ Create a user',
+    // Summary annual labels
+    'summary.annual_indicators': '📈 Indicators',
+    'summary.avg_savings': 'Avg. savings/month',
+    'summary.monthly_balance': '📊 Month-by-month balance',
+    'summary.annual_balance': 'Annual balance',
   }
 };
 
