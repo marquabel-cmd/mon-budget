@@ -915,6 +915,11 @@ body.auth-locked #context-banner {
 <!-- ── WELCOME SCREEN ── -->
 <div id="welcome-screen">
   <div class="welcome-box">
+    <div id="inapp-banner" style="display:none;background:rgba(255,165,0,.18);border:1px solid rgba(255,165,0,.5);border-radius:12px;padding:14px 16px;margin-bottom:22px;text-align:left">
+      <div style="font-size:13px;font-weight:700;color:#FFB347;margin-bottom:6px">📱 Ouvre dans ton navigateur pour rester connecté</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:10px">Le navigateur Instagram ne sauvegarde pas ta session. Ouvre l'app dans Chrome ou Safari pour ne pas perdre tes données.</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.5)">👉 Tape les <b style="color:rgba(255,255,255,.7)">⋮</b> en haut à droite → <b style="color:rgba(255,255,255,.7)">Ouvrir dans le navigateur</b></div>
+    </div>
     <div class="welcome-logo-icon">💰</div>
     <div class="welcome-title">Mon Budget</div>
     <div class="welcome-sub">Gestion mensuelle des revenus et dépenses</div>
@@ -6922,8 +6927,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.29';
-const SW_VERSION = 'v156';
+const APP_VERSION = '11.30';
+const SW_VERSION = 'v157';
 function _setVersionDisplays() {
   const vd = document.getElementById('app-version-display');
   if (vd) vd.textContent = APP_VERSION;
@@ -6934,8 +6939,24 @@ function _setVersionDisplays() {
 }
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', _setVersionDisplays);
+
+// ── Détection navigateur in-app Instagram/Facebook ──
+(function() {
+  const ua = navigator.userAgent || '';
+  const isInApp = /Instagram|FBAN|FBAV|FB_IAB|LinkedInApp|Twitter/.test(ua);
+  if (isInApp) {
+    const b = document.getElementById('inapp-banner');
+    if (b) b.style.display = 'block';
+  }
+})();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.30': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📱', text: 'Navigateur Instagram/Facebook : bandeau automatique invitant à ouvrir dans Chrome/Safari pour rester connecté' }
+    ]
+  },
   '11.29': {
     date: 'Mai 2026',
     items: [
