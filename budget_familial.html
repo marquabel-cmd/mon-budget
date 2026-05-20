@@ -4003,12 +4003,12 @@ function renderVarCat(year, cat) {
       </td>
       <td style="text-align:center">
         <button class="add-tx-btn" style="padding:2px 8px;font-size:10px"
-          onclick="addTxForMonth('${year}','${cat.key}',${m})">+ Ajouter</button>
+          onclick="addTxForMonth('${year}','${cat.key}',${m})">${t('btn.add_tx')}</button>
       </td>
       <td style="text-align:center">
         <button class="add-tx-btn" style="padding:2px 8px;font-size:10px;border-color:var(--blue);color:var(--blue)"
           id="vexp-btn-${year}-${cat.key}-${m}"
-          onclick="toggleMonthDetail('${year}','${cat.key}',${m},this)">▾ Détail</button>
+          onclick="toggleMonthDetail('${year}','${cat.key}',${m},this)">${t('btn.detail')}</button>
       </td>
     </tr>
     <tr id="vdetrow-${year}-${cat.key}-${m}" style="display:none">
@@ -4395,29 +4395,29 @@ function renderKpiCards(year) {
     <div class="kpi-card" style="border-top-color:${cPos(taux,20,10)}">
       <div class="kpi-label">${t('dash.savings_rate')}</div>
       <div class="kpi-value" style="color:${cPos(taux,20,10)}">${taux>0?'+':''}${taux}%</div>
-      <div class="kpi-sub">${taux>=20?'✅ Excellent':taux>=10?'⚠️ Correct':'❌ Insuffisant'}</div>
-      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Part des revenus épargnée.<br>Objectif recommandé : <b>≥ 20%</b></div>
+      <div class="kpi-sub">${taux>=20?t('kpi.excellent'):taux>=10?t('kpi.correct'):t('kpi.insufficient')}</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">${t('kpi.savings_desc')}</div>
       ${tauxAction}
     </div>
     <div class="kpi-card" style="border-top-color:${cNeg(ratioChg,50,65)}">
       <div class="kpi-label">${t('dash.charges_ratio')}</div>
       <div class="kpi-value" style="color:${cNeg(ratioChg,50,65)}">${ratioChg}%</div>
-      <div class="kpi-sub">${ratioChg<=50?'✅ Maîtrisé':ratioChg<=65?'⚠️ Élevé':'❌ Critique'}</div>
-      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Poids des charges fixes (loyer, abonnements…).<br>Idéalement <b>≤ 50%</b> des revenus.</div>
+      <div class="kpi-sub">${ratioChg<=50?t('kpi.controlled'):ratioChg<=65?t('kpi.high'):t('kpi.critical')}</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">${t('kpi.charges_desc')}</div>
       ${chgAction}
     </div>
     <div class="kpi-card" style="border-top-color:${typeof moisRes==='number'?cPos(moisRes,3,1):'#ccc'}">
       <div class="kpi-label">${t('dash.reserve_months')}</div>
       <div class="kpi-value" style="color:${typeof moisRes==='number'?cPos(moisRes,3,1):'var(--gray)'}">${moisRes}</div>
-      <div class="kpi-sub">${typeof moisRes==='number'?(moisRes>=3?'✅ Sécurisé':moisRes>=1?'⚠️ Fragile':'❌ Attention'):'Soldes non renseignés'}</div>
-      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Mois de dépenses couverts par votre épargne.<br>Objectif de sécurité : <b>≥ 3 mois</b>.</div>
+      <div class="kpi-sub">${typeof moisRes==='number'?(moisRes>=3?t('kpi.secure'):moisRes>=1?t('kpi.fragile'):t('kpi.attention')):t('kpi.balances_missing')}</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">${t('kpi.reserve_desc')}</div>
       ${resAction}
     </div>
     <div class="kpi-card" style="border-top-color:${proj>=0?'#5B6AF0':'#F04F5B'}">
       <div class="kpi-label">${t('dash.projection')}</div>
       <div class="kpi-value" style="color:${proj>=0?'#5B6AF0':'#F04F5B'};font-size:20px">${proj>=0?'+':''}${fmtN(proj)} €</div>
-      <div class="kpi-sub">${proj>=0?'📈 Sur bonne voie':'❌ Déficit projeté'}</div>
-      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Épargne annuelle estimée sur la base des <b>${pastMonths} mois</b> enregistrés.</div>
+      <div class="kpi-sub">${proj>=0?t('kpi.on_track'):t('kpi.deficit')}</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">${t('kpi.proj_desc', pastMonths)}</div>
       ${projAction}
     </div>
   </div>`;
@@ -6082,16 +6082,16 @@ function renderConfigTab() {
           <input type="color" id="new-method-bg" value="#e8f1fb" style="width:32px;height:30px;border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:2px">
           <button class="btn btn-save" style="padding:5px 10px;font-size:12px" onclick="addMethodFromForm()">＋</button>
         </div>
-        <div style="font-size:10px;color:var(--gray);margin-top:4px">Couleur bordure + couleur fond</div>
+        <div style="font-size:10px;color:var(--gray);margin-top:4px">${t('cfg.color_hint')}</div>
       </div>
-      <div class="config-card" style="margin-top:14px"><h3>🎯 Objectif d'épargne mensuel</h3>
-        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">Définissez un objectif d'épargne par mois. Il s'affiche dans l'onglet <b>🏠 Accueil</b> avec une barre de progression.</div>
+      <div class="config-card" style="margin-top:14px"><h3>${t('cfg.savings_goal_title')}</h3>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">${t('cfg.savings_goal_desc')}</div>
         <div style="display:flex;gap:6px;align-items:center">
           <input type="number" id="cfg-savings-goal" step="10" min="0" placeholder="ex : 500" value="${cfg.savingsGoal||''}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text)">
-          <span style="font-size:13px;color:var(--gray);white-space:nowrap">€ / mois</span>
+          <span style="font-size:13px;color:var(--gray);white-space:nowrap">${t('cfg.savings_goal_unit')}</span>
           <button onclick="saveSavingsGoal()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">✅</button>
         </div>
-        ${cfg.savingsGoal ? `<div style="font-size:11px;color:var(--green);margin-top:8px">✓ Objectif actuel : <b>${fmtN(cfg.savingsGoal)} €/mois</b></div>` : '<div style="font-size:11px;color:var(--gray);margin-top:6px">Aucun objectif défini.</div>'}
+        ${cfg.savingsGoal ? `<div style="font-size:11px;color:var(--green);margin-top:8px">${t('cfg.savings_goal_set', fmtN(cfg.savingsGoal))}</div>` : `<div style="font-size:11px;color:var(--gray);margin-top:6px">${t('cfg.savings_goal_none')}</div>`}
       </div>
       ${(() => {
         const accs = getAccounts();
@@ -6112,7 +6112,7 @@ function renderConfigTab() {
           </div>`).join('');
         const addAccForm = isLicensed() ? `
           <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
-            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:5px">➕ Ajouter un compte</div>
+            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:5px">${t('cfg.add_account')}</div>
             <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
               <input type="text" id="new-acc-name" placeholder="Nom du compte (ex: Compte B)" style="flex:2;min-width:120px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
               <input type="color" id="new-acc-color" value="#5B6AF0" style="width:30px;height:30px;border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:2px">
@@ -6121,7 +6121,7 @@ function renderConfigTab() {
           </div>` : `<div style="font-size:11px;color:var(--gray);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">⭐ <a href="#" onclick="showUpgrade('multi-comptes');return false" style="color:var(--blue);text-decoration:none">Premium</a> — ajoutez jusqu'à 5 comptes</div>`;
         const addLivForm = isLicensed() ? `
           <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
-            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:5px">➕ Ajouter un livret</div>
+            <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:5px">${t('cfg.add_livret')}</div>
             <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
               <input type="text" id="new-liv-name" placeholder="Nom du livret (ex: Livret B)" style="flex:2;min-width:120px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
               <select id="new-liv-acc" style="flex:1;min-width:100px;border:1px solid var(--border);border-radius:4px;padding:5px 6px;font-size:12px;background:var(--surface);color:var(--text)">
@@ -6131,10 +6131,10 @@ function renderConfigTab() {
             </div>
           </div>` : '';
         return `<div class="config-card" style="margin-top:14px">
-          <h3>🏦 Comptes &amp; Livrets</h3>
-          <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Comptes bancaires</div>
+          <h3>${t('cfg.accounts_title')}</h3>
+          <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">${t('cfg.bank_accounts')}</div>
           ${accRows}${addAccForm}
-          <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 5px">Livrets d'épargne</div>
+          <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 5px">${t('cfg.savings_accounts')}</div>
           ${livRows}${addLivForm}
         </div>`;
       })()}
@@ -6174,13 +6174,13 @@ function renderConfigTab() {
           <button onclick="openAuthModal('register')" style="width:100%;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">✨ ${t('cfg.register')}</button>
         `}
       </div>
-      <div class="config-card"><h3>☁️ Synchronisation Cloud</h3>
+      <div class="config-card"><h3>${t('cfg.cloud_title')}</h3>
         ${!isLicensed() ? `
           <div style="text-align:center;padding:16px 8px">
             <div style="font-size:28px;margin-bottom:8px">🔒</div>
-            <div style="font-weight:600;font-size:13px;margin-bottom:6px">Fonctionnalité Premium</div>
-            <div style="font-size:12px;color:var(--gray);margin-bottom:14px">La synchronisation cloud est disponible avec la licence Premium.</div>
-            <button onclick="showUpgrade('synchronisation cloud Firebase')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer">⭐ Voir Premium</button>
+            <div style="font-weight:600;font-size:13px;margin-bottom:6px">${t('cfg.cloud_premium_feature')}</div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:14px">${t('cfg.cloud_premium_desc')}</div>
+            <button onclick="showUpgrade('synchronisation cloud Firebase')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer">${t('cfg.cloud_see_premium')}</button>
           </div>
         ` : (() => {
           const lastSyncTs = localStorage.getItem('budget_last_sync_' + CURRENT_USER_ID);
@@ -6195,16 +6195,16 @@ function renderConfigTab() {
             <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--green-light);border-radius:8px;margin-bottom:12px">
               <span style="font-size:20px">✅</span>
               <div>
-                <div style="font-weight:700;color:var(--green);font-size:13px">Premium actif — Sync Firebase</div>
-                <div style="font-size:11px;color:var(--gray);margin-top:2px">Profil lié : <b>${_esc(linkedUser)}</b> · Compte : ${_esc(_fbUser?.email||'—')}</div>
+                <div style="font-weight:700;color:var(--green);font-size:13px">${t('cfg.cloud_active')}</div>
+                <div style="font-size:11px;color:var(--gray);margin-top:2px">${t('cfg.cloud_linked')} : <b>${_esc(linkedUser)}</b> · ${t('auth.connected')} : ${_esc(_fbUser?.email||'—')}</div>
               </div>
             </div>
-            <div style="font-size:11px;color:var(--gray);margin-bottom:10px">⏱ Dernière sync : <b>${lastSyncFmt}</b></div>
+            <div style="font-size:11px;color:var(--gray);margin-bottom:10px">${t('cfg.cloud_last_sync')} : <b>${lastSyncFmt}</b></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button onclick="saveData()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">⬆️ Envoyer vers cloud</button>
-              <button onclick="cloudPullNow()" style="flex:1;background:var(--green-light);color:var(--green);border:1px solid var(--green);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">⬇️ Récupérer depuis cloud</button>
+              <button onclick="saveData()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">${t('cfg.cloud_push')}</button>
+              <button onclick="cloudPullNow()" style="flex:1;background:var(--green-light);color:var(--green);border:1px solid var(--green);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">${t('cfg.cloud_pull')}</button>
             </div>
-            <div style="font-size:10px;color:var(--gray);margin-top:8px;line-height:1.5">💡 <b>Sur un nouvel appareil :</b> connectez-vous avec le même compte Google, activez la licence, puis cliquez <b>⬇️ Récupérer depuis cloud</b>.</div>
+            <div style="font-size:10px;color:var(--gray);margin-top:8px;line-height:1.5">${t('cfg.cloud_new_device')}</div>
           </div>`;
         })()}
 
@@ -6220,19 +6220,19 @@ function renderConfigTab() {
         const gistSection = token ? `
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
             <span class="gist-status-dot ok" id="gist-status-dot"></span>
-            <span id="gist-status-txt" style="font-size:11px;color:var(--gray)">Connecté${lastSync?' — dernier sync '+new Date(lastSync).toLocaleString('fr-BE'):''}</span>
+            <span id="gist-status-txt" style="font-size:11px;color:var(--gray)">${t('cfg.gist_connected')}${lastSync?' — '+t('cfg.gist_last_sync')+' '+new Date(lastSync).toLocaleString(_lang==='en'?'en-GB':'fr-BE'):''}</span>
           </div>
           ${gistId?`<div style="font-size:10px;color:var(--gray);margin-bottom:6px">Gist ID : <code style="background:var(--surface-alt);padding:1px 4px;border-radius:3px">${gistId.slice(0,12)}…</code></div>`:''}
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn btn-save" style="flex:1;min-width:100px;font-size:11px" onclick="gistPush()">⬆️ Envoyer vers Gist</button>
-            <button class="btn" style="flex:1;min-width:100px;font-size:11px;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="gistPull()">⬇️ Récupérer depuis Gist</button>
-            <button class="btn" style="font-size:11px;background:var(--red-light);color:var(--red);border:1px solid var(--red)" onclick="gistDisconnect()">🔌 Déconnecter</button>
+            <button class="btn btn-save" style="flex:1;min-width:100px;font-size:11px" onclick="gistPush()">${t('cfg.gist_push')}</button>
+            <button class="btn" style="flex:1;min-width:100px;font-size:11px;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="gistPull()">${t('cfg.gist_pull')}</button>
+            <button class="btn" style="font-size:11px;background:var(--red-light);color:var(--red);border:1px solid var(--red)" onclick="gistDisconnect()">${t('cfg.gist_disconnect')}</button>
           </div>` : `
           <div style="background:var(--green-light,#e8f8f0);border:1px solid var(--green,#27ae60);border-radius:7px;padding:8px 10px;margin-bottom:10px;display:flex;align-items:center;gap:8px">
             <span style="font-size:20px">🆓</span>
             <div>
-              <div style="font-size:12px;font-weight:800;color:var(--green,#27ae60)">100% GRATUIT — aucune carte bancaire</div>
-              <div style="font-size:10px;color:var(--gray)">Sync automatique à chaque sauvegarde via GitHub</div>
+              <div style="font-size:12px;font-weight:800;color:var(--green,#27ae60)">${t('cfg.gist_free')}</div>
+              <div style="font-size:10px;color:var(--gray)">${t('cfg.gist_free_desc')}</div>
             </div>
           </div>
           <details style="margin-bottom:10px">
@@ -6268,30 +6268,30 @@ function renderConfigTab() {
           </div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
             <span class="gist-status-dot off" id="gist-status-dot"></span>
-            <span id="gist-status-txt" style="font-size:11px;color:var(--gray)">Non configuré</span>
+            <span id="gist-status-txt" style="font-size:11px;color:var(--gray)">${t('cfg.gist_not_configured')}</span>
           </div>`;
         return `<div class="config-card" style="margin-top:14px">
-          <h3>🛡 Protection des données</h3>
+          <h3>${t('cfg.data_protection')}</h3>
           <div style="display:flex;flex-direction:column;gap:10px">
             <div style="padding:8px 10px;border-radius:8px;background:var(--surface-alt);border:1px solid var(--border)">
-              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">💾 Copie de sécurité dans votre navigateur</div>
+              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">${t('cfg.backup_browser')}</div>
               <div style="display:flex;align-items:center;gap:6px">
                 <span style="font-size:16px">${opfsOk?'✅':'⚠️'}</span>
-                <span style="font-size:12px">${opfsOk?'Active — vos données sont doublement protégées':'Non disponible (essayez Chrome ou Edge)'}</span>
+                <span style="font-size:12px">${opfsOk?t('cfg.backup_active'):t('cfg.backup_inactive')}</span>
               </div>
-              <div style="font-size:10px;color:var(--gray);margin-top:4px">Votre budget est copié automatiquement en double dans votre navigateur. Aucune manipulation requise.</div>
+              <div style="font-size:10px;color:var(--gray);margin-top:4px">${t('cfg.backup_desc')}</div>
             </div>
             <div style="padding:8px 10px;border-radius:8px;background:var(--surface-alt);border:1px solid var(--border)">
-              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">📥 Sauvegarder / Restaurer vos données — ${exportLabel}</div>
+              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">${t('cfg.backup_save')} — ${exportLabel}</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
-                <button class="btn btn-save" style="flex:1;min-width:110px;font-size:11px" onclick="exportDataJSON()">⬇️ Télécharger une sauvegarde</button>
-                <button class="btn" style="flex:1;min-width:110px;font-size:11px;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="importDataJSON()">⬆️ Restaurer une sauvegarde</button>
+                <button class="btn btn-save" style="flex:1;min-width:110px;font-size:11px" onclick="exportDataJSON()">${t('cfg.backup_download')}</button>
+                <button class="btn" style="flex:1;min-width:110px;font-size:11px;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="importDataJSON()">${t('cfg.backup_restore')}</button>
               </div>
-              <div style="font-size:10px;color:var(--gray);margin-top:4px">Enregistrez une copie de vos données sur votre ordinateur, clé USB ou service cloud. Pratique pour faire une sauvegarde manuelle ou transférer vos données.</div>
+              <div style="font-size:10px;color:var(--gray);margin-top:4px">${t('cfg.backup_desc2')}</div>
             </div>
             <div style="padding:8px 10px;border-radius:8px;background:var(--surface-alt);border:1px solid var(--border)">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-                <span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase">🌐 Accès depuis tous vos appareils</span>
+                <span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase">${t('cfg.gist_title')}</span>
                 <span style="background:#27ae60;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;letter-spacing:.4px">GRATUIT</span>
               </div>
               ${gistSection}
@@ -6299,11 +6299,11 @@ function renderConfigTab() {
           </div>
         </div>`;
       })()}
-      <div class="config-card" style="margin-top:14px"><h3>🤖 Assistant IA (Groq)</h3>
+      <div class="config-card" style="margin-top:14px"><h3>${t('cfg.ai_title')}</h3>
         <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--green-light);border-radius:8px;margin-bottom:10px">
-          <span>✅</span><span style="font-size:12px;color:var(--green);font-weight:700">Assistant actif — disponible pour tous les utilisateurs</span>
+          <span>✅</span><span style="font-size:12px;color:var(--green);font-weight:700">${t('cfg.ai_active')}</span>
         </div>
-        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">Propulsé par <b>Groq</b> (Llama 3.1). Clique sur le bouton 🤖 en bas à droite pour l'utiliser.</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">${t('cfg.ai_desc')}</div>
         <details>
           <summary style="font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">⚙️ Utiliser ma propre clé API</summary>
           <div style="margin-top:8px">
@@ -6320,20 +6320,20 @@ function renderConfigTab() {
           📱 Version <b>${APP_VERSION}</b> — SW <b>${SW_VERSION}</b>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-save" onclick="saveData()">💾 Sauvegarder maintenant</button>
-          <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">📦 Voir les backups</button>
+          <button class="btn btn-save" onclick="saveData()">${t('cfg.save_now')}</button>
+          <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">${t('cfg.see_backups')}</button>
           ${years.length > 1 ? `
           <div style="border:2px solid #F04F5B;border-radius:10px;padding:12px;background:#FEF0F1">
-            <div style="font-size:12px;font-weight:700;color:#c0392b;margin-bottom:8px">🗑️ Supprimer une année</div>
-            <div style="font-size:11px;color:#7a2020;margin-bottom:10px">⚠️ Toutes les données de l'année seront définitivement effacées. Cette action est irréversible.</div>
+            <div style="font-size:12px;font-weight:700;color:#c0392b;margin-bottom:8px">${t('cfg.delete_year')}</div>
+            <div style="font-size:11px;color:#7a2020;margin-bottom:10px">${t('cfg.delete_year_warn')}</div>
             <div style="display:flex;gap:8px;align-items:center">
               <select id="cfg-del-year" style="flex:1;border:1px solid #F04F5B;border-radius:7px;padding:7px 10px;font-size:13px;font-weight:700;background:#fff3f3;color:#c0392b;outline:none">
                 ${[...years].reverse().map(y => `<option value="${y}">${y}</option>`).join('')}
               </select>
-              <button onclick="_confirmDeleteYear()" style="background:#F04F5B;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">🗑️ Supprimer</button>
+              <button onclick="_confirmDeleteYear()" style="background:#F04F5B;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">${t('cfg.delete_year_btn')}</button>
             </div>
-          </div>` : `<div style="font-size:12px;color:var(--gray);padding:8px;background:var(--surface-alt);border-radius:7px">Il n'y a qu'une seule année — impossible de la supprimer.</div>`}
-          <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="resetData()">🚨 Réinitialiser les données — SUPPRESSION TOTALE</button>
+          </div>` : `<div style="font-size:12px;color:var(--gray);padding:8px;background:var(--surface-alt);border-radius:7px">${t('cfg.only_year')}</div>`}
+          <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="resetData()">${t('cfg.reset_data')}</button>
         </div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>🌐 ${t('settings.language')}</h3>
@@ -7347,6 +7347,85 @@ const TRANSLATIONS = {
     'type.revenu': '💰 Revenu',
     'type.fixed': '🔒 Charge fixe récurrente',
     'type.occasional': '📌 Charge occasionnelle',
+    // Help dropdown menu
+    'help.install': '📲 Installer l\'application',
+    'help.tour': '🗺️ Tour guidé',
+    'help.guide': '📖 Guide complet',
+    'help.account': '👤 Mon compte',
+    'help.invite': '🎁 Inviter un ami',
+    // KPI descriptions
+    'kpi.savings_desc': 'Part des revenus épargnée.<br>Objectif recommandé : <b>≥ 20%</b>',
+    'kpi.charges_desc': 'Poids des charges fixes (loyer, abonnements…).<br>Idéalement <b>≤ 50%</b> des revenus.',
+    'kpi.reserve_desc': 'Mois de dépenses couverts par votre épargne.<br>Objectif de sécurité : <b>≥ 3 mois</b>.',
+    'kpi.proj_desc': 'Épargne annuelle estimée sur la base des <b>{0} mois</b> enregistrés.',
+    'kpi.excellent': '✅ Excellent',
+    'kpi.correct': '⚠️ Correct',
+    'kpi.insufficient': '❌ Insuffisant',
+    'kpi.controlled': '✅ Maîtrisé',
+    'kpi.high': '⚠️ Élevé',
+    'kpi.critical': '❌ Critique',
+    'kpi.secure': '✅ Sécurisé',
+    'kpi.fragile': '⚠️ Fragile',
+    'kpi.attention': '❌ Attention',
+    'kpi.on_track': '📈 Sur bonne voie',
+    'kpi.deficit': '❌ Déficit projeté',
+    'kpi.balances_missing': 'Soldes non renseignés',
+    // Settings sections
+    'cfg.savings_goal_title': '🎯 Objectif d\'épargne mensuel',
+    'cfg.savings_goal_desc': 'Définissez un objectif d\'épargne par mois. Il s\'affiche dans l\'onglet <b>🏠 Accueil</b> avec une barre de progression.',
+    'cfg.savings_goal_unit': '€ / mois',
+    'cfg.savings_goal_set': '✓ Objectif actuel : <b>{0} €/mois</b>',
+    'cfg.savings_goal_none': 'Aucun objectif défini.',
+    'cfg.color_hint': 'Couleur bordure + couleur fond',
+    'cfg.accounts_title': '🏦 Comptes & Livrets',
+    'cfg.bank_accounts': 'Comptes bancaires',
+    'cfg.savings_accounts': 'Livrets d\'épargne',
+    'cfg.add_account': '➕ Ajouter un compte',
+    'cfg.add_livret': '➕ Ajouter un livret',
+    'cfg.premium_multiaccounts': '⭐ Premium — ajoutez jusqu\'à 5 comptes',
+    'cfg.cloud_title': '☁️ Synchronisation Cloud',
+    'cfg.cloud_premium_feature': 'Fonctionnalité Premium',
+    'cfg.cloud_premium_desc': 'La synchronisation cloud est disponible avec la licence Premium.',
+    'cfg.cloud_see_premium': '⭐ Voir Premium',
+    'cfg.cloud_active': 'Premium actif — Sync Firebase',
+    'cfg.cloud_linked': 'Profil lié',
+    'cfg.cloud_last_sync': '⏱ Dernière sync',
+    'cfg.cloud_push': '⬆️ Envoyer vers cloud',
+    'cfg.cloud_pull': '⬇️ Récupérer depuis cloud',
+    'cfg.cloud_new_device': '💡 <b>Sur un nouvel appareil :</b> connectez-vous avec le même compte Google, activez la licence, puis cliquez <b>⬇️ Récupérer depuis cloud</b>.',
+    'cfg.data_protection': '🛡 Protection des données',
+    'cfg.backup_browser': '💾 Copie de sécurité dans votre navigateur',
+    'cfg.backup_active': 'Active — vos données sont doublement protégées',
+    'cfg.backup_inactive': 'Non disponible (essayez Chrome ou Edge)',
+    'cfg.backup_desc': 'Votre budget est copié automatiquement en double dans votre navigateur. Aucune manipulation requise.',
+    'cfg.backup_save': '📥 Sauvegarder / Restaurer vos données',
+    'cfg.backup_download': '⬇️ Télécharger une sauvegarde',
+    'cfg.backup_restore': '⬆️ Restaurer une sauvegarde',
+    'cfg.backup_desc2': 'Enregistrez une copie de vos données sur votre ordinateur, clé USB ou service cloud. Pratique pour faire une sauvegarde manuelle ou transférer vos données.',
+    'cfg.gist_title': '🌐 Accès depuis tous vos appareils',
+    'cfg.gist_connected': 'Connecté',
+    'cfg.gist_last_sync': 'dernier sync',
+    'cfg.gist_not_configured': 'Non configuré',
+    'cfg.gist_push': '⬆️ Envoyer vers Gist',
+    'cfg.gist_pull': '⬇️ Récupérer depuis Gist',
+    'cfg.gist_disconnect': '🔌 Déconnecter',
+    'cfg.gist_free': '100% GRATUIT — aucune carte bancaire',
+    'cfg.gist_free_desc': 'Sync automatique à chaque sauvegarde via GitHub',
+    'cfg.ai_title': '🤖 Assistant IA (Groq)',
+    'cfg.ai_active': 'Assistant actif — disponible pour tous les utilisateurs',
+    'cfg.ai_desc': 'Propulsé par <b>Groq</b> (Llama 3.1). Clique sur le bouton 🤖 en bas à droite pour l\'utiliser.',
+    'cfg.ai_own_key': '⚙️ Utiliser ma propre clé API',
+    'cfg.ai_key_label': 'Clé personnelle — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys ↗</a>',
+    'cfg.save_now': '💾 Sauvegarder maintenant',
+    'cfg.see_backups': '📦 Voir les backups',
+    'cfg.delete_year': '🗑️ Supprimer une année',
+    'cfg.delete_year_warn': '⚠️ Toutes les données de l\'année seront définitivement effacées. Cette action est irréversible.',
+    'cfg.delete_year_btn': '🗑️ Supprimer',
+    'cfg.only_year': 'Il n\'y a qu\'une seule année — impossible de la supprimer.',
+    'cfg.reset_data': '🚨 Réinitialiser les données — SUPPRESSION TOTALE',
+    // Var section
+    'btn.add_tx': '+ Ajouter',
+    'btn.detail': '▾ Détail',
   },
   en: {
     // Welcome screen
@@ -7599,6 +7678,85 @@ const TRANSLATIONS = {
     'type.revenu': '💰 Revenue',
     'type.fixed': '🔒 Recurring fixed cost',
     'type.occasional': '📌 One-time cost',
+    // Help dropdown menu
+    'help.install': '📲 Install the app',
+    'help.tour': '🗺️ Guided tour',
+    'help.guide': '📖 Full guide',
+    'help.account': '👤 My account',
+    'help.invite': '🎁 Invite a friend',
+    // KPI descriptions
+    'kpi.savings_desc': 'Share of revenues saved.<br>Recommended target: <b>≥ 20%</b>',
+    'kpi.charges_desc': 'Weight of fixed costs (rent, subscriptions…).<br>Ideally <b>≤ 50%</b> of revenues.',
+    'kpi.reserve_desc': 'Months of expenses covered by your savings.<br>Safety target: <b>≥ 3 months</b>.',
+    'kpi.proj_desc': 'Annual savings estimate based on <b>{0} months</b> of data.',
+    'kpi.excellent': '✅ Excellent',
+    'kpi.correct': '⚠️ Adequate',
+    'kpi.insufficient': '❌ Insufficient',
+    'kpi.controlled': '✅ Controlled',
+    'kpi.high': '⚠️ High',
+    'kpi.critical': '❌ Critical',
+    'kpi.secure': '✅ Secure',
+    'kpi.fragile': '⚠️ Fragile',
+    'kpi.attention': '❌ Warning',
+    'kpi.on_track': '📈 On track',
+    'kpi.deficit': '❌ Projected deficit',
+    'kpi.balances_missing': 'Balances not entered',
+    // Settings sections
+    'cfg.savings_goal_title': '🎯 Monthly savings goal',
+    'cfg.savings_goal_desc': 'Set a monthly savings target. It appears on the <b>🏠 Home</b> tab with a progress bar.',
+    'cfg.savings_goal_unit': '€ / month',
+    'cfg.savings_goal_set': '✓ Current goal: <b>{0} €/month</b>',
+    'cfg.savings_goal_none': 'No goal set.',
+    'cfg.color_hint': 'Border color + background color',
+    'cfg.accounts_title': '🏦 Accounts & Savings',
+    'cfg.bank_accounts': 'Bank accounts',
+    'cfg.savings_accounts': 'Savings accounts',
+    'cfg.add_account': '➕ Add an account',
+    'cfg.add_livret': '➕ Add a savings account',
+    'cfg.premium_multiaccounts': '⭐ Premium — add up to 5 accounts',
+    'cfg.cloud_title': '☁️ Cloud Sync',
+    'cfg.cloud_premium_feature': 'Premium feature',
+    'cfg.cloud_premium_desc': 'Cloud sync is available with a Premium license.',
+    'cfg.cloud_see_premium': '⭐ See Premium',
+    'cfg.cloud_active': 'Premium active — Firebase Sync',
+    'cfg.cloud_linked': 'Linked profile',
+    'cfg.cloud_last_sync': '⏱ Last sync',
+    'cfg.cloud_push': '⬆️ Push to cloud',
+    'cfg.cloud_pull': '⬇️ Pull from cloud',
+    'cfg.cloud_new_device': '💡 <b>On a new device:</b> sign in with the same Google account, activate the license, then click <b>⬇️ Pull from cloud</b>.',
+    'cfg.data_protection': '🛡 Data protection',
+    'cfg.backup_browser': '💾 Browser backup copy',
+    'cfg.backup_active': 'Active — your data is doubly protected',
+    'cfg.backup_inactive': 'Not available (try Chrome or Edge)',
+    'cfg.backup_desc': 'Your budget is automatically duplicated in your browser. No action required.',
+    'cfg.backup_save': '📥 Save / Restore your data',
+    'cfg.backup_download': '⬇️ Download a backup',
+    'cfg.backup_restore': '⬆️ Restore a backup',
+    'cfg.backup_desc2': 'Save a copy of your data on your computer, USB drive or cloud service. Handy for manual backups or data transfers.',
+    'cfg.gist_title': '🌐 Access from all your devices',
+    'cfg.gist_connected': 'Connected',
+    'cfg.gist_last_sync': 'last sync',
+    'cfg.gist_not_configured': 'Not configured',
+    'cfg.gist_push': '⬆️ Push to Gist',
+    'cfg.gist_pull': '⬇️ Pull from Gist',
+    'cfg.gist_disconnect': '🔌 Disconnect',
+    'cfg.gist_free': '100% FREE — no credit card',
+    'cfg.gist_free_desc': 'Auto-sync on every save via GitHub',
+    'cfg.ai_title': '🤖 AI Assistant (Groq)',
+    'cfg.ai_active': 'Assistant active — available for all users',
+    'cfg.ai_desc': 'Powered by <b>Groq</b> (Llama 3.1). Click the 🤖 button at the bottom right to use it.',
+    'cfg.ai_own_key': '⚙️ Use my own API key',
+    'cfg.ai_key_label': 'Personal key — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys ↗</a>',
+    'cfg.save_now': '💾 Save now',
+    'cfg.see_backups': '📦 View backups',
+    'cfg.delete_year': '🗑️ Delete a year',
+    'cfg.delete_year_warn': '⚠️ All data for this year will be permanently deleted. This action is irreversible.',
+    'cfg.delete_year_btn': '🗑️ Delete',
+    'cfg.only_year': 'There is only one year — cannot delete it.',
+    'cfg.reset_data': '🚨 Reset all data — COMPLETE DELETION',
+    // Var section
+    'btn.add_tx': '+ Add',
+    'btn.detail': '▾ Detail',
   }
 };
 
@@ -7674,6 +7832,25 @@ function setLang(code) {
     if (uSub) uSub.textContent = t('update.ready');
     if (uBtn) uBtn.textContent = t('update.btn');
   }
+  // Update help dropdown items
+  const helpItems = [
+    ['openInstallModal', 'help.install'],
+    ['startTour', 'help.tour'],
+    ['openAide', 'help.guide'],
+    ['dashboard.html', 'help.account'],
+    ['openShareModal', 'help.invite'],
+  ];
+  document.querySelectorAll('.tour-help-item').forEach(el => {
+    const onclick = el.getAttribute('onclick') || '';
+    for (const [fn, key] of helpItems) {
+      if (onclick.includes(fn)) { el.textContent = t(key); break; }
+    }
+    // Special case: invite has color style, restore it
+    if (onclick.includes('openShareModal')) {
+      el.style.color = '#00C896';
+      el.style.fontWeight = '700';
+    }
+  });
   // Update context banner (tab title in header)
   const activeTab = document.querySelector('.nav-btn.tab.active');
   if (activeTab) {
