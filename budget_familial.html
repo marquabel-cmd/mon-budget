@@ -1343,7 +1343,7 @@ body.auth-locked #context-banner {
 
 <header>
   <div>
-    <h1 id="app-title" onclick="adminTitleClick()" style="cursor:default">💰 Mon Budget</h1>
+    <h1 id="app-title" style="cursor:default">💰 Mon Budget</h1>
     <div class="sub app-sub">Gestion mensuelle des revenus et dépenses</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
@@ -1459,19 +1459,19 @@ body.auth-locked #context-banner {
 
   <!-- ══ Groupe 2 — Navigation ══ -->
   <div class="nav-group nav-group-main nav-group-nav">
-    <span class="nav-group-lbl">Navigation</span>
+    <span class="nav-group-lbl" data-i18n="nav.group.nav">Navigation</span>
     <div class="nav-group-items">
       <button class="nav-btn tab" onclick="switchTab('accueil',this)" data-tabid="accueil">
         <span class="nav-icon">🏠</span>
-        <span class="nav-label">Accueil</span>
+        <span class="nav-label" data-i18n="nav.home">Accueil</span>
       </button>
       <button class="nav-btn tab active" onclick="switchTab('resume',this)" data-tabid="resume">
         <span class="nav-icon">📊</span>
-        <span class="nav-label">Résumé</span>
+        <span class="nav-label" data-i18n="nav.summary">Résumé</span>
       </button>
       <button class="nav-btn tab" onclick="switchTab('charts',this)" data-tabid="charts">
         <span class="nav-icon">📈</span>
-        <span class="nav-label">Graphiques</span>
+        <span class="nav-label" data-i18n="nav.charts">Graphiques</span>
       </button>
       <!-- Onglets années logique interne (masqués CSS) -->
       <div id="year-tabs" style="display:contents"></div>
@@ -1482,23 +1482,23 @@ body.auth-locked #context-banner {
 
   <!-- ══ Groupe 3 — Gestion ══ -->
   <div class="nav-group nav-group-gestion">
-    <span class="nav-group-lbl">Gestion</span>
+    <span class="nav-group-lbl" data-i18n="nav.group.manage">Gestion</span>
     <div class="nav-group-items">
       <button class="nav-btn" onclick="addYear()" title="Ajouter une année">
         <span class="nav-icon">📅＋</span>
-        <span class="nav-label">Année</span>
+        <span class="nav-label" data-i18n="nav.year">Année</span>
       </button>
       <button class="nav-btn tab" onclick="switchTab('config',this)" data-tabid="config">
         <span class="nav-icon">⚙️</span>
-        <span class="nav-label">Config</span>
+        <span class="nav-label" data-i18n="nav.config">Config</span>
       </button>
       <button class="nav-btn" onclick="openGlobalSearch()" title="Recherche globale">
         <span class="nav-icon">🔍</span>
-        <span class="nav-label">Recherche</span>
+        <span class="nav-label" data-i18n="nav.search">Recherche</span>
       </button>
       <button class="nav-btn" onclick="openInstallModal();_closeMobileNav()" title="Installer l'application">
         <span class="nav-icon">📲</span>
-        <span class="nav-label">Installer</span>
+        <span class="nav-label" data-i18n="nav.install">Installer</span>
       </button>
     </div>
   </div>
@@ -2987,7 +2987,7 @@ function updateContextBanner(tabId) {
   const mobileTitle = document.getElementById('nav-mobile-title');
   if (!titleEl || !infoEl) return;
 
-  const names = {accueil:'🏠 Accueil', resume:'📊 Résumé', charts:'📈 Graphiques', config:'⚙️ Configuration'};
+  const names = {accueil: t('ctx.home'), resume: t('ctx.summary'), charts: t('ctx.charts'), config: t('ctx.config')};
   let info = '';
   let label = '';
 
@@ -4393,28 +4393,28 @@ function renderKpiCards(year) {
 
   return `<div class="kpi-cards">
     <div class="kpi-card" style="border-top-color:${cPos(taux,20,10)}">
-      <div class="kpi-label">Taux d'épargne</div>
+      <div class="kpi-label">${t('dash.savings_rate')}</div>
       <div class="kpi-value" style="color:${cPos(taux,20,10)}">${taux>0?'+':''}${taux}%</div>
       <div class="kpi-sub">${taux>=20?'✅ Excellent':taux>=10?'⚠️ Correct':'❌ Insuffisant'}</div>
       <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Part des revenus épargnée.<br>Objectif recommandé : <b>≥ 20%</b></div>
       ${tauxAction}
     </div>
     <div class="kpi-card" style="border-top-color:${cNeg(ratioChg,50,65)}">
-      <div class="kpi-label">Charges / Revenus</div>
+      <div class="kpi-label">${t('dash.charges_ratio')}</div>
       <div class="kpi-value" style="color:${cNeg(ratioChg,50,65)}">${ratioChg}%</div>
       <div class="kpi-sub">${ratioChg<=50?'✅ Maîtrisé':ratioChg<=65?'⚠️ Élevé':'❌ Critique'}</div>
       <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Poids des charges fixes (loyer, abonnements…).<br>Idéalement <b>≤ 50%</b> des revenus.</div>
       ${chgAction}
     </div>
     <div class="kpi-card" style="border-top-color:${typeof moisRes==='number'?cPos(moisRes,3,1):'#ccc'}">
-      <div class="kpi-label">Mois de réserve</div>
+      <div class="kpi-label">${t('dash.reserve_months')}</div>
       <div class="kpi-value" style="color:${typeof moisRes==='number'?cPos(moisRes,3,1):'var(--gray)'}">${moisRes}</div>
       <div class="kpi-sub">${typeof moisRes==='number'?(moisRes>=3?'✅ Sécurisé':moisRes>=1?'⚠️ Fragile':'❌ Attention'):'Soldes non renseignés'}</div>
       <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Mois de dépenses couverts par votre épargne.<br>Objectif de sécurité : <b>≥ 3 mois</b>.</div>
       ${resAction}
     </div>
     <div class="kpi-card" style="border-top-color:${proj>=0?'#5B6AF0':'#F04F5B'}">
-      <div class="kpi-label">Projection épargne</div>
+      <div class="kpi-label">${t('dash.projection')}</div>
       <div class="kpi-value" style="color:${proj>=0?'#5B6AF0':'#F04F5B'};font-size:20px">${proj>=0?'+':''}${fmtN(proj)} €</div>
       <div class="kpi-sub">${proj>=0?'📈 Sur bonne voie':'❌ Déficit projeté'}</div>
       <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">Épargne annuelle estimée sur la base des <b>${pastMonths} mois</b> enregistrés.</div>
@@ -5448,9 +5448,9 @@ function buildAnnualTrendChart() {
     data: {
       labels: years,
       datasets: [
-        { label: 'Revenus',  data: rv,  backgroundColor: '#27ae6088', borderColor: '#27ae60', borderWidth: 1.5, borderRadius: 5 },
-        { label: 'Dépenses', data: dep, backgroundColor: '#c0392b88', borderColor: '#c0392b', borderWidth: 1.5, borderRadius: 5 },
-        { label: 'Balance',  data: bal, type: 'line', borderColor: '#5B6AF0', backgroundColor: '#5B6AF022', tension: .35, fill: false, pointRadius: 5, yAxisID: 'y' }
+        { label: t('chart.revenues'),  data: rv,  backgroundColor: '#27ae6088', borderColor: '#27ae60', borderWidth: 1.5, borderRadius: 5 },
+        { label: t('chart.expenses'), data: dep, backgroundColor: '#c0392b88', borderColor: '#c0392b', borderWidth: 1.5, borderRadius: 5 },
+        { label: t('chart.balance'),  data: bal, type: 'line', borderColor: '#5B6AF0', backgroundColor: '#5B6AF022', tension: .35, fill: false, pointRadius: 5, yAxisID: 'y' }
       ]
     },
     options: {
@@ -5502,7 +5502,7 @@ function buildTopExpensesChart(year) {
     .filter(c=>c.value>0).sort((a,b)=>b.value-a.value);
   _charts.top = new Chart(document.getElementById('chart-top'),{
     type:'bar',
-    data:{labels:data.map(c=>c.label),datasets:[{label:'Dépenses (€)',data:data.map(c=>c.value),backgroundColor:PALETTE.map(p=>p+'cc')}]},
+    data:{labels:data.map(c=>c.label),datasets:[{label:t('chart.expenses_eur'),data:data.map(c=>c.value),backgroundColor:PALETTE.map(p=>p+'cc')}]},
     options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+' €'}}}}
   });
 }
@@ -5510,11 +5510,11 @@ function buildPerYearCharts() {
   const y = _chartYear; if(!DATA[y]) return;
   const rv=revTotal(y), dep=depTotal(y);
   _charts.revdep = new Chart(document.getElementById('chart-revdep'),{type:'bar',
-    data:{labels:MONTHS,datasets:[{label:'Revenus',data:rv.map(v=>Math.round(v*100)/100),backgroundColor:'#27ae6088'},{label:'Dépenses',data:dep.map(v=>Math.round(v*100)/100),backgroundColor:'#c0392b88'}]},
+    data:{labels:MONTHS,datasets:[{label:t('chart.revenues'),data:rv.map(v=>Math.round(v*100)/100),backgroundColor:'#27ae6088'},{label:t('chart.expenses'),data:dep.map(v=>Math.round(v*100)/100),backgroundColor:'#c0392b88'}]},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+' €'}}}}});
   const chgT=sum(chgTotal(y)), varCatTotals=getVarCats().map(c=>Math.round(sum(varTotal(y,c.key))*100)/100);
   _charts.cat = new Chart(document.getElementById('chart-cat'),{type:'doughnut',
-    data:{labels:['Charges fixes & occ.',...getVarCats().map(c=>c.label)],datasets:[{data:[Math.round(chgT*100)/100,...varCatTotals],backgroundColor:PALETTE}]},
+    data:{labels:[t('chart.fixed_costs'),...getVarCats().map(c=>c.label)],datasets:[{data:[Math.round(chgT*100)/100,...varCatTotals],backgroundColor:PALETTE}]},
     options:{responsive:true,plugins:{legend:{position:'right'}}}});
   buildWealthChart(y);
   buildTopExpensesChart(y);
@@ -5789,10 +5789,10 @@ function renderDashboard() {
       <div class="section-card" style="margin-bottom:14px">
         <div style="font-weight:700;font-size:13px;margin-bottom:10px">🔄 vs ${getMonths()[mi]} ${prevYr}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
-          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>💹 Revenus</span>${delta(rv,pRv)}</div>
-          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>🏠 Charges</span>${delta(ch,pCh,true)}</div>
-          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>🛒 Variables</span>${delta(vr,pVr,true)}</div>
-          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>💰 Solde</span>${delta(bal,pBal)}</div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>${t('dash.revenues')}</span>${delta(rv,pRv)}</div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>${t('dash.charges')}</span>${delta(ch,pCh,true)}</div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>${t('dash.vars')}</span>${delta(vr,pVr,true)}</div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>${t('dash.balance')}</span>${delta(bal,pBal)}</div>
         </div>
       </div>`;
   }
@@ -5804,14 +5804,14 @@ function renderDashboard() {
           <span>${tx.catIcon} <b>${_esc(tx.catLabel)}</b>${tx.comment ? ` <span style="color:var(--gray)">— ${_esc(tx.comment)}</span>` : ''}</span>
           <span style="font-weight:700;white-space:nowrap;color:var(--text)">${fmtN(tx.amount)} €</span>
         </div>`).join('')
-    : `<p style="color:var(--gray);font-size:12px;text-align:center;padding:14px 0">Aucune dépense variable ce mois.</p>`;
+    : `<p style="color:var(--gray);font-size:12px;text-align:center;padding:14px 0">${t('dash.no_expenses')}</p>`;
 
   // Sélecteur d'année (si plusieurs)
   // Toggle vue Mois / Année
   const viewToggle = `<div style="display:flex;justify-content:flex-end;margin-bottom:14px">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:inline-flex">
-      <button onclick="_dashView='month';renderDashboard()" style="padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:${_dashView==='month'?'var(--blue)':'transparent'};color:${_dashView==='month'?'#fff':'var(--gray)'}">📅 Mois</button>
-      <button onclick="_dashView='year';renderDashboard()" style="padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:${_dashView==='year'?'var(--blue)':'transparent'};color:${_dashView==='year'?'#fff':'var(--gray)'}">📊 Année</button>
+      <button onclick="_dashView='month';renderDashboard()" style="padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:${_dashView==='month'?'var(--blue)':'transparent'};color:${_dashView==='month'?'#fff':'var(--gray)'}">${t('dash.view.month')}</button>
+      <button onclick="_dashView='year';renderDashboard()" style="padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:${_dashView==='year'?'var(--blue)':'transparent'};color:${_dashView==='year'?'#fff':'var(--gray)'}">${t('dash.view.year')}</button>
     </div>
   </div>`;
 
@@ -5829,15 +5829,15 @@ function renderDashboard() {
       : `<div style="font-size:18px;font-weight:800;margin-bottom:16px">${yr}</div>`;
     wrap.innerHTML = `<div>${viewToggle}${annualYearSel}
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px">
-        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💹 Revenus</div><div style="font-size:20px;font-weight:800;color:var(--green);margin-top:6px">${fmtN(tRv)} €</div></div>
-        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🏠 Charges</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(tCh)} €</div></div>
-        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🛒 Variables</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(tVr)} €</div></div>
-        <div class="section-card" style="padding:14px;text-align:center;border-left:3px solid ${tBal>=0?'var(--green)':'var(--red)'}"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💰 Solde annuel</div><div style="font-size:20px;font-weight:800;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmtN(tBal)} €</div></div>
+        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.revenues')}</div><div style="font-size:20px;font-weight:800;color:var(--green);margin-top:6px">${fmtN(tRv)} €</div></div>
+        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.charges')}</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(tCh)} €</div></div>
+        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.vars')}</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(tVr)} €</div></div>
+        <div class="section-card" style="padding:14px;text-align:center;border-left:3px solid ${tBal>=0?'var(--green)':'var(--red)'}"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.balance')}</div><div style="font-size:20px;font-weight:800;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmtN(tBal)} €</div></div>
       </div>
       <div class="section-card" style="margin-bottom:14px">
         <div style="font-weight:700;font-size:13px;margin-bottom:12px">📈 Indicateurs</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Taux d'épargne</div><div style="font-weight:800;font-size:20px;color:${savingsRate>=0?'var(--green)':'var(--red)'};margin-top:4px">${savingsRate}%</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('dash.savings_rate')}</div><div style="font-weight:800;font-size:20px;color:${savingsRate>=0?'var(--green)':'var(--red)'};margin-top:4px">${savingsRate}%</div></div>
           <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Épargne moy./mois</div><div style="font-weight:800;font-size:18px;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:4px">${fmtN(tBal/12)} €</div></div>
           <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.best_month')}</div><div style="font-weight:700;font-size:13px;color:var(--green);margin-top:4px">${getMonths()[bestMi]} · ${fmtN(balArr[bestMi])} €</div></div>
           <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.worst_month')}</div><div style="font-weight:700;font-size:13px;color:var(--red);margin-top:4px">${getMonths()[worstMi]} · ${fmtN(balArr[worstMi])} €</div></div>
@@ -7085,8 +7085,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.34';
-const SW_VERSION = 'v161';
+const APP_VERSION = '11.35';
+const SW_VERSION = 'v162';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -7296,6 +7296,43 @@ const TRANSLATIONS = {
     'tab.summary': '📊 Résumé',
     'tab.charts': '📈 Graphiques',
     'tab.config': '⚙️ Paramètres',
+    // Nav sidebar labels
+    'nav.home': 'Accueil',
+    'nav.summary': 'Résumé',
+    'nav.charts': 'Graphiques',
+    'nav.config': 'Config',
+    'nav.group.nav': 'Navigation',
+    'nav.group.manage': 'Gestion',
+    'nav.year': 'Année',
+    'nav.search': 'Recherche',
+    'nav.install': 'Installer',
+    'nav.help': 'Aide',
+    // Context header
+    'ctx.home': '🏠 Accueil',
+    'ctx.summary': '📊 Résumé',
+    'ctx.charts': '📈 Graphiques',
+    'ctx.config': '⚙️ Configuration',
+    // Charts
+    'chart.revenues': 'Revenus',
+    'chart.expenses': 'Dépenses',
+    'chart.balance': 'Balance',
+    'chart.expenses_eur': 'Dépenses (€)',
+    'chart.fixed_costs': 'Charges fixes & occ.',
+    // Dashboard
+    'dash.revenues': '💹 Revenus',
+    'dash.charges': '🏠 Charges',
+    'dash.vars': '🛒 Variables',
+    'dash.balance': '💰 Solde',
+    'dash.no_expenses': 'Aucune dépense variable ce mois.',
+    'dash.view.month': '📅 Mois',
+    'dash.view.year': '📊 Année',
+    'dash.charges_ratio': 'Charges / Revenus',
+    'dash.savings_rate': 'Taux d\'épargne',
+    'dash.reserve_months': 'Mois de réserve',
+    'dash.projection': 'Projection épargne',
+    'dash.budget_remaining': 'Budget restant',
+    'dash.expenses_month': 'Dépenses du mois',
+    'dash.top_cat': 'Top catégorie',
     // Update bar
     'update.available': 'Mise à jour disponible',
     'update.ready': 'Une nouvelle version de l\'application est prête',
@@ -7511,6 +7548,43 @@ const TRANSLATIONS = {
     'tab.summary': '📊 Summary',
     'tab.charts': '📈 Charts',
     'tab.config': '⚙️ Settings',
+    // Nav sidebar labels
+    'nav.home': 'Home',
+    'nav.summary': 'Summary',
+    'nav.charts': 'Charts',
+    'nav.config': 'Settings',
+    'nav.group.nav': 'Navigation',
+    'nav.group.manage': 'Manage',
+    'nav.year': 'Year',
+    'nav.search': 'Search',
+    'nav.install': 'Install',
+    'nav.help': 'Help',
+    // Context header
+    'ctx.home': '🏠 Home',
+    'ctx.summary': '📊 Summary',
+    'ctx.charts': '📈 Charts',
+    'ctx.config': '⚙️ Settings',
+    // Charts
+    'chart.revenues': 'Revenues',
+    'chart.expenses': 'Expenses',
+    'chart.balance': 'Balance',
+    'chart.expenses_eur': 'Expenses (€)',
+    'chart.fixed_costs': 'Fixed costs & one-time',
+    // Dashboard
+    'dash.revenues': '💹 Revenues',
+    'dash.charges': '🏠 Fixed costs',
+    'dash.vars': '🛒 Variable',
+    'dash.balance': '💰 Balance',
+    'dash.no_expenses': 'No variable expenses this month.',
+    'dash.view.month': '📅 Month',
+    'dash.view.year': '📊 Year',
+    'dash.charges_ratio': 'Fixed costs / Revenues',
+    'dash.savings_rate': 'Savings rate',
+    'dash.reserve_months': 'Reserve months',
+    'dash.projection': 'Savings projection',
+    'dash.budget_remaining': 'Remaining budget',
+    'dash.expenses_month': 'Monthly expenses',
+    'dash.top_cat': 'Top category',
     // Update bar
     'update.available': 'Update available',
     'update.ready': 'A new version of the app is ready',
@@ -7577,6 +7651,7 @@ function setLang(code) {
     if (typeof getYears === 'function') getYears().forEach(y => renderYear(y));
     if (typeof renderSummary === 'function') renderSummary();
     if (typeof renderConfigTab === 'function') renderConfigTab();
+    if (typeof renderDashboard === 'function') renderDashboard();
   }
   if (typeof renderWelcomeScreen === 'function') renderWelcomeScreen();
   // Re-render onboarding screen if visible
@@ -7592,6 +7667,12 @@ function setLang(code) {
     if (uTitle) uTitle.textContent = t('update.available');
     if (uSub) uSub.textContent = t('update.ready');
     if (uBtn) uBtn.textContent = t('update.btn');
+  }
+  // Update context banner (tab title in header)
+  const activeTab = document.querySelector('.nav-btn.tab.active');
+  if (activeTab) {
+    const tabId = activeTab.getAttribute('data-tabid');
+    if (tabId && typeof updateContextBanner === 'function') updateContextBanner(tabId);
   }
 }
 
@@ -7706,6 +7787,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.35': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🌐', text: 'i18n : navigation latérale, entêtes contextuels et libellés de groupes traduits EN/FR — le menu suit la langue choisie' },
+      { icon: '🔒', text: 'Sécurité : suppression du déclencheur admin caché (5 clics sur le logo)' }
+    ]
+  },
   '11.34': {
     date: 'Mai 2026',
     items: [
@@ -9198,11 +9286,7 @@ let _adminSavedData = null, _isAdminMode = false, _adminLabel = '';
 function _isFbAdmin() { return _fbUser?.uid === ADMIN_UID; }
 
 function adminTitleClick() {
-  if (!_isFbAdmin()) return;
-  _adminClickCount++;
-  clearTimeout(_adminClickTimer);
-  if (_adminClickCount >= 5) { _adminClickCount = 0; openAdminPanel(); }
-  else { _adminClickTimer = setTimeout(() => { _adminClickCount = 0; }, 2000); }
+  // Hidden admin trigger removed — use the admin button in Settings
 }
 function openAdminPanel() {
   if (!_isFbAdmin()) { showToast('⛔ Accès réservé à l\'administrateur'); return; }
