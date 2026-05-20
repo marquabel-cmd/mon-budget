@@ -3,11 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon Budget — Gérez votre argent simplement</title>
-<meta name="description" content="L'application de gestion budgétaire simple, privée et puissante. Suivez revenus, charges et dépenses. Synchronisation cloud Premium. Essai 30 jours gratuit.">
-<meta property="og:title" content="Mon Budget — Gérez votre argent simplement">
-<meta property="og:description" content="Application PWA de gestion budgétaire personnelle. Gratuit, privé, sans abonnement forcé.">
-<meta property="og:image" content="icon-512.png">
+<title>Mon Budget — App budget familial gratuite | Sans pub ni tracking</title>
+<meta name="description" content="Gérez vos revenus, charges et dépenses variables par catégorie. Gratuit, fonctionne hors-ligne, vos données restent chez vous. Alternative à Bankin' et Excel.">
+<meta name="keywords" content="app budget familial gratuit, gestion budget mensuel, budget belgique, alternative bankin gratuit, budget familial excel alternative, app budget sans cloud">
+<meta property="og:title" content="Mon Budget — App budget familial gratuite">
+<meta property="og:description" content="Vos revenus, charges et dépenses en un coup d'œil. Gratuit, sans pub, sans tracking. Vos données restent chez vous.">
+<meta property="og:image" content="https://budget.marquabel.be/icon-512.png">
+<meta property="og:url" content="https://budget.marquabel.be">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mon Budget — App budget familial gratuite">
+<meta name="twitter:description" content="Gratuit, hors-ligne, vos données restent chez vous. Alternative à Bankin' et Excel.">
+<meta name="twitter:image" content="https://budget.marquabel.be/icon-512.png">
+<link rel="canonical" href="https://budget.marquabel.be/">
 <meta name="theme-color" content="#1A1D2E">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -174,6 +182,22 @@ footer{padding:40px 24px;background:var(--dark2);border-top:1px solid var(--bord
   .mockup-screen{grid-template-columns:1fr}
 }
 
+/* COMPARISON TABLE */
+.comp-wrap{overflow-x:auto;margin-top:56px;border-radius:16px;border:1px solid var(--border)}
+.comp-table{width:100%;border-collapse:collapse;min-width:560px}
+.comp-table th{padding:16px 20px;font-size:13px;font-weight:700;color:var(--gray);text-align:center;background:var(--dark3);border-bottom:2px solid var(--border)}
+.comp-table th:first-child{text-align:left}
+.comp-table th.col-us{color:#a5b0ff;background:rgba(91,106,240,.12)}
+.comp-table td{padding:13px 20px;font-size:13px;color:var(--gray);text-align:center;border-bottom:1px solid var(--border)}
+.comp-table td:first-child{text-align:left;font-weight:600;color:var(--text)}
+.comp-table td.col-us{background:rgba(91,106,240,.06);color:#a5b0ff}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table tr:hover td{background:rgba(255,255,255,.03)}
+.comp-table tr:hover td.col-us{background:rgba(91,106,240,.1)}
+.comp-yes{color:var(--green);font-weight:700;font-size:16px}
+.comp-no{color:#555;font-size:16px}
+.comp-partial{color:var(--orange);font-size:13px;font-weight:600}
+
 /* ANIMATIONS */
 @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 .fade-up{animation:fadeUp .6s ease forwards}
@@ -192,6 +216,7 @@ footer{padding:40px 24px;background:var(--dark2);border-top:1px solid var(--bord
   </a>
   <nav>
     <a href="#features">Fonctionnalités</a>
+    <a href="#compare">Comparatif</a>
     <a href="#pricing">Tarifs</a>
     <a href="#faq">FAQ</a>
     <a href="budget_familial.html" class="btn-nav">Ouvrir l'app →</a>
@@ -202,9 +227,9 @@ footer{padding:40px 24px;background:var(--dark2);border-top:1px solid var(--bord
 <section class="hero">
   <div class="hero-bg"></div>
   <div>
-    <div class="hero-badge fade-up">💳 Application PWA · Gratuite pour commencer</div>
-    <h1 class="fade-up-2">Maîtrisez votre argent,<br>mois après mois.</h1>
-    <p class="fade-up-3">Revenus, charges, dépenses — tout au même endroit. Simple, rapide, privé. Vos données restent chez vous, sans connexion bancaire requise.</p>
+    <div class="hero-badge fade-up">🇧🇪 Fait en Belgique · Gratuit pour commencer</div>
+    <h1 class="fade-up-2">Enfin savoir où part<br>votre argent</h1>
+    <p class="fade-up-3">Sans donner vos données à personne. Revenus, charges, dépenses — tout au même endroit. Gratuit, hors-ligne, et vos données restent chez vous.</p>
     <div class="hero-ctas fade-up-4">
       <a href="budget_familial.html" class="btn-primary">🚀 Commencer gratuitement</a>
       <a href="#features" class="btn-secondary">Voir les fonctionnalités</a>
@@ -391,6 +416,96 @@ footer{padding:40px 24px;background:var(--dark2);border-top:1px solid var(--bord
         <div class="step-desc">Graphiques, comparaisons, projections fin d'année. Vous savez exactement où va votre argent.</div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section id="compare" style="background:var(--dark3);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <span class="section-label">Comparatif</span>
+      <h2 class="section-title">Pourquoi choisir Mon Budget ?</h2>
+      <p class="section-sub center">La seule app budget en français, gratuite, sans cloud obligatoire.</p>
+    </div>
+    <div class="comp-wrap">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th style="width:30%"></th>
+            <th class="col-us">⭐ Mon Budget</th>
+            <th>Bankin'</th>
+            <th>Excel</th>
+            <th>YNAB</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Prix de départ</td>
+            <td class="col-us" style="color:var(--green);font-weight:700">Gratuit</td>
+            <td>3,99€/mois</td>
+            <td>~8€/mois</td>
+            <td>14$/mois</td>
+          </tr>
+          <tr>
+            <td>Données restent chez vous</td>
+            <td class="col-us"><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+            <td><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+          </tr>
+          <tr>
+            <td>Fonctionne hors-ligne</td>
+            <td class="col-us"><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+            <td><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+          </tr>
+          <tr>
+            <td>Zéro pub, zéro tracking</td>
+            <td class="col-us"><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+            <td><span class="comp-yes">✓</span></td>
+            <td><span class="comp-partial">Partiel</span></td>
+          </tr>
+          <tr>
+            <td>En français (BE/FR)</td>
+            <td class="col-us"><span class="comp-yes">✓</span></td>
+            <td><span class="comp-yes">✓</span></td>
+            <td><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+          </tr>
+          <tr>
+            <td>Application mobile</td>
+            <td class="col-us"><span class="comp-yes">✓</span></td>
+            <td><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+            <td><span class="comp-yes">✓</span></td>
+          </tr>
+          <tr>
+            <td>Import relevés CSV</td>
+            <td class="col-us"><span class="comp-yes">✓</span></td>
+            <td>Auto (banque)</td>
+            <td><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+          </tr>
+          <tr>
+            <td>Assistant IA intégré</td>
+            <td class="col-us"><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+            <td><span class="comp-no">✗</span></td>
+            <td><span class="comp-no">✗</span></td>
+          </tr>
+          <tr>
+            <td>Sans inscription obligatoire</td>
+            <td class="col-us"><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+            <td><span class="comp-yes">✓</span></td>
+            <td><span class="comp-no">✗</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="text-align:center;margin-top:24px;font-size:13px;color:var(--gray);opacity:.7">Comparaison basée sur les offres publiques — Mai 2026</p>
   </div>
 </section>
 
