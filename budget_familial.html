@@ -2271,7 +2271,12 @@ function _finishLogin(id) {
     if (isLicensed() && id === fbLocalId) {
       setCloudStatus('syncing');
       cloudPull().then(cloudData => {
-        if (cloudData === null && !_lastSyncError) { setCloudStatus('off'); return; }
+        if (cloudData === null && !_lastSyncError) {
+          // Cloud vide ou données locales plus récentes — tenter un push immédiat
+          if (_hasYearData(DATA)) { setTimeout(() => cloudPush(), 2000); }
+          else { setCloudStatus('off'); }
+          return;
+        }
         if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
         _backupBeforeCloudReplace();
         const _cloudTxCount = _countAllTx(cloudData);
@@ -7278,8 +7283,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.53';
-const SW_VERSION = 'v176';
+const APP_VERSION = '11.54';
+const SW_VERSION = 'v177';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
