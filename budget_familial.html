@@ -4537,7 +4537,7 @@ function renderKpiCards(year) {
   const resAction = typeof moisRes === 'number' && moisRes < 3
     ? (initSolde === 0
         ? _kpiActionBtn('💰 Renseigner vos soldes →', `document.querySelector('[data-section="soldes"]')?.scrollIntoView({behavior:'smooth'})`)
-        : _kpiActionBtn('📈 Augmenter l\'épargne mensuelle →', `_goToTab('resume')`)
+        : _kpiActionBtn('📈 Augmenter l\'épargne mensuelle →', `_scrollToSection('${year}','revenus')`)
       )
     : (typeof moisRes !== 'number' ? _kpiActionBtn('💰 Renseigner vos soldes de départ →', `document.querySelector('[data-section="soldes"]')?.scrollIntoView({behavior:'smooth'})`) : '');
   const projAction = proj < 0
@@ -7328,8 +7328,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.63';
-const SW_VERSION = 'v184';
+const APP_VERSION = '11.64';
+const SW_VERSION = 'v185';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
