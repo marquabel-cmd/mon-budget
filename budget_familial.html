@@ -7139,8 +7139,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.40';
-const SW_VERSION = 'v167';
+const APP_VERSION = '11.41';
+const SW_VERSION = 'v168';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -7298,6 +7298,19 @@ const TRANSLATIONS = {
     'cfg.uninstall': 'Désinstaller l\'application — EFFACE TOUT',
     'cfg.gist_help_hint': 'Besoin d\'images ? Consulte le',
     'cfg.gist_help_link': 'guide illustré dans l\'Aide',
+    // AI Assistant
+    'ai.title': 'Assistant Budget IA',
+    'ai.powered_by': 'Propulsé par Groq (Llama 3.1)',
+    'ai.clear_title': 'Effacer la conversation',
+    'ai.welcome': '👋 Bonjour ! Je suis ton assistant budget.<br>Quelques exemples de questions :<br>• <i>Quel est mon solde actuel ?</i><br>• <i>Combien j\'ai dépensé en courses ce mois-ci ?</i><br>• <i>Compare mes dépenses 2025 et 2026</i><br>• <i>Donne-moi des conseils pour économiser</i>',
+    'ai.cleared': 'Conversation effacée. Pose-moi une nouvelle question ! 😊',
+    'ai.no_data': 'Aucune donnée disponible.',
+    'ai.typing': 'Analyse de tes données…',
+    'ai.error': 'Erreur',
+    'ai.voice_input': 'Saisie vocale',
+    'ai.err_invalid_key': 'Clé API Groq invalide. Vérifie-la dans ⚙️ Paramètres → Assistant IA.',
+    'ai.err_rate_limit': 'Limite de requêtes atteinte. Réessaie dans quelques secondes.',
+    'ai.err_empty': 'Réponse vide de Groq',
     // Toast messages
     'toast.saved': '✅ Sauvegardé',
     'toast.deleted': '🗑 Supprimé',
@@ -8076,6 +8089,19 @@ const TRANSLATIONS = {
     'cfg.uninstall': 'Uninstall app — WIPES EVERYTHING',
     'cfg.gist_help_hint': 'Need screenshots? See the',
     'cfg.gist_help_link': 'illustrated guide in Help',
+    // AI Assistant
+    'ai.title': 'AI Budget Assistant',
+    'ai.powered_by': 'Powered by Groq (Llama 3.1)',
+    'ai.clear_title': 'Clear conversation',
+    'ai.welcome': '👋 Hello! I\'m your budget assistant.<br>Some example questions:<br>• <i>What is my current balance?</i><br>• <i>How much did I spend on groceries this month?</i><br>• <i>Compare my expenses for 2025 and 2026</i><br>• <i>Give me tips to save money</i>',
+    'ai.cleared': 'Conversation cleared. Ask me a new question! 😊',
+    'ai.no_data': 'No data available.',
+    'ai.typing': 'Analysing your data…',
+    'ai.error': 'Error',
+    'ai.voice_input': 'Voice input',
+    'ai.err_invalid_key': 'Invalid Groq API key. Check it in ⚙️ Settings → AI Assistant.',
+    'ai.err_rate_limit': 'Rate limit reached. Please try again in a few seconds.',
+    'ai.err_empty': 'Empty response from Groq',
     // Toast messages
     'toast.saved': '✅ Saved',
     'toast.deleted': '🗑 Deleted',
@@ -8938,6 +8964,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.41': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🤖', text: 'Assistant IA entièrement bilingue : message de bienvenue, effacement, erreurs, statut, saisie vocale — tous via t()' },
+      { icon: '🌐', text: 'Système prompt : "Réponds en français" remplacé par une instruction dynamique selon la langue — l\'IA répond maintenant en anglais si l\'app est en EN' }
+    ]
+  },
   '11.40': {
     date: 'Mai 2026',
     items: [
@@ -10827,7 +10860,7 @@ function toggleAiChat() {
   if (_aiOpen) {
     const msgs = document.getElementById('ai-chat-messages');
     if (!msgs.children.length) {
-      _appendAiMsg('bot', '👋 Bonjour ! Je suis ton assistant budget.<br>Quelques exemples de questions :<br>• <i>Quel est mon solde actuel ?</i><br>• <i>Combien j\'ai dépensé en courses ce mois-ci ?</i><br>• <i>Compare mes dépenses 2025 et 2026</i><br>• <i>Donne-moi des conseils pour économiser</i>');
+      _appendAiMsg('bot', t('ai.welcome'));
     }
     setTimeout(() => document.getElementById('ai-chat-input')?.focus(), 100);
   }
@@ -10836,7 +10869,7 @@ function toggleAiChat() {
 function clearAiChat() {
   const msgs = document.getElementById('ai-chat-messages');
   if (msgs) msgs.innerHTML = '';
-  _appendAiMsg('bot', 'Conversation effacée. Pose-moi une nouvelle question ! 😊');
+  _appendAiMsg('bot', t('ai.cleared'));
 }
 
 function _appendAiMsg(role, html) {
@@ -10852,9 +10885,11 @@ function _appendAiMsg(role, html) {
 
 function _buildBudgetContext() {
   const years = getYears();
-  if (!years.length) return 'Aucune donnée disponible.';
-  const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
-  let ctx = 'Tu es un assistant budgétaire personnel expert. Réponds en français, de façon concise et bienveillante. Tutoie l\'utilisateur. Utilise les données ci-dessous :\n\n';
+  if (!years.length) return t('ai.no_data');
+  const _aiLangInstr = _lang === 'en'
+    ? 'You are an expert personal budget assistant. Reply in English, concisely and helpfully. Use the data below:\n\n'
+    : 'Tu es un assistant budgétaire personnel expert. Réponds en français, de façon concise et bienveillante. Tutoie l\'utilisateur. Utilise les données ci-dessous :\n\n';
+  let ctx = _aiLangInstr;
   years.forEach(year => {
     const d = DATA[year];
     if (!d) return;
@@ -10915,7 +10950,7 @@ async function sendAiMessage() {
   _appendAiMsg('user', text);
   _aiTyping = true;
   if (sendBtn) sendBtn.disabled = true;
-  const typingDiv = _appendAiMsg('bot', '⏳ <i>Analyse de tes données…</i>');
+  const typingDiv = _appendAiMsg('bot', `⏳ <i>${t('ai.typing')}</i>`);
   if (typingDiv) typingDiv.classList.add('ai-msg-typing');
   try {
     const context = _buildBudgetContext();
@@ -10924,7 +10959,7 @@ async function sendAiMessage() {
     _appendAiMsg('bot', answer);
   } catch(e) {
     if (typingDiv) typingDiv.remove();
-    _appendAiMsg('bot', `❌ Erreur : ${e.message}`);
+    _appendAiMsg('bot', `❌ ${t('ai.error')} : ${e.message}`);
   } finally {
     _aiTyping = false;
     if (sendBtn) sendBtn.disabled = false;
@@ -11142,8 +11177,8 @@ function _stopVoice(manual = false) {
   }
   const btn    = document.getElementById('ai-mic-btn');
   const status = document.getElementById('ai-chat-status');
-  if (btn)    { btn.classList.remove('listening'); btn.title = 'Saisie vocale'; btn.textContent = '🎤'; }
-  if (status) status.textContent = 'Propulsé par Groq';
+  if (btn)    { btn.classList.remove('listening'); btn.title = t('ai.voice_input'); btn.textContent = '🎤'; }
+  if (status) status.textContent = t('ai.powered_by');
   // Si arrêt manuel avec du texte → envoyer aussi
   if (manual && document.getElementById('ai-chat-input')?.value.trim()) {
     setTimeout(() => sendAiMessage(), 200);
@@ -11176,13 +11211,13 @@ async function _callGemini(apiKey, systemContext, userMessage) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const msg = err.error?.message || `Erreur HTTP ${res.status}`;
-    if (res.status === 401) throw new Error('Clé API Groq invalide. Vérifie-la dans ⚙️ Paramètres → Assistant IA.');
-    if (res.status === 429) throw new Error('Limite de requêtes atteinte. Réessaie dans quelques secondes.');
+    if (res.status === 401) throw new Error(t('ai.err_invalid_key'));
+    if (res.status === 429) throw new Error(t('ai.err_rate_limit'));
     throw new Error(msg);
   }
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error('Réponse vide de Groq');
+  if (!text) throw new Error(t('ai.err_empty'));
   return text
     .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
     .replace(/\*(.*?)\*/g, '<i>$1</i>')
@@ -12132,10 +12167,10 @@ function closeCompareView() {
   <div class="ai-chat-header">
     <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
     <div style="flex:1">
-      <div style="font-weight:700;font-size:13px">Assistant Budget IA</div>
-      <div style="font-size:10px;color:var(--gray)" id="ai-chat-status">Propulsé par Groq (Llama 3.1)</div>
+      <div style="font-weight:700;font-size:13px" data-i18n="ai.title">AI Budget Assistant</div>
+      <div style="font-size:10px;color:var(--gray)" id="ai-chat-status" data-i18n="ai.powered_by">Powered by Groq (Llama 3.1)</div>
     </div>
-    <button onclick="clearAiChat()" title="Effacer la conversation" style="background:none;border:none;font-size:13px;color:var(--gray);cursor:pointer;padding:2px 6px">🗑</button>
+    <button onclick="clearAiChat()" data-i18n-title="ai.clear_title" title="Clear conversation" style="background:none;border:none;font-size:13px;color:var(--gray);cursor:pointer;padding:2px 6px">🗑</button>
     <button onclick="toggleAiChat()" style="background:none;border:none;font-size:16px;color:var(--gray);cursor:pointer;padding:2px 6px">✕</button>
   </div>
   <div class="ai-chat-messages" id="ai-chat-messages"></div>
