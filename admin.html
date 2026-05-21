@@ -248,10 +248,15 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
     <!-- User panel -->
     <div id="user-panel">
       <div class="user-panel-header">
-        <div>
+        <div style="flex:1;min-width:0">
           <div style="font-weight:700;margin-bottom:4px" id="panel-email">—</div>
           <div class="user-panel-info">UID : <strong id="panel-uid">—</strong> &nbsp;·&nbsp; Dernière connexion : <strong id="panel-last">—</strong></div>
-          <div class="user-panel-info" id="panel-expiry-line" style="display:none;margin-top:3px">Licence : <strong id="panel-expiry">—</strong></div>
+          <div class="user-panel-info" id="panel-expiry-line" style="display:none;margin-top:3px">Licence : <strong id="panel-expiry">—</strong> &nbsp;·&nbsp; Depuis : <strong id="panel-since">—</strong></div>
+          <!-- Libellé éditable -->
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+            <input id="panel-label" type="text" placeholder="🏷️ Libellé / note interne…" class="auth-input" style="margin:0;padding:5px 10px;font-size:12px;flex:1;max-width:280px">
+            <button class="btn btn-ghost btn-sm" onclick="saveUserLabel()">💾</button>
+          </div>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="closePanel()">✕</button>
       </div>
@@ -301,15 +306,17 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
       <table>
         <thead>
           <tr>
-            <th>Email</th>
+            <th>Email / Libellé</th>
             <th>Statut</th>
+            <th>Début abonnement</th>
+            <th>Fin abonnement</th>
             <th>Appareils</th>
             <th>Dernière connexion</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="users-tbody">
-          <tr class="empty-row"><td colspan="5">🔄 Chargement…</td></tr>
+          <tr class="empty-row"><td colspan="7">🔄 Chargement…</td></tr>
         </tbody>
       </table>
     </div>
@@ -1027,24 +1034,33 @@ function renderStats() {
   document.getElementById('s-revenue').textContent  = (paying * 14.90).toFixed(2) + ' €';
 }
 
+function _fmtDate(ts) { return ts ? new Date(ts).toLocaleDateString('fr-FR') : '—'; }
 function renderUsers(entries) {
   const tbody = document.getElementById('users-tbody');
   document.getElementById('user-count').textContent = entries.length;
-  if (!entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Aucun client trouvé</td></tr>'; return; }
+  if (!entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Aucun client trouvé</td></tr>'; return; }
   const now = Date.now();
   tbody.innerHTML = entries.map(([uid, info]) => {
     const email    = _esc(info?.email || '—');
+    const lbl      = info?.label ? `<div style="font-size:11px;color:#8B5CF6;font-style:italic;margin-top:2px">🏷️ ${_esc(info.label)}</div>` : '';
     const p        = info?.premium;
     const active   = _isPremiumActive(p);
     const expiring = typeof p === 'number' && p > now && p < now + 30*24*3600*1000;
+    const expired  = typeof p === 'number' && p < now;
     const devCount = Object.keys(info?.devices || {}).length;
-    const last     = info?.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
+    const last     = _fmtDate(info?.lastLogin);
+    const since    = _fmtDate(info?.premiumSince);
+    const until    = p === true ? '<span style="color:#00C896;font-weight:700">♾️ À vie</span>'
+                   : typeof p === 'number' ? `<span style="color:${expired?'#F04F5B':expiring?'#F5A623':'#E2E4F0'}">${_fmtDate(p)}${expiring?' ⚠️':''}</span>`
+                   : '<span style="color:#555">—</span>';
     const badge    = active
       ? `<span class="badge badge-premium">⭐ Premium${expiring ? ' ⚠️' : ''}</span>`
       : `<span class="badge badge-free">Gratuit</span>`;
     return `<tr>
-      <td style="font-weight:500">${email}</td>
+      <td style="font-weight:500">${email}${lbl}</td>
       <td>${badge}</td>
+      <td style="color:#8892B0;font-size:12px">${since}</td>
+      <td style="font-size:12px">${until}</td>
       <td>📱 ${devCount}/3</td>
       <td style="color:#8892B0">${_esc(last)}</td>
       <td class="actions">
@@ -1081,14 +1097,17 @@ function selectUser(uid) {
   document.getElementById('panel-email').textContent = info.email || uid;
   document.getElementById('panel-uid').textContent   = uid.slice(0,20) + '…';
   document.getElementById('panel-last').textContent  = info.lastLogin ? new Date(info.lastLogin).toLocaleDateString('fr-FR') : '—';
+  document.getElementById('panel-label').value = info.label || '';
 
-  // Expiration
+  // Expiration + since
   const p = info.premium;
   const expiryLine = document.getElementById('panel-expiry-line');
   const expiryEl   = document.getElementById('panel-expiry');
+  const sinceEl    = document.getElementById('panel-since');
+  if (sinceEl) sinceEl.textContent = info.premiumSince ? new Date(info.premiumSince).toLocaleDateString('fr-FR') : '—';
   if (p === true) {
     expiryLine.style.display = '';
-    expiryEl.textContent = 'À vie (sans expiration)';
+    expiryEl.textContent = '♾️ À vie (sans expiration)';
     expiryEl.style.color = '#00C896';
   } else if (typeof p === 'number') {
     expiryLine.style.display = '';
@@ -1151,6 +1170,25 @@ function _premiumLabel(val) {
   return 'expire le ' + new Date(val).toLocaleDateString('fr-FR');
 }
 
+async function saveUserLabel() {
+  if (!_selectedUid) return;
+  const label = document.getElementById('panel-label').value.trim();
+  try {
+    const token = await getToken();
+    if (!token) { showToast('❌ Session expirée'); return; }
+    const r = await _fbFetch(`${LICENSE_DB}/users/${_selectedUid}/label.json`, {
+      method: label ? 'PUT' : 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: label ? JSON.stringify(label) : undefined
+    }, token);
+    if (!r.ok) { showToast(`❌ Erreur HTTP ${r.status}`); return; }
+    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], label: label || undefined };
+    if (!label) delete _allUsers[_selectedUid].label;
+    filterUsers();
+    showToast('✅ Libellé sauvegardé');
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
 async function grantPremium() {
   if (!_selectedUid) return;
   const res = document.getElementById('panel-result');
@@ -1158,11 +1196,13 @@ async function grantPremium() {
   try {
     const token = await getToken();
     const val   = _getPremiumValue();
-    const r = await _fbFetch(`${LICENSE_DB}/users/${_selectedUid}/premium.json`, {
-      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(val)
+    const since = _allUsers[_selectedUid]?.premiumSince || Date.now();
+    const patch = { premium: val, premiumSince: since };
+    const r = await _fbFetch(`${LICENSE_DB}/users/${_selectedUid}.json`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(patch)
     }, token);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: val };
+    _allUsers[_selectedUid] = { ..._allUsers[_selectedUid], premium: val, premiumSince: since };
     res.textContent = '✅ Premium accordé — ' + _premiumLabel(val);
     selectUser(_selectedUid); renderStats(); filterUsers(); showToast('⭐ Premium accordé');
   } catch(e) { res.textContent = '❌ ' + e.message; }
@@ -1595,6 +1635,18 @@ async function viewUserBudget(uid) {
     return;
   }
 
+  // Note fraîcheur des données
+  const pushTs = raw._lastPush || raw._ts || null;
+  const freshnessNote = pushTs
+    ? `<div data-bv-note style="font-size:10px;color:#8892B0;padding:6px 14px;background:#171A28;border-bottom:1px solid #2C3050">
+        ⏱️ Dernière sync cloud : <strong>${new Date(pushTs).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</strong>
+        — Les données affichées correspondent au dernier push Firebase (peuvent différer des données locales de l'utilisateur).
+       </div>`
+    : `<div data-bv-note style="font-size:10px;color:#8892B0;padding:6px 14px;background:#171A28;border-bottom:1px solid #2C3050">
+        ⚠️ Données issues du dernier push cloud — peuvent différer des données locales de l'utilisateur.
+       </div>`;
+  document.getElementById('bv-content').innerHTML = freshnessNote;
+
   // Onglets années
   const tabEl = document.getElementById('bv-year-tabs');
   tabEl.style.display = 'flex';
@@ -1712,7 +1764,10 @@ function _renderBvYear(year) {
   }
 
   html += '</div>'; // bv-section
-  document.getElementById('bv-content').innerHTML = html;
+  // Garder la note de fraîcheur, remplacer le reste
+  const bvEl = document.getElementById('bv-content');
+  const noteEl = bvEl.querySelector('[data-bv-note]');
+  bvEl.innerHTML = (noteEl ? noteEl.outerHTML : '') + html;
 }
 // ── /BUDGET VIEWER ─────────────────────────────────────────────────────
 
