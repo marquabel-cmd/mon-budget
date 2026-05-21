@@ -288,7 +288,10 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
     <!-- Users table -->
     <div class="section-header">
       <span class="section-title">👥 Clients (<span id="user-count">0</span>)</span>
-      <input class="search-input" id="search" placeholder="🔍 Rechercher…" oninput="filterUsers()">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-sm" style="border:1px solid #5B6AF044;color:#8891f0" onclick="openBudgetViewer()">👁️ Voir budget par UID / clé</button>
+        <input class="search-input" id="search" placeholder="🔍 Rechercher…" oninput="filterUsers()">
+      </div>
     </div>
     <div class="table-wrap">
       <table>
@@ -810,11 +813,17 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
 <div id="budget-viewer-modal" onclick="if(event.target===this)closeBudgetViewer()">
   <div class="bv-wrap">
     <div class="bv-header">
-      <div>
+      <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:15px" id="bv-email">—</div>
         <div style="font-size:11px;color:#8892B0;margin-top:2px;font-family:monospace" id="bv-uid">—</div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="closeBudgetViewer()">✕ Fermer</button>
+      <!-- Recherche directe par UID ou clé de licence -->
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        <input id="bv-search-input" class="auth-input" style="margin:0;padding:6px 10px;font-size:12px;width:240px;background:#12141F"
+          placeholder="UID ou clé BETA-XXXX…" onkeydown="if(event.key==='Enter')bvSearchAndLoad()">
+        <button class="btn btn-primary btn-sm" onclick="bvSearchAndLoad()">👁️ Charger</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeBudgetViewer()">✕</button>
+      </div>
     </div>
     <div id="bv-year-tabs" class="bv-year-tabs" style="display:none"></div>
     <div id="bv-content">
@@ -1338,6 +1347,36 @@ let _bvYear = null;
 function closeBudgetViewer() {
   document.getElementById('budget-viewer-modal').style.display = 'none';
   _bvData = null; _bvYear = null;
+}
+
+// Ouvre le viewer depuis le tableau (uid connu)
+// Ou depuis la barre de recherche libre (uid ou clé de licence)
+function openBudgetViewer() {
+  document.getElementById('bv-email').textContent = '—';
+  document.getElementById('bv-uid').textContent = '—';
+  document.getElementById('bv-search-input').value = '';
+  document.getElementById('bv-year-tabs').style.display = 'none';
+  document.getElementById('bv-content').innerHTML = '<div class="bv-empty">Entrez un UID ou une clé de licence ci-dessus puis cliquez 👁️ Charger.</div>';
+  document.getElementById('budget-viewer-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('bv-search-input').focus(), 80);
+}
+
+async function bvSearchAndLoad() {
+  const raw = document.getElementById('bv-search-input').value.trim();
+  if (!raw) return;
+  // Résoudre : clé de licence → UID
+  let uid = raw;
+  const keyEntry = _betaKeys.find(k => k.key === raw);
+  if (keyEntry?.uid) {
+    uid = keyEntry.uid;
+  } else if (raw.includes('-') && !raw.startsWith('BETA') && !raw.startsWith('PREM')) {
+    // format inconnu — essayer quand même comme UID
+  }
+  // Chercher dans les users connus
+  const info = _allUsers[uid] || {};
+  document.getElementById('bv-email').textContent = info.email || (keyEntry ? `Clé : ${keyEntry.recipient || raw}` : uid);
+  document.getElementById('bv-uid').textContent = uid;
+  await viewUserBudget(uid);
 }
 
 async function viewUserBudget(uid) {
