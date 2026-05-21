@@ -5508,6 +5508,10 @@ function restoreBackup(key) {
     getYears().forEach(y => renderYear(y));
     renderSummary();
     closeBackups();
+    // CRITIQUE : sauvegarder en localStorage ET pousser vers Firebase immédiatement
+    // Sans ça, le prochain chargement relit l'ancien localStorage et perd la restauration
+    _cloudDirty = true;
+    saveData(true); // sauvegarde localStorage + push Firebase
     showToast(t('toast.backup_restored'));
   } catch(e) { showToast(t('toast.error') + ' — ' + e.message); }
 }
@@ -7322,8 +7326,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.59';
-const SW_VERSION = 'v180';
+const APP_VERSION = '11.60';
+const SW_VERSION = 'v181';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -9181,6 +9185,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.60': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔒', text: 'Fix critique restauration : la restauration d\'une sauvegarde sauvegarde maintenant immédiatement en localStorage ET pousse vers Firebase — les données ne sont plus perdues au prochain chargement.' },
+      { icon: '☁️', text: 'Icône sync cloud cliquable depuis l\'en-tête : cliquer pousse immédiatement vers Firebase sans passer par les paramètres.' }
+    ]
+  },
   '11.58': {
     date: 'Mai 2026',
     items: [
