@@ -7213,7 +7213,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.45';
+const APP_VERSION = '11.46';
 const SW_VERSION = 'v172';
 
 // ── INTERNATIONALISATION ──
@@ -9072,6 +9072,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.46': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔄', text: 'Auto-sync périodique : Gist GitHub et Firebase se synchronisent automatiquement toutes les 60 minutes en arrière-plan (sans action de ta part)' }
+    ]
+  },
   '11.45': {
     date: 'Mai 2026',
     items: [
@@ -10594,6 +10600,17 @@ if ('serviceWorker' in navigator) {
       // Vérifier les mises à jour immédiatement + toutes les 30 minutes
       reg.update();
       setInterval(() => reg.update(), 30 * 60 * 1000);
+
+      // ── Auto-sync périodique (toutes les 60 min) ──
+      // Gist et Firebase sont déclenchés silencieusement si configurés
+      setInterval(() => {
+        if (getGistToken() && !_gistSyncing && !_compareMode && !_isAdminMode && _hasYearData(DATA)) {
+          gistPush();
+        }
+        if (cloudApiUrl() && _deviceAllowed && !_compareMode && !_isAdminMode && _hasYearData(DATA)) {
+          cloudPush();
+        }
+      }, 60 * 60 * 1000);
 
       // Si un nouveau SW est déjà en attente (ex: onglet resté ouvert longtemps), l'activer tout de suite
       function _activateWaiting(worker) {
