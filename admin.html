@@ -159,8 +159,9 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
 
 /* ── BUDGET VIEWER ── */
 #budget-viewer-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9500;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
-.bv-wrap{background:#1C1F30;border:1px solid #2C3050;border-radius:16px;width:95vw;max-width:1600px;margin:auto;overflow:hidden;resize:horizontal}
-.bv-header{background:#20243A;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #2C3050;flex-wrap:wrap}
+.bv-wrap{background:#1C1F30;border:1px solid #2C3050;border-radius:16px;width:min(95vw,1600px);margin:auto;overflow:visible;display:flex;flex-direction:column}
+.bv-wrap>*{min-width:0}
+.bv-header{background:#20243A;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #2C3050;flex-wrap:wrap;border-radius:16px 16px 0 0}
 .bv-year-tabs{display:flex;gap:4px;padding:10px 16px;background:#171A28;border-bottom:1px solid #2C3050;flex-wrap:wrap}
 .bv-year-btn{background:none;border:1px solid #2C3050;border-radius:6px;color:#8892B0;font-size:12px;font-weight:600;padding:5px 12px;cursor:pointer;transition:all .15s}
 .bv-year-btn.active{background:#5B6AF020;border-color:#5B6AF0;color:#8891f0}
@@ -338,8 +339,8 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
           <div class="stat-card"><div class="stat-label" style="color:#7effa0">En ligne (5 min)</div><div class="stat-value" style="color:#7effa0" id="v-online">—</div></div>
         </div>
 
-        <!-- 2 colonnes : funnel + chart -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <!-- 3 colonnes : funnel + chart 7j + géo -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
 
           <!-- Funnel -->
           <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:20px">
@@ -353,6 +354,13 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
           <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:20px">
             <div style="font-size:12px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">📈 Visites — 7 derniers jours</div>
             <canvas id="v-chart" height="120"></canvas>
+          </div>
+
+          <!-- Chart géo pays -->
+          <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:20px">
+            <div style="font-size:12px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">🌍 Visiteurs par pays</div>
+            <canvas id="v-geo-chart" height="120"></canvas>
+            <div id="v-geo-list" style="margin-top:10px"></div>
           </div>
 
         </div>
@@ -828,9 +836,10 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:20px">
+    <div id="ek-error" style="display:none;background:#F04F5B22;border:1px solid #F04F5B55;border-radius:8px;padding:10px 14px;font-size:12px;color:#F04F5B;margin-top:12px"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn btn-ghost" style="flex:1" onclick="closeEditKeyModal()">Annuler</button>
-      <button class="btn btn-primary" style="flex:1;font-weight:700" onclick="confirmEditKey()">💾 Enregistrer</button>
+      <button class="btn btn-primary" style="flex:1;font-weight:700" id="ek-save-btn" onclick="confirmEditKey()">💾 Enregistrer</button>
     </div>
   </div>
 </div>
@@ -1234,6 +1243,7 @@ function updateBkModal() {
 let _activeTab = 'dashboard';
 let _visitorsTimer = null;
 let _visitorsChart = null;
+let _geoChart = null;
 let _allVisitors = [];
 
 // ── ERRORS ─────────────────────────────────────────────────────────────
@@ -1810,6 +1820,44 @@ async function loadVisitors() {
       });
     }
 
+    // Chart géo — regrouper par pays
+    const flagOf = cc => cc ? cc.toUpperCase().split('').map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('') : '🌐';
+    const byCo = {};
+    entries.forEach(([,v]) => {
+      const cc = v.country || '__';
+      byCo[cc] = (byCo[cc] || 0) + 1;
+    });
+    const geoSorted = Object.entries(byCo).sort((a,b) => b[1]-a[1]).slice(0, 10);
+    const geoCanvas = document.getElementById('v-geo-chart');
+    if (geoCanvas) {
+      if (_geoChart) { _geoChart.destroy(); _geoChart = null; }
+      _geoChart = new Chart(geoCanvas, {
+        type: 'bar',
+        data: {
+          labels: geoSorted.map(([cc]) => flagOf(cc === '__' ? null : cc) + ' ' + (cc === '__' ? 'Inconnu' : cc)),
+          datasets: [{ data: geoSorted.map(([,n]) => n), backgroundColor: 'rgba(0,200,150,.7)', borderRadius: 5, borderSkipped: false }]
+        },
+        options: {
+          indexAxis: 'y',
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color:'#8892B0', font:{size:11} }, grid: { color:'rgba(255,255,255,.05)' }, beginAtZero: true },
+            y: { ticks: { color:'#E2E4F0', font:{size:12} }, grid: { display: false } }
+          }
+        }
+      });
+    }
+    // Mini-liste texte sous le chart géo
+    const geoListEl = document.getElementById('v-geo-list');
+    if (geoListEl) {
+      geoListEl.innerHTML = geoSorted.map(([cc, n]) =>
+        `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #1e2235">
+          <span style="color:#C0C6E0">${flagOf(cc==='__'?null:cc)} ${cc==='__'?'Inconnu':cc}</span>
+          <span style="font-weight:700;color:#7effa0">${n}</span>
+        </div>`
+      ).join('');
+    }
+
     // Liste
     renderVisitorsList(entries);
   } catch(e) {
@@ -2051,15 +2099,20 @@ function closeEditKeyModal() {
   document.getElementById('edit-key-modal').style.display = 'none';
   _editingKey = null;
 }
+function _ekError(msg) {
+  const el = document.getElementById('ek-error');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = msg ? '' : 'none';
+}
 async function confirmEditKey() {
   if (!_editingKey) return;
-
-  const btn = document.querySelector('#edit-key-modal .btn-primary');
+  const btn = document.getElementById('ek-save-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Enregistrement…'; }
-
+  _ekError('');
   try {
     const token = await getToken();
-    if (!token) { showToast('❌ Session expirée — reconnectez-vous'); return; }
+    if (!token) { _ekError('❌ Session expirée — rechargez la page et reconnectez-vous'); return; }
 
     const name      = document.getElementById('ek-name').value.trim();
     const source    = document.getElementById('ek-source').value;
@@ -2069,45 +2122,41 @@ async function confirmEditKey() {
     const createdAt = startVal ? new Date(startVal).getTime() : null;
     const expiresAt = endVal   ? new Date(endVal).setHours(23,59,59,999) : null;
 
-    // Toujours inclure tous les champs (même vides) pour permettre la mise à jour
-    const patch = { source, recipient: name || null, notes: notes || null };
+    // Construire le patch complet — utiliser null pour les champs vides (Firebase PATCH ignore null)
+    const patch = {};
+    patch.source    = source;
+    if (name)      patch.recipient = name;
+    if (notes)     patch.notes     = notes;
     if (createdAt) patch.createdAt = createdAt;
+    if (expiresAt) patch.expiresAt = expiresAt;
 
-    // Gérer l'expiration séparément : PATCH ne peut pas supprimer un champ
-    if (expiresAt) {
-      patch.expiresAt = expiresAt;
-    } else {
-      // Champ date vide → à vie → supprimer le champ expiresAt
-      await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}/expiresAt.json`, { method:'DELETE' }, token);
-    }
-
-    // Supprimer les champs null côté Firebase aussi
-    if (!name)  await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}/recipient.json`, { method:'DELETE' }, token);
-    if (!notes) await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}/notes.json`,     { method:'DELETE' }, token);
-
-    // Patch principal (sans les null)
-    const cleanPatch = Object.fromEntries(Object.entries(patch).filter(([,v]) => v !== null));
-    const r = await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}.json`, {
-      method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(cleanPatch)
+    // PATCH principal
+    const url = `${LICENSE_DB}/licenses/${_editingKey}.json`;
+    const r = await _fbFetch(url, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(patch)
     }, token);
 
     if (!r.ok) {
-      const errBody = await r.text().catch(() => '');
-      showToast(`❌ Erreur HTTP ${r.status}${errBody ? ' — ' + errBody.slice(0,60) : ''}`);
+      const body = await r.text().catch(() => '');
+      _ekError(`❌ Erreur Firebase ${r.status}${body ? ' — ' + body.slice(0,120) : ''}`);
       return;
     }
 
+    // Supprimer les champs vides séparément (ne bloque pas si ça rate)
+    const delCalls = [];
+    if (!name)      delCalls.push(_fbFetch(`${url.replace('.json','')}/recipient.json`, { method:'DELETE' }, token).catch(()=>{}));
+    if (!notes)     delCalls.push(_fbFetch(`${url.replace('.json','')}/notes.json`,     { method:'DELETE' }, token).catch(()=>{}));
+    if (!expiresAt) delCalls.push(_fbFetch(`${url.replace('.json','')}/expiresAt.json`, { method:'DELETE' }, token).catch(()=>{}));
+    await Promise.allSettled(delCalls);
+
     // Mettre à jour le cache local
-    const localUpdate = { ...cleanPatch };
-    if (!name)      delete localUpdate.recipient;
-    if (!notes)     delete localUpdate.notes;
-    if (!expiresAt) delete localUpdate.expiresAt;
     _betaKeys = _betaKeys.map(k => {
       if (k.key !== _editingKey) return k;
-      const updated = { ...k, ...localUpdate };
-      if (!name)      delete updated.recipient;
-      if (!notes)     delete updated.notes;
-      if (!expiresAt) delete updated.expiresAt;
+      const updated = { ...k, source };
+      if (name)      updated.recipient = name;  else delete updated.recipient;
+      if (notes)     updated.notes     = notes; else delete updated.notes;
+      if (expiresAt) updated.expiresAt = expiresAt; else delete updated.expiresAt;
+      if (createdAt) updated.createdAt = createdAt;
       return updated;
     });
     renderBetaKeys();
@@ -2115,7 +2164,7 @@ async function confirmEditKey() {
     showToast('✅ Licence mise à jour');
 
   } catch(e) {
-    showToast('❌ Erreur : ' + (e.message || 'inconnue'));
+    _ekError('❌ ' + (e.message || 'Erreur inconnue'));
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '💾 Enregistrer'; }
   }
