@@ -3534,7 +3534,7 @@ function toggleMethodCalc(year, key, checked) {
 function fmtK(v){return Math.round(v).toLocaleString('fr-FR');}
 function mthMiniRow(arr, auto) {
   return `<div class="mth-mini-row" onclick="event.stopPropagation()">
-    ${MONTHS.map((m,i)=>{const v=arr[i]||0;const c=auto?(v>=0?'var(--green)':'var(--red)'):'var(--gray)';const bg=auto?(v>=0?'var(--green-light)':'var(--red-light)'):'var(--gray-light)';return`<div class="mth-mini-cell" style="background:${bg}"><div class="mth-mini-label">${m}</div><div class="mth-mini-val" style="color:${c}">${fmtK(v)}</div></div>`;}).join('')}
+    ${getMonths().map((m,i)=>{const v=arr[i]||0;const c=auto?(v>=0?'var(--green)':'var(--red)'):'var(--gray)';const bg=auto?(v>=0?'var(--green-light)':'var(--red-light)'):'var(--gray-light)';return`<div class="mth-mini-cell" style="background:${bg}"><div class="mth-mini-label">${m}</div><div class="mth-mini-val" style="color:${c}">${fmtK(v)}</div></div>`;}).join('')}
   </div>`;
 }
 
@@ -3991,7 +3991,7 @@ function renderMethodTotals(year) {
     <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-top:8px;border-top:1px solid var(--border)">${t('summary.payment_split')}</div>
     <table class="charge-table"><thead><tr>
       <th class="lbl-col">${t('summary.payment_mode')}</th>
-      ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
+      ${getMonths().map(m=>`<th>${m}</th>`).join('')}
       <th class="tot-col">TOTAL</th><th style="width:28px"></th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
@@ -4589,7 +4589,7 @@ function openBudgetEditor(year, catKey) {
     ? (existingMonthly[0] || (annBgt > 0 ? annBgt / 12 : ''))
     : (annBgt > 0 ? +(annBgt / 12).toFixed(2) : '');
   const mSel = document.getElementById('bgt-from-month');
-  if (mSel) mSel.innerHTML = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+  if (mSel) mSel.innerHTML = getMonths().map((m, i) => `<option value="${i}">${m}</option>`).join('');
   const amtInp = document.getElementById('bgt-from-amount');
   if (amtInp) amtInp.value = suggestedMonthly || '';
   _bgtEdRenderMonths();
@@ -4715,10 +4715,10 @@ function renderMonthSummary(year) {
       ${row(t('summary.recurring_charges'),ch,'chg')}
       ${row(t('summary.variable_expenses'),vr,'var')}
       ${row(t('summary.total_expenses'),dep,'dep')}
-      ${row('🔴 Reste à payer (charges non payées)',rap,'rap','var(--row-warn)')}
-      ${(()=>{const bud=rv.map((v,i)=>v-ch[i]);const bt=sum(bud);return`<tr style="background:var(--row-info);font-weight:800;font-size:13px"><td class="lbl-col">💰 Disponible avant dépenses</td>${bud.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bud-${i}">${fmtN(v)}</td>`).join('')}<td class="tot-col ${bt<0?'neg':'pos'}" id="sm-${year}-bud-tot">${fmtN(bt)}</td><td></td></tr>`;})()}
+      ${row(t('row.remaining_to_pay'),rap,'rap','var(--row-warn)')}
+      ${(()=>{const bud=rv.map((v,i)=>v-ch[i]);const bt=sum(bud);return`<tr style="background:var(--row-info);font-weight:800;font-size:13px"><td class="lbl-col">${t('row.available_before_var')}</td>${bud.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bud-${i}">${fmtN(v)}</td>`).join('')}<td class="tot-col ${bt<0?'neg':'pos'}" id="sm-${year}-bud-tot">${fmtN(bt)}</td><td></td></tr>`;})()}
       <tr style="background:var(--row-success);font-weight:800;font-size:13px">
-        <td class="lbl-col">✅ SOLDE RÉEL DU MOIS</td>
+        <td class="lbl-col">${t('row.real_balance')}</td>
         ${balRow}
         <td class="tot-col ${balTot<0?'neg':'pos'}" id="sm-${year}-bal-tot">${fmtN(balTot)}</td>
         <td></td>
@@ -5377,7 +5377,7 @@ function resetData() {
 function exportCSV() {
   const activeYear = getYears().find(y => document.getElementById('tab-y'+y)?.classList.contains('active')) || '2025';
   const d = DATA[activeYear];
-  let rows=[['LIBELLÉ',...MONTHS,'TOTAL']];
+  let rows=[['LIBELLÉ',...getMonths(),'TOTAL']];
   rows.push(['--- REVENUS ---']);
   d.revenus.forEach(r=>rows.push([r.label,...r.v.map(v=>v||0),sum(r.v)]));
   rows.push(['--- CHARGES ---']);
@@ -5498,7 +5498,7 @@ function buildBalanceChart() {
   const years = getYears();
   _charts.balance = new Chart(document.getElementById('chart-balance'), {
     type:'line',
-    data:{ labels:MONTHS, datasets:years.map((y,i)=>({label:y,data:balance(y).map(v=>Math.round(v*100)/100),borderColor:PALETTE[i%PALETTE.length],backgroundColor:PALETTE[i%PALETTE.length]+'22',tension:.3,fill:false,pointRadius:4}))},
+    data:{ labels:getMonths(), datasets:years.map((y,i)=>({label:y,data:balance(y).map(v=>Math.round(v*100)/100),borderColor:PALETTE[i%PALETTE.length],backgroundColor:PALETTE[i%PALETTE.length]+'22',tension:.3,fill:false,pointRadius:4}))},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+' €'}}}}
   });
 }
@@ -5512,7 +5512,7 @@ function buildSavingsChart() {
   datasets.push({label:'✅ Objectif 20%',data:Array(12).fill(20),borderColor:'#00C89666',borderDash:[5,4],pointRadius:0,borderWidth:1.5});
   datasets.push({label:'⚠️ Seuil 10%',data:Array(12).fill(10),borderColor:'#F5A62366',borderDash:[5,4],pointRadius:0,borderWidth:1.5});
   _charts.savings = new Chart(document.getElementById('chart-savings'),{
-    type:'line',data:{labels:MONTHS,datasets},
+    type:'line',data:{labels:getMonths(),datasets},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+'%'}}}}
   });
 }
@@ -5524,9 +5524,9 @@ function buildWealthChart(year) {
   const wData = bal.map(v => { cumul += v; return Math.round(cumul*100)/100; });
   _charts.wealth = new Chart(document.getElementById('chart-wealth'),{
     type:'line',
-    data:{labels:MONTHS,datasets:[
-      {label:'Patrimoine total',data:wData,borderColor:'#5B6AF0',backgroundColor:'#5B6AF022',tension:.3,fill:true,pointRadius:4},
-      {label:'Niveau initial',data:Array(12).fill(Math.round(initW*100)/100),borderColor:'#ccc',borderDash:[4,4],pointRadius:0,borderWidth:1.5}
+    data:{labels:getMonths(),datasets:[
+      {label:t('chart.wealth_total'),data:wData,borderColor:'#5B6AF0',backgroundColor:'#5B6AF022',tension:.3,fill:true,pointRadius:4},
+      {label:t('chart.wealth_initial'),data:Array(12).fill(Math.round(initW*100)/100),borderColor:'#ccc',borderDash:[4,4],pointRadius:0,borderWidth:1.5}
     ]},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}
   });
@@ -5544,7 +5544,7 @@ function buildPerYearCharts() {
   const y = _chartYear; if(!DATA[y]) return;
   const rv=revTotal(y), dep=depTotal(y);
   _charts.revdep = new Chart(document.getElementById('chart-revdep'),{type:'bar',
-    data:{labels:MONTHS,datasets:[{label:t('chart.revenues'),data:rv.map(v=>Math.round(v*100)/100),backgroundColor:'#27ae6088'},{label:t('chart.expenses'),data:dep.map(v=>Math.round(v*100)/100),backgroundColor:'#c0392b88'}]},
+    data:{labels:getMonths(),datasets:[{label:t('chart.revenues'),data:rv.map(v=>Math.round(v*100)/100),backgroundColor:'#27ae6088'},{label:t('chart.expenses'),data:dep.map(v=>Math.round(v*100)/100),backgroundColor:'#c0392b88'}]},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+' €'}}}}});
   const chgT=sum(chgTotal(y)), varCatTotals=getVarCats().map(c=>Math.round(sum(varTotal(y,c.key))*100)/100);
   _charts.cat = new Chart(document.getElementById('chart-cat'),{type:'doughnut',
@@ -5671,7 +5671,7 @@ function openPdfReport() {
       <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px">
         <thead><tr style="background:#f4f5fa">
           <th style="border:1px solid #ddd;padding:5px 8px;text-align:left">Indicateur</th>
-          ${MONTHS.map(m=>`<th style="border:1px solid #ddd;padding:5px 3px;text-align:right">${m}</th>`).join('')}
+          ${getMonths().map(m=>`<th style="border:1px solid #ddd;padding:5px 3px;text-align:right">${m}</th>`).join('')}
           <th style="border:1px solid #ddd;padding:5px 8px;text-align:right;background:#eef0fd;font-weight:800">TOTAL</th>
         </tr></thead>
         <tbody>
@@ -5682,7 +5682,7 @@ function openPdfReport() {
         </tbody>
       </table>
       ${cats.length ? `<div style="page-break-inside:avoid"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">${t('summary.var_split')}</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${cats.map(c=>`<div style="border:1px solid #eee;border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between"><span style="font-size:11px">${c.icon||'🛍️'} ${_esc(c.label)}</span><span style="font-size:11px;font-weight:700;color:#e74c3c">${fmt(c.total)}</span></div>`).join('')}</div></div>` : ''}
-      ${(() => { const notes = DATA[year]?.notes || {}; const noteEntries = MONTHS.map((m,i)=>({m,i,n:notes[i]})).filter(e=>e.n?.trim()); return noteEntries.length ? `<div style="page-break-inside:avoid;margin-top:12px"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">${t('summary.monthly_notes')}</div>${noteEntries.map(e=>`<div style="display:flex;gap:10px;font-size:11px;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:700;color:#5B6AF0;white-space:nowrap;min-width:40px">${e.m}</span><span>${_esc(e.n)}</span></div>`).join('')}</div>` : ''; })()}
+      ${(() => { const notes = DATA[year]?.notes || {}; const noteEntries = getMonths().map((m,i)=>({m,i,n:notes[i]})).filter(e=>e.n?.trim()); return noteEntries.length ? `<div style="page-break-inside:avoid;margin-top:12px"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">${t('summary.monthly_notes')}</div>${noteEntries.map(e=>`<div style="display:flex;gap:10px;font-size:11px;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:700;color:#5B6AF0;white-space:nowrap;min-width:40px">${e.m}</span><span>${_esc(e.n)}</span></div>`).join('')}</div>` : ''; })()}
     </div>`;
   });
   html += `<div style="border-top:1px solid #ddd;padding-top:10px;margin-top:12px;font-size:9px;color:#aaa;text-align:center">Mon Budget v${APP_VERSION} — budget.marquabel.be — ${t('pdf.generated').replace('{0}', dateStr)}</div></div>`;
@@ -7138,8 +7138,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.38';
-const SW_VERSION = 'v165';
+const APP_VERSION = '11.39';
+const SW_VERSION = 'v166';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -7207,6 +7207,9 @@ const TRANSLATIONS = {
     'row.occasional_charges': '📌 CHARGES OCCASIONNELLES',
     'row.total_charges_sep': 'TOTAL CHARGES',
     'row.total_revenus_sep': 'TOTAL REVENUS',
+    'row.remaining_to_pay': '🔴 Reste à payer (charges non payées)',
+    'row.available_before_var': '💰 Disponible avant dépenses',
+    'row.real_balance': '✅ SOLDE RÉEL DU MOIS',
     // Months abbreviations
     'month.1': 'JAN', 'month.2': 'FÉV', 'month.3': 'MAR', 'month.4': 'AVR',
     'month.5': 'MAI', 'month.6': 'JUIN', 'month.7': 'JUIL', 'month.8': 'AOÛT',
@@ -7372,6 +7375,8 @@ const TRANSLATIONS = {
     'chart.balance': 'Balance',
     'chart.expenses_eur': 'Dépenses (€)',
     'chart.fixed_costs': 'Charges fixes & occ.',
+    'chart.wealth_total': 'Patrimoine total',
+    'chart.wealth_initial': 'Niveau initial',
     // Dashboard
     'dash.revenues': '💹 Revenus',
     'dash.charges': '🏠 Charges',
@@ -7978,6 +7983,9 @@ const TRANSLATIONS = {
     'row.occasional_charges': '📌 ONE-TIME COSTS',
     'row.total_charges_sep': 'TOTAL COSTS',
     'row.total_revenus_sep': 'TOTAL REVENUES',
+    'row.remaining_to_pay': '🔴 Remaining to pay (unpaid costs)',
+    'row.available_before_var': '💰 Available before variable expenses',
+    'row.real_balance': '✅ ACTUAL MONTHLY BALANCE',
     // Months abbreviations
     'month.1': 'JAN', 'month.2': 'FEB', 'month.3': 'MAR', 'month.4': 'APR',
     'month.5': 'MAY', 'month.6': 'JUN', 'month.7': 'JUL', 'month.8': 'AUG',
@@ -8143,6 +8151,8 @@ const TRANSLATIONS = {
     'chart.balance': 'Balance',
     'chart.expenses_eur': 'Expenses (€)',
     'chart.fixed_costs': 'Fixed costs & one-time',
+    'chart.wealth_total': 'Total wealth',
+    'chart.wealth_initial': 'Initial level',
     // Dashboard
     'dash.revenues': '💹 Revenues',
     'dash.charges': '🏠 Fixed costs',
@@ -8923,6 +8933,15 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.39': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🌍', text: 'Mois traduits EN/FR dans tous les contextes : mini-row, graphiques, CSV, PDF, sélecteurs' },
+      { icon: '✅', text: 'Labels du résumé mensuel traduits : "Reste à payer", "Disponible avant dépenses", "SOLDE RÉEL DU MOIS"' },
+      { icon: '📊', text: 'Graphiques patrimoine et revenus/dépenses : labels traduits (chart.wealth_total, chart.wealth_initial)' },
+      { icon: '❓', text: 'aide.html : bannière bilingue quand le contenu est en anglais et l\'interface en français' }
+    ]
+  },
   '11.38': {
     date: 'Mai 2026',
     items: [
@@ -10115,7 +10134,7 @@ function parseAndReview(text, filename) {
   document.getElementById('csv-tbody').innerHTML = _csvRows.map((row,i)=>`
     <tr id="csv-row-${i}" style="border-bottom:1px solid var(--border);${row.isDuplicate?'background:rgba(255,193,7,.07)':''}${!row.include?';opacity:.45':''}">
       <td style="text-align:center;padding:6px"><input type="checkbox" ${row.include?'checked':''} onchange="csvToggleRow(${i},this.checked)"></td>
-      <td style="padding:6px;white-space:nowrap;color:var(--gray)">${MONTHS[row.month]} ${row.day}</td>
+      <td style="padding:6px;white-space:nowrap;color:var(--gray)">${getMonths()[row.month]} ${row.day}</td>
       <td style="padding:6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${row.label}">${row.label}${row.isDuplicate?'<span style="margin-left:5px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">⚠️ doublon</span>':''}</td>
       <td style="padding:6px;text-align:right;font-weight:700;color:var(--red);white-space:nowrap">${fmt(row.amount)}</td>
       <td style="padding:6px"><select style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;width:100%" onchange="csvSetCat(${i},this.value)">
@@ -10859,7 +10878,7 @@ function _buildBudgetContext() {
       const total = entries.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
       const byMonth = {};
       entries.forEach(e => { if (e.month!=null) byMonth[e.month]=(byMonth[e.month]||0)+(parseFloat(e.amount)||0); });
-      const mStr = Object.entries(byMonth).map(([m,v])=>`${MONTHS[m]}:${v.toFixed(0)}€`).join(', ');
+      const mStr = Object.entries(byMonth).map(([m,v])=>`${getMonths()[m]}:${v.toFixed(0)}${curSym()}`).join(', ');
       return `  ${cat.icon} ${cat.label}: ${total.toFixed(0)}€ total (${mStr})`;
     }).filter(Boolean).join('\n');
     if (varsSection) ctx += `🛒 DÉPENSES VARIABLES :\n${varsSection}\n`;

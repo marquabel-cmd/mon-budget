@@ -1323,7 +1323,7 @@ const AIDE_TRANSLATIONS = {
     sb_charts: '📉 Graphiques', sb_backup: '💾 Sauvegarde', sb_gist: '🐙 GitHub Gist gratuit',
     sb_dark: '🌙 Mode nuit', sb_year: '📅 Nouvelle année', sb_login: '🔐 Connexion & Compte',
     sb_quick: '➕ Ajout rapide', sb_ai: '🤖 Assistant IA', sb_feedback: '💬 Feedback & Suggestions',
-    frBanner: null,
+    frBanner: '📖 Ce guide est principalement rédigé en anglais. Les titres et la navigation sont traduits. Cliquez sur le bouton de langue pour basculer.',
   },
   en: {
     pageTitle: '❓ Help',
@@ -1438,9 +1438,9 @@ function applyAideLang(lang) {
     h2.innerHTML = iconText + (titles[lang] || titles.fr);
   });
 
-  // French content banner
+  // Content language banner (shown when interface is FR but content is EN)
   let banner = document.getElementById('fr-content-banner');
-  if (lang === 'en' && T.frBanner) {
+  if (lang === 'fr' && T.frBanner) {
     if (!banner) {
       banner = document.createElement('div');
       banner.id = 'fr-content-banner';
