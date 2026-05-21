@@ -349,6 +349,50 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
   </div>
 </div>
 
+<!-- Modal édition licence -->
+<div id="edit-key-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:9000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeEditKeyModal()">
+  <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:16px;padding:28px;width:100%;max-width:420px">
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">✏️ Modifier la licence</h3>
+    <div id="ek-key-display" style="font-family:monospace;font-size:12px;color:#8892B0;margin-bottom:20px"></div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Libellé / Destinataire</label>
+        <input id="ek-name" type="text" placeholder="Nom ou pseudo" class="auth-input" style="margin:0">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Source</label>
+        <select id="ek-source" class="auth-input" style="margin:0">
+          <option value="paid">💳 Payant (client Stripe)</option>
+          <option value="beta_tester">🧪 Bêta testeur</option>
+          <option value="family">👨‍👩‍👧 Famille</option>
+          <option value="friend">👫 Ami / proche</option>
+          <option value="partner">🤝 Partenaire / influenceur</option>
+          <option value="gift">🎁 Offert (autre)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Notes</label>
+        <textarea id="ek-notes" placeholder="Notes internes…" class="auth-input" style="margin:0;resize:vertical;min-height:56px;font-family:Inter,sans-serif"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Début de validité</label>
+          <input id="ek-start" type="date" class="auth-input" style="margin:0">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Fin de validité</label>
+          <input id="ek-end" type="date" class="auth-input" style="margin:0">
+          <div style="font-size:10px;color:#8892B0;margin-top:4px">Laisser vide = À vie</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeEditKeyModal()">Annuler</button>
+      <button class="btn btn-primary" style="flex:1;font-weight:700" onclick="confirmEditKey()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1016,14 +1060,15 @@ function renderBetaKeys() {
             ${used    ? `<span style="font-size:10px;background:#5B6AF020;color:#5B6AF0;border-radius:4px;padding:1px 6px">✓ Utilisée</span>` : ''}
             ${expired && !revoked ? `<span style="font-size:10px;background:#F04F5B20;color:#F04F5B;border-radius:4px;padding:1px 6px">Expirée</span>` : ''}
           </div>
-          ${k.recipient ? `<div style="font-size:13px;font-weight:600;color:#E2E4F0">👤 ${_esc(k.recipient)}${k.email ? ` <span style="font-size:11px;color:#8892B0;font-weight:400">&lt;${_esc(k.email)}&gt;</span>` : ''}</div>` : ''}
+          ${k.recipient ? `<div style="font-size:13px;font-weight:600;color:#E2E4F0">👤 ${_esc(k.recipient)}${k.email ? ` <span style="font-size:11px;color:#8892B0;font-weight:400">&lt;${_esc(k.email)}&gt;</span>` : ''}</div>` : '<div style="font-size:13px;color:#8892B0;font-style:italic">👤 Sans libellé</div>'}
           ${k.notes    ? `<div style="font-size:12px;color:#8892B0;margin-top:2px">💬 ${_esc(k.notes)}</div>` : ''}
-          <div style="font-size:11px;color:${expired&&!revoked?'#F04F5B':'#8892B0'};margin-top:4px">
-            ${expiryTxt}
-            ${k.createdAt ? ` &nbsp;·&nbsp; Créée le ${new Date(k.createdAt).toLocaleDateString('fr-FR')}` : ''}
+          <div style="font-size:11px;color:${expired&&!revoked?'#F04F5B':'#8892B0'};margin-top:5px;display:flex;gap:12px;flex-wrap:wrap">
+            ${k.createdAt ? `<span>📅 Début : <b style="color:#E2E4F0">${new Date(k.createdAt).toLocaleDateString('fr-FR')}</b></span>` : ''}
+            <span style="color:${expired&&!revoked?'#F04F5B':'inherit'}">🏁 Fin : <b style="color:${expired&&!revoked?'#F04F5B':'#E2E4F0'}">${expiryTxt.replace('⚠️ Expirée le ','').replace('Expire le ','')}</b>${expired&&!revoked?' ⚠️':''}</span>
           </div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn btn-ghost btn-sm" onclick="openEditKeyModal('${k.key}')">✏️</button>
           ${!revoked ? `<button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key}')">📋 Copier</button>` : ''}
           ${revoked
             ? `<button class="btn btn-green btn-sm" onclick="reactivateBetaKey('${k.key}')">🔄 Réactiver</button>
@@ -1037,6 +1082,60 @@ function renderBetaKeys() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ── EDIT KEY ──────────────────────────────────────────────────────────
+let _editingKey = null;
+function openEditKeyModal(key) {
+  const k = _betaKeys.find(b => b.key === key);
+  if (!k) return;
+  _editingKey = key;
+  document.getElementById('ek-key-display').textContent = key;
+  document.getElementById('ek-name').value   = k.recipient || '';
+  document.getElementById('ek-source').value = k.source    || 'gift';
+  document.getElementById('ek-notes').value  = k.notes     || '';
+  // Dates
+  const toDateInput = ts => ts ? new Date(ts).toISOString().slice(0,10) : '';
+  document.getElementById('ek-start').value = toDateInput(k.createdAt);
+  document.getElementById('ek-end').value   = toDateInput(k.expiresAt);
+  document.getElementById('edit-key-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('ek-name').focus(), 50);
+}
+function closeEditKeyModal() {
+  document.getElementById('edit-key-modal').style.display = 'none';
+  _editingKey = null;
+}
+async function confirmEditKey() {
+  if (!_editingKey) return;
+  const token     = await getToken();
+  const name      = document.getElementById('ek-name').value.trim();
+  const source    = document.getElementById('ek-source').value;
+  const notes     = document.getElementById('ek-notes').value.trim();
+  const startVal  = document.getElementById('ek-start').value;
+  const endVal    = document.getElementById('ek-end').value;
+  const createdAt = startVal ? new Date(startVal).getTime() : null;
+  const expiresAt = endVal   ? new Date(endVal).setHours(23,59,59,999) : null;
+
+  const patch = { source };
+  if (name)      patch.recipient  = name;
+  if (notes)     patch.notes      = notes;
+  if (createdAt) patch.createdAt  = createdAt;
+  if (expiresAt) patch.expiresAt  = expiresAt;
+  else {
+    // Supprimer expiresAt si champ vide (à vie)
+    await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}/expiresAt.json`, { method:'DELETE' }, token);
+  }
+
+  const r = await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}.json`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(patch)
+  }, token);
+  if (!r.ok) { showToast('❌ Erreur sauvegarde'); return; }
+
+  // Mettre à jour le cache local
+  _betaKeys = _betaKeys.map(k => k.key === _editingKey ? { ...k, ...patch, expiresAt: expiresAt || undefined } : k);
+  renderBetaKeys();
+  closeEditKeyModal();
+  showToast('✅ Licence mise à jour');
 }
 
 // ── SOURCE CONFIG ─────────────────────────────────────────────────────
