@@ -217,6 +217,7 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
     </div>
     <div class="header-right">
       <span id="admin-email" style="font-size:12px;color:#8892B0"></span>
+      <button class="btn btn-ghost btn-sm" id="refresh-btn" onclick="refreshAll()" title="Rafraîchir toutes les données">🔄</button>
       <a href="budget_familial.html" class="btn btn-ghost btn-sm">← App</a>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Déconnexion</button>
     </div>
@@ -1487,19 +1488,40 @@ function openBudgetViewer() {
 async function bvSearchAndLoad() {
   const raw = document.getElementById('bv-search-input').value.trim();
   if (!raw) return;
-  // Résoudre : clé de licence → UID
+
   let uid = raw;
+  let info = {};
+
+  // 1. Clé de licence → UID
   const keyEntry = _betaKeys.find(k => k.key === raw);
-  if (keyEntry?.uid) {
-    uid = keyEntry.uid;
-  } else if (raw.includes('-') && !raw.startsWith('BETA') && !raw.startsWith('PREM')) {
-    // format inconnu — essayer quand même comme UID
+  if (keyEntry?.uid) { uid = keyEntry.uid; }
+
+  // 2. Email → UID (chercher dans _allUsers)
+  if (raw.includes('@')) {
+    const found = Object.entries(_allUsers).find(([,u]) => (u.email||'').toLowerCase() === raw.toLowerCase());
+    if (found) { uid = found[0]; info = found[1]; }
   }
-  // Chercher dans les users connus
-  const info = _allUsers[uid] || {};
-  document.getElementById('bv-email').textContent = info.email || (keyEntry ? `Clé : ${keyEntry.recipient || raw}` : uid);
+
+  // 3. UID direct — chercher les infos
+  if (!info.email) info = _allUsers[uid] || {};
+
+  document.getElementById('bv-email').textContent = info.email || (keyEntry ? `Clé : ${keyEntry.recipient||raw}` : uid);
   document.getElementById('bv-uid').textContent = uid;
   await viewUserBudget(uid);
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  try {
+    await Promise.all([loadUsers(), loadBetaKeys()]);
+    if (_activeTab === 'visitors') loadVisitors();
+    if (_activeTab === 'feedback') loadFeedback();
+    if (_activeTab === 'errors')   loadErrors();
+    showToast('✅ Données rafraîchies');
+  } finally {
+    if (btn) { btn.textContent = '🔄'; btn.disabled = false; }
+  }
 }
 
 async function viewUserBudget(uid) {
@@ -1517,17 +1539,34 @@ async function viewUserBudget(uid) {
     return;
   }
 
-  // Chercher les données sur les deux chemins possibles
+  // Chercher les données sur tous les chemins possibles
   let raw = null;
-  for (const path of [`${LICENSE_DB}/userdata/${uid}/budget.json`, `${LICENSE_DB}/user-data/${uid}/budget.json`]) {
+  const paths = [
+    `${LICENSE_DB}/userdata/${uid}/budget.json`,    // chemin principal actuel
+    `${LICENSE_DB}/userdata/${uid}.json`,            // nœud complet (contient budget + autres)
+    `${LICENSE_DB}/user-data/${uid}/budget.json`,   // ancien chemin (clé de licence)
+    `${LICENSE_DB}/user-data/${uid}.json`,
+  ];
+  for (const path of paths) {
     try {
       const r = await fetch(`${path}?auth=${token}`);
-      if (r.ok) { const d = await r.json(); if (d && typeof d === 'object') { raw = d; break; } }
+      if (r.ok) {
+        const d = await r.json();
+        if (d && typeof d === 'object') {
+          // Si le nœud contient une clé "budget", l'utiliser
+          raw = d.budget && typeof d.budget === 'object' ? d.budget : d;
+          // Vérifier qu'il y a des données utiles (pas juste _gistToken/_syncedUsers)
+          const hasYears = Object.keys(raw).some(k => /^\d{4}$/.test(k));
+          const hasUseful = hasYears || Object.keys(raw).some(k => !k.startsWith('_'));
+          if (hasUseful) break;
+          raw = null; // continuer avec le chemin suivant
+        }
+      }
     } catch {}
   }
 
   if (!raw) {
-    document.getElementById('bv-content').innerHTML = '<div class="bv-empty">📭 Aucune donnée budget trouvée pour cet utilisateur.<br><span style="font-size:11px;opacity:.6">L\'utilisateur n\'a peut-être pas encore activé la sync cloud.</span></div>';
+    document.getElementById('bv-content').innerHTML = `<div class="bv-empty">📭 Aucune donnée budget dans Firebase pour cet utilisateur.<br><span style="font-size:11px;opacity:.6">Cause probable : la sync cloud n'a jamais été activée, ou le token était expiré lors du dernier accès.</span><br><br><span style="font-size:11px;color:#5B6AF0">→ Demander à l'utilisateur d'ouvrir l'app et d'activer ☁️ Sync</span></div>`;
     return;
   }
 
