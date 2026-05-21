@@ -5402,8 +5402,9 @@ let _aideHistoryPushed = false;
 function openAide(anchor) {
   const modal = document.getElementById('aide-modal');
   const iframe = document.getElementById('aide-iframe');
-  if (!modal || !iframe) { showToast(t('toast.load_error')); window.location.href = 'aide.html'; return; }
-  iframe.src = 'aide.html' + (anchor ? '#' + anchor : '');
+  const aideFile = _lang === 'fr' ? 'aide-fr.html' : 'aide.html';
+  if (!modal || !iframe) { showToast(t('toast.load_error')); window.location.href = aideFile; return; }
+  iframe.src = aideFile + (anchor ? '#' + anchor : '');
   modal.style.display = 'flex';
   history.pushState({ aideModal: true }, '');
   _aideHistoryPushed = true;
@@ -6292,7 +6293,7 @@ function renderConfigTab() {
               <div style="margin-top:8px;background:#fff3cd;border:1px solid #ffc107;border-radius:5px;padding:6px 8px;color:#856404">
                 ⚠️ <b>Important :</b> copie le token <b>ghp_…</b> immédiatement !<br>GitHub ne le montrera <b>qu'une seule fois</b>.
               </div>
-              <div style="margin-top:8px;font-style:italic;color:var(--gray)">💡 Besoin d'images ? Consulte le <a href="aide.html#github-gist" target="_blank" style="color:var(--blue)">guide illustré dans l'Aide</a>.</div>
+              <div style="margin-top:8px;font-style:italic;color:var(--gray)">💡 ${t('cfg.gist_help_hint')} <a href="${_lang==='fr'?'aide-fr.html':'aide.html'}#github-gist" target="_blank" style="color:var(--blue)">${t('cfg.gist_help_link')}</a>.</div>
             </div>
           </details>
           <div style="font-size:11px;color:var(--gray);margin-bottom:6px">${t('gist.token_label')}</div>
@@ -7138,8 +7139,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.39';
-const SW_VERSION = 'v166';
+const APP_VERSION = '11.40';
+const SW_VERSION = 'v167';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -7295,6 +7296,8 @@ const TRANSLATIONS = {
     'cfg.have_license': 'Déjà une clé de licence ?',
     'cfg.activate_license': 'Activer',
     'cfg.uninstall': 'Désinstaller l\'application — EFFACE TOUT',
+    'cfg.gist_help_hint': 'Besoin d\'images ? Consulte le',
+    'cfg.gist_help_link': 'guide illustré dans l\'Aide',
     // Toast messages
     'toast.saved': '✅ Sauvegardé',
     'toast.deleted': '🗑 Supprimé',
@@ -8071,6 +8074,8 @@ const TRANSLATIONS = {
     'cfg.have_license': 'Already have a license key?',
     'cfg.activate_license': 'Activate',
     'cfg.uninstall': 'Uninstall app — WIPES EVERYTHING',
+    'cfg.gist_help_hint': 'Need screenshots? See the',
+    'cfg.gist_help_link': 'illustrated guide in Help',
     // Toast messages
     'toast.saved': '✅ Saved',
     'toast.deleted': '🗑 Deleted',
@@ -8933,6 +8938,14 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.40': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📄', text: 'aide-fr.html restauré depuis git — version française originale rétablie' },
+      { icon: '🔀', text: 'openAide() bascule automatiquement entre aide-fr.html (FR) et aide.html (EN) selon la langue' },
+      { icon: '🧭', text: 'Liens du tour guidé mis à jour selon la langue courante' }
+    ]
+  },
   '11.39': {
     date: 'Mai 2026',
     items: [
@@ -11254,8 +11267,10 @@ function _renderTourStep() {
   document.getElementById('tour-text').innerHTML = step.text;
 
   const lnk = document.getElementById('tour-link');
-  if (step.link) { lnk.href = step.link; lnk.style.display = 'flex'; }
-  else { lnk.style.display = 'none'; }
+  if (step.link) {
+    lnk.href = step.link.replace('aide.html', _lang === 'fr' ? 'aide-fr.html' : 'aide.html');
+    lnk.style.display = 'flex';
+  } else { lnk.style.display = 'none'; }
 
   document.getElementById('tour-prev-btn').style.visibility = isFirst ? 'hidden' : 'visible';
   const nb = document.getElementById('tour-next-btn');

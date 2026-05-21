@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aide — Mon Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,sans-serif;background:#F4F5FA;color:#1A1D2E;line-height:1.6}
+a{color:#5B6AF0;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ── APP-NAV TOOLBAR ── */
+.app-nav{display:flex;align-items:center;gap:10px;background:#1A1D2E;border-bottom:1px solid #2C3050;padding:8px 16px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.15);position:sticky;top:0;z-index:50}
+.app-nav::-webkit-scrollbar{display:none}
+.nav-group{display:flex;flex-direction:column;gap:4px;background:#20243A;border:1px solid #2C3050;border-radius:12px;padding:5px 6px 6px;flex-shrink:0}
+.nav-group-main{flex:1;min-width:0}
+.nav-group-lbl{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#8892B0;opacity:.6;padding:0 4px;line-height:1;white-space:nowrap}
+.nav-group-items{display:flex;align-items:center;gap:2px}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s,color .15s,transform .1s;color:#8892B0;white-space:nowrap;line-height:1;min-width:54px;text-decoration:none}
+.nav-btn:hover{background:rgba(91,106,240,.1);color:#5B6AF0;transform:translateY(-1px);text-decoration:none}
+.nav-btn.active{background:#5B6AF0;color:#fff;box-shadow:0 2px 8px rgba(91,106,240,.35)}
+.nav-icon{font-size:16px;line-height:1.3;display:block}
+.nav-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:1;color:inherit;display:block}
+.nav-group-gestion .nav-btn.active{background:#8B5CF6;box-shadow:0 2px 8px rgba(139,92,246,.35)}
+
+/* ── BARRE MOBILE ── */
+.nav-mobile-bar{display:none;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px;background:#1A1D2E;border-bottom:1px solid #2C3050;position:sticky;top:0;z-index:52}
+.nav-mobile-title{font-size:13px;font-weight:700;color:#E2E4F0;flex:1}
+.nav-mobile-toggle{display:flex;align-items:center;gap:5px;background:#20243A;border:1px solid #2C3050;border-radius:8px;padding:5px 10px;color:#8892B0;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;flex-shrink:0}
+.nav-mobile-toggle.open{background:#5B6AF0;color:#fff;border-color:#5B6AF0}
+@media(max-width:700px){
+  .nav-mobile-bar{display:flex}
+  .app-nav{display:none;position:static;padding:8px 12px;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+  .app-nav.nav-expanded{display:flex;flex-direction:column}
+  .app-nav.nav-expanded .nav-group{width:100%}
+  .app-nav.nav-expanded .nav-group-items{flex-wrap:wrap;gap:3px}
+  .app-nav.nav-expanded .nav-btn{flex:1;min-width:60px;justify-content:center}
+  .sidebar-nav{top:24px}
+}
+
+/* Layout */
+.layout{display:flex;max-width:1100px;margin:32px auto;gap:24px;padding:0 24px 60px}
+
+/* Sidebar nav */
+.sidebar{width:220px;flex-shrink:0}
+.sidebar-nav{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:72px}
+.sidebar-nav h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#6B7394;margin-bottom:10px;padding:0 8px}
+.sidebar-nav a{display:block;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#1A1D2E;transition:all .15s}
+.sidebar-nav a:hover{background:#EEF0FD;color:#5B6AF0;text-decoration:none}
+.sidebar-nav a.active{background:#5B6AF0;color:#fff}
+.sidebar-nav .nav-premium{background:linear-gradient(135deg,#FFF3CD,#FFF8E1);color:#7a4f00;font-weight:700;border:1px solid #F5A623}
+.sidebar-nav .nav-premium:hover{background:linear-gradient(135deg,#F5A623,#e08800);color:#fff}
+
+/* Content */
+.content{flex:1;min-width:0}
+.section{background:#fff;border-radius:14px;padding:28px 32px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.section h2{font-size:19px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:10px;scroll-margin-top:24px}
+.section h2 span{font-size:22px}
+.section .lead{font-size:14px;color:#6B7394;margin-bottom:20px;border-bottom:1px solid #E8EAF2;padding-bottom:16px}
+.section h3{font-size:14px;font-weight:700;margin:20px 0 8px;color:#2D3561}
+.section p{font-size:13px;color:#3a3f5c;margin-bottom:10px}
+.section ul,.section ol{font-size:13px;color:#3a3f5c;padding-left:20px;margin-bottom:10px}
+.section li{margin-bottom:6px}
+
+/* Tips / callouts */
+.tip{background:#EEF0FD;border-left:3px solid #5B6AF0;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#2D3561;margin:12px 0}
+.tip b{color:#5B6AF0}
+.warn{background:#FEF6E6;border-left:3px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7a4f00;margin:12px 0}
+.demo-tip{background:#FEF9E7;border-left:3px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7a4f00;margin:12px 0}
+.demo-tip b{color:#F5A623}
+.premium-tip{background:linear-gradient(135deg,#FFF8E1,#FFFBF0);border-left:3px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7a4f00;margin:12px 0}
+
+/* Screenshot placeholder */
+.screenshot{background:#F4F5FA;border:2px dashed #C8CADB;border-radius:10px;padding:36px 20px;text-align:center;margin:14px 0;color:#9DA3BC;font-size:12px}
+.screenshot-icon{font-size:28px;margin-bottom:6px}
+
+/* Feature grid */
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
+.feature-card{background:#F4F5FA;border-radius:10px;padding:14px;font-size:12px}
+.feature-card .fc-icon{font-size:22px;margin-bottom:6px}
+.feature-card .fc-title{font-weight:700;color:#1A1D2E;margin-bottom:4px}
+.feature-card .fc-desc{color:#6B7394;line-height:1.4}
+
+/* ── PREMIUM COMPARISON SECTION ── */
+.section.section-premium{background:linear-gradient(160deg,#1A1D2E 0%,#2D3561 100%);color:#fff}
+.section.section-premium h2{color:#fff}
+.section.section-premium .lead{color:rgba(255,255,255,.6);border-bottom-color:rgba(255,255,255,.15)}
+.section.section-premium h3{color:rgba(255,255,255,.85)}
+.section.section-premium p{color:rgba(255,255,255,.7)}
+
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.compare-col{border-radius:14px;padding:22px 20px}
+.compare-col.free{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15)}
+.compare-col.premium{background:linear-gradient(135deg,rgba(245,166,35,.18),rgba(91,106,240,.2));border:2px solid #F5A623;position:relative}
+.compare-col-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#F5A623;color:#1A1D2E;font-size:10px;font-weight:800;padding:3px 14px;border-radius:20px;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
+.compare-col-title{font-size:16px;font-weight:800;margin-bottom:4px;color:#fff}
+.compare-col.free .compare-col-title{color:rgba(255,255,255,.7)}
+.compare-col-price{font-size:13px;margin-bottom:16px}
+.compare-col.free .compare-col-price{color:rgba(255,255,255,.45)}
+.compare-col.premium .compare-col-price{color:#F5A623;font-weight:700}
+.compare-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}
+.compare-row:last-child{border-bottom:none}
+.compare-row .cr-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.compare-row .cr-text{line-height:1.4}
+.compare-row .cr-text b{display:block;color:#fff;font-weight:700}
+.compare-row .cr-text span{color:rgba(255,255,255,.5);font-size:11px}
+.compare-col.free .compare-row .cr-text b{color:rgba(255,255,255,.65)}
+.compare-col.premium .compare-row .cr-text b{color:#fff}
+.compare-lock{opacity:.45;text-decoration:line-through}
+
+.buy-btn{display:block;margin:20px auto 0;background:linear-gradient(135deg,#F5A623,#e08800);color:#1A1D2E;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:800;cursor:pointer;text-decoration:none;text-align:center;max-width:320px;box-shadow:0 6px 20px rgba(245,166,35,.4);transition:all .2s}
+.buy-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(245,166,35,.55);text-decoration:none;color:#1A1D2E}
+
+.limit-badge{display:inline-block;background:rgba(240,79,91,.2);color:#F04F5B;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.free-badge{display:inline-block;background:rgba(100,100,130,.15);color:#6B7394;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.pro-badge{display:inline-block;background:#FEF6E6;color:#e08800;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+
+/* ── GUIDE D'INSTALLATION ── */
+.install-step{display:flex;gap:18px;margin-bottom:28px;align-items:flex-start}
+.install-step:last-child{margin-bottom:0}
+.step-num{width:36px;height:36px;border-radius:50%;background:#5B6AF0;color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;box-shadow:0 4px 12px rgba(91,106,240,.35)}
+.step-body{flex:1;min-width:0}
+.step-body h4{font-size:14px;font-weight:800;color:#1A1D2E;margin-bottom:5px}
+.step-body p{font-size:13px;color:#3a3f5c;margin-bottom:8px;line-height:1.5}
+.step-img{width:100%;border-radius:10px;border:2px solid #E8EAF2;box-shadow:0 4px 14px rgba(0,0,0,.08);margin-top:8px;display:block}
+.step-img-caption{font-size:11px;color:#9DA3BC;margin-top:5px;text-align:center;font-style:italic}
+.step-body .step-tip{background:#EEF0FD;border-radius:8px;padding:8px 12px;font-size:12px;color:#2D3561;margin-top:8px;border-left:3px solid #5B6AF0}
+.step-body .step-warn{background:#FEF0F1;border-radius:8px;padding:8px 12px;font-size:12px;color:#a0272f;margin-top:8px;border-left:3px solid #F04F5B}
+
+/* ── ACTIVATE SECTION ── */
+.activate-box{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:18px 20px;margin-top:16px}
+.activate-box p{color:rgba(255,255,255,.65);font-size:13px;margin-bottom:10px}
+.activate-steps{list-style:none;padding:0;counter-reset:step}
+.activate-steps li{counter-increment:step;display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:13px;color:rgba(255,255,255,.75)}
+.activate-steps li::before{content:counter(step);min-width:22px;height:22px;background:#5B6AF0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+
+@media(max-width:700px){
+  .layout{flex-direction:column}
+  .sidebar{width:100%}
+  .sidebar-nav{position:static}
+  .section{padding:20px 16px}
+  .compare-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── BARRE MOBILE ── -->
+<div class="nav-mobile-bar">
+  <span class="nav-mobile-title">❓ Aide</span>
+  <button class="nav-mobile-toggle" id="nav-mobile-toggle" onclick="this.classList.toggle('open');document.getElementById('app-nav').classList.toggle('nav-expanded');this.querySelector('span').textContent=document.getElementById('app-nav').classList.contains('nav-expanded')?'✕':'☰'" aria-label="Menu">
+    <span>☰</span> Menu
+  </button>
+</div>
+
+<!-- ── TOOLBAR ── -->
+<nav class="app-nav" id="app-nav">
+  <div class="nav-group nav-group-donnees">
+    <span class="nav-group-lbl">Données</span>
+    <div class="nav-group-items">
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📂</span><span class="nav-label">Importer</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📥</span><span class="nav-label">Exporter</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🖨️</span><span class="nav-label">PDF</span></a>
+    </div>
+  </div>
+  <div class="nav-group nav-group-main nav-group-nav">
+    <span class="nav-group-lbl">Navigation</span>
+    <div class="nav-group-items">
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🏠</span><span class="nav-label">Accueil</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📊</span><span class="nav-label">Résumé</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📈</span><span class="nav-label">Graphiques</span></a>
+      <a class="nav-btn active" href="aide.html"><span class="nav-icon">❓</span><span class="nav-label">Aide</span></a>
+    </div>
+  </div>
+  <div class="nav-group nav-group-gestion">
+    <span class="nav-group-lbl">Gestion</span>
+    <div class="nav-group-items">
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📅＋</span><span class="nav-label">Année</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">⚙️</span><span class="nav-label">Config</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🔍</span><span class="nav-label">Recherche</span></a>
+      <a class="nav-btn" href="dashboard.html"><span class="nav-icon">👤</span><span class="nav-label">Compte</span></a>
+    </div>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <h4>Sommaire</h4>
+      <a href="#guide" style="background:#EEF0FD;color:#5B6AF0;font-weight:700">📋 Guide d'installation</a>
+      <a href="#demarrage">🚀 Démarrage</a>
+      <a href="#premium" class="nav-premium">⭐ Gratuit vs Premium</a>
+      <a href="#demo">🎮 Mode démo</a>
+      <a href="#interface">🖥️ Interface</a>
+      <a href="#accueil">🏠 Tableau de bord</a>
+      <a href="#objectif-epargne">🎯 Objectif d'épargne</a>
+      <a href="#recherche">🔍 Recherche globale</a>
+      <a href="#revenus">💼 Revenus</a>
+      <a href="#charges">🏠 Charges</a>
+      <a href="#variables">🛒 Dépenses variables</a>
+      <a href="#budget-cible">🎯 Budgets par catégorie</a>
+      <a href="#livret">💰 Livret d'épargne</a>
+      <a href="#indicateurs">📈 Indicateurs financiers</a>
+      <a href="#resume">📊 Résumé mensuel</a>
+      <a href="#graphiques">📉 Graphiques</a>
+      <a href="#sauvegarde">💾 Sauvegarde</a>
+      <a href="#github-gist" style="background:#e8f8f0;color:#27ae60;border-color:#27ae60">🐙 GitHub Gist gratuit</a>
+      <a href="#dark">🌙 Mode nuit</a>
+      <a href="#annee">📅 Nouvelle année</a>
+      <a href="#connexion">🔐 Connexion &amp; Compte</a>
+      <a href="#ajout-rapide">➕ Ajout rapide</a>
+      <a href="#assistant-ia">🤖 Assistant IA</a>
+      <a href="#feedback">💬 Feedback & Suggestions</a>
+      <div style="margin-top:14px;padding:8px 10px;border-top:1px solid #e8eaf6;font-size:10px;color:#9BA3C9;line-height:1.6">
+        📱 App <b>11.35</b><br>
+        🔧 SW <b>v162</b>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Content -->
+  <main class="content">
+
+    <!-- ══════════════════════════════════════════ -->
+    <!-- GUIDE D'INSTALLATION                      -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="section" id="guide" style="border-top:4px solid #5B6AF0">
+      <h2><span>📋</span> Guide d'installation pas à pas</h2>
+      <p class="lead">Suivez ces étapes dans l'ordre. Chaque étape est illustrée d'une capture d'écran réelle. Même un enfant peut le faire ! 😊</p>
+
+      <!-- ÉTAPE 1 -->
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Ouvre l'application dans ton navigateur</h4>
+          <p>Va sur l'adresse de l'application (ou ouvre le fichier <b>budget_familial.html</b>). L'écran de démarrage apparaît avec deux choix.</p>
+          <img class="step-img" src="screenshots/01_welcome.png" alt="Écran de bienvenue">
+          <div class="step-img-caption">L'écran de bienvenue avec les profils utilisateurs</div>
+          <div class="step-tip">💡 Si c'est la toute première fois, tu verras d'abord l'écran d'onboarding avec deux grandes cartes : <b>Mode Démo</b> et <b>Créer mon compte</b>.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 -->
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Clique sur ton nom pour te connecter</h4>
+          <p>Clique sur la carte avec ton prénom. Si tu as mis un code PIN, il te sera demandé. Une fois connecté, l'application s'ouvre directement.</p>
+          <img class="step-img" src="screenshots/10_tour.png" alt="Tour guidé au premier lancement">
+          <div class="step-img-caption">Au premier lancement, le tour guidé démarre automatiquement 🎉</div>
+          <div class="step-tip">💡 Le tour guidé te présente chaque partie de l'application en <b>12 étapes</b> (y compris l'ajout rapide, la connexion Google et l'assistant IA). Tu peux naviguer avec les flèches ← → de ton clavier.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 3 -->
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Découvre les boutons du haut (header)</h4>
+          <p>En haut de la page se trouvent tous les boutons importants :</p>
+          <img class="step-img" src="screenshots/03_header.png" alt="Header de l'application">
+          <div class="step-img-caption">La barre du haut avec tous les boutons de contrôle</div>
+          <ul style="margin-top:10px">
+            <li>🔵 <b>Ton prénom</b> — clique pour changer d'utilisateur</li>
+            <li>💾 <b>Sauvegarder</b> — <span style="color:#F04F5B;font-weight:700">TRÈS IMPORTANT</span> : clique ici après chaque modification !</li>
+            <li>📥 <b>Export CSV</b> — exporte tes données dans un fichier Excel</li>
+            <li>📦 <b>Backups</b> — retrouve tes sauvegardes automatiques</li>
+            <li>❓ <b>Aide</b> — relance le tour guidé ou ouvre ce guide</li>
+            <li>🌙 <b>Mode nuit</b> — change le thème clair/sombre</li>
+          </ul>
+          <div class="step-warn">⚠️ <b>N'oublie jamais de cliquer sur 💾 Sauvegarder</b> après avoir saisi des données ! Sinon tout sera perdu si tu fermes la page.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 4 -->
+      <div class="install-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Navigue entre les années avec les onglets</h4>
+          <p>En dessous du header, tu vois les onglets d'années. Clique sur une année pour l'afficher. Utilise <b>＋ Année</b> pour créer une nouvelle année.</p>
+          <img class="step-img" src="screenshots/04_tabs.png" alt="Onglets d'années">
+          <div class="step-img-caption">Les onglets : Résumé global, 2025, 2026, + Année, Graphiques, Config</div>
+          <div class="step-tip">💡 <b>En version gratuite</b>, tu peux avoir <b>1 seule année</b>. Avec la licence Premium tu en as autant que tu veux.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 5 -->
+      <div class="install-step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>Renseigne les soldes de départ</h4>
+          <p>En haut de chaque année, il y a 4 cases importantes que tu dois remplir une seule fois :</p>
+          <img class="step-img" src="screenshots/05_soldes.png" alt="Section soldes">
+          <div class="step-img-caption">Les 4 indicateurs de solde en haut de chaque année</div>
+          <ul style="margin-top:10px">
+            <li><b>Compte (01/01)</b> — Ton solde de compte courant au 1er janvier</li>
+            <li><b>Compte actuel</b> — Se calcule tout seul ✨</li>
+            <li><b>Livret initial</b> — Ton solde de livret d'épargne au 1er janvier</li>
+            <li><b>Livret actuel</b> — Se calcule tout seul ✨</li>
+          </ul>
+          <div class="step-tip">💡 Pour les années suivantes, le livret initial est rempli automatiquement avec le solde de fin de l'année précédente.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 6 -->
+      <div class="install-step">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <h4>Saisis tes revenus mensuels</h4>
+          <p>Dans la section verte <b>💼 Revenus</b>, clique sur chaque case pour saisir le montant de chaque mois. Tu peux avoir plusieurs lignes de revenus (salaire, allocations, etc.).</p>
+          <img class="step-img" src="screenshots/06_revenus.png" alt="Section revenus">
+          <div class="step-img-caption">Section Revenus avec les montants mois par mois — ici 4 500 €/mois</div>
+          <div class="step-tip">💡 Si ton salaire est le même tous les mois, clique droit sur la cellule de janvier pour copier la valeur sur toute la ligne.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 7 -->
+      <div class="install-step">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <h4>Renseigne tes charges fixes et coche quand c'est payé</h4>
+          <p>Dans la section rose <b>🏠 Charges &amp; Dépenses fixes</b>, saisis tes charges régulières (loyer, électricité, abonnements…). Chaque mois, <b>clique sur la case pour la cocher en vert</b> quand tu as payé.</p>
+          <img class="step-img" src="screenshots/07_charges.png" alt="Section charges">
+          <div class="step-img-caption">Section Charges — clique sur une cellule pour la marquer "payée" (vert)</div>
+          <div class="step-warn">⚠️ Seules les charges cochées (payées) sont comptées dans le calcul de ton solde réel. N'oublie pas de cocher !</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 8 -->
+      <div class="install-step">
+        <div class="step-num">8</div>
+        <div class="step-body">
+          <h4>Note tes dépenses variables au fil du mois</h4>
+          <p>Dans la section jaune <b>🛒 Dépenses variables</b>, clique sur le <b>petit ＋</b> dans la colonne du bon mois pour ajouter une dépense (courses, carburant, divers…).</p>
+          <img class="step-img" src="screenshots/08_variables.png" alt="Section dépenses variables">
+          <div class="step-img-caption">Section Dépenses variables avec les catégories colorées</div>
+          <div class="step-tip">💡 Tu peux indiquer le commentaire (ex: "Lidl"), la date du jour et le mode de paiement (carte, liquide, chèque repas).</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 9 -->
+      <div class="install-step">
+        <div class="step-num">9</div>
+        <div class="step-body">
+          <h4>Consulte le résumé mensuel automatique</h4>
+          <p>La section bleue <b>📊 Résumé mensuel</b> calcule tout automatiquement pour chaque mois de l'année.</p>
+          <img class="step-img" src="screenshots/09_resume.png" alt="Section résumé mensuel">
+          <div class="step-img-caption">Le résumé mensuel — tout se calcule automatiquement !</div>
+          <ul style="margin-top:10px">
+            <li>🟢 <b>Revenus</b> — total des salaires du mois</li>
+            <li>🔴 <b>Charges payées</b> — total des charges cochées</li>
+            <li>🟡 <b>Dépenses variables</b> — total des dépenses saisies</li>
+            <li>🔵 <b>Solde réel</b> — ton solde bancaire réel calculé</li>
+            <li>💰 <b>Livret</b> — ton solde d'épargne calculé</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 10 -->
+      <div class="install-step">
+        <div class="step-num">10</div>
+        <div class="step-body">
+          <h4>Sauvegarde et c'est terminé ! 🎉</h4>
+          <p>Clique sur le bouton <b>💾 Sauvegarder</b> dans le header. L'application affiche "Sauvegardé ✅" et la date/heure du dernier enregistrement.</p>
+          <div class="step-tip">💡 L'application crée automatiquement une sauvegarde de sécurité chaque jour. Tu peux retrouver jusqu'à 20 jours d'historique dans <b>📦 Backups</b>.</div>
+          <div class="step-tip" style="margin-top:8px;background:#E6FAF5;border-left-color:#00C896">🎯 <b>Conseil :</b> installe l'application sur ton téléphone ou tablette ! Sur Chrome/Edge, clique sur l'icône d'installation dans la barre d'adresse. Elle fonctionnera même sans internet. <a href="#demarrage" style="color:#5B6AF0">→ En savoir plus</a></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Démarrage -->
+    <div class="section" id="demarrage">
+      <h2><span>🚀</span> Démarrage</h2>
+      <p class="lead">Mon Budget est une application web progressive (PWA). Elle fonctionne hors ligne et peut être installée sur votre appareil comme une vraie application.</p>
+
+      <h3>Première ouverture</h3>
+      <p>Lors de la première ouverture, vous avez le choix entre :</p>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="fc-icon">🎮</div>
+          <div class="fc-title">Mode Démo</div>
+          <div class="fc-desc">Explorez avec des données fictives sans rien configurer. Idéal pour découvrir.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">➕</div>
+          <div class="fc-title">Créer un compte</div>
+          <div class="fc-desc">Configurez votre profil, vos revenus et charges habituelles en 6 étapes.</div>
+        </div>
+      </div>
+
+      <h3>Création de compte (assistant en 6 étapes)</h3>
+      <ol>
+        <li><b>Profil</b> — Votre prénom et couleur d'avatar</li>
+        <li><b>Revenus</b> — Vos revenus mensuels habituels (salaires, allocations…)</li>
+        <li><b>Charges</b> — Vos charges fixes récurrentes (loyer, énergie, abonnements…)</li>
+        <li><b>Budgets</b> — Budget mensuel suggéré pour chaque catégorie de dépenses (converti automatiquement en annuel)</li>
+        <li><b>PIN</b> — Code de sécurité facultatif pour protéger vos données</li>
+        <li><b>Cloud</b> — Connexion Google optionnelle pour la sync Premium</li>
+      </ol>
+      <div class="tip">
+        <b>💡 Budgets suggérés</b> — À l'étape Budgets, l'assistant pré-remplit des montants courants (ex : courses 300 €/mois). Modifiez-les selon votre situation, ou laissez 0 pour ne pas définir de budget. Les montants sont automatiquement annualisés (×12).
+      </div>
+
+      <h3>Installation sur mobile / bureau</h3>
+      <p>Sur mobile (Chrome/Safari), appuyez sur <b>« Ajouter à l'écran d'accueil »</b>. Sur PC (Chrome/Edge), cliquez sur l'icône d'installation dans la barre d'adresse. L'app fonctionne ensuite hors ligne.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!-- PREMIUM SECTION                           -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="section section-premium" id="premium">
+      <h2><span>⭐</span> Version Gratuite vs Premium</h2>
+      <p class="lead">Mon Budget est disponible en version gratuite avec des fonctionnalités essentielles, ou en version Premium pour un usage complet et sans limites.</p>
+
+      <div class="compare-grid">
+
+        <!-- FREE -->
+        <div class="compare-col free">
+          <div class="compare-col-title">🔓 Version Gratuite</div>
+          <div class="compare-col-price">Gratuit — pour toujours</div>
+
+          <div class="compare-row">
+            <div class="cr-icon">👤</div>
+            <div class="cr-text">
+              <b>1 seul utilisateur</b>
+              <span>Un seul profil par installation</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">📅</div>
+            <div class="cr-text">
+              <b>1 année d'historique</b>
+              <span>Impossible d'ajouter une 2ᵉ année</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">🛒</div>
+            <div class="cr-text">
+              <b>3 catégories de dépenses max</b>
+              <span>Courses, carburant, divers</span>
+            </div>
+          </div>
+          <div class="compare-row compare-lock">
+            <div class="cr-icon">🏦</div>
+            <div class="cr-text">
+              <b>1 seul compte bancaire</b>
+              <span>Pas de gestion multi-comptes</span>
+            </div>
+          </div>
+          <div class="compare-row compare-lock">
+            <div class="cr-icon">📈</div>
+            <div class="cr-text">
+              <b>1 seul livret d'épargne</b>
+              <span>Pas de gestion multi-livrets</span>
+            </div>
+          </div>
+          <div class="compare-row compare-lock">
+            <div class="cr-icon">☁️</div>
+            <div class="cr-text">
+              <b>Pas de sync cloud</b>
+              <span>Données uniquement en local</span>
+            </div>
+          </div>
+          <div class="compare-row compare-lock">
+            <div class="cr-icon">📱</div>
+            <div class="cr-text">
+              <b>Pas de multi-appareils</b>
+              <span>Impossible d'accéder depuis un autre appareil</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PREMIUM -->
+        <div class="compare-col premium">
+          <div class="compare-col-badge">⭐ RECOMMANDÉ</div>
+          <div class="compare-col-title">✨ Version Premium</div>
+          <div class="compare-col-price">2,99 €/mois &nbsp;·&nbsp; 24,99 €/an — paiement sécurisé Stripe</div>
+
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Utilisateurs illimités</b>
+              <span>Famille, couple, colocation…</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Historique multi-années illimité</b>
+              <span>Conservez toutes vos années sans restriction</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Catégories illimitées</b>
+              <span>Créez autant de catégories que vous voulez</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Multi-comptes bancaires + livrets</b>
+              <span>Gérez Compte A, Compte B, Livret B… chacun avec sa carte et ses lignes dédiées</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Synchronisation cloud Firebase</b>
+              <span>Données sauvegardées et accessibles partout</span>
+            </div>
+          </div>
+          <div class="compare-row">
+            <div class="cr-icon">✅</div>
+            <div class="cr-text">
+              <b>Multi-appareils</b>
+              <span>PC, téléphone, tablette — toujours à jour</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">
+        <a class="buy-btn" href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank" style="flex:1;min-width:200px">
+          💳 Mensuel — 2,99 € / mois
+        </a>
+        <a class="buy-btn" href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank" style="flex:1;min-width:200px;background:linear-gradient(135deg,#5B6AF0,#3b4cd0);box-shadow:0 6px 20px rgba(91,106,240,.4)">
+          💳 Annuel — 24,99 € / an <span style="font-size:11px;opacity:.8">(économisez 30%)</span>
+        </a>
+      </div>
+
+      <h3>Activation automatique après paiement</h3>
+      <div class="activate-box">
+        <p>L'activation est <b>entièrement automatique</b>. Aucune clé à saisir, aucun email à attendre.</p>
+        <ol class="activate-steps">
+          <li>Cliquez sur un bouton Premium dans l'app (⚙️ Paramètres ou l'overlay Premium)</li>
+          <li>Vous êtes redirigé vers la page de paiement sécurisée <b>Stripe</b></li>
+          <li>Renseignez votre carte bancaire et validez le paiement</li>
+          <li>Retournez dans l'app — le statut passe automatiquement à <b>✨ Premium actif</b></li>
+        </ol>
+      </div>
+
+      <h3>Ce que vous voyez selon votre version</h3>
+      <p style="color:rgba(255,255,255,.7)">Les fonctionnalités verrouillées en version gratuite affichent une fenêtre « Passez à Premium » quand vous tentez de les utiliser. Vous n'êtes jamais bloqué — vous savez toujours ce qui est disponible.</p>
+    </div>
+
+    <!-- Mode démo -->
+    <div class="section" id="demo">
+      <h2><span>🎮</span> Mode Démo</h2>
+      <p class="lead">Le mode démo charge des données fictives pour vous permettre d'explorer toutes les fonctionnalités sans risque.</p>
+
+      <h3>Activer le mode démo</h3>
+      <p>Au premier lancement, cliquez sur la carte <b>Mode Démo</b>. L'application se charge avec des données d'exemple (Jean &amp; Marie, 2025–2026).</p>
+
+      <div class="demo-tip">
+        <b>Bannière orange</b> — Quand le mode démo est actif, une bannière jaune/orange s'affiche en haut de l'écran pour vous rappeler que les données sont fictives.
+      </div>
+
+      <h3>Quitter le mode démo</h3>
+      <p>Cliquez sur <b>✕ Quitter le mode démo</b> dans la bannière. Confirmez la suppression : toutes les données fictives sont effacées et vous revenez à l'écran de démarrage pour créer votre vrai compte.</p>
+
+      <div class="warn">
+        <b>⚠️ Attention</b> — Quitter le mode démo supprime définitivement les données fictives. Vos vraies données (si vous en avez) ne sont pas affectées.
+      </div>
+    </div>
+
+    <!-- Interface -->
+    <div class="section" id="interface">
+      <h2><span>🖥️</span> Interface générale</h2>
+      <p class="lead">L'application est organisée par années (onglets) et par mois (colonnes dans chaque tableau).</p>
+
+      <div class="screenshot">
+        <div class="screenshot-icon">📸</div>
+        Capture d'écran de l'interface principale
+      </div>
+
+      <h3>En-tête (header)</h3>
+      <ul>
+        <li><b>💾 Sauvegarder</b> — Enregistre toutes les modifications dans le navigateur</li>
+        <li><b>📥 Export CSV</b> — Exporte les données du mois actuel en CSV</li>
+        <li><b>🖨️ PDF</b> — Génère un rapport PDF structuré : KPIs annuels, tableau mensuel complet et répartition des dépenses par catégorie pour chaque année</li>
+        <li><b>📂 Import CSV</b> — Importe des transactions depuis un relevé bancaire CSV (détection automatique des colonnes, choix de catégorie, méthode de paiement, total sélectionné et <b>détection automatique des doublons</b> ⚠️)</li>
+        <li><b>📦 Backups</b> — Affiche la liste des sauvegardes automatiques (une par jour, 20 max)</li>
+        <li><b>🔐 Connexion</b> — Connexion avec Google pour la synchronisation cloud Premium</li>
+        <li><b>❓ Aide</b> — Relance le tour guidé ou ouvre ce guide</li>
+        <li><b>🌙 / ☀️</b> — Bascule entre mode jour et mode nuit</li>
+      </ul>
+
+      <h3>Boutons flottants (bas à droite)</h3>
+      <ul>
+        <li><b>➕ Vert</b> — <a href="#ajout-rapide">Ajout rapide</a> d'une dépense variable</li>
+        <li><b>🤖 Violet</b> — <a href="#assistant-ia">Assistant IA</a> Gemini (chat)</li>
+      </ul>
+
+      <h3>Onglets d'années</h3>
+      <p>Chaque onglet représente une année. Cliquez sur <b>＋ Année</b> pour créer une nouvelle année.<span class="limit-badge">1 an max en gratuit</span> <span class="pro-badge">Illimité en Premium</span></p>
+
+      <h3>Colonnes de mois</h3>
+      <p>Chaque tableau a 12 colonnes (Jan–Déc). Saisissez directement les montants dans les cellules. Appuyez sur <b>Entrée</b> ou <b>Tab</b> pour passer à la cellule suivante.</p>
+
+    </div>
+
+    <!-- Tableau de bord mensuel -->
+    <div class="section" id="accueil">
+      <h2><span>🏠</span> Tableau de bord mensuel</h2>
+      <p class="lead">L'onglet <b>Accueil</b> est votre vue synthèse du mois : d'un coup d'œil, vous voyez où vous en êtes financièrement sans avoir à parcourir les tableaux détaillés.</p>
+
+      <h3>Navigation entre les mois</h3>
+      <p>Utilisez les boutons <b>←</b> et <b>→</b> pour naviguer d'un mois à l'autre. Le changement d'année s'effectue automatiquement (janvier → décembre de l'année précédente et inversement). Utilisez le sélecteur d'année pour sauter directement à une année.</p>
+
+      <h3>📅 Vue mensuelle / 📊 Vue annuelle</h3>
+      <p>Un toggle en haut à droite permet de basculer entre la <b>vue mensuelle</b> (détail d'un mois) et la <b>vue annuelle</b> qui affiche les totaux de l'année, le taux d'épargne, l'épargne moyenne mensuelle, le meilleur et pire mois, et un graphique en barres des soldes mois par mois.</p>
+
+      <h3>4 indicateurs clés (KPIs)</h3>
+      <p>Chaque carte affiche la valeur du mois sélectionné et une <b>sparkline SVG</b> — une mini-courbe représentant la tendance sur les 12 mois de l'année. D'un coup d'œil, vous voyez si un indicateur monte ou descend.</p>
+
+      <h3>🍩 Graphique donut</h3>
+      <p>Lorsqu'il y a au moins 2 catégories de dépenses variables actives dans le mois, un <b>graphique donut</b> SVG apparaît sous les KPIs. Il montre la répartition des dépenses par catégorie avec le montant et le pourcentage.</p>
+      <div class="feature-grid">
+        <div class="feature-card" style="border-top:3px solid #27ae60">
+          <div class="fc-icon">💹</div>
+          <div class="fc-title">Revenus</div>
+          <div class="fc-desc">Total des revenus perçus ce mois.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #5B6AF0">
+          <div class="fc-icon">🏠</div>
+          <div class="fc-title">Charges</div>
+          <div class="fc-desc">Charges récurrentes + versements livret d'épargne de ce mois.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #e67e22">
+          <div class="fc-icon">🛒</div>
+          <div class="fc-title">Variables</div>
+          <div class="fc-desc">Total des dépenses variables (courses, loisirs…) du mois.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #8B5CF6">
+          <div class="fc-icon">💰</div>
+          <div class="fc-title">Solde</div>
+          <div class="fc-desc">Revenus − Charges − Variables. En vert si positif, en rouge si négatif.</div>
+        </div>
+      </div>
+
+      <h3>🔄 Comparaison vs année précédente</h3>
+      <p>Si vous avez des données pour l'année précédente, un tableau comparatif s'affiche automatiquement pour le même mois. Il indique pour chaque indicateur le delta (+ ou −) avec une couleur verte (amélioration) ou rouge (régression).</p>
+
+      <h3>⚠️ Alertes budgets dépassés</h3>
+      <p>Si une catégorie de dépenses variables dépasse son budget mensuel (défini dans la gestion des catégories), une alerte rouge apparaît dans le tableau de bord avec le montant dépensé vs le budget.</p>
+
+      <h3>🛒 Dernières dépenses</h3>
+      <p>La liste des dépenses variables du mois est affichée, triées par montant décroissant (jusqu'à 8 entrées + compteur des autres).</p>
+
+      <h3>📅 Bouton "Aller à l'année en cours"</h3>
+      <p>Un bouton rapide permet de naviguer directement vers l'onglet de l'année actuelle (ex: 2026) depuis le tableau de bord.</p>
+
+      <h3>🏠 Détail des charges du mois</h3>
+      <p>En dessous des KPIs et de la comparaison, une section liste toutes les charges du mois en cours (loyer, abonnements, versements livret…) avec leur montant et leur statut payé ✓.</p>
+
+      <h3>📱 Navigation par swipe (mobile)</h3>
+      <p>Sur mobile, un <b>glissement vers la gauche</b> passe au mois suivant, un <b>glissement vers la droite</b> revient au mois précédent — sans avoir à toucher les boutons ← →.</p>
+
+      <h3>📝 Note du mois</h3>
+      <p>En bas de l'Accueil, un champ texte libre permet d'ajouter une <b>note mensuelle</b> (ex : "mois chargé, vacances", "bonus reçu"). La note est sauvegardée automatiquement et apparaît dans le <b>rapport PDF</b> dans une section dédiée.</p>
+
+      <div class="tip">
+        <b>💡 Astuce</b> — Commencez votre session par l'onglet Accueil pour voir rapidement où vous en êtes. Si le solde est rouge, consultez les catégories dépassées pour identifier les postes à réduire.
+      </div>
+    </div>
+
+    <!-- Recherche globale -->
+    <div class="section" id="recherche">
+      <h2><span>🔍</span> Recherche globale</h2>
+      <p class="lead">Retrouvez instantanément n'importe quelle ligne de revenu, charge ou dépense variable dans toutes vos années, sans naviguer dans les tableaux.</p>
+
+      <h3>Ouvrir la recherche</h3>
+      <p>Cliquez sur l'onglet <b>🔍</b> dans la barre de navigation (tout à droite). La recherche peut aussi être fermée avec la touche <b>Échap</b>.</p>
+
+      <h3>Ce qui est indexé</h3>
+      <ul style="margin:8px 0 12px 20px;line-height:2">
+        <li><b>Libellés des revenus</b> — ex : "Salaire", "Prime"</li>
+        <li><b>Libellés des charges</b> — ex : "Loyer", "Assurance"</li>
+        <li><b>Dépenses variables</b> — libellé, catégorie et commentaire de chaque transaction</li>
+      </ul>
+
+      <h3>Résultats</h3>
+      <p>Les résultats sont groupés par année avec le type et le montant. Cliquer sur un résultat <b>navigue directement</b> vers la section correspondante et ferme la recherche.</p>
+    </div>
+
+    <!-- Objectif d'épargne -->
+    <div class="section" id="objectif-epargne">
+      <h2><span>🎯</span> Objectif d'épargne mensuel</h2>
+      <p class="lead">Définissez un objectif d'épargne mensuel en euros. Une barre de progression s'affiche dans l'onglet Accueil pour suivre votre avancement.</p>
+
+      <h3>Configurer l'objectif</h3>
+      <ol style="margin:8px 0 12px 20px;line-height:2">
+        <li>Ouvrez l'onglet <b>⚙️ Config</b></li>
+        <li>Descendez jusqu'à la section <b>🎯 Objectif d'épargne mensuel</b></li>
+        <li>Saisissez le montant cible (ex : 500 €/mois)</li>
+        <li>Cliquez sur <b>✅</b> pour enregistrer</li>
+      </ol>
+
+      <h3>Barre de progression</h3>
+      <p>Dans l'onglet <b>🏠 Accueil</b>, la barre indique le pourcentage d'objectif atteint pour le mois affiché :</p>
+      <ul>
+        <li><b>Vert</b> — Objectif atteint ou dépassé 🎉</li>
+        <li><b>Bleu</b> — En bonne voie (solde positif mais sous l'objectif)</li>
+        <li><b>Rouge</b> — Solde négatif, objectif non atteignable ce mois</li>
+      </ul>
+
+      <div class="tip">
+        <b>💡 Conseil</b> — Un bon objectif d'épargne représente 10–20% de vos revenus mensuels nets. Commencez modestement et augmentez progressivement.
+      </div>
+    </div>
+
+    <!-- Revenus -->
+    <div class="section" id="revenus">
+      <h2><span>💼</span> Revenus</h2>
+      <p class="lead">Saisissez vos revenus mensuels (salaires, allocations, primes…) dans la section verte.</p>
+
+      <h3>Ajouter un revenu</h3>
+      <p>Cliquez sur <b>＋ Ajouter un revenu</b> en bas de la section. Saisissez le libellé et les montants mois par mois.</p>
+
+      <h3>Cocher « En calcul »</h3>
+      <p>La colonne <b>∑</b> (en calcul) détermine si ce revenu est pris en compte dans le résumé mensuel. Décochez pour exclure temporairement un revenu sans le supprimer.</p>
+
+      <h3>Supprimer une ligne</h3>
+      <p>Passez la souris sur le libellé d'une ligne pour faire apparaître le bouton <b>✕</b> rouge. Cliquez dessus pour supprimer (une confirmation est demandée).</p>
+
+      <div class="tip">
+        <b>Astuce</b> — Pour les revenus identiques chaque mois, saisissez la valeur dans janvier, puis faites un clic droit sur la cellule pour la dupliquer sur tous les mois.
+      </div>
+    </div>
+
+    <!-- Charges -->
+    <div class="section" id="charges">
+      <h2><span>🏠</span> Charges fixes</h2>
+      <p class="lead">Les charges sont les dépenses récurrentes : loyer, énergie, abonnements, assurances…</p>
+
+      <h3>Statut « Payé »</h3>
+      <p>Chaque cellule de charge a un indicateur de paiement. Cliquez sur la cellule pour basculer entre <b>payé</b> (vert) et <b>non payé</b> (gris). Seules les charges marquées payées sont incluses dans le calcul du solde réel.</p>
+
+      <h3>Types de charges</h3>
+      <ul>
+        <li><b>Fixe</b> — Montant identique chaque mois</li>
+        <li><b>Occasionnelle</b> — Montant variable selon le mois</li>
+        <li><b>Livret ↑</b> — Virement vers le livret d'épargne</li>
+        <li><b>Livret ↓</b> — Retrait du livret vers le compte courant</li>
+      </ul>
+
+      <h3>Reste à payer</h3>
+      <p>En bas de chaque tableau de résumé, une ligne <b>« Reste à payer »</b> affiche le total des charges non encore payées pour le mois.</p>
+    </div>
+
+    <!-- Dépenses variables -->
+    <div class="section" id="variables">
+      <h2><span>🛒</span> Dépenses variables</h2>
+      <p class="lead">Les dépenses variables (courses, carburant, divers…) sont saisies sous forme de transactions individuelles.</p>
+
+      <h3>Catégories disponibles</h3>
+      <p>En version gratuite, vous disposez de <b>3 catégories</b> (courses, carburant, divers). En version Premium, créez-en autant que vous voulez depuis <b>⚙️ Paramètres → Catégories</b>.<span class="limit-badge">3 max en gratuit</span> <span class="pro-badge">Illimité en Premium</span></p>
+
+      <h3>🔎 Filtrer les catégories</h3>
+      <p>Un champ de recherche en haut de la section "Dépenses variables" permet de <b>filtrer les catégories</b> par nom en temps réel. Utile quand vous avez beaucoup de catégories (Premium).</p>
+
+      <h3>Ajouter une dépense</h3>
+      <p>Cliquez sur le bouton <b>＋</b> dans la colonne du bon mois. Une ligne s'ajoute avec le montant, un commentaire optionnel, la date et le mode de paiement.</p>
+
+      <h3>Modes de paiement</h3>
+      <ul>
+        <li><b>Carte</b> — Paiement par carte bancaire (par défaut)</li>
+        <li><b>Liquide</b> — Paiement en espèces</li>
+        <li><b>Repas</b> — Tickets restaurant / chèques repas</li>
+      </ul>
+
+      <h3>Couleurs des catégories</h3>
+      <div class="feature-grid">
+        <div class="feature-card" style="border-left:4px solid #5B9BD5">
+          <div class="fc-icon">⛽</div>
+          <div class="fc-title">Carburant</div>
+          <div class="fc-desc">Bleu clair</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #3CB371">
+          <div class="fc-icon">🛒</div>
+          <div class="fc-title">Courses</div>
+          <div class="fc-desc">Vert</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #9B59B6">
+          <div class="fc-icon">📦</div>
+          <div class="fc-title">Divers</div>
+          <div class="fc-desc">Violet</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #F0A500">
+          <div class="fc-icon">🐕</div>
+          <div class="fc-title">Chien / Animaux</div>
+          <div class="fc-desc">Jaune/Ambre</div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <b>Ajout rapide</b> — Utilisez le bouton <b>⚡ Ajout rapide</b> pour saisir plusieurs dépenses d'un coup depuis n'importe quelle vue.
+      </div>
+    </div>
+
+    <!-- Budgets par catégorie -->
+    <div class="section" id="budget-cible">
+      <h2><span>🎯</span> Budgets par catégorie</h2>
+      <p class="lead">Définissez un budget annuel pour chaque catégorie de dépenses variables et suivez vos progrès en temps réel.</p>
+
+      <h3>Comment ça fonctionne</h3>
+      <p>Pour chaque catégorie (courses, carburant…), vous pouvez fixer un budget annuel. Une barre de progression s'affiche sous le titre de la catégorie, indiquant combien vous avez dépensé par rapport à l'objectif.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card" style="border-left:4px solid #00C896">
+          <div class="fc-icon">🟢</div>
+          <div class="fc-title">Sous les 80%</div>
+          <div class="fc-desc">Barre verte — vous êtes dans les clous.</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #F5A623">
+          <div class="fc-icon">🟡</div>
+          <div class="fc-title">Entre 80% et 100%</div>
+          <div class="fc-desc">Barre orange — approchez de la limite, attention !</div>
+        </div>
+        <div class="feature-card" style="border-left:4px solid #F04F5B">
+          <div class="fc-icon">🔴</div>
+          <div class="fc-title">Dépassement</div>
+          <div class="fc-desc">Barre rouge avec ⚠️ — budget dépassé pour l'année.</div>
+        </div>
+      </div>
+
+      <h3>Définir un budget</h3>
+      <p>Trois façons de définir un budget :</p>
+      <ol>
+        <li><b>À la création du compte</b> — L'assistant wizard propose des montants suggérés (ex : courses 300 €/mois) à l'étape 4. Modifiez-les, puis confirmez. Les montants €/mois sont automatiquement convertis en €/an.</li>
+        <li><b>En ajoutant une catégorie</b> — Dans <b>⚙️ Config → Catégories</b>, saisissez un montant €/mois ou €/an lors de l'ajout d'une nouvelle catégorie.</li>
+        <li><b>Via la Config</b> — Dans <b>⚙️ Config → Catégories</b>, modifiez le champ <b>Budget/an €</b> directement sur la ligne de la catégorie existante.</li>
+      </ol>
+
+      <h3>Alerte budget manquant</h3>
+      <p>Quand vous cliquez sur <b>⚡ +</b> ou utilisez l'<b>Ajout rapide</b> pour une catégorie sans budget, une alerte orange s'affiche dans le formulaire avec un lien <b>Définir un budget →</b>. Cliquez dessus pour saisir un montant mensuel immédiatement.</p>
+
+      <h3>Modifier une catégorie</h3>
+      <p>Dans <b>⚙️ Config → Catégories</b>, vous pouvez désormais modifier directement l'<b>icône</b> et le <b>libellé</b> d'une catégorie existante en cliquant sur les champs correspondants. Inutile de supprimer et recréer.</p>
+
+      <div class="tip">
+        <b>💡 Le budget est partagé par toutes les années</b> — Le budget défini pour une catégorie s'applique à toutes les années. La barre de progression affiche la consommation de l'année affichée.
+      </div>
+    </div>
+
+    <!-- Livret -->
+    <div class="section" id="livret">
+      <h2><span>💰</span> Livret d'épargne</h2>
+      <p class="lead">Le livret d'épargne est géré automatiquement à partir des lignes de charge spéciales.</p>
+
+      <h3>Lignes dédiées au livret</h3>
+      <ul>
+        <li><b>📈 Ordre permanent Livret</b> (cat: <code>livret_in</code>) — Virement mensuel automatique depuis le compte courant vers le livret. Augmente le solde livret, diminue le compte courant.</li>
+        <li><b>💰 Compte → Livret</b> (cat: <code>livret_in</code>) — Dépôt manuel. Même effet.</li>
+        <li><b>📉 Retrait Livret → compte</b> (cat: <code>livret_out</code>) — Retrait du livret vers le compte courant. Diminue le livret, augmente le compte courant.</li>
+      </ul>
+
+      <h3>Solde livret initial</h3>
+      <p>Pour la première année, saisissez le solde du livret au 1er janvier dans le champ <b>Livret initial (01/01)</b>.</p>
+      <p>Pour les années suivantes, ce champ est calculé <b>automatiquement</b> à partir du solde de fin de l'année précédente — vous n'avez rien à saisir.</p>
+
+      <h3>Saisie des montants</h3>
+      <p>Saisissez toujours des valeurs <b>positives</b>. L'application gère automatiquement le sens (ajout ou retrait) selon le type de ligne.</p>
+
+      <div class="tip">
+        <b>Statut payé automatique</b> — Dès qu'une valeur non nulle est saisie dans une ligne livret, le statut est automatiquement marqué comme payé.
+      </div>
+    </div>
+
+    <!-- Résumé -->
+    <div class="section" id="resume">
+      <h2><span>📊</span> Résumé mensuel</h2>
+      <p class="lead">Le tableau de résumé affiche pour chaque mois le bilan complet : revenus, charges, dépenses et soldes.</p>
+
+      <h3>Lignes du résumé</h3>
+      <ul>
+        <li><b>Revenus</b> — Total des revenus marqués « en calcul »</li>
+        <li><b>Charges payées</b> — Total des charges marquées payées</li>
+        <li><b>Dépenses variables</b> — Total des transactions saisies</li>
+        <li><b>🔴 Reste à payer</b> — Charges non encore payées</li>
+        <li><b>Disponible</b> — Revenus − charges payées − dépenses variables</li>
+        <li><b>SOLDE RÉEL</b> — Solde du compte courant calculé depuis le début de l'année</li>
+        <li><b>Livret</b> — Solde du livret d'épargne à la fin du mois</li>
+      </ul>
+
+      <h3>🏆 Statistiques annuelles</h3>
+      <p>Sous le tableau de résumé, des <b>cartes de statistiques</b> s'affichent pour chaque année : taux d'épargne annuel, épargne moyenne par mois, meilleur et pire mois (par solde), mois le plus dépensier en variables, et la catégorie de dépenses variables la plus coûteuse.</p>
+
+      <h3>Soldes initiaux</h3>
+      <p>En haut de la page (section <b>Soldes de départ</b>), renseignez :</p>
+      <ul>
+        <li><b>Compte ING</b> — Solde du compte courant au 1er janvier</li>
+        <li><b>Livret initial</b> — Solde du livret au 1er janvier (auto-calculé pour les années suivantes)</li>
+      </ul>
+    </div>
+
+    <!-- Indicateurs financiers KPI -->
+    <div class="section" id="indicateurs">
+      <h2><span>📈</span> Indicateurs financiers (KPI)</h2>
+      <p class="lead">Quatre indicateurs clés s'affichent automatiquement en haut de chaque année pour évaluer votre santé financière d'un coup d'œil.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card" style="border-top:3px solid #5B6AF0">
+          <div class="fc-icon">💚</div>
+          <div class="fc-title">Taux d'épargne</div>
+          <div class="fc-desc">% de vos revenus mis de côté. Objectif recommandé : ≥ 20%.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #F04F5B">
+          <div class="fc-icon">🏠</div>
+          <div class="fc-title">Charges / Revenus</div>
+          <div class="fc-desc">% de vos revenus consommés par les charges fixes. En dessous de 50% c'est sain.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #F5A623">
+          <div class="fc-icon">🛡️</div>
+          <div class="fc-title">Mois de réserve</div>
+          <div class="fc-desc">Combien de mois de dépenses votre solde actuel peut couvrir.</div>
+        </div>
+        <div class="feature-card" style="border-top:3px solid #8B5CF6">
+          <div class="fc-icon">🔮</div>
+          <div class="fc-title">Projection annuelle</div>
+          <div class="fc-desc">Épargne estimée sur l'année complète basée sur les mois déjà renseignés.</div>
+        </div>
+      </div>
+
+      <h3>Projection fin d'année</h3>
+      <p>Dans le résumé mensuel, une ligne de projection s'affiche si vous avez au moins 1 mois de données et que l'année n'est pas encore terminée. Elle calcule votre épargne annuelle estimée sur la base de votre moyenne mensuelle actuelle.</p>
+      <div class="tip">
+        <b>💡 Interprétation</b> — Un taux d'épargne vert (≥ 20%) et une projection positive (bleue) indiquent une situation financière saine. Un ratio charges/revenus rouge (> 70%) signale un risque de déséquilibre.
+      </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="section" id="graphiques">
+      <h2><span>📉</span> Graphiques</h2>
+      <p class="lead">L'onglet <b>Graphiques</b> offre plusieurs visualisations de vos finances, filtrables par année. Un bouton <b>📅 Aller à [année en cours]</b> permet de revenir directement à l'onglet de l'année actuelle.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="fc-icon">📊</div>
+          <div class="fc-title">Revenus vs Dépenses</div>
+          <div class="fc-desc">Histogramme comparant mois par mois vos revenus, charges et dépenses variables.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">💰</div>
+          <div class="fc-title">Évolution du solde</div>
+          <div class="fc-desc">Courbe de votre solde bancaire mois par mois.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">📈</div>
+          <div class="fc-title">Taux d'épargne mensuel</div>
+          <div class="fc-desc">Courbe du % d'épargne chaque mois, avec lignes de référence à 10% (seuil) et 20% (objectif). Toutes les années sont affichées.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🏦</div>
+          <div class="fc-title">Évolution du patrimoine</div>
+          <div class="fc-desc">Courbe cumulative de votre solde + livret mois par mois pour l'année sélectionnée.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🛒</div>
+          <div class="fc-title">Top catégories</div>
+          <div class="fc-desc">Barres horizontales des catégories de dépenses les plus importantes, du plus élevé au plus faible.</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🔄</div>
+          <div class="fc-title">Répartition des charges</div>
+          <div class="fc-desc">Camembert des charges fixes selon votre mode de paiement.</div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <b>💡 Astuce</b> — Sur le graphique du taux d'épargne, vous pouvez comparer plusieurs années simultanément. Chaque année a sa propre couleur de courbe.
+      </div>
+    </div>
+
+    <!-- Sauvegarde -->
+    <div class="section" id="sauvegarde">
+      <h2><span>💾</span> Sauvegarde et backups</h2>
+      <p class="lead">Toutes les données sont stockées localement dans votre navigateur (localStorage). Pensez à sauvegarder régulièrement.</p>
+
+      <h3>Sauvegarde manuelle</h3>
+      <p>Cliquez sur <b>💾 Sauvegarder</b> dans le header. Une notification verte confirme l'enregistrement. La date/heure de la dernière sauvegarde s'affiche à droite.</p>
+
+      <h3>Sauvegarde automatique quotidienne</h3>
+      <p>À chaque sauvegarde, une copie datée est créée automatiquement. L'application conserve les <b>20 derniers backups</b> (un par jour).</p>
+
+      <h3>Restaurer un backup</h3>
+      <p>Cliquez sur <b>📦 Backups</b> dans le header. La liste des sauvegardes apparaît avec leur date. Cliquez sur <b>Restaurer</b> pour revenir à un état antérieur.</p>
+
+      <h3>📥 Sauvegarde externe — Export / Import JSON</h3>
+      <p>Pour éviter tout risque de perte lors d'un vidage de cache, vous pouvez exporter vos données en fichier <b>JSON</b> :</p>
+      <ol style="margin:8px 0 12px 20px;line-height:1.8">
+        <li>Allez dans <b>⚙️ Réglages</b></li>
+        <li>Dans la section <b>📥 Sauvegarde externe</b>, cliquez sur <b>⬇️ Exporter JSON</b></li>
+        <li>Un fichier <code>budget_backup_XXXX.json</code> est téléchargé — conservez-le en lieu sûr (cloud, clé USB…)</li>
+        <li>Pour restaurer, cliquez sur <b>⬆️ Importer JSON</b> et sélectionnez le fichier</li>
+      </ol>
+      <div class="tip">
+        💡 <b>Bonne pratique :</b> exportez en JSON après chaque session importante. Le fichier contient toutes vos années, revenus, charges et dépenses variables.
+      </div>
+
+      <div class="warn">
+        <b>⚠️ Attention</b> — Les données sont stockées dans votre navigateur. Effacer le cache ou changer de navigateur/appareil entraîne la perte des données. Utilisez l'export JSON ou la sync GitHub Gist pour une sauvegarde externe garantie.
+      </div>
+
+      <div class="premium-tip">
+        <b>⭐ Avec la licence Premium</b> — La synchronisation cloud Firebase sauvegarde automatiquement vos données à chaque modification. Vos données sont accessibles depuis n'importe quel appareil, n'importe où.
+      </div>
+
+      <h3 id="github-gist">🐙 Sync cloud gratuit via GitHub Gist</h3>
+      <div style="background:#e8f8f0;border:2px solid #27ae60;border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px">
+        <span style="font-size:32px;line-height:1">🆓</span>
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#27ae60;margin-bottom:3px">100% GRATUIT — aucune carte bancaire, aucun abonnement</div>
+          <div style="font-size:13px;color:#2d6a4f;line-height:1.6">GitHub est une plateforme gratuite utilisée par des millions de développeurs. En créant un compte gratuit, vous pouvez sauvegarder vos données budgétaires automatiquement dans le cloud, accessibles partout.</div>
+        </div>
+      </div>
+      <p>La synchronisation GitHub Gist permet de sauvegarder vos données en ligne <b>automatiquement à chaque enregistrement</b>. Si vous videz votre cache ou changez d'appareil, vos données sont récupérables en un clic.</p>
+
+      <div style="background:var(--card,#fff);border:1px solid #ddd;border-radius:12px;overflow:hidden;margin:16px 0">
+
+        <div style="background:#24292f;color:#fff;padding:12px 16px;font-weight:700;font-size:14px">
+          📋 Étape 1 — Créer un compte GitHub gratuit
+        </div>
+        <div style="padding:14px 16px;line-height:2;font-size:13px">
+          <div>1. Ouvre ton navigateur et va sur <a href="https://github.com/join" target="_blank" style="color:#0969da;font-weight:600">https://github.com/join</a></div>
+          <div>2. Remplis le formulaire :</div>
+          <ul style="margin:4px 0 4px 24px;line-height:2">
+            <li><b>Username</b> : choisis un pseudo (ex: <code>pascal-budget</code>)</li>
+            <li><b>Email address</b> : ton adresse e-mail</li>
+            <li><b>Password</b> : un mot de passe sécurisé</li>
+          </ul>
+          <div>3. Clique le bouton vert <b>"Continue"</b></div>
+          <div>4. Résous le petit puzzle de vérification (cliquer sur des images)</div>
+          <div>5. Ouvre ta boîte mail → tu as reçu un e-mail de GitHub → clique <b>"Verify email address"</b></div>
+          <div>6. Tu es connecté ! GitHub te demande quelques préférences → clique <b>"Skip personalization"</b> (tout en bas)</div>
+          <div style="background:#d1ecf1;border:1px solid #bee5eb;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#0c5460">
+            ✅ <b>C'est fait !</b> Ton compte GitHub est créé. Tu peux maintenant passer à l'étape 2.
+          </div>
+        </div>
+
+        <div style="background:#24292f;color:#fff;padding:12px 16px;font-weight:700;font-size:14px;border-top:1px solid #444">
+          🔑 Étape 2 — Créer le token de sécurité (Personal Access Token)
+        </div>
+        <div style="padding:14px 16px;line-height:2;font-size:13px">
+          <p style="margin:0 0 8px">Un "token" est comme un mot de passe spécial que tu donnes à Mon Budget pour qu'il puisse sauvegarder tes données. Il n'a accès qu'aux Gists (notes privées), rien d'autre.</p>
+          <div>1. Sur GitHub, clique sur ta <b>photo de profil</b> en haut à droite</div>
+          <div>2. Dans le menu déroulant, clique sur <b>Settings</b> (⚙️ Paramètres)</div>
+          <div>3. Fais défiler tout le menu gauche jusqu'en bas → clique <b>Developer settings</b> (Paramètres développeur)</div>
+          <div>4. Clique sur <b>Personal access tokens</b></div>
+          <div>5. Clique sur <b>Tokens (classic)</b></div>
+          <div>6. Clique le bouton <b>Generate new token</b> → puis <b>Generate new token (classic)</b></div>
+          <div>7. Dans le champ <b>Note</b>, écris : <code style="background:#f6f8fa;padding:2px 6px;border-radius:4px;border:1px solid #ddd">Mon Budget</code></div>
+          <div>8. Dans <b>Expiration</b>, sélectionne <b>No expiration</b> (pas de date d'expiration)</div>
+          <div>9. Dans la liste <b>Select scopes</b>, coche UNIQUEMENT la case <b>gist</b> ☑️</div>
+          <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 10px;margin:6px 0;font-size:12px;color:#856404">
+            ⚠️ Ne coche <b>aucune autre case</b> — cela limiterait les risques si le token était compromis.
+          </div>
+          <div>10. Clique le grand bouton vert <b>Generate token</b> tout en bas</div>
+          <div style="background:#f8d7da;border:1px solid #f5c6cb;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#721c24">
+            🚨 <b>ATTENTION :</b> GitHub affiche le token <b>une seule fois</b> ! Il ressemble à <code>ghp_AbCdEf123456...</code><br>
+            <b>Copie-le immédiatement</b> (Ctrl+C) avant de quitter la page !
+          </div>
+        </div>
+
+        <div style="background:#24292f;color:#fff;padding:12px 16px;font-weight:700;font-size:14px;border-top:1px solid #444">
+          ✅ Étape 3 — Connecter Mon Budget à GitHub
+        </div>
+        <div style="padding:14px 16px;line-height:2;font-size:13px">
+          <div>1. Dans Mon Budget, va dans <b>⚙️ Réglages</b></div>
+          <div>2. Section <b>🛡 Protection des données</b></div>
+          <div>3. Dans le bloc <b>🐙 GitHub Gist</b>, colle ton token dans le champ (Ctrl+V)</div>
+          <div>4. Clique <b>✅ Connecter</b></div>
+          <div>5. Un point vert 🟢 apparaît → <b>Connecté !</b></div>
+          <div>6. Dès maintenant, chaque fois que tu cliques <b>💾 Sauvegarder</b>, tes données sont aussi envoyées sur GitHub.</div>
+          <div style="background:#d4edda;border:1px solid #c3e6cb;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#155724">
+            🎉 <b>C'est configuré !</b> Pour récupérer tes données sur un autre appareil, connecte-toi à GitHub depuis ce nouvel appareil, crée un nouveau token, et clique <b>"⬇️ Récupérer depuis Gist"</b>.
+          </div>
+        </div>
+      </div>
+
+      <div class="tip">
+        💡 <b>Tu changes d'appareil ou de navigateur ?</b> Crée un nouveau token sur GitHub et colle-le dans Réglages → GitHub Gist. Puis clique "⬇️ Récupérer depuis Gist" pour restaurer toutes tes données.
+      </div>
+
+      <h3>Export CSV</h3>
+      <p>Cliquez sur <b>📥 Export CSV</b> pour télécharger vos données mensuelles en tableau. Ce fichier peut être réimporté via <b>📂 Import CSV</b>.</p>
+    </div>
+
+    <!-- Dark mode -->
+    <div class="section" id="dark">
+      <h2><span>🌙</span> Mode nuit / jour</h2>
+      <p class="lead">Basculez entre le thème clair et le thème sombre à tout moment.</p>
+
+      <p>Cliquez sur le bouton <b>🌙</b> (mode nuit) ou <b>☀️</b> (mode jour) dans le coin supérieur droit du header. Le choix est mémorisé et persistera à la prochaine ouverture.</p>
+
+      <div class="tip">
+        <b>Astuce</b> — Le mode nuit est recommandé en soirée pour réduire la fatigue oculaire. Tous les tableaux, modales et bannières s'adaptent automatiquement.
+      </div>
+    </div>
+
+    <!-- Nouvelle année -->
+    <div class="section" id="annee">
+      <h2><span>📅</span> Créer une nouvelle année</h2>
+      <p class="lead">Chaque année est indépendante. Créez une nouvelle année pour commencer le suivi d'un nouvel exercice.<span class="limit-badge">1 an max en gratuit</span> <span class="pro-badge">Illimité en Premium</span></p>
+
+      <h3>Procédure</h3>
+      <ol>
+        <li>Cliquez sur <b>＋ Année</b> à droite des onglets d'années</li>
+        <li>Une fenêtre s'affiche avec vos revenus habituels (basés sur la moyenne de l'année précédente)</li>
+        <li>Ajustez les montants si nécessaire</li>
+        <li>Cliquez sur <b>✅ Créer l'année</b></li>
+      </ol>
+
+      <p>L'année est créée avec :</p>
+      <ul>
+        <li>Les revenus que vous avez confirmés</li>
+        <li>Les mêmes charges que l'année précédente</li>
+        <li>Le solde livret initial calculé automatiquement depuis la fin de l'année précédente</li>
+        <li>Aucune dépense variable (à saisir au fil de l'année)</li>
+      </ul>
+
+      <h3>Supprimer une année</h3>
+      <p>Survolez l'onglet de l'année → cliquez sur le <b>✕</b> qui apparaît. Une confirmation est demandée avec option de backup automatique.</p>
+    </div>
+
+    <!-- Connexion -->
+    <div class="section" id="connexion">
+      <h2><span>🔐</span> Connexion &amp; Compte Cloud</h2>
+      <p class="lead">Créez un compte avec votre adresse email pour accéder à la synchronisation cloud et activer le Premium.</p>
+
+      <h3>Pourquoi se connecter ?</h3>
+      <p>Sans connexion, vos données sont stockées uniquement dans votre navigateur. Avec un compte connecté :</p>
+      <ul>
+        <li>✅ Synchronisation automatique dans le cloud Firebase (Premium)</li>
+        <li>✅ Accès depuis plusieurs appareils (PC, téléphone, tablette)</li>
+        <li>✅ Vos données sont récupérables si vous changez de navigateur</li>
+        <li>✅ Activation Premium automatique après paiement Stripe</li>
+      </ul>
+
+      <h3>Comment créer un compte / se connecter</h3>
+      <ol>
+        <li>Allez dans l'onglet <b>⚙️ Paramètres</b> et cliquez sur <b>🔐 Se connecter</b></li>
+        <li>Saisissez votre <b>adresse email</b> et un <b>mot de passe</b></li>
+        <li>Si c'est la première fois : cliquez <b>Créer un compte</b> — un email de vérification est envoyé</li>
+        <li>Si vous avez déjà un compte : cliquez <b>Se connecter</b></li>
+        <li>Votre email apparaît dans Paramètres — vous êtes connecté ✅</li>
+      </ol>
+
+      <div class="tip">
+        <b>💡 Connexion persistante</b> — Vous restez connecté sur cet appareil. Le token de session est effacé automatiquement à la fermeture du navigateur pour plus de sécurité.
+      </div>
+
+      <div class="warn">
+        <b>⚠️ Premium requis pour la sync</b> — La connexion est disponible gratuitement, mais la synchronisation cloud automatique nécessite une licence Premium active.
+      </div>
+    </div>
+
+    <!-- Ajout rapide -->
+    <div class="section" id="ajout-rapide">
+      <h2><span>➕</span> Bouton Ajout Rapide</h2>
+      <p class="lead">Le bouton vert ➕ en bas à droite permet d'ajouter une dépense variable rapidement, depuis n'importe quelle vue.</p>
+
+      <h3>Comment l'utiliser</h3>
+      <ol>
+        <li>Cliquez sur le bouton <b>➕ vert</b> en bas à droite de l'écran</li>
+        <li>Un formulaire apparaît avec les champs : catégorie, montant, mois, commentaire, mode de paiement, jour</li>
+        <li>L'<b>année et le mois</b> sont pré-remplis selon l'onglet actif</li>
+        <li>Saisissez le montant et cliquez sur <b>✅ Ajouter</b></li>
+      </ol>
+
+      <div class="tip">
+        <b>💡 Astuce</b> — L'ajout rapide détecte automatiquement l'année en cours selon l'onglet affiché. Si vous êtes sur l'onglet 2026, la dépense sera ajoutée en 2026.
+      </div>
+      <div class="tip" style="background:#FEF6E6;border-left-color:#F5A623">
+        <b>⚠️ Alerte budget</b> — Si la catégorie sélectionnée n'a pas de budget défini, une alerte orange s'affiche dans le formulaire. Cliquez sur <b>Définir un budget →</b> pour en saisir un directement. <a href="#budget-cible">En savoir plus sur les budgets →</a>
+      </div>
+
+      <h3>Champs disponibles</h3>
+      <ul>
+        <li><b>Catégorie</b> — Courses, carburant, divers, ou vos catégories personnalisées <span class="pro-badge">Premium</span></li>
+        <li><b>Montant</b> — La somme de la dépense en euros</li>
+        <li><b>Mois</b> — Le mois auquel rattacher la dépense</li>
+        <li><b>Commentaire</b> — Note optionnelle (ex : "Lidl", "Plein carburant")</li>
+        <li><b>Mode de paiement</b> — Carte, liquide, chèque repas…</li>
+        <li><b>Jour</b> — Le jour du mois (optionnel)</li>
+      </ul>
+    </div>
+
+    <!-- Assistant IA -->
+    <div class="section" id="assistant-ia">
+      <h2><span>🤖</span> Assistant IA (Groq)</h2>
+      <p class="lead">L'assistant IA analyse vos données budget en temps réel et répond à vos questions financières en langage naturel. Propulsé par <b>Groq</b> — gratuit, sans carte bancaire.</p>
+
+      <h3>Activer l'assistant (2 minutes)</h3>
+      <ol>
+        <li>Allez sur <a href="https://console.groq.com/keys" target="_blank"><b>console.groq.com/keys</b></a></li>
+        <li>Créez un compte gratuit (email + mot de passe, aucune carte bancaire)</li>
+        <li>Cliquez sur <b>Create API Key</b></li>
+        <li>Donnez un nom (ex : "Mon Budget") et copiez la clé générée (commence par <code>gsk_…</code>)</li>
+        <li>Dans l'application, allez dans <b>⚙️ Paramètres → Assistant IA</b></li>
+        <li>Collez la clé dans le champ et cliquez <b>✅ Sauver</b></li>
+      </ol>
+
+      <div class="tip">
+        <b>💡 Entièrement gratuit, sans carte bancaire</b> — Groq offre 14 400 requêtes/jour sur le modèle Llama 3.1. Largement suffisant pour un usage quotidien.
+      </div>
+
+      <h3>Utiliser le chat</h3>
+      <ol>
+        <li>Cliquez sur le bouton <b>🤖 violet</b> en bas à droite</li>
+        <li>Le panneau de chat s'ouvre</li>
+        <li>Tapez votre question en français et appuyez sur <b>Entrée</b></li>
+        <li>L'assistant répond en se basant sur <b>vos vraies données</b></li>
+      </ol>
+
+      <h3>Exemples de questions</h3>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="fc-icon">💰</div>
+          <div class="fc-title">Soldes</div>
+          <div class="fc-desc">« Quel est mon solde actuel ? »<br>« Combien ai-je sur le livret ? »</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">📊</div>
+          <div class="fc-title">Analyse</div>
+          <div class="fc-desc">« Quel mois j'ai le plus dépensé ? »<br>« Compare 2025 et 2026 »</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🛒</div>
+          <div class="fc-title">Dépenses</div>
+          <div class="fc-desc">« Combien en courses ce mois ? »<br>« Total carburant 2026 ? »</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">💡</div>
+          <div class="fc-title">Conseils</div>
+          <div class="fc-desc">« Comment économiser ? »<br>« Où je dépense le plus ? »</div>
+        </div>
+      </div>
+
+      <h3>Confidentialité</h3>
+      <p>Vos données budget sont envoyées à l'API Groq <b>uniquement au moment où vous posez une question</b>. Groq utilise le modèle Llama 3.1 (open-source). La clé API est stockée uniquement dans votre navigateur, jamais sur nos serveurs.</p>
+
+      <div class="warn">
+        <b>⚠️ Ne partagez pas votre clé API</b> — Si vous partagez l'accès à votre navigateur, supprimez la clé dans Paramètres → Assistant IA.
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="section" id="feedback">
+      <h2><span>💬</span> Feedback &amp; Suggestions</h2>
+      <p class="lead">Envoyez vos idées, signalements de bugs ou questions directement depuis l'application. Chaque message est lu et traité personnellement.</p>
+
+      <h3>Envoyer un message</h3>
+      <ol>
+        <li>Cliquez sur l'icône <b>💬</b> en bas à droite de l'application</li>
+        <li>Choisissez la catégorie : 🐛 Bug, 💡 Idée, ❓ Question ou 💬 Autre</li>
+        <li>Saisissez un sujet et votre message</li>
+        <li>Donnez une note ⭐ optionnelle</li>
+        <li>Cliquez sur <b>📤 Envoyer</b></li>
+      </ol>
+
+      <div class="tip">
+        <b>💡 Connexion requise</b> — Vous devez être connecté pour envoyer un feedback. Cela permet de vous répondre directement par email.
+      </div>
+
+      <h3>Suivi de votre demande</h3>
+      <p>Chaque feedback reçoit un statut qui évolue au fil du traitement :</p>
+      <ul>
+        <li>🟠 <b>Nouveau</b> — reçu, pas encore lu</li>
+        <li>🔵 <b>Lu</b> — pris en compte</li>
+        <li>🟣 <b>En cours</b> — en cours de traitement</li>
+        <li>🟢 <b>Répondu</b> — une réponse vous a été envoyée par email</li>
+        <li>⚫ <b>Clôturé</b> — traitement terminé</li>
+      </ul>
+
+      <div class="tip">
+        <b>💡 Réponse par email</b> — Si une réponse vous est envoyée, vous la recevez directement dans votre boîte mail. L'expéditeur est <b>Mon Budget</b>.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── Intersection observer for sidebar active state ──
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.sidebar-nav a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.sidebar-nav a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 });
+sections.forEach(s => observer.observe(s));
+
+// ── i18n — reads language from main app localStorage ──
+const AIDE_TRANSLATIONS = {
+  fr: {
+    pageTitle: '❓ Aide',
+    menuTitle: '❓ Aide',
+    sidebarTitle: 'Sommaire',
+    langBtn: '🇬🇧 English',
+    // Nav toolbar
+    nav_data: 'Données', nav_import: 'Importer', nav_export: 'Exporter', nav_pdf: 'PDF',
+    nav_nav: 'Navigation', nav_home: 'Accueil', nav_summary: 'Résumé', nav_charts: 'Graphiques', nav_help: 'Aide',
+    nav_manage: 'Gestion', nav_year: 'Année', nav_config: 'Config', nav_search: 'Recherche', nav_account: 'Compte',
+    // Sidebar
+    sb_guide: '📋 Guide d\'installation', sb_start: '🚀 Démarrage', sb_premium: '⭐ Gratuit vs Premium',
+    sb_demo: '🎮 Mode démo', sb_interface: '🖥️ Interface', sb_home: '🏠 Tableau de bord',
+    sb_savings: '🎯 Objectif d\'épargne', sb_search: '🔍 Recherche globale', sb_revenues: '💼 Revenus',
+    sb_charges: '🏠 Charges', sb_variables: '🛒 Dépenses variables', sb_budgets: '🎯 Budgets par catégorie',
+    sb_livret: '💰 Livret d\'épargne', sb_indicators: '📈 Indicateurs financiers', sb_summary: '📊 Résumé mensuel',
+    sb_charts: '📉 Graphiques', sb_backup: '💾 Sauvegarde', sb_gist: '🐙 GitHub Gist gratuit',
+    sb_dark: '🌙 Mode nuit', sb_year: '📅 Nouvelle année', sb_login: '🔐 Connexion & Compte',
+    sb_quick: '➕ Ajout rapide', sb_ai: '🤖 Assistant IA', sb_feedback: '💬 Feedback & Suggestions',
+    frBanner: null,
+  },
+  en: {
+    pageTitle: '❓ Help',
+    menuTitle: '❓ Help',
+    sidebarTitle: 'Contents',
+    langBtn: '🇫🇷 Français',
+    // Nav toolbar
+    nav_data: 'Data', nav_import: 'Import', nav_export: 'Export', nav_pdf: 'PDF',
+    nav_nav: 'Navigation', nav_home: 'Home', nav_summary: 'Summary', nav_charts: 'Charts', nav_help: 'Help',
+    nav_manage: 'Manage', nav_year: 'Year', nav_config: 'Settings', nav_search: 'Search', nav_account: 'Account',
+    // Sidebar
+    sb_guide: '📋 Installation guide', sb_start: '🚀 Getting started', sb_premium: '⭐ Free vs Premium',
+    sb_demo: '🎮 Demo mode', sb_interface: '🖥️ Interface', sb_home: '🏠 Dashboard',
+    sb_savings: '🎯 Savings goal', sb_search: '🔍 Global search', sb_revenues: '💼 Revenues',
+    sb_charges: '🏠 Fixed costs', sb_variables: '🛒 Variable expenses', sb_budgets: '🎯 Category budgets',
+    sb_livret: '💰 Savings account', sb_indicators: '📈 Financial indicators', sb_summary: '📊 Monthly summary',
+    sb_charts: '📉 Charts', sb_backup: '💾 Backup', sb_gist: '🐙 GitHub Gist (free)',
+    sb_dark: '🌙 Dark mode', sb_year: '📅 New year', sb_login: '🔐 Login & Account',
+    sb_quick: '➕ Quick add', sb_ai: '🤖 AI Assistant', sb_feedback: '💬 Feedback & Suggestions',
+    frBanner: '🇫🇷 This page is currently in French. English translation is in progress.',
+  }
+};
+
+// Section h2 translations
+const SECTION_TITLES = {
+  guide:          { fr: 'Guide d\'installation pas à pas', en: 'Step-by-step installation guide' },
+  demarrage:      { fr: 'Démarrage rapide', en: 'Quick start' },
+  premium:        { fr: 'Gratuit vs Premium — Que choisir ?', en: 'Free vs Premium — Which to choose?' },
+  demo:           { fr: 'Mode Démo', en: 'Demo Mode' },
+  interface:      { fr: 'Interface', en: 'Interface' },
+  accueil:        { fr: 'Tableau de bord (Accueil)', en: 'Dashboard (Home)' },
+  'objectif-epargne': { fr: 'Objectif d\'épargne mensuel', en: 'Monthly savings goal' },
+  recherche:      { fr: 'Recherche globale', en: 'Global search' },
+  revenus:        { fr: 'Revenus', en: 'Revenues' },
+  charges:        { fr: 'Charges & Dépenses fixes', en: 'Fixed costs' },
+  variables:      { fr: 'Dépenses variables', en: 'Variable expenses' },
+  'budget-cible': { fr: 'Budgets par catégorie', en: 'Category budgets' },
+  livret:         { fr: 'Livret d\'épargne', en: 'Savings account' },
+  indicateurs:    { fr: 'Indicateurs financiers', en: 'Financial indicators' },
+  resume:         { fr: 'Résumé mensuel', en: 'Monthly summary' },
+  graphiques:     { fr: 'Graphiques', en: 'Charts' },
+  sauvegarde:     { fr: 'Sauvegarde & Cloud', en: 'Backup & Cloud' },
+  'github-gist':  { fr: 'Sync gratuite via GitHub Gist', en: 'Free sync via GitHub Gist' },
+  dark:           { fr: 'Mode nuit', en: 'Dark mode' },
+  annee:          { fr: 'Nouvelle année', en: 'New year' },
+  connexion:      { fr: 'Connexion & Compte', en: 'Login & Account' },
+  'ajout-rapide': { fr: 'Ajout rapide', en: 'Quick add' },
+  'assistant-ia': { fr: 'Assistant IA', en: 'AI Assistant' },
+  feedback:       { fr: 'Feedback & Suggestions', en: 'Feedback & Suggestions' },
+};
+
+function _aideLang() { return localStorage.getItem('mbudget-lang') || 'fr'; }
+function _aideSetLang(code) {
+  localStorage.setItem('mbudget-lang', code);
+  applyAideLang(code);
+}
+
+function applyAideLang(lang) {
+  const T = AIDE_TRANSLATIONS[lang] || AIDE_TRANSLATIONS.fr;
+  document.documentElement.lang = lang;
+
+  // Page title
+  document.title = T.pageTitle + ' — Mon Budget';
+
+  // Mobile nav title
+  const mobileTitle = document.querySelector('.nav-mobile-title');
+  if (mobileTitle) mobileTitle.textContent = T.menuTitle;
+
+  // Toolbar nav labels
+  const navMap = {
+    nav_data: '.nav-group-donnees .nav-group-lbl',
+    nav_nav: '.nav-group-nav .nav-group-lbl',
+    nav_manage: '.nav-group-gestion .nav-group-lbl',
+  };
+  Object.entries(navMap).forEach(([k, sel]) => {
+    const el = document.querySelector(sel);
+    if (el) el.textContent = T[k];
+  });
+
+  // Toolbar nav button labels (by position)
+  const navBtns = document.querySelectorAll('.nav-btn .nav-label');
+  const navKeys = ['nav_import','nav_export','nav_pdf','nav_home','nav_summary','nav_charts','nav_help','nav_year','nav_config','nav_search','nav_account'];
+  navBtns.forEach((el, i) => { if (navKeys[i]) el.textContent = T[navKeys[i]]; });
+
+  // Sidebar title
+  const sbTitle = document.querySelector('.sidebar-nav h4');
+  if (sbTitle) sbTitle.textContent = T.sidebarTitle;
+
+  // Sidebar links
+  const sbMap = {
+    '#guide': 'sb_guide', '#demarrage': 'sb_start', '#premium': 'sb_premium',
+    '#demo': 'sb_demo', '#interface': 'sb_interface', '#accueil': 'sb_home',
+    '#objectif-epargne': 'sb_savings', '#recherche': 'sb_search', '#revenus': 'sb_revenues',
+    '#charges': 'sb_charges', '#variables': 'sb_variables', '#budget-cible': 'sb_budgets',
+    '#livret': 'sb_livret', '#indicateurs': 'sb_indicators', '#resume': 'sb_summary',
+    '#graphiques': 'sb_charts', '#sauvegarde': 'sb_backup', '#github-gist': 'sb_gist',
+    '#dark': 'sb_dark', '#annee': 'sb_year', '#connexion': 'sb_login',
+    '#ajout-rapide': 'sb_quick', '#assistant-ia': 'sb_ai', '#feedback': 'sb_feedback',
+  };
+  Object.entries(sbMap).forEach(([href, key]) => {
+    const el = document.querySelector(`.sidebar-nav a[href="${href}"]`);
+    if (el) el.textContent = T[key];
+  });
+
+  // Section h2 titles
+  Object.entries(SECTION_TITLES).forEach(([id, titles]) => {
+    const sec = document.getElementById(id);
+    if (!sec) return;
+    const h2 = sec.querySelector('h2');
+    if (!h2) return;
+    const icon = h2.querySelector('span');
+    const iconText = icon ? icon.outerHTML + ' ' : '';
+    h2.innerHTML = iconText + (titles[lang] || titles.fr);
+  });
+
+  // French content banner
+  let banner = document.getElementById('fr-content-banner');
+  if (lang === 'en' && T.frBanner) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'fr-content-banner';
+      banner.style.cssText = 'background:#FEF6E6;border-left:4px solid #F5A623;border-radius:0 8px 8px 0;padding:10px 16px;font-size:13px;color:#7a4f00;margin:0 0 16px;font-weight:600';
+      const mainContent = document.querySelector('.content');
+      if (mainContent) mainContent.insertBefore(banner, mainContent.firstChild);
+    }
+    banner.textContent = T.frBanner;
+  } else if (banner) {
+    banner.remove();
+  }
+
+  // Lang button
+  const btn = document.getElementById('aide-lang-btn');
+  if (btn) btn.textContent = T.langBtn;
+}
+
+// Add language switcher button to sidebar
+(function() {
+  const sidebar = document.querySelector('.sidebar-nav');
+  if (!sidebar) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'margin-top:10px;padding:8px 10px;border-top:1px solid #e8eaf6';
+  div.innerHTML = '<button id="aide-lang-btn" onclick="_aideSetLang(_aideLang()===\"fr\"?\"en\":\"fr\")" style="width:100%;background:#EEF0FD;border:1px solid #C5CAEE;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;color:#5B6AF0;cursor:pointer"></button>';
+  sidebar.appendChild(div);
+})();
+
+// Apply on load
+applyAideLang(_aideLang());
+</script>
+</body>
+</html>
