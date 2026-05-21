@@ -226,6 +226,7 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
     <button class="tab-btn active" id="tabn-dashboard" onclick="switchTab('dashboard')">📊 Tableau de bord</button>
     <button class="tab-btn" id="tabn-visitors" onclick="switchTab('visitors')">👁️ Visiteurs</button>
     <button class="tab-btn" id="tabn-feedback" onclick="switchTab('feedback')">💬 Feedback <span id="fbn-badge" style="display:none;background:#F5A623;color:#000;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
+    <button class="tab-btn" id="tabn-errors" onclick="switchTab('errors')">🔴 Erreurs <span id="err-badge" style="display:none;background:#F04F5B;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
     <button class="tab-btn" id="tabn-services" onclick="switchTab('services')">🔗 Services</button>
   </nav>
 
@@ -385,6 +386,29 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
 
       <!-- Liste -->
       <div id="fb-list" style="display:flex;flex-direction:column;gap:12px">
+        <div style="text-align:center;padding:32px;color:#8892B0">🔄 Chargement…</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB: ERREURS -->
+  <div id="tab-errors" style="display:none">
+    <div class="container" style="max-width:960px;padding-top:20px">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="fb-filter fb-active" data-ef="all"     onclick="filterErrors('all')"    >Toutes <span id="erc-all"    class="fb-badge show" style="background:#5B6AF0"></span></button>
+          <button class="fb-filter"           data-ef="new"     onclick="filterErrors('new')"    >🔴 Nouvelles <span id="erc-new"    class="fb-badge" style="background:#F04F5B"></span></button>
+          <button class="fb-filter"           data-ef="seen"    onclick="filterErrors('seen')"   >👁️ Vues <span id="erc-seen"   class="fb-badge" style="background:#8892B0"></span></button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="loadErrors()">🔄 Rafraîchir</button>
+          <button class="btn btn-red btn-sm"   onclick="clearAllErrors()">🗑️ Tout effacer</button>
+        </div>
+      </div>
+
+      <div id="err-list" style="display:flex;flex-direction:column;gap:10px">
         <div style="text-align:center;padding:32px;color:#8892B0">🔄 Chargement…</div>
       </div>
 
@@ -1210,6 +1234,105 @@ let _visitorsTimer = null;
 let _visitorsChart = null;
 let _allVisitors = [];
 
+// ── ERRORS ─────────────────────────────────────────────────────────────
+let _errorsData  = {};   // { uid: { errId: {...} } }
+let _errorsFilter = 'all';
+const _seenErrors = new Set(JSON.parse(localStorage.getItem('admin_seen_errors')||'[]'));
+
+async function loadErrors() {
+  document.getElementById('err-list').innerHTML = '<div style="text-align:center;padding:32px;color:#8892B0">🔄 Chargement…</div>';
+  const token = await getToken();
+  const r = await _fbFetch(`${LICENSE_DB}/errors.json`, {}, token);
+  const data = r.ok ? await r.json() : null;
+  _errorsData = data || {};
+  _renderErrors();
+}
+
+function filterErrors(f) {
+  _errorsFilter = f;
+  document.querySelectorAll('[data-ef]').forEach(b => b.classList.toggle('fb-active', b.dataset.ef === f));
+  _renderErrors();
+}
+
+function _allErrItems() {
+  const items = [];
+  Object.entries(_errorsData).forEach(([uid, errs]) => {
+    if (!errs || typeof errs !== 'object') return;
+    Object.entries(errs).forEach(([id, e]) => {
+      if (e && e.ts) items.push({ id, uid, ...e });
+    });
+  });
+  return items.sort((a,b) => b.ts - a.ts);
+}
+
+function _renderErrors() {
+  const all  = _allErrItems();
+  const newC = all.filter(e => !_seenErrors.has(e.id)).length;
+  // Badges tabs
+  document.getElementById('erc-all').textContent  = all.length;  document.getElementById('erc-all').classList.toggle('show',  all.length  > 0);
+  document.getElementById('erc-new').textContent  = newC;         document.getElementById('erc-new').classList.toggle('show',  newC        > 0);
+  document.getElementById('erc-seen').textContent = all.length - newC; document.getElementById('erc-seen').classList.toggle('show', (all.length-newC) > 0);
+  const badge = document.getElementById('err-badge');
+  if (badge) { badge.textContent = newC; badge.style.display = newC ? '' : 'none'; }
+
+  let items = all;
+  if (_errorsFilter === 'new')  items = all.filter(e => !_seenErrors.has(e.id));
+  if (_errorsFilter === 'seen') items = all.filter(e =>  _seenErrors.has(e.id));
+
+  if (!items.length) {
+    document.getElementById('err-list').innerHTML = '<div style="text-align:center;padding:32px;color:#8892B0">✅ Aucune erreur dans cette catégorie.</div>';
+    return;
+  }
+
+  document.getElementById('err-list').innerHTML = items.map(e => {
+    const isNew  = !_seenErrors.has(e.id);
+    const date   = new Date(e.ts).toLocaleString('fr-BE');
+    const userInfo = _allUsers[e.uid]?.email || e.email || e.uid || 'Anonyme';
+    return `
+    <div style="background:#1C1F30;border:1px solid ${isNew?'#F04F5B44':'#2C3050'};border-left:4px solid ${isNew?'#F04F5B':'#2C3050'};border-radius:12px;padding:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:${isNew?'#F04F5B':'#8892B0'};margin-bottom:4px">${isNew?'🔴 Nouvelle':'👁️ Vue'} · ${_esc(date)}</div>
+          <div style="font-size:13px;font-weight:600;color:#E2E4F0;word-break:break-all">${_esc(e.message||'Erreur inconnue')}</div>
+          <div style="font-size:11px;color:#8892B0;margin-top:3px">👤 ${_esc(userInfo)} · v${_esc(e.version||'?')} · ${_esc(e.lang||'?')} · ${_esc(e.source||'')}${e.line?':'+e.line:''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          ${isNew?`<button class="btn btn-ghost btn-sm" onclick="markErrorSeen('${e.id}','${e.uid}')">👁️ Marquer vue</button>`:''}
+          <button class="btn btn-red btn-sm" onclick="deleteError('${e.id}','${e.uid}')">🗑️</button>
+        </div>
+      </div>
+      ${e.stack?`<details style="margin-top:6px"><summary style="font-size:11px;color:#5B6AF0;cursor:pointer">Stack trace</summary><pre style="font-size:10px;color:#8892B0;margin-top:6px;overflow-x:auto;line-height:1.4">${_esc(e.stack)}</pre></details>`:''}
+      ${e.ua?`<div style="font-size:10px;color:#6B7394;margin-top:4px;word-break:break-all">🌐 ${_esc(e.ua)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function markErrorSeen(id, uid) {
+  _seenErrors.add(id);
+  localStorage.setItem('admin_seen_errors', JSON.stringify([..._seenErrors].slice(-500)));
+  _renderErrors();
+}
+
+async function deleteError(id, uid) {
+  const token = await getToken();
+  const safeUid = uid.replace(/[.#$[\]]/g,'_');
+  await _fbFetch(`${LICENSE_DB}/errors/${safeUid}/${id}.json`, { method:'DELETE' }, token);
+  if (_errorsData[uid]) delete _errorsData[uid][id];
+  _seenErrors.delete(id);
+  _renderErrors();
+}
+
+async function clearAllErrors() {
+  if (!confirm('Effacer TOUTES les erreurs enregistrées ?')) return;
+  const token = await getToken();
+  await _fbFetch(`${LICENSE_DB}/errors.json`, { method:'DELETE' }, token);
+  _errorsData = {}; _seenErrors.clear();
+  localStorage.removeItem('admin_seen_errors');
+  _renderErrors();
+  showToast('🗑️ Toutes les erreurs effacées');
+}
+// ── /ERRORS ────────────────────────────────────────────────────────────
+
 // ── FEEDBACK ───────────────────────────────────────────────────────────
 const EMAIL_WORKER_URL     = 'https://stripe-webhook-mon-budget.marquabel.workers.dev/email';
 const EMAILJS_REPLY_TEMPLATE = 'template_wbmh293';
@@ -1547,7 +1670,7 @@ function _renderBvYear(year) {
 
 function switchTab(tab) {
   _activeTab = tab;
-  ['dashboard','visitors','feedback','services'].forEach(t => {
+  ['dashboard','visitors','feedback','errors','services'].forEach(t => {
     const el = document.getElementById('tab-' + t);
     const btn = document.getElementById('tabn-' + t);
     if (el) el.style.display = tab === t ? '' : 'none';
@@ -1561,6 +1684,7 @@ function switchTab(tab) {
     if (_visitorsTimer) { clearInterval(_visitorsTimer); _visitorsTimer = null; }
   }
   if (tab === 'feedback') loadFeedback();
+  if (tab === 'errors')   loadErrors();
 }
 
 // ── VISITORS ──────────────────────────────────────────────────────────

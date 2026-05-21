@@ -7278,8 +7278,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.52';
-const SW_VERSION = 'v175';
+const APP_VERSION = '11.53';
+const SW_VERSION = 'v176';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -9137,6 +9137,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.53': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔴', text: 'Suivi automatique des erreurs JS : toute erreur silencieuse en production est envoyée dans Firebase et visible dans l\'onglet 🔴 Erreurs de l\'admin.' }
+    ]
+  },
   '11.52': {
     date: 'Mai 2026',
     items: [
@@ -12300,6 +12306,59 @@ function closeCompareView() {
   if (_origRY) window.renderYear = function(y){ _sel = null; return _origRY(y); };
   if (_origRS) window.renderSummary = function(){ _sel = null; return _origRS(); };
 })();
+
+// ── ERROR TRACKING ─────────────────────────────────────────────────────
+(function() {
+  let _errCount = 0;          // max 10 erreurs par session
+  const _errSeen = new Set(); // dédoublonnage
+
+  async function _logError(msg, source, line, col, stack) {
+    if (_errCount >= 10) return;                          // quota session
+    if (_isAdminMode) return;                             // pas en mode admin
+    if (!cloudApiUrl && !LICENSE_DB) return;              // pas de Firebase configuré
+    const key = `${msg}|${line}`;
+    if (_errSeen.has(key)) return;                        // doublon
+    _errSeen.add(key); _errCount++;
+
+    const uid  = CURRENT_USER_ID || 'anonymous';
+    const payload = {
+      uid,
+      email:   _fbUser?.email || localStorage.getItem('mbudget-fb-email') || '',
+      message: String(msg).slice(0, 300),
+      source:  String(source || '').replace(location.origin, ''),
+      line:    line || 0,
+      col:     col  || 0,
+      stack:   String(stack || '').slice(0, 800),
+      version: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '?',
+      sw:      typeof SW_VERSION  !== 'undefined' ? SW_VERSION  : '?',
+      lang:    typeof _lang       !== 'undefined' ? _lang       : navigator.language,
+      ua:      navigator.userAgent.slice(0, 150),
+      ts:      Date.now()
+    };
+
+    try {
+      const token = await fbGetToken().catch(()=>null);
+      const errId = 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6);
+      const url = `${LICENSE_DB}/errors/${uid.replace(/[.#$[\]]/g,'_')}/${errId}.json`;
+      const authUrl = token ? url + '?auth=' + token : url;
+      fetch(authUrl, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
+        .catch(()=>{}); // silencieux
+    } catch {}
+  }
+
+  // Erreurs JS synchrones
+  window.addEventListener('error', e => {
+    _logError(e.message, e.filename, e.lineno, e.colno, e.error?.stack);
+  });
+
+  // Promesses rejetées non gérées
+  window.addEventListener('unhandledrejection', e => {
+    const msg = e.reason?.message || String(e.reason).slice(0,200);
+    const stack = e.reason?.stack || '';
+    _logError('UnhandledRejection: ' + msg, '', 0, 0, stack);
+  });
+})();
+// ── /ERROR TRACKING ────────────────────────────────────────────────────
 </script>
 
 <!-- ── AUTH MODAL ── -->
