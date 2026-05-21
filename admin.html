@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Mon Budget</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:#12141F;color:#E2E4F0;min-height:100vh}
@@ -96,6 +97,20 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
   .search-input{width:140px}
   thead th:nth-child(3),thead th:nth-child(4),tbody td:nth-child(3),tbody td:nth-child(4){display:none}
 }
+/* ── TABS NAV ── */
+.tab-nav{display:flex;gap:4px;background:#1C1F30;border-bottom:1px solid #2C3050;padding:0 24px;position:sticky;top:57px;z-index:9}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;color:#8892B0;font-size:13px;font-weight:600;padding:12px 16px;cursor:pointer;transition:color .15s,border-color .15s}
+.tab-btn:hover{color:#E2E4F0}
+.tab-btn.active{color:#5B6AF0;border-bottom-color:#5B6AF0}
+/* ── FUNNEL ── */
+.funnel-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.funnel-icon{font-size:18px;width:26px;text-align:center;flex-shrink:0}
+.funnel-bar-wrap{flex:1;height:8px;border-radius:4px;background:#2C3050}
+.funnel-bar{height:8px;border-radius:4px;transition:width .5s}
+/* ── LIVE DOT ── */
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#555;margin-right:6px;vertical-align:middle}
+.live-dot.green{background:#7effa0;box-shadow:0 0 6px #7effa080}
+.live-dot.blue{background:#5B6AF0}
 </style>
 </head>
 <body>
@@ -139,6 +154,12 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
     </div>
   </div>
 
+  <nav class="tab-nav">
+    <button class="tab-btn active" id="tabn-dashboard" onclick="switchTab('dashboard')">📊 Tableau de bord</button>
+    <button class="tab-btn" id="tabn-visitors" onclick="switchTab('visitors')">👁️ Visiteurs</button>
+  </nav>
+
+  <div id="tab-dashboard">
   <div class="container">
 
     <!-- Stats -->
@@ -213,36 +234,64 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
       </table>
     </div>
 
-    <!-- Visiteurs -->
-    <div class="section-header" style="margin-top:24px;cursor:pointer" onclick="toggleVisitors()">
-      <span class="section-title">👁️ Visiteurs <span id="visitor-count-badge" style="font-size:11px;color:#8892B0;font-weight:400"></span></span>
-      <span id="visitor-toggle-icon" style="color:#8892B0;font-size:13px">▶ Charger</span>
-    </div>
-    <div id="visitors-section" style="display:none">
-      <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
-        <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:10px;padding:12px 18px;text-align:center;min-width:110px">
-          <div style="font-size:22px;font-weight:700;color:#5B6AF0" id="v-total">—</div>
-          <div style="font-size:10px;color:#8892B0;margin-top:2px">Visiteurs uniques</div>
+  </div>
+  </div>
+
+    <!-- TAB: VISITEURS -->
+    <div id="tab-visitors" style="display:none">
+      <div class="container" style="max-width:1200px">
+
+        <!-- Header live -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="live-dot" id="live-dot"></span>
+            <span id="live-txt" style="font-size:12px;color:#8892B0">—</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadVisitors()">🔄 Rafraîchir</button>
         </div>
-        <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:10px;padding:12px 18px;text-align:center;min-width:110px">
-          <div style="font-size:22px;font-weight:700;color:#00C896" id="v-week">—</div>
-          <div style="font-size:10px;color:#8892B0;margin-top:2px">7 derniers jours</div>
+
+        <!-- KPIs -->
+        <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:20px">
+          <div class="stat-card"><div class="stat-label">Visiteurs uniques</div><div class="stat-value stat-blue" id="v-total">—</div></div>
+          <div class="stat-card"><div class="stat-label">7 derniers jours</div><div class="stat-value stat-green" id="v-week">—</div></div>
+          <div class="stat-card"><div class="stat-label">Aujourd'hui</div><div class="stat-value stat-orange" id="v-today">—</div></div>
+          <div class="stat-card"><div class="stat-label">Visites totales</div><div class="stat-value stat-purple" id="v-visits">—</div></div>
+          <div class="stat-card"><div class="stat-label" style="color:#7effa0">En ligne (5 min)</div><div class="stat-value" style="color:#7effa0" id="v-online">—</div></div>
         </div>
-        <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:10px;padding:12px 18px;text-align:center;min-width:110px">
-          <div style="font-size:22px;font-weight:700;color:#F5A623" id="v-today">—</div>
-          <div style="font-size:10px;color:#8892B0;margin-top:2px">Aujourd'hui</div>
+
+        <!-- 2 colonnes : funnel + chart -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+
+          <!-- Funnel -->
+          <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:20px">
+            <div style="font-size:12px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">📊 Entonnoir de conversion</div>
+            <div id="v-funnel">
+              <div style="color:#8892B0;font-size:13px">Chargement…</div>
+            </div>
+          </div>
+
+          <!-- Chart 7j -->
+          <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:20px">
+            <div style="font-size:12px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">📈 Visites — 7 derniers jours</div>
+            <canvas id="v-chart" height="120"></canvas>
+          </div>
+
         </div>
-        <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:10px;padding:12px 18px;text-align:center;min-width:110px">
-          <div style="font-size:22px;font-weight:700;color:#8B5CF6" id="v-visits">—</div>
-          <div style="font-size:10px;color:#8892B0;margin-top:2px">Visites totales</div>
+
+        <!-- Liste visiteurs -->
+        <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid #2C3050;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:14px;font-weight:700">Liste des visiteurs</span>
+            <input class="search-input" id="v-search" placeholder="🔍 Filtrer…" oninput="filterVisitorsList()" style="width:180px">
+          </div>
+          <div id="v-list" style="max-height:500px;overflow-y:auto">
+            <div style="padding:24px;text-align:center;color:#8892B0">Chargement…</div>
+          </div>
         </div>
-      </div>
-      <div id="visitors-list" style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;overflow:hidden">
-        <div style="padding:16px;color:#8892B0;font-size:13px">🔄 Chargement…</div>
+
       </div>
     </div>
 
-  </div>
 </div>
 
 <!-- Modal création clé bêta -->
@@ -656,81 +705,157 @@ function updateBkModal() {
   const type = document.getElementById('bk-type').value;
   document.getElementById('bk-duration').value = type === 'beta' ? '365' : '365';
 }
-// ── VISITEURS ──
-let _visitorsLoaded = false;
-function _labelFromUa(ua) {
-  if (!ua) return 'Inconnu';
-  let b = 'Nav', os = '';
-  const edg = ua.match(/Edg\/(\d+)/), chr = ua.match(/Chrome\/(\d+)/), ff = ua.match(/Firefox\/(\d+)/);
-  if (edg) b = 'Edge ' + edg[1];
-  else if (chr && !ua.includes('OPR')) b = 'Chrome ' + chr[1];
-  else if (ff) b = 'Firefox ' + ff[1];
-  else if (ua.includes('Safari/') && !chr) b = 'Safari';
-  else if (ua.includes('OPR/')) b = 'Opera';
-  if (/iPhone|iPad/.test(ua)) os = 'iOS';
-  else if (/Android/.test(ua)) os = 'Android';
-  else if (/Windows NT 10/.test(ua)) os = 'Windows 10/11';
-  else if (/Windows/.test(ua)) os = 'Windows';
-  else if (/Mac OS/.test(ua)) os = 'macOS';
-  else if (/Linux/.test(ua)) os = 'Linux';
-  return os ? b + ' / ' + os : b;
-}
-async function toggleVisitors() {
-  const sec = document.getElementById('visitors-section');
-  const ico = document.getElementById('visitor-toggle-icon');
-  if (sec.style.display !== 'none') {
-    sec.style.display = 'none'; ico.textContent = '▶ Charger'; return;
+// ── TAB NAVIGATION ────────────────────────────────────────────────────
+let _activeTab = 'dashboard';
+let _visitorsTimer = null;
+let _visitorsChart = null;
+let _allVisitors = [];
+
+function switchTab(tab) {
+  _activeTab = tab;
+  ['dashboard','visitors'].forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    const btn = document.getElementById('tabn-' + t);
+    if (el) el.style.display = tab === t ? '' : 'none';
+    if (btn) btn.classList.toggle('active', tab === t);
+  });
+  if (tab === 'visitors') {
+    loadVisitors();
+    if (_visitorsTimer) clearInterval(_visitorsTimer);
+    _visitorsTimer = setInterval(() => { if (_activeTab === 'visitors') loadVisitors(); }, 30000);
+  } else {
+    if (_visitorsTimer) { clearInterval(_visitorsTimer); _visitorsTimer = null; }
   }
-  sec.style.display = 'block'; ico.textContent = '▼ Masquer';
-  if (_visitorsLoaded) return;
-  await loadVisitors();
 }
+
+// ── VISITORS ──────────────────────────────────────────────────────────
 async function loadVisitors() {
-  _visitorsLoaded = true;
+  const token = await getToken();
+  if (!token) return;
+  const liveDot = document.getElementById('live-dot');
+  const liveTxt = document.getElementById('live-txt');
+  if (liveDot) liveDot.className = 'live-dot blue';
+  if (liveTxt) liveTxt.textContent = '⏳ Chargement…';
   try {
-    const token = await getToken();
-    const r = await _fbFetch(`${LICENSE_DB}/analytics/visitors.json`, {}, token);
-    if (!r.ok) { document.getElementById('visitors-list').innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ Accès refusé — vérifiez les règles Firebase</div>'; return; }
-    const data = await r.json();
-    if (!data) { document.getElementById('visitors-list').innerHTML = '<div style="padding:16px;color:#8892B0">Aucun visiteur enregistré.</div>'; return; }
-    const now = Date.now();
-    const day = 24*3600*1000;
-    const entries = Object.entries(data).sort(([,a],[,b]) => (b.lastSeen||0) - (a.lastSeen||0));
-    const total   = entries.length;
-    const week    = entries.filter(([,v]) => now - (v.lastSeen||0) < 7*day).length;
-    const today   = entries.filter(([,v]) => now - (v.lastSeen||0) < day).length;
-    const visits  = entries.reduce((s,[,v]) => s + (v.visits||1), 0);
-    document.getElementById('v-total').textContent  = total;
-    document.getElementById('v-week').textContent   = week;
-    document.getElementById('v-today').textContent  = today;
-    document.getElementById('v-visits').textContent = visits;
-    document.getElementById('visitor-count-badge').textContent = '(' + total + ')';
-    const fmtD = ts => ts ? new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
-    document.getElementById('visitors-list').innerHTML = `
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead><tr style="border-bottom:1px solid #2C3050;color:#8892B0;font-size:10px;text-transform:uppercase;letter-spacing:.5px">
-          <th style="padding:10px 14px;text-align:left">Appareil</th>
-          <th style="padding:10px 8px;text-align:left">Compte</th>
-          <th style="padding:10px 8px;text-align:center">Visites</th>
-          <th style="padding:10px 8px;text-align:right">1ère visite</th>
-          <th style="padding:10px 14px;text-align:right">Dernière visite</th>
-        </tr></thead>
-        <tbody>${entries.map(([vid, v]) => {
-          const label   = v.label || _labelFromUa(v.ua) || 'Inconnu';
-          const icon    = /iOS|iPhone|iPad/.test(label) ? '📱' : /Android/.test(label) ? '📱' : /macOS/.test(label) ? '💻' : '🖥️';
-          const online  = now - (v.lastSeen||0) < 5*60*1000;
-          const dot     = online ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#7effa0;margin-right:5px;vertical-align:middle"></span>' : '';
-          const account = v.email ? `<span style="color:#5B6AF0">${_esc(v.email)}</span>` : '<span style="color:#555">Anonyme</span>';
-          return `<tr style="border-bottom:1px solid #1e2235">
-            <td style="padding:10px 14px">${dot}${icon} ${_esc(label)}</td>
-            <td style="padding:10px 8px">${account}</td>
-            <td style="padding:10px 8px;text-align:center;font-weight:700;color:#8B5CF6">${v.visits||1}</td>
-            <td style="padding:10px 8px;text-align:right;color:#8892B0">${fmtD(v.firstSeen)}</td>
-            <td style="padding:10px 14px;text-align:right;color:#8892B0">${fmtD(v.lastSeen)}</td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>`;
-  } catch(e) { document.getElementById('visitors-list').innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ ' + e.message + '</div>'; }
+    const [rVis, rUsers] = await Promise.all([
+      _fbFetch(LICENSE_DB + '/analytics/visitors.json', {}, token),
+      _fbFetch(LICENSE_DB + '/users.json', {}, token)
+    ]);
+    const visData   = rVis.ok   ? await rVis.json()   : null;
+    const usersData = rUsers.ok ? await rUsers.json() : null;
+    if (!visData) { if (liveTxt) liveTxt.textContent = 'Aucun visiteur'; return; }
+
+    const now = Date.now(), day = 86400000;
+    const entries = Object.entries(visData).sort(([,a],[,b]) => (b.lastSeen||0) - (a.lastSeen||0));
+    _allVisitors = entries;
+
+    const onlineCount = entries.filter(([,v]) => now-(v.lastSeen||0) < 300000).length;
+
+    // KPIs
+    document.getElementById('v-total').textContent   = entries.length;
+    document.getElementById('v-week').textContent    = entries.filter(([,v]) => now-(v.lastSeen||0) < 7*day).length;
+    document.getElementById('v-today').textContent   = entries.filter(([,v]) => now-(v.lastSeen||0) < day).length;
+    document.getElementById('v-visits').textContent  = entries.reduce((s,[,v]) => s+(v.visits||1), 0);
+    document.getElementById('v-online').textContent  = onlineCount;
+
+    // Live indicator
+    if (liveDot) { liveDot.className = 'live-dot ' + (onlineCount > 0 ? 'green' : 'blue'); }
+    if (liveTxt) liveTxt.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    // Funnel
+    const funnelEl = document.getElementById('v-funnel');
+    if (funnelEl && usersData) {
+      const userEntries = Object.entries(usersData);
+      const totalAccounts = userEntries.length;
+      const premiumCount  = userEntries.filter(([,u]) => u?.premium === true || (typeof u?.premium === 'number' && u.premium > now)).length;
+      const totalVisitors = entries.length;
+      const pct = (n, d) => d > 0 ? Math.round(n/d*100) : 0;
+      const bar = (val, max, color) => {
+        const w = max > 0 ? Math.max(3, Math.round(val/max*100)) : 3;
+        return `<div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${w}%;background:${color}"></div></div>`;
+      };
+      funnelEl.innerHTML = [
+        { icon:'👁️', label:'Visiteurs uniques', val:totalVisitors, pct:100,                            color:'#5B6AF0' },
+        { icon:'👤', label:'Comptes créés',      val:totalAccounts, pct:pct(totalAccounts,totalVisitors), color:'#00C896' },
+        { icon:'⭐', label:'Premium actifs',      val:premiumCount,  pct:pct(premiumCount,totalVisitors),  color:'#F5A623' },
+      ].map(row => `
+        <div class="funnel-row">
+          <div class="funnel-icon">${row.icon}</div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+              <span style="color:#8892B0">${row.label}</span>
+              <span style="font-weight:700;color:#E2E4F0">${row.val} <span style="color:#555;font-weight:400">(${row.pct}%)</span></span>
+            </div>
+            ${bar(row.val, totalVisitors, row.color)}
+          </div>
+        </div>`).join('');
+    }
+
+    // Chart 7 jours
+    const days7 = Array.from({length:7}, (_,i) => {
+      const d = new Date(now - (6-i)*day);
+      return { label: d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}), ts: new Date(d).setHours(0,0,0,0) };
+    });
+    const visitsByDay = days7.map(d => entries.filter(([,v]) => { const t=v.lastSeen||0; return t>=d.ts && t<d.ts+day; }).length);
+    const chartCanvas = document.getElementById('v-chart');
+    if (chartCanvas) {
+      if (_visitorsChart) { _visitorsChart.destroy(); _visitorsChart = null; }
+      _visitorsChart = new Chart(chartCanvas, {
+        type:'bar',
+        data:{ labels:days7.map(d=>d.label), datasets:[{ data:visitsByDay, backgroundColor:'rgba(91,106,240,.7)', borderRadius:5, borderSkipped:false }] },
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{ticks:{color:'#8892B0',font:{size:11}},grid:{color:'rgba(255,255,255,.05)'}},
+            y:{ticks:{color:'#8892B0',font:{size:11},stepSize:1},grid:{color:'rgba(255,255,255,.05)'},beginAtZero:true}
+          }
+        }
+      });
+    }
+
+    // Liste
+    renderVisitorsList(entries);
+  } catch(e) {
+    const liveTxt2 = document.getElementById('live-txt');
+    if (liveTxt2) liveTxt2.textContent = '❌ ' + e.message;
+  }
+}
+
+function renderVisitorsList(entries) {
+  const list = document.getElementById('v-list');
+  if (!list) return;
+  const now = Date.now();
+  const fmtD = ts => ts ? new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+  if (!entries.length) { list.innerHTML = '<div style="padding:24px;text-align:center;color:#8892B0">Aucun visiteur</div>'; return; }
+  list.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="border-bottom:1px solid #2C3050;color:#8892B0;font-size:11px;text-transform:uppercase;letter-spacing:.5px;background:#20243A">
+      <th style="padding:10px 16px;text-align:left">Appareil</th>
+      <th style="padding:10px 10px;text-align:left">Compte</th>
+      <th style="padding:10px 10px;text-align:center">Visites</th>
+      <th style="padding:10px 10px;text-align:right">1ère visite</th>
+      <th style="padding:10px 16px;text-align:right">Dernière visite</th>
+    </tr></thead>
+    <tbody>${entries.map(([,v]) => {
+      const lbl    = v.label || 'Inconnu';
+      const icon   = /iOS|iPhone|iPad/.test(lbl)?'📱':/Android/.test(lbl)?'📱':/macOS/.test(lbl)?'💻':'🖥️';
+      const online = now-(v.lastSeen||0) < 300000;
+      const dot    = online ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#7effa0;margin-right:6px;vertical-align:middle"></span>' : '';
+      const acc    = v.email ? `<a href="mailto:${_esc(v.email)}" style="color:#5B6AF0">${_esc(v.email)}</a>` : '<span style="color:#555">Anonyme</span>';
+      return `<tr style="border-bottom:1px solid #1e2235" onmouseover="this.style.background='#20243A'" onmouseout="this.style.background=''">
+        <td style="padding:10px 16px">${dot}${icon} ${_esc(lbl)}</td>
+        <td style="padding:10px 10px">${acc}</td>
+        <td style="padding:10px 10px;text-align:center;font-weight:700;color:#8B5CF6">${v.visits||1}</td>
+        <td style="padding:10px 10px;text-align:right;color:#8892B0">${fmtD(v.firstSeen)}</td>
+        <td style="padding:10px 16px;text-align:right;color:#8892B0">${fmtD(v.lastSeen)}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function filterVisitorsList() {
+  const q = (document.getElementById('v-search')?.value || '').toLowerCase();
+  const filtered = q ? _allVisitors.filter(([,v]) => (v.email||'').toLowerCase().includes(q) || (v.label||'').toLowerCase().includes(q)) : _allVisitors;
+  renderVisitorsList(filtered);
 }
 
 function generateBetaKey() {

@@ -6495,7 +6495,8 @@ function renderConfigTab() {
       <div class="config-card" style="margin-top:14px;border:2px solid #F5A623;background:var(--orange-light)">
         <h3 style="color:#c07800">🔐 Administration</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn" onclick="openAdminPanel()" style="background:#F5A623;color:#1A1D2E;font-weight:700;border:none;cursor:pointer;text-align:center">👁️ Panneau admin — Clients &amp; Licences</button>
+          <a href="admin.html" target="_blank" class="btn" style="background:#F5A623;color:#1A1D2E;font-weight:700;border:none;text-decoration:none;text-align:center;display:block">📊 Panneau admin complet ↗</a>
+          <button class="btn" onclick="openAdminPanel()" style="background:rgba(245,166,35,.15);color:#c07800;font-weight:600;border:1px solid #F5A623;cursor:pointer;text-align:center;font-size:12px">👁️ Voir données client (in-app)</button>
         </div>
       </div>` : ''}
     </div>
@@ -7238,8 +7239,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.48';
-const SW_VERSION = 'v172';
+const APP_VERSION = '11.49';
+const SW_VERSION = 'v173';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -9097,6 +9098,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.49': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📊', text: 'Config Admin : bouton "Panneau admin complet" ouvre admin.html (onglets Tableau de bord + Visiteurs avec funnel, graphique 7j, auto-refresh 30s)' }
+    ]
+  },
   '11.48': {
     date: 'Mai 2026',
     items: [
