@@ -7139,8 +7139,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.41';
-const SW_VERSION = 'v168';
+const APP_VERSION = '11.42';
+const SW_VERSION = 'v169';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -7311,6 +7311,7 @@ const TRANSLATIONS = {
     'ai.err_invalid_key': 'Clé API Groq invalide. Vérifie-la dans ⚙️ Paramètres → Assistant IA.',
     'ai.err_rate_limit': 'Limite de requêtes atteinte. Réessaie dans quelques secondes.',
     'ai.err_empty': 'Réponse vide de Groq',
+    'ai.placeholder': 'Posez votre question…',
     // Toast messages
     'toast.saved': '✅ Sauvegardé',
     'toast.deleted': '🗑 Supprimé',
@@ -8102,6 +8103,7 @@ const TRANSLATIONS = {
     'ai.err_invalid_key': 'Invalid Groq API key. Check it in ⚙️ Settings → AI Assistant.',
     'ai.err_rate_limit': 'Rate limit reached. Please try again in a few seconds.',
     'ai.err_empty': 'Empty response from Groq',
+    'ai.placeholder': 'Ask a question…',
     // Toast messages
     'toast.saved': '✅ Saved',
     'toast.deleted': '🗑 Deleted',
@@ -8851,6 +8853,23 @@ function setLang(code) {
     const tabId = activeTab.getAttribute('data-tabid');
     if (tabId && typeof updateContextBanner === 'function') updateContextBanner(tabId);
   }
+  // Update AI chat panel (title, status, welcome message if chat is empty)
+  const aiStatus = document.getElementById('ai-chat-status');
+  if (aiStatus) aiStatus.textContent = t('ai.powered_by');
+  const aiTitle = document.querySelector('#ai-chat-panel .ai-chat-header [data-i18n="ai.title"]');
+  if (aiTitle) aiTitle.textContent = t('ai.title');
+  const aiMsgs = document.getElementById('ai-chat-messages');
+  if (aiMsgs && aiMsgs.children.length <= 1) {
+    // Only one message = the welcome message; replace it with the new language version
+    aiMsgs.innerHTML = '';
+    _appendAiMsg('bot', t('ai.welcome'));
+  }
+  const aiInput = document.getElementById('ai-chat-input');
+  if (aiInput) aiInput.placeholder = t('ai.placeholder') || (code === 'en' ? 'Ask a question…' : 'Pose une question…');
+  const aiMicBtn = document.getElementById('ai-mic-btn');
+  if (aiMicBtn) aiMicBtn.title = t('ai.voice_input');
+  const aiClearBtn = document.querySelector('#ai-chat-panel button[onclick="clearAiChat()"]');
+  if (aiClearBtn) aiClearBtn.title = t('ai.clear_title');
 }
 
 function _updateOnboardingLang() {
@@ -8964,6 +8983,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.42': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '⚡', text: 'Changement de langue instantané : le panneau IA (titre, statut, placeholder, message de bienvenue) switche immédiatement sans recharger la page' }
+    ]
+  },
   '11.41': {
     date: 'Mai 2026',
     items: [
@@ -12176,7 +12201,7 @@ function closeCompareView() {
   <div class="ai-chat-messages" id="ai-chat-messages"></div>
   <div class="ai-chat-input-area">
     <button class="ai-mic-btn" id="ai-mic-btn" onclick="toggleVoiceInput()" title="Saisie vocale (cliquez pour parler)">🎤</button>
-    <input type="text" id="ai-chat-input" placeholder="Posez votre question…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendAiMessage();event.preventDefault()}">
+    <input type="text" id="ai-chat-input" data-i18n-placeholder="ai.placeholder" placeholder="Ask a question…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendAiMessage();event.preventDefault()}">
     <button class="ai-chat-send" id="ai-chat-send" onclick="sendAiMessage()">Envoyer</button>
   </div>
 </div>
