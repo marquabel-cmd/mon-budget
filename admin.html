@@ -1728,9 +1728,9 @@ function _renderBvYear(year) {
 
   // KPIs
   let html = `<div class="bv-kpis">
-    <div class="bv-kpi"><div class="bv-kpi-label">Revenus</div><div class="bv-kpi-value stat-blue">${_fmt(totalRev)}</div></div>
-    <div class="bv-kpi"><div class="bv-kpi-label">Charges fixes</div><div class="bv-kpi-value stat-orange">${_fmt(totalCharges)}</div></div>
-    <div class="bv-kpi"><div class="bv-kpi-label">Dépenses variables</div><div class="bv-kpi-value stat-purple">${_fmt(totalDep)}</div></div>
+    <div class="bv-kpi"><div class="bv-kpi-label">Revenus <span style="font-size:9px;opacity:.5">${revRows.length} lignes</span></div><div class="bv-kpi-value stat-blue">${_fmt(totalRev)}</div></div>
+    <div class="bv-kpi"><div class="bv-kpi-label">Charges fixes <span style="font-size:9px;opacity:.5">${chargeRows.length} lignes</span></div><div class="bv-kpi-value stat-orange">${_fmt(totalCharges)}</div></div>
+    <div class="bv-kpi"><div class="bv-kpi-label">Dép. variables <span style="font-size:9px;opacity:.5">${depRows.length} cats</span></div><div class="bv-kpi-value stat-purple">${_fmt(totalDep)}</div></div>
     <div class="bv-kpi"><div class="bv-kpi-label">Budget restant</div><div class="bv-kpi-value" style="color:${soldeColor}">${_fmt(solde)}</div></div>
     ${soldesEntries.map(([k,v]) => `<div class="bv-kpi"><div class="bv-kpi-label">💰 ${_esc(k)}</div><div class="bv-kpi-value" style="color:${parseFloat(v)>=0?'#7effa0':'#F04F5B'}">${_fmt(v)}</div></div>`).join('')}
   </div>`;
@@ -1739,7 +1739,7 @@ function _renderBvYear(year) {
 
   // Revenus
   if (revRows.length) {
-    html += '<div class="bv-section-title">💼 Revenus</div>';
+    html += `<div class="bv-section-title">💼 Revenus <span style="font-weight:400;color:#555">(${revRows.length} ligne${revRows.length>1?'s':''})</span></div>`;
     revRows.forEach(r => {
       const vals = Array.isArray(r.v) ? r.v : [];
       const total = _sum(vals);
@@ -1750,7 +1750,7 @@ function _renderBvYear(year) {
 
   // Charges fixes
   if (chargeRows.length) {
-    html += '<div class="bv-section-title">🏠 Charges fixes</div>';
+    html += `<div class="bv-section-title">🏠 Charges fixes <span style="font-weight:400;color:#555">(${chargeRows.length} ligne${chargeRows.length>1?'s':''})</span></div>`;
     chargeRows.forEach(r => {
       const vals = Array.isArray(r.v) ? r.v : [];
       const total = _sum(vals);
@@ -1761,7 +1761,7 @@ function _renderBvYear(year) {
 
   // Dépenses variables par catégorie — une ligne par catégorie, triée alphabétiquement
   if (depRows.length) {
-    html += '<div class="bv-section-title">🛒 Dépenses variables</div>';
+    html += `<div class="bv-section-title">🛒 Dépenses variables <span style="font-weight:400;color:#555">(${depRows.length} catégorie${depRows.length>1?'s':''})</span></div>`;
     depRows.sort((a,b) => a.label.localeCompare(b.label)).forEach(r => {
       const vals = Array.isArray(r.v) ? r.v : [];
       const total = _sum(vals);
