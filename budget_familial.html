@@ -5008,11 +5008,36 @@ function setCloudStatus(s, errMsg) {
   const el = document.getElementById('cloud-status');
   if (!el) return;
   if (errMsg) _lastSyncError = errMsg;
-  const map = {off:'', syncing:'🔄', ok:'☁️ Sync', error:'⚠️ Sync'};
-  const col = {off:'', syncing:'rgba(255,255,255,.7)', ok:'#7effa0', error:'#ffb3b3'};
-  el.textContent = map[s]||''; el.style.color = col[s]||'';
+  // 'off' : cloud configuré mais inactif → nuage grisé visible
+  const hasCloud = !!cloudApiUrl();
+  const map = {
+    off:     hasCloud ? '☁️' : '',
+    syncing: '🔄',
+    ok:      '☁️',
+    error:   '⚠️'
+  };
+  const col = {
+    off:     'rgba(255,255,255,.25)',
+    syncing: 'rgba(255,255,255,.8)',
+    ok:      '#7effa0',
+    error:   '#ffb3b3'
+  };
+  const lbl = {
+    off:     hasCloud ? (_lang==='en' ? ' Sync off' : ' Sync off') : '',
+    syncing: _lang==='en' ? ' Syncing…' : ' Sync…',
+    ok:      ' Sync',
+    error:   ' Sync'
+  };
+  el.textContent = (map[s]||'') + (lbl[s]||'');
+  el.style.color  = col[s]||'';
   el.style.cursor = s === 'error' ? 'pointer' : 'default';
-  el.title = s === 'error' ? (_lastSyncError || t('sync.error_default')) : {off:'', syncing:t('sync.syncing'), ok:t('sync.ok')}[s]||'';
+  const tips = {
+    off:     hasCloud ? (_lang==='en' ? 'Cloud sync inactive (session expired or offline)' : 'Sync cloud inactive (session expirée ou hors ligne)') : '',
+    syncing: _lang==='en' ? 'Syncing…' : 'Synchronisation en cours…',
+    ok:      _lang==='en' ? 'Cloud sync active' : 'Sync cloud active',
+    error:   _lastSyncError || (_lang==='en' ? 'Sync error' : 'Erreur de sync')
+  };
+  el.title   = tips[s]||'';
   el.onclick = s === 'error' ? () => showToast('❌ Sync : ' + (_lastSyncError || 'Erreur inconnue')) : null;
   if (s === 'ok') {
     const now = Date.now();
@@ -6499,7 +6524,6 @@ function renderConfigTab() {
         <h3 style="color:#c07800">🔐 Administration</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
           <a href="admin.html" target="_blank" class="btn" style="background:#F5A623;color:#1A1D2E;font-weight:700;border:none;text-decoration:none;text-align:center;display:block">📊 Panneau admin complet ↗</a>
-          <button class="btn" onclick="openAdminPanel()" style="background:rgba(245,166,35,.15);color:#c07800;font-weight:600;border:1px solid #F5A623;cursor:pointer;text-align:center;font-size:12px">👁️ Voir données client (in-app)</button>
         </div>
       </div>` : ''}
     </div>
@@ -6856,12 +6880,24 @@ async function _fbRefreshToken() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ grant_type:'refresh_token', refresh_token: s.refreshToken })
     });
+    // Erreur réseau (fetch rejeté) → on ne touche pas à la session, on réessaiera plus tard
     const d = await r.json();
-    if (!r.ok) throw new Error(d.error?.message);
+    if (!r.ok) {
+      const code = d.error?.message || '';
+      // Refresh token invalide/révoqué → vrai logout
+      if (code.includes('TOKEN_EXPIRED') || code.includes('INVALID_REFRESH_TOKEN') || code.includes('USER_DISABLED') || code.includes('USER_NOT_FOUND')) {
+        _fbSave(null); return null;
+      }
+      // Autres erreurs Firebase (quota, etc.) → silencieux, on garde la session
+      return null;
+    }
     const u = { uid: d.user_id, email: s.email, idToken: d.id_token,
       refreshToken: d.refresh_token, expiresAt: Date.now() + parseInt(d.expires_in)*1000 };
     _fbSave(u); return u;
-  } catch { _fbSave(null); return null; }
+  } catch {
+    // Erreur réseau (pas de connexion) → on garde la session intacte
+    return null;
+  }
 }
 async function fbGetToken() {
   let u = _fbUser || _fbLoad();
@@ -7242,8 +7278,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.50';
-const SW_VERSION = 'v173';
+const APP_VERSION = '11.52';
+const SW_VERSION = 'v175';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -9101,6 +9137,19 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.52': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔄', text: 'Fix mise à jour bloquée : le SW est maintenant enregistré avec updateViaCache:"none" — le navigateur récupère toujours la dernière version sans rester coincé sur une version ancienne.' },
+      { icon: '☁️', text: 'Icône de sync cloud restaurée : visible en permanence dans l\'en-tête (grisé = inactif, vert = actif, orange = erreur). Tooltip au survol.' }
+    ]
+  },
+  '11.51': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔐', text: 'Fix : déconnexion intempestive lors d\'une perte réseau temporaire. Le token Firebase n\'est plus effacé sur une erreur réseau passagère — la session reste active jusqu\'à reconnexion.' }
+    ]
+  },
   '11.50': {
     date: 'Mai 2026',
     items: [
@@ -10650,7 +10699,8 @@ window.addEventListener('message', async (e) => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
+      // updateViaCache:'none' → le navigateur ignore son cache HTTP pour sw.js
       // Vérifier les mises à jour immédiatement + toutes les 30 minutes
       reg.update();
       setInterval(() => reg.update(), 30 * 60 * 1000);

@@ -111,6 +111,56 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
 .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#555;margin-right:6px;vertical-align:middle}
 .live-dot.green{background:#7effa0;box-shadow:0 0 6px #7effa080}
 .live-dot.blue{background:#5B6AF0}
+
+/* ── SERVICES TAB ── */
+.svc-section{margin-bottom:28px}
+.svc-section-title{font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.svc-section-title::after{content:'';flex:1;height:1px;background:#2C3050}
+.svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.svc-card{background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:16px 18px;transition:border-color .15s,background .15s}
+.svc-card:hover{background:#20243A;border-color:#3a3f60}
+.svc-card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.svc-icon{font-size:22px;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.svc-name{font-size:14px;font-weight:700;color:#E2E4F0}
+.svc-desc{font-size:12px;color:#8892B0;margin-bottom:12px;line-height:1.5}
+.svc-links{display:flex;flex-wrap:wrap;gap:6px}
+.svc-link{display:inline-flex;align-items:center;gap:5px;background:#20243A;border:1px solid #2C3050;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;color:#8892B0;text-decoration:none;transition:background .15s,color .15s,border-color .15s;white-space:nowrap}
+.svc-link:hover{background:#2C3050;color:#E2E4F0;border-color:#5B6AF0}
+.svc-link.primary{background:#5B6AF020;border-color:#5B6AF044;color:#8891f0}
+.svc-link.primary:hover{background:#5B6AF030;border-color:#5B6AF0;color:#fff}
+.svc-status{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto;flex-shrink:0}
+.svc-status.active{background:#00C89620;color:#00C896}
+.svc-status.partial{background:#F5A62320;color:#F5A623}
+.svc-status.todo{background:#F04F5B20;color:#F04F5B}
+.svc-todo-card{background:#1C1F30;border:1px solid #F5A62344;border-radius:12px;padding:16px 18px;display:flex;align-items:flex-start;gap:12px}
+.svc-todo-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.svc-todo-name{font-size:13px;font-weight:700;color:#E2E4F0;margin-bottom:3px}
+.svc-todo-desc{font-size:12px;color:#8892B0;line-height:1.5}
+.svc-todo-why{display:inline-block;font-size:10px;font-weight:700;color:#F5A623;background:#F5A62315;padding:2px 7px;border-radius:8px;margin-top:5px}
+@media(max-width:600px){.svc-grid{grid-template-columns:1fr}}
+
+/* ── BUDGET VIEWER ── */
+#budget-viewer-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9500;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+.bv-wrap{background:#1C1F30;border:1px solid #2C3050;border-radius:16px;width:100%;max-width:820px;margin:auto;overflow:hidden}
+.bv-header{background:#20243A;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #2C3050}
+.bv-year-tabs{display:flex;gap:4px;padding:12px 16px;background:#171A28;border-bottom:1px solid #2C3050;flex-wrap:wrap}
+.bv-year-btn{background:none;border:1px solid #2C3050;border-radius:6px;color:#8892B0;font-size:12px;font-weight:600;padding:5px 12px;cursor:pointer;transition:all .15s}
+.bv-year-btn.active{background:#5B6AF020;border-color:#5B6AF0;color:#8891f0}
+.bv-year-btn:hover:not(.active){background:#2C3050;color:#E2E4F0}
+.bv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;padding:16px}
+.bv-kpi{background:#171A28;border-radius:10px;padding:14px;text-align:center}
+.bv-kpi-label{font-size:10px;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.bv-kpi-value{font-size:20px;font-weight:700}
+.bv-section{padding:0 16px 16px}
+.bv-section-title{font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;margin-top:14px;padding-bottom:6px;border-bottom:1px solid #2C3050}
+.bv-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:7px;font-size:13px}
+.bv-row:nth-child(odd){background:#20243A}
+.bv-row-label{color:#C0C6E0;flex:1}
+.bv-row-vals{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.bv-pill{font-size:11px;padding:2px 8px;border-radius:10px;background:#2C3050;color:#8892B0}
+.bv-row-total{font-weight:700;min-width:80px;text-align:right}
+.bv-cat-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;background:#5B6AF020;color:#8891f0;margin-right:6px}
+.bv-empty{text-align:center;padding:32px;color:#8892B0;font-size:13px}
 </style>
 </head>
 <body>
@@ -157,6 +207,7 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
   <nav class="tab-nav">
     <button class="tab-btn active" id="tabn-dashboard" onclick="switchTab('dashboard')">📊 Tableau de bord</button>
     <button class="tab-btn" id="tabn-visitors" onclick="switchTab('visitors')">👁️ Visiteurs</button>
+    <button class="tab-btn" id="tabn-services" onclick="switchTab('services')">🔗 Services</button>
   </nav>
 
   <div id="tab-dashboard">
@@ -192,6 +243,7 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
         <button class="btn btn-green btn-sm" onclick="grantPremium()">⭐ Accorder</button>
         <button class="btn btn-primary btn-sm" onclick="renewPremium()">🔄 Renouveler</button>
         <button class="btn btn-red btn-sm" onclick="revokePremium()">✕ Révoquer</button>
+        <button class="btn btn-ghost btn-sm" style="border:1px solid #5B6AF044;color:#8891f0" onclick="viewUserBudget(_selectedUid)">👁️ Voir données budget</button>
       </div>
       <div style="margin-top:14px">
         <div style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Appareils (<span id="panel-devices">0</span>/3)</div>
@@ -294,6 +346,325 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
       </div>
     </div>
 
+  <!-- TAB: SERVICES -->
+  <div id="tab-services" style="display:none">
+    <div class="container" style="max-width:1100px;padding-top:28px">
+
+      <!-- APP -->
+      <div class="svc-section">
+        <div class="svc-section-title">🌐 Application</div>
+        <div class="svc-grid">
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#5B6AF020">💰</div>
+              <div>
+                <div class="svc-name">Mon Budget — App</div>
+                <span class="svc-status active">● Actif</span>
+              </div>
+            </div>
+            <div class="svc-desc">L'application PWA publique. Hébergée via GitHub Pages, servie par Cloudflare CDN.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://budget.marquabel.be" target="_blank">🚀 Ouvrir l'app ↗</a>
+              <a class="svc-link" href="https://budget.marquabel.be/budget_familial.html" target="_blank">📄 budget_familial.html</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INFRASTRUCTURE -->
+      <div class="svc-section">
+        <div class="svc-section-title">⚙️ Infrastructure</div>
+        <div class="svc-grid">
+
+          <!-- Firebase -->
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#F5A62320">🔥</div>
+              <div>
+                <div class="svc-name">Firebase</div>
+                <span class="svc-status active">● Actif</span>
+              </div>
+            </div>
+            <div class="svc-desc">Authentification Google + base de données Realtime (licences, sync cloud utilisateurs). Projet : <code style="font-size:11px;color:#F5A623">mon-budget-licences</code></div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://console.firebase.google.com/project/mon-budget-licences/overview" target="_blank">🔥 Console ↗</a>
+              <a class="svc-link" href="https://console.firebase.google.com/project/mon-budget-licences/database/mon-budget-licences-default-rtdb/data" target="_blank">🗄️ Base de données</a>
+              <a class="svc-link" href="https://console.firebase.google.com/project/mon-budget-licences/authentication/users" target="_blank">👤 Utilisateurs auth</a>
+              <a class="svc-link" href="https://console.firebase.google.com/project/mon-budget-licences/usage" target="_blank">📊 Quotas</a>
+            </div>
+          </div>
+
+          <!-- GitHub -->
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#8892B020">🐙</div>
+              <div>
+                <div class="svc-name">GitHub Pages</div>
+                <span class="svc-status active">● Actif</span>
+              </div>
+            </div>
+            <div class="svc-desc">Hébergement du code source et de l'app via GitHub Pages. Chaque push sur <code style="font-size:11px;color:#8B5CF6">main</code> met à jour budget.marquabel.be.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://github.com" target="_blank">🐙 GitHub ↗</a>
+              <a class="svc-link" href="https://github.com/settings/tokens" target="_blank">🔑 Personal tokens</a>
+              <a class="svc-link" href="https://gist.github.com" target="_blank">📋 Gists (backup)</a>
+            </div>
+          </div>
+
+          <!-- Cloudflare -->
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#F5A62320">☁️</div>
+              <div>
+                <div class="svc-name">Cloudflare</div>
+                <span class="svc-status active">● Actif</span>
+              </div>
+            </div>
+            <div class="svc-desc">CDN + DNS pour budget.marquabel.be. 2 Workers actifs : relay email/Stripe et proxy IA Groq.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://dash.cloudflare.com" target="_blank">☁️ Dashboard ↗</a>
+              <a class="svc-link" href="https://dash.cloudflare.com/workers-and-pages" target="_blank">⚡ Workers</a>
+              <a class="svc-link" href="https://dash.cloudflare.com/dns" target="_blank">🌐 DNS</a>
+              <a class="svc-link" href="https://dash.cloudflare.com/analytics" target="_blank">📈 Analytics CDN</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PAIEMENTS -->
+      <div class="svc-section">
+        <div class="svc-section-title">💳 Paiements</div>
+        <div class="svc-grid">
+
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#635BFF20">💳</div>
+              <div>
+                <div class="svc-name">Stripe</div>
+                <span class="svc-status active">● Actif</span>
+              </div>
+            </div>
+            <div class="svc-desc">Gestion des abonnements Premium mensuel (2,99€) et annuel (24,99€). Webhooks vers Cloudflare Worker pour activation automatique des licences.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://dashboard.stripe.com/dashboard" target="_blank">💳 Dashboard ↗</a>
+              <a class="svc-link" href="https://dashboard.stripe.com/customers" target="_blank">👥 Clients</a>
+              <a class="svc-link" href="https://dashboard.stripe.com/subscriptions" target="_blank">🔄 Abonnements</a>
+              <a class="svc-link" href="https://dashboard.stripe.com/products" target="_blank">📦 Produits</a>
+              <a class="svc-link" href="https://dashboard.stripe.com/webhooks" target="_blank">🔔 Webhooks</a>
+              <a class="svc-link" href="https://dashboard.stripe.com/balance" target="_blank">💰 Balance</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- IA -->
+      <div class="svc-section">
+        <div class="svc-section-title">🤖 Intelligence artificielle</div>
+        <div class="svc-grid">
+
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#00C89620">🧠</div>
+              <div>
+                <div class="svc-name">Groq (via Cloudflare Worker)</div>
+                <span class="svc-status active">● Actif</span>
+              </div>
+            </div>
+            <div class="svc-desc">LLM ultra-rapide pour l'assistant IA intégré. Requêtes relayées par le Worker <code style="font-size:11px;color:#00C896">cold-salad-fd46.marquabel.workers.dev</code> pour masquer la clé API.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://console.groq.com" target="_blank">🧠 Console Groq ↗</a>
+              <a class="svc-link" href="https://console.groq.com/keys" target="_blank">🔑 API Keys</a>
+              <a class="svc-link" href="https://console.groq.com/usage" target="_blank">📊 Usage</a>
+            </div>
+          </div>
+
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#4285F420">🔑</div>
+              <div>
+                <div class="svc-name">Google Cloud (OAuth)</div>
+                <span class="svc-status active">● Actif</span>
+              </div>
+            </div>
+            <div class="svc-desc">Credentials OAuth pour "Se connecter avec Google". Client ID configuré pour budget.marquabel.be.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://console.cloud.google.com/apis/credentials" target="_blank">🔑 Credentials ↗</a>
+              <a class="svc-link" href="https://console.cloud.google.com/apis/dashboard" target="_blank">📊 APIs actives</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- MARKETING & SEO -->
+      <div class="svc-section">
+        <div class="svc-section-title">📣 Marketing & SEO</div>
+        <div class="svc-grid">
+
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#DA552F20">🦁</div>
+              <div>
+                <div class="svc-name">Product Hunt</div>
+                <span class="svc-status partial">● Listé</span>
+              </div>
+            </div>
+            <div class="svc-desc">Fiche produit listée. Encourage les upvotes et commentaires pour gagner en visibilité.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://www.producthunt.com/products/mon-budget" target="_blank">🦁 Fiche produit ↗</a>
+              <a class="svc-link" href="https://www.producthunt.com/posts/mon-budget" target="_blank">📢 Post launch</a>
+            </div>
+          </div>
+
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#5B6AF020">🔄</div>
+              <div>
+                <div class="svc-name">AlternativeTo</div>
+                <span class="svc-status partial">● À publier</span>
+              </div>
+            </div>
+            <div class="svc-desc">Répertoire d'alternatives logicielles. Instructions de publication disponibles dans le dossier <code style="font-size:11px;color:#5B6AF0">.agents/</code>.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://alternativeto.net" target="_blank">🔄 AlternativeTo ↗</a>
+              <a class="svc-link" href="https://alternativeto.net/add-software" target="_blank">➕ Ajouter logiciel</a>
+            </div>
+          </div>
+
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#4285F420">🔍</div>
+              <div>
+                <div class="svc-name">Google Search Console</div>
+                <span class="svc-status partial">● À vérifier</span>
+              </div>
+            </div>
+            <div class="svc-desc">Suivi du référencement naturel, mots-clés qui génèrent des visites, pages indexées, erreurs d'exploration Google.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://search.google.com/search-console?resource_id=https%3A%2F%2Fbudget.marquabel.be%2F" target="_blank">🔍 Search Console ↗</a>
+              <a class="svc-link" href="https://search.google.com/search-console/performance/search-analytics?resource_id=https%3A%2F%2Fbudget.marquabel.be%2F" target="_blank">📈 Performance</a>
+            </div>
+          </div>
+
+          <div class="svc-card">
+            <div class="svc-card-head">
+              <div class="svc-icon" style="background:#00C89620">🐘</div>
+              <div>
+                <div class="svc-name">Facebook Sharing Debugger</div>
+                <span class="svc-status active">● Util</span>
+              </div>
+            </div>
+            <div class="svc-desc">Vider le cache de l'aperçu Facebook/Instagram quand tu changes l'og:image ou la description.</div>
+            <div class="svc-links">
+              <a class="svc-link primary" href="https://developers.facebook.com/tools/debug/?q=https%3A%2F%2Fbudget.marquabel.be" target="_blank">🐘 Sharing Debugger ↗</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- À METTRE EN PLACE -->
+      <div class="svc-section">
+        <div class="svc-section-title">💡 À mettre en place — gestion à 100%</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
+
+          <div class="svc-todo-card">
+            <div class="svc-todo-icon">🚨</div>
+            <div>
+              <div class="svc-todo-name">Sentry — suivi des erreurs JS</div>
+              <div class="svc-todo-desc">Capture automatiquement toutes les erreurs JavaScript en production. Tu sais quand quelque chose plante chez un utilisateur sans qu'il t'en parle.</div>
+              <div class="svc-todo-why">🔥 Priorité haute</div>
+              <div style="margin-top:6px"><a class="svc-link" href="https://sentry.io" target="_blank">→ sentry.io (gratuit jusqu'à 5k erreurs/mois)</a></div>
+            </div>
+          </div>
+
+          <div class="svc-todo-card">
+            <div class="svc-todo-icon">📡</div>
+            <div>
+              <div class="svc-todo-name">UptimeRobot — monitoring disponibilité</div>
+              <div class="svc-todo-desc">Vérifie toutes les 5 min que budget.marquabel.be répond. Alerte email/SMS immédiate si le site tombe.</div>
+              <div class="svc-todo-why">🔥 Priorité haute</div>
+              <div style="margin-top:6px"><a class="svc-link" href="https://uptimerobot.com" target="_blank">→ uptimerobot.com (gratuit jusqu'à 50 monitors)</a></div>
+            </div>
+          </div>
+
+          <div class="svc-todo-card">
+            <div class="svc-todo-icon">📧</div>
+            <div>
+              <div class="svc-todo-name">Resend — transactionnel email</div>
+              <div class="svc-todo-desc">Logs de délivrabilité emails (bienvenue, renouvellement, expiration). Actuellement les emails passent par Cloudflare Worker mais sans dashboard de suivi.</div>
+              <div class="svc-todo-why">📌 Priorité moyenne</div>
+              <div style="margin-top:6px"><a class="svc-link" href="https://resend.com" target="_blank">→ resend.com (3 000 emails/mois gratuits)</a></div>
+            </div>
+          </div>
+
+          <div class="svc-todo-card">
+            <div class="svc-todo-icon">💬</div>
+            <div>
+              <div class="svc-todo-name">Crisp / Tawk.to — chat support</div>
+              <div class="svc-todo-desc">Widget de chat live sur l'app. Les utilisateurs peuvent te contacter sans quitter l'application. Historique des conversations.</div>
+              <div class="svc-todo-why">📌 Priorité moyenne</div>
+              <div style="margin-top:6px"><a class="svc-link" href="https://crisp.chat" target="_blank">→ crisp.chat (gratuit 2 agents)</a></div>
+            </div>
+          </div>
+
+          <div class="svc-todo-card">
+            <div class="svc-todo-icon">⭐</div>
+            <div>
+              <div class="svc-todo-name">Trustpilot / Capterra — avis publics</div>
+              <div class="svc-todo-desc">Profil d'avis vérifiés. Augmente la confiance des nouveaux visiteurs et améliore le SEO (schema.org ratings).</div>
+              <div class="svc-todo-why">📋 Priorité basse</div>
+              <div style="margin-top:6px">
+                <a class="svc-link" href="https://www.trustpilot.com" target="_blank">→ Trustpilot</a>
+                <a class="svc-link" href="https://www.capterra.com" target="_blank">→ Capterra</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="svc-todo-card">
+            <div class="svc-todo-icon">🗺️</div>
+            <div>
+              <div class="svc-todo-name">Sitemap.xml + robots.txt</div>
+              <div class="svc-todo-desc">Fichier sitemap.xml à la racine pour que Google indexe toutes les pages. robots.txt pour contrôler ce que les crawlers voient.</div>
+              <div class="svc-todo-why">🔥 Priorité haute — SEO</div>
+              <div style="margin-top:6px"><a class="svc-link" href="https://budget.marquabel.be/sitemap.xml" target="_blank">→ Vérifier sitemap.xml</a></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- WORKERS ACTIFS -->
+      <div class="svc-section">
+        <div class="svc-section-title">⚡ Cloudflare Workers actifs</div>
+        <div style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;overflow:hidden">
+          <table style="width:100%">
+            <thead><tr>
+              <th style="background:#20243A;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px">Worker</th>
+              <th style="background:#20243A;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px">URL</th>
+              <th style="background:#20243A;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px">Rôle</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-top:1px solid #2C3050">
+                <td style="padding:11px 14px;font-size:13px;font-weight:600">stripe-webhook-mon-budget</td>
+                <td style="padding:11px 14px;font-size:11px;color:#5B6AF0;font-family:monospace"><a href="https://stripe-webhook-mon-budget.marquabel.workers.dev" target="_blank" style="color:#5B6AF0">stripe-webhook-mon-budget<br>.marquabel.workers.dev</a></td>
+                <td style="padding:11px 14px;font-size:12px;color:#8892B0">Réception webhooks Stripe → activation licence Firebase + envoi email bienvenue</td>
+              </tr>
+              <tr style="border-top:1px solid #2C3050">
+                <td style="padding:11px 14px;font-size:13px;font-weight:600">groq-proxy</td>
+                <td style="padding:11px 14px;font-size:11px;color:#5B6AF0;font-family:monospace"><a href="https://cold-salad-fd46.marquabel.workers.dev" target="_blank" style="color:#5B6AF0">cold-salad-fd46<br>.marquabel.workers.dev</a></td>
+                <td style="padding:11px 14px;font-size:12px;color:#8892B0">Proxy vers API Groq — masque la clé API, ajoute CORS, rate-limiting</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
 <!-- Modal création clé bêta -->
@@ -389,6 +760,23 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
     <div style="display:flex;gap:8px;margin-top:20px">
       <button class="btn btn-ghost" style="flex:1" onclick="closeEditKeyModal()">Annuler</button>
       <button class="btn btn-primary" style="flex:1;font-weight:700" onclick="confirmEditKey()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── BUDGET VIEWER MODAL ── -->
+<div id="budget-viewer-modal" onclick="if(event.target===this)closeBudgetViewer()">
+  <div class="bv-wrap">
+    <div class="bv-header">
+      <div>
+        <div style="font-weight:700;font-size:15px" id="bv-email">—</div>
+        <div style="font-size:11px;color:#8892B0;margin-top:2px;font-family:monospace" id="bv-uid">—</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeBudgetViewer()">✕ Fermer</button>
+    </div>
+    <div id="bv-year-tabs" class="bv-year-tabs" style="display:none"></div>
+    <div id="bv-content">
+      <div class="bv-empty">🔄 Chargement…</div>
     </div>
   </div>
 </div>
@@ -573,7 +961,10 @@ function renderUsers(entries) {
       <td>${badge}</td>
       <td>📱 ${devCount}/3</td>
       <td style="color:#8892B0">${_esc(last)}</td>
-      <td><button class="btn btn-ghost btn-sm" data-uid="${_esc(uid)}" onclick="selectUser(this.dataset.uid)">Gérer</button></td>
+      <td class="actions">
+        <button class="btn btn-ghost btn-sm" data-uid="${_esc(uid)}" onclick="selectUser(this.dataset.uid)">Gérer</button>
+        <button class="btn btn-ghost btn-sm" data-uid="${_esc(uid)}" onclick="viewUserBudget(this.dataset.uid)" title="Voir données budget" style="padding:5px 8px">👁️</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -768,9 +1159,160 @@ let _visitorsTimer = null;
 let _visitorsChart = null;
 let _allVisitors = [];
 
+// ── BUDGET VIEWER ──────────────────────────────────────────────────────
+let _bvData = null;
+let _bvYear = null;
+
+function closeBudgetViewer() {
+  document.getElementById('budget-viewer-modal').style.display = 'none';
+  _bvData = null; _bvYear = null;
+}
+
+async function viewUserBudget(uid) {
+  if (!uid) return;
+  const info = _allUsers[uid] || {};
+  document.getElementById('bv-email').textContent = info.email || uid;
+  document.getElementById('bv-uid').textContent = uid;
+  document.getElementById('bv-year-tabs').style.display = 'none';
+  document.getElementById('bv-content').innerHTML = '<div class="bv-empty">🔄 Chargement des données…</div>';
+  document.getElementById('budget-viewer-modal').style.display = 'flex';
+
+  const token = await getToken();
+  if (!token) {
+    document.getElementById('bv-content').innerHTML = '<div class="bv-empty" style="color:#F04F5B">❌ Session expirée — reconnectez-vous</div>';
+    return;
+  }
+
+  // Chercher les données sur les deux chemins possibles
+  let raw = null;
+  for (const path of [`${LICENSE_DB}/userdata/${uid}/budget.json`, `${LICENSE_DB}/user-data/${uid}/budget.json`]) {
+    try {
+      const r = await fetch(`${path}?auth=${token}`);
+      if (r.ok) { const d = await r.json(); if (d && typeof d === 'object') { raw = d; break; } }
+    } catch {}
+  }
+
+  if (!raw) {
+    document.getElementById('bv-content').innerHTML = '<div class="bv-empty">📭 Aucune donnée budget trouvée pour cet utilisateur.<br><span style="font-size:11px;opacity:.6">L\'utilisateur n\'a peut-être pas encore activé la sync cloud.</span></div>';
+    return;
+  }
+
+  _bvData = raw;
+  // Détecter les années (clés numériques 4 chiffres)
+  const years = Object.keys(raw).filter(k => /^\d{4}$/.test(k)).sort((a,b) => b-a);
+  if (!years.length) {
+    document.getElementById('bv-content').innerHTML = '<div class="bv-empty">📭 Structure de données non reconnue.</div>';
+    return;
+  }
+
+  // Onglets années
+  const tabEl = document.getElementById('bv-year-tabs');
+  tabEl.style.display = 'flex';
+  tabEl.innerHTML = years.map(y =>
+    `<button class="bv-year-btn${y===years[0]?' active':''}" onclick="bvSwitchYear('${y}',this)">${y}</button>`
+  ).join('');
+
+  _bvYear = years[0];
+  _renderBvYear(_bvYear);
+}
+
+function bvSwitchYear(year, btn) {
+  _bvYear = year;
+  document.querySelectorAll('.bv-year-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  _renderBvYear(year);
+}
+
+function _fmt(v) { return (parseFloat(v)||0).toLocaleString('fr-BE',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' €'; }
+function _sum(arr) { return (Array.isArray(arr) ? arr : []).reduce((s,v) => s+(parseFloat(v)||0), 0); }
+
+function _renderBvYear(year) {
+  const d = _bvData[year];
+  if (!d) { document.getElementById('bv-content').innerHTML = '<div class="bv-empty">Aucune donnée pour cette année.</div>'; return; }
+
+  const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
+
+  // Revenus
+  const revRows = Array.isArray(d.revenus) ? d.revenus : [];
+  const totalRev = revRows.reduce((s,r) => s + _sum(r.v), 0);
+
+  // Charges fixes
+  const chargeRows = Array.isArray(d.charges) ? d.charges : [];
+  const totalCharges = chargeRows.reduce((s,r) => s + _sum(r.v), 0);
+
+  // Dépenses variables
+  const depRows = Array.isArray(d.depenses) ? d.depenses : [];
+  const totalDep = depRows.reduce((s,r) => s + _sum(r.v), 0);
+
+  const solde = totalRev - totalCharges - totalDep;
+  const soldeColor = solde >= 0 ? '#00C896' : '#F04F5B';
+
+  // KPIs
+  let html = `<div class="bv-kpis">
+    <div class="bv-kpi"><div class="bv-kpi-label">Revenus</div><div class="bv-kpi-value stat-blue">${_fmt(totalRev)}</div></div>
+    <div class="bv-kpi"><div class="bv-kpi-label">Charges fixes</div><div class="bv-kpi-value stat-orange">${_fmt(totalCharges)}</div></div>
+    <div class="bv-kpi"><div class="bv-kpi-label">Dépenses variables</div><div class="bv-kpi-value stat-purple">${_fmt(totalDep)}</div></div>
+    <div class="bv-kpi"><div class="bv-kpi-label">Solde net</div><div class="bv-kpi-value" style="color:${soldeColor}">${_fmt(solde)}</div></div>
+  </div>`;
+
+  html += '<div class="bv-section">';
+
+  // Revenus
+  if (revRows.length) {
+    html += '<div class="bv-section-title">💼 Revenus</div>';
+    revRows.forEach(r => {
+      const vals = Array.isArray(r.v) ? r.v : [];
+      const total = _sum(vals);
+      const pills = vals.map((v,i) => parseFloat(v) ? `<span class="bv-pill">${MONTHS[i]} ${_fmt(v)}</span>` : '').filter(Boolean).join('');
+      html += `<div class="bv-row"><span class="bv-row-label">${_esc(r.label||'—')}</span><div class="bv-row-vals">${pills}</div><span class="bv-row-total stat-blue">${_fmt(total)}</span></div>`;
+    });
+  }
+
+  // Charges fixes
+  if (chargeRows.length) {
+    html += '<div class="bv-section-title">🏠 Charges fixes</div>';
+    chargeRows.forEach(r => {
+      const vals = Array.isArray(r.v) ? r.v : [];
+      const total = _sum(vals);
+      const pills = vals.map((v,i) => parseFloat(v) ? `<span class="bv-pill">${MONTHS[i]} ${_fmt(v)}</span>` : '').filter(Boolean).join('');
+      html += `<div class="bv-row"><span class="bv-row-label">${_esc(r.label||'—')}</span><div class="bv-row-vals">${pills}</div><span class="bv-row-total stat-orange">${_fmt(total)}</span></div>`;
+    });
+  }
+
+  // Dépenses variables par catégorie
+  if (depRows.length) {
+    html += '<div class="bv-section-title">🛒 Dépenses variables</div>';
+    // Grouper par catégorie
+    const byCat = {};
+    depRows.forEach(r => {
+      const cat = r.cat || r.category || '—';
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push(r);
+    });
+    Object.entries(byCat).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cat, rows]) => {
+      const catTotal = rows.reduce((s,r) => s + _sum(r.v), 0);
+      html += `<div style="margin:6px 0 3px;padding:5px 10px;background:#20243A;border-radius:6px;font-size:11px;font-weight:700;color:#8892B0;display:flex;justify-content:space-between"><span>${_esc(cat)}</span><span>${_fmt(catTotal)}</span></div>`;
+      rows.forEach(r => {
+        const vals = Array.isArray(r.v) ? r.v : [];
+        const total = _sum(vals);
+        const pills = vals.map((v,i) => parseFloat(v) ? `<span class="bv-pill">${MONTHS[i]} ${_fmt(v)}</span>` : '').filter(Boolean).join('');
+        html += `<div class="bv-row" style="padding-left:20px"><span class="bv-row-label" style="font-size:12px">${_esc(r.label||'—')}</span><div class="bv-row-vals">${pills}</div><span class="bv-row-total stat-purple">${_fmt(total)}</span></div>`;
+      });
+    });
+  }
+
+  if (!revRows.length && !chargeRows.length && !depRows.length) {
+    html += '<div class="bv-empty">Aucune donnée saisie pour cette année.</div>';
+  }
+
+  html += '</div>'; // bv-section
+  document.getElementById('bv-content').innerHTML = html;
+}
+// ── /BUDGET VIEWER ─────────────────────────────────────────────────────
+
 function switchTab(tab) {
   _activeTab = tab;
-  ['dashboard','visitors'].forEach(t => {
+  ['dashboard','visitors','services'].forEach(t => {
     const el = document.getElementById('tab-' + t);
     const btn = document.getElementById('tabn-' + t);
     if (el) el.style.display = tab === t ? '' : 'none';
@@ -1068,7 +1610,7 @@ function renderBetaKeys() {
           </div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
-          <button class="btn btn-ghost btn-sm" onclick="openEditKeyModal('${k.key}')">✏️</button>
+          <button class="btn btn-ghost btn-sm" data-key="${_esc(k.key)}" onclick="openEditKeyModal(this.dataset.key)">✏️</button>
           ${!revoked ? `<button class="btn btn-ghost btn-sm" onclick="copyKey('${k.key}')">📋 Copier</button>` : ''}
           ${revoked
             ? `<button class="btn btn-green btn-sm" onclick="reactivateBetaKey('${k.key}')">🔄 Réactiver</button>
@@ -1088,7 +1630,7 @@ function renderBetaKeys() {
 let _editingKey = null;
 function openEditKeyModal(key) {
   const k = _betaKeys.find(b => b.key === key);
-  if (!k) return;
+  if (!k) { showToast('⚠️ Clé introuvable — rechargez la page'); return; }
   _editingKey = key;
   document.getElementById('ek-key-display').textContent = key;
   document.getElementById('ek-name').value   = k.recipient || '';
@@ -1107,35 +1649,72 @@ function closeEditKeyModal() {
 }
 async function confirmEditKey() {
   if (!_editingKey) return;
-  const token     = await getToken();
-  const name      = document.getElementById('ek-name').value.trim();
-  const source    = document.getElementById('ek-source').value;
-  const notes     = document.getElementById('ek-notes').value.trim();
-  const startVal  = document.getElementById('ek-start').value;
-  const endVal    = document.getElementById('ek-end').value;
-  const createdAt = startVal ? new Date(startVal).getTime() : null;
-  const expiresAt = endVal   ? new Date(endVal).setHours(23,59,59,999) : null;
 
-  const patch = { source };
-  if (name)      patch.recipient  = name;
-  if (notes)     patch.notes      = notes;
-  if (createdAt) patch.createdAt  = createdAt;
-  if (expiresAt) patch.expiresAt  = expiresAt;
-  else {
-    // Supprimer expiresAt si champ vide (à vie)
-    await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}/expiresAt.json`, { method:'DELETE' }, token);
+  const btn = document.querySelector('#edit-key-modal .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Enregistrement…'; }
+
+  try {
+    const token = await getToken();
+    if (!token) { showToast('❌ Session expirée — reconnectez-vous'); return; }
+
+    const name      = document.getElementById('ek-name').value.trim();
+    const source    = document.getElementById('ek-source').value;
+    const notes     = document.getElementById('ek-notes').value.trim();
+    const startVal  = document.getElementById('ek-start').value;
+    const endVal    = document.getElementById('ek-end').value;
+    const createdAt = startVal ? new Date(startVal).getTime() : null;
+    const expiresAt = endVal   ? new Date(endVal).setHours(23,59,59,999) : null;
+
+    // Toujours inclure tous les champs (même vides) pour permettre la mise à jour
+    const patch = { source, recipient: name || null, notes: notes || null };
+    if (createdAt) patch.createdAt = createdAt;
+
+    // Gérer l'expiration séparément : PATCH ne peut pas supprimer un champ
+    if (expiresAt) {
+      patch.expiresAt = expiresAt;
+    } else {
+      // Champ date vide → à vie → supprimer le champ expiresAt
+      await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}/expiresAt.json`, { method:'DELETE' }, token);
+    }
+
+    // Supprimer les champs null côté Firebase aussi
+    if (!name)  await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}/recipient.json`, { method:'DELETE' }, token);
+    if (!notes) await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}/notes.json`,     { method:'DELETE' }, token);
+
+    // Patch principal (sans les null)
+    const cleanPatch = Object.fromEntries(Object.entries(patch).filter(([,v]) => v !== null));
+    const r = await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}.json`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(cleanPatch)
+    }, token);
+
+    if (!r.ok) {
+      const errBody = await r.text().catch(() => '');
+      showToast(`❌ Erreur HTTP ${r.status}${errBody ? ' — ' + errBody.slice(0,60) : ''}`);
+      return;
+    }
+
+    // Mettre à jour le cache local
+    const localUpdate = { ...cleanPatch };
+    if (!name)      delete localUpdate.recipient;
+    if (!notes)     delete localUpdate.notes;
+    if (!expiresAt) delete localUpdate.expiresAt;
+    _betaKeys = _betaKeys.map(k => {
+      if (k.key !== _editingKey) return k;
+      const updated = { ...k, ...localUpdate };
+      if (!name)      delete updated.recipient;
+      if (!notes)     delete updated.notes;
+      if (!expiresAt) delete updated.expiresAt;
+      return updated;
+    });
+    renderBetaKeys();
+    closeEditKeyModal();
+    showToast('✅ Licence mise à jour');
+
+  } catch(e) {
+    showToast('❌ Erreur : ' + (e.message || 'inconnue'));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Enregistrer'; }
   }
-
-  const r = await _fbFetch(`${LICENSE_DB}/licenses/${_editingKey}.json`, {
-    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(patch)
-  }, token);
-  if (!r.ok) { showToast('❌ Erreur sauvegarde'); return; }
-
-  // Mettre à jour le cache local
-  _betaKeys = _betaKeys.map(k => k.key === _editingKey ? { ...k, ...patch, expiresAt: expiresAt || undefined } : k);
-  renderBetaKeys();
-  closeEditKeyModal();
-  showToast('✅ Licence mise à jour');
 }
 
 // ── SOURCE CONFIG ─────────────────────────────────────────────────────
