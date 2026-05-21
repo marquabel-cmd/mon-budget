@@ -5032,6 +5032,7 @@ async function cloudPush() {
   if (!_hasYearData(DATA)) return; // Ne jamais écraser le cloud avec des données vides
   if (!_deviceAllowed) { setCloudStatus('error', _lang==='en' ? `Device not authorized — max ${MAX_DEVICES} devices` : `Appareil non autorisé — ${MAX_DEVICES} appareils max`); return; }
   const token = await fbGetToken();
+  if (!token) { setCloudStatus('off'); return; } // Session expirée — pas de push silencieux
   setCloudStatus('syncing');
   try {
     // Inclure les profils utilisateurs dans la sync (sans photos pour limiter la taille)
@@ -5061,6 +5062,7 @@ async function cloudPush() {
     };
     const r = await _fbFetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}, token);
     if (r.ok) { _lastPushTime = Date.now(); setCloudStatus('ok'); _lastSyncError = ''; }
+    else if (r.status === 401) { setCloudStatus('off'); } // Session expirée — on masque silencieusement
     else { setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); }
   } catch(e) { setCloudStatus('error', e.message || 'Réseau inaccessible'); }
 }
@@ -5069,9 +5071,10 @@ async function cloudPull() {
   if (!url) return null;
   if (!_deviceAllowed) return null;
   const token = await fbGetToken();
+  if (!token) return null; // Session expirée — pas de pull silencieux
   try {
     const r = await _fbFetch(url, {}, token);
-    if (!r.ok) { _lastSyncError = `HTTP ${r.status} — vérifiez les règles Firebase`; return null; }
+    if (!r.ok) { _lastSyncError = r.status === 401 ? '' : `HTTP ${r.status} — vérifiez les règles Firebase`; return null; }
     const d = await r.json();
     if (!d || Array.isArray(d)) return null;
     if (typeof d !== 'object') { _lastSyncError = 'Format de données invalide'; return null; }
@@ -7239,7 +7242,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.49';
+const APP_VERSION = '11.50';
 const SW_VERSION = 'v173';
 
 // ── INTERNATIONALISATION ──
@@ -9098,6 +9101,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.50': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔐', text: 'Fix sync cloud : token expiré → plus d\'erreur 401 visible. La sync s\'arrête silencieusement jusqu\'à reconnexion, sans message trompeur "vérifiez les règles Firebase"' }
+    ]
+  },
   '11.49': {
     date: 'Mai 2026',
     items: [
