@@ -2282,18 +2282,22 @@ function _finishLogin(id) {
         if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
         _backupBeforeCloudReplace();
         const _cloudTxCount = _countAllTx(cloudData);
-        const _hadDirty = _cloudDirty; // mémoriser si des changements locaux attendaient un push
-        if (_hadDirty) {
-          // Des changements locaux non poussés existent (catégories, charges, revenus, vars…)
-          // → garder le LOCAL comme base structurelle, ajouter les vars cloud absentes du local
+        // Comparer les timestamps pour savoir qui est le plus récent
+        const _cloudPushTime  = cloudData._lastPush || 0;
+        const _localSaveStr   = localStorage.getItem('budget_lastsave_' + (CURRENT_USER_ID||''));
+        const _localSaveTime  = _localSaveStr ? new Date(_localSaveStr).getTime() : 0;
+        // Le local est "plus récent" uniquement si : données locales non poussées ET local modifié APRÈS le dernier push cloud
+        const _localIsNewer = _cloudDirty && _localSaveTime > _cloudPushTime;
+        if (_localIsNewer) {
+          // Local modifié après le dernier push Firebase → garder local comme base, ajouter vars cloud manquantes
           DATA = _mergeBudgetData(cloudData, DATA); // args inversés : local devient base
         } else {
-          // Local propre (rien de non poussé) → le cloud fait autorité
+          // Cloud plus récent (ex: autre appareil a poussé) → cloud fait autorité
           DATA = _mergeBudgetData(DATA, cloudData);
         }
         if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
-        // Repousser si des tx locales ont été réinjectées, ou si des changements locaux existaient
-        if (_countAllTx(DATA) > _cloudTxCount || _hadDirty) dSave();
+        // Repousser si : local plus récent, ou tx locales réinjectées
+        if (_localIsNewer || _countAllTx(DATA) > _cloudTxCount) dSave();
         else _cloudDirty = false;
         document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
         renderTabs();
@@ -7326,8 +7330,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.60';
-const SW_VERSION = 'v181';
+const APP_VERSION = '11.61';
+const SW_VERSION = 'v182';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
