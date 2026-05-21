@@ -159,6 +159,16 @@ header{background:linear-gradient(135deg,#1A1D2E 0%,#252A4A 100%);color:#fff;pad
 header h1{font-size:18px;font-weight:700;margin:0;letter-spacing:-0.01em}
 header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .header-btns{display:flex;gap:8px}
+/* ── QUICK LANG/CURRENCY SWITCHER ── */
+.qs-bar{display:flex;align-items:center;gap:3px;margin-right:2px}
+.qs-btn{background:rgba(255,255,255,.08);color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;line-height:1.6}
+.qs-btn:hover{background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.35)}
+.qs-wrap{position:relative}
+.qs-dropdown{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:9000;min-width:160px;padding:4px 0;overflow:hidden}
+.qs-dropdown.open{display:block}
+.qs-opt{padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:8px;transition:background .12s}
+.qs-opt:hover{background:var(--surface-alt)}
+.qs-opt.active{color:var(--blue);background:var(--blue-light)}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'Inter',system-ui,sans-serif;transition:all .15s}
 .btn-save{background:var(--blue);color:#fff}.btn-save:hover{background:var(--blue-dark)}
 .btn-reset{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.55);letter-spacing:.01em}.btn-reset:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.75)}
@@ -660,6 +670,7 @@ body.auth-locked #context-banner {
   #cloud-status{display:none}
   #last-sync-time{display:none!important}
   #last-save-info{display:none}
+  .qs-bar{display:none}
   /* ── NAV MOBILE ── */
   .nav-mobile-bar{display:flex}
   .app-nav{display:none;position:static;padding:8px 12px;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,.18)}
@@ -1357,14 +1368,32 @@ body.auth-locked #context-banner {
       <span id="last-save-info" style="font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;align-self:center"></span>
       <span id="autosave-indicator" title="Sauvegarde automatique" style="font-size:11px;color:rgba(255,255,255,0.5);white-space:nowrap;align-self:center;display:none">💾 --:--</span>
       <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openBackups()">📦 <span class="btn-label">Backups</span></button>
+      <!-- Quick lang/currency switcher — desktop/tablet only -->
+      <div class="qs-bar">
+        <button class="qs-btn" id="qs-lang-btn" onclick="setLang(_lang==='fr'?'en':'fr')" title="Switch language"></button>
+        <div class="qs-wrap">
+          <button class="qs-btn" id="qs-cur-btn" onclick="document.getElementById('qs-cur-dd').classList.toggle('open');event.stopPropagation()"></button>
+          <div class="qs-dropdown" id="qs-cur-dd">
+            <div class="qs-opt" data-cur="EUR" onclick="setCurrency('EUR');document.getElementById('qs-cur-dd').classList.remove('open')">🇪🇺 EUR — €</div>
+            <div class="qs-opt" data-cur="USD" onclick="setCurrency('USD');document.getElementById('qs-cur-dd').classList.remove('open')">🇺🇸 USD — $</div>
+            <div class="qs-opt" data-cur="GBP" onclick="setCurrency('GBP');document.getElementById('qs-cur-dd').classList.remove('open')">🇬🇧 GBP — £</div>
+            <div class="qs-opt" data-cur="CHF" onclick="setCurrency('CHF');document.getElementById('qs-cur-dd').classList.remove('open')">🇨🇭 CHF</div>
+            <div class="qs-opt" data-cur="CAD" onclick="setCurrency('CAD');document.getElementById('qs-cur-dd').classList.remove('open')">🇨🇦 CAD</div>
+            <div class="qs-opt" data-cur="MAD" onclick="setCurrency('MAD');document.getElementById('qs-cur-dd').classList.remove('open')">🇲🇦 MAD</div>
+            <div class="qs-opt" data-cur="TND" onclick="setCurrency('TND');document.getElementById('qs-cur-dd').classList.remove('open')">🇹🇳 TND</div>
+            <div class="qs-opt" data-cur="DZD" onclick="setCurrency('DZD');document.getElementById('qs-cur-dd').classList.remove('open')">🇩🇿 DZD</div>
+            <div class="qs-opt" data-cur="XOF" onclick="setCurrency('XOF');document.getElementById('qs-cur-dd').classList.remove('open')">🌍 XOF</div>
+          </div>
+        </div>
+      </div>
       <div id="tour-help-wrap" style="position:relative">
-        <button class="btn" onclick="toggleHelpDropdown(event)" title="Aide & Tour" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
+        <button class="btn" onclick="toggleHelpDropdown(event)" data-i18n-title="header.help_tour" title="Aide & Tour" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
         <div id="tour-help-dropdown">
-          <div class="tour-help-item" onclick="openInstallModal();closeHelpDropdown()">📲 Install the app</div>
-          <div class="tour-help-item" onclick="startTour();closeHelpDropdown()">🗺️ Guided tour</div>
-          <div class="tour-help-item" onclick="openAide();closeHelpDropdown()">📖 Full guide</div>
-          <div class="tour-help-item" onclick="window.location.href='dashboard.html';closeHelpDropdown()">👤 My account</div>
-          <div class="tour-help-item" onclick="openShareModal();closeHelpDropdown()" style="color:#00C896;font-weight:700">🎁 Invite a friend</div>
+          <div class="tour-help-item" data-i18n="help.install" onclick="openInstallModal();closeHelpDropdown()">📲 Installer l'application</div>
+          <div class="tour-help-item" data-i18n="help.tour" onclick="startTour();closeHelpDropdown()">🗺️ Tour guidé</div>
+          <div class="tour-help-item" data-i18n="help.guide" onclick="openAide();closeHelpDropdown()">📖 Guide complet</div>
+          <div class="tour-help-item" data-i18n="help.account" onclick="window.location.href='dashboard.html';closeHelpDropdown()">👤 Mon compte</div>
+          <div class="tour-help-item" data-i18n="help.invite" onclick="openShareModal();closeHelpDropdown()" style="color:#00C896;font-weight:700">🎁 Inviter un ami</div>
           <div style="padding:7px 14px;font-size:11px;color:var(--gray);border-top:1px solid var(--border);user-select:all">v<span id="app-version-display"></span> · SW <span id="sw-version-display"></span></div>
         </div>
       </div>
@@ -1576,11 +1605,29 @@ function setCurrency(code) {
   localStorage.setItem('mbudget-currency', _cur);
   const sel = document.getElementById('currency-select');
   if (sel) sel.value = _cur;
+  _updateQsBar();
   if (typeof CURRENT_USER_ID !== 'undefined' && CURRENT_USER_ID) {
     if (typeof getYears === 'function') getYears().forEach(y => renderYear(y));
     if (typeof renderSummary === 'function') renderSummary();
     if (typeof renderConfigTab === 'function') renderConfigTab();
     if (typeof renderDashboard === 'function') renderDashboard();
+  }
+}
+function _updateQsBar() {
+  const langBtn = document.getElementById('qs-lang-btn');
+  if (langBtn) langBtn.textContent = _lang === 'fr' ? '🇫🇷 FR' : '🇬🇧 EN';
+  const curBtn = document.getElementById('qs-cur-btn');
+  if (curBtn) curBtn.textContent = getCurInfo().symbol;
+  // Mark active currency option
+  document.querySelectorAll('#qs-cur-dd .qs-opt').forEach(el => {
+    el.classList.toggle('active', el.dataset.cur === _cur);
+  });
+  // Close dropdown on outside click (register once)
+  if (!window._qsClickBound) {
+    window._qsClickBound = true;
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.qs-wrap')) document.getElementById('qs-cur-dd')?.classList.remove('open');
+    });
   }
 }
 const sum = a => a.reduce((s,x)=>s+(parseFloat(x)||0),0);
@@ -7139,8 +7186,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.42';
-const SW_VERSION = 'v169';
+const APP_VERSION = '11.43';
+const SW_VERSION = 'v170';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -8760,6 +8807,11 @@ function setLang(code) {
     const key = el.getAttribute('data-i18n-placeholder');
     el.placeholder = t(key);
   });
+  // Update title attributes
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    el.title = t(key);
+  });
   // Update search hint
   const shp = document.getElementById('search-hint-p');
   if (shp) shp.textContent = t('search.hint');
@@ -8853,6 +8905,8 @@ function setLang(code) {
     const tabId = activeTab.getAttribute('data-tabid');
     if (tabId && typeof updateContextBanner === 'function') updateContextBanner(tabId);
   }
+  // Update quick lang/currency bar
+  if (typeof _updateQsBar === 'function') _updateQsBar();
   // Update AI chat panel (title, status, welcome message if chat is empty)
   const aiStatus = document.getElementById('ai-chat-status');
   if (aiStatus) aiStatus.textContent = t('ai.powered_by');
@@ -8955,6 +9009,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
   });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.getAttribute('data-i18n-title'));
+  });
+  // Init quick lang/currency bar
+  _updateQsBar();
   _updateWizardLang();
   _updateOnboardingLang();
   // Update welcome screen lang button states
@@ -8983,6 +9045,14 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.43': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🌐', text: 'Quick switcher langue/devise dans le header (desktop/tablette) — 1 clic pour changer, invisible sur mobile' },
+      { icon: '🔧', text: 'Menu ❓ traduit dès le chargement via data-i18n — plus de texte anglais en FR au démarrage' },
+      { icon: '✨', text: 'data-i18n-title supporté dans setLang() et au DOMContentLoaded' }
+    ]
+  },
   '11.42': {
     date: 'Mai 2026',
     items: [
