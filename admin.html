@@ -1198,10 +1198,16 @@ async function viewUserBudget(uid) {
   }
 
   _bvData = raw;
-  // Détecter les années (clés numériques 4 chiffres)
-  const years = Object.keys(raw).filter(k => /^\d{4}$/.test(k)).sort((a,b) => b-a);
+  // Détecter les années (clés numériques 4 chiffres), directement ou dans raw.data
+  let years = Object.keys(raw).filter(k => /^\d{4}$/.test(k)).sort((a,b) => b-a);
+  if (!years.length && raw.data && typeof raw.data === 'object') {
+    _bvData = raw.data;
+    years = Object.keys(raw.data).filter(k => /^\d{4}$/.test(k)).sort((a,b) => b-a);
+  }
   if (!years.length) {
-    document.getElementById('bv-content').innerHTML = '<div class="bv-empty">📭 Structure de données non reconnue.</div>';
+    // Afficher la structure brute pour diagnostic
+    const keys = Object.keys(raw).slice(0, 20).join(', ');
+    document.getElementById('bv-content').innerHTML = `<div class="bv-empty">📭 Aucune année détectée dans les données.<br><span style="font-size:11px;opacity:.6;font-family:monospace">Clés trouvées : ${_esc(keys) || '(vide)'}</span></div>`;
     return;
   }
 
@@ -1240,19 +1246,37 @@ function _renderBvYear(year) {
   const chargeRows = Array.isArray(d.charges) ? d.charges : [];
   const totalCharges = chargeRows.reduce((s,r) => s + _sum(r.v), 0);
 
-  // Dépenses variables
-  const depRows = Array.isArray(d.depenses) ? d.depenses : [];
+  // Dépenses variables — clé 'vars' (objet ou tableau) ou 'depenses' (ancien nom)
+  let depRows = [];
+  const varsRaw = d.vars || d.depenses || null;
+  if (Array.isArray(varsRaw)) {
+    depRows = varsRaw;
+  } else if (varsRaw && typeof varsRaw === 'object') {
+    // vars = { carburant: [v1..v12], courses: [...], ... }
+    // ou vars = { carburant: { label:'Carburant', v:[...] }, ... }
+    depRows = Object.entries(varsRaw).map(([cat, val]) => {
+      if (Array.isArray(val))                          return { label: cat, cat, v: val };
+      if (val && typeof val === 'object' && val.v)     return { label: val.label || cat, cat, v: val.v };
+      if (val && typeof val === 'object')              return { label: cat, cat, v: Object.values(val).filter(x => typeof x === 'number') };
+      return null;
+    }).filter(Boolean);
+  }
   const totalDep = depRows.reduce((s,r) => s + _sum(r.v), 0);
 
   const solde = totalRev - totalCharges - totalDep;
   const soldeColor = solde >= 0 ? '#00C896' : '#F04F5B';
+
+  // Soldes de compte si disponibles
+  const soldes = d.soldes || {};
+  const soldesEntries = Object.entries(soldes).filter(([,v]) => v != null && v !== 0);
 
   // KPIs
   let html = `<div class="bv-kpis">
     <div class="bv-kpi"><div class="bv-kpi-label">Revenus</div><div class="bv-kpi-value stat-blue">${_fmt(totalRev)}</div></div>
     <div class="bv-kpi"><div class="bv-kpi-label">Charges fixes</div><div class="bv-kpi-value stat-orange">${_fmt(totalCharges)}</div></div>
     <div class="bv-kpi"><div class="bv-kpi-label">Dépenses variables</div><div class="bv-kpi-value stat-purple">${_fmt(totalDep)}</div></div>
-    <div class="bv-kpi"><div class="bv-kpi-label">Solde net</div><div class="bv-kpi-value" style="color:${soldeColor}">${_fmt(solde)}</div></div>
+    <div class="bv-kpi"><div class="bv-kpi-label">Budget restant</div><div class="bv-kpi-value" style="color:${soldeColor}">${_fmt(solde)}</div></div>
+    ${soldesEntries.map(([k,v]) => `<div class="bv-kpi"><div class="bv-kpi-label">💰 ${_esc(k)}</div><div class="bv-kpi-value" style="color:${parseFloat(v)>=0?'#7effa0':'#F04F5B'}">${_fmt(v)}</div></div>`).join('')}
   </div>`;
 
   html += '<div class="bv-section">';
