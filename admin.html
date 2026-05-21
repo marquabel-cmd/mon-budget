@@ -1619,20 +1619,29 @@ function _renderBvYear(year) {
   const chargeRows = Array.isArray(d.charges) ? d.charges : [];
   const totalCharges = chargeRows.reduce((s,r) => s + _sum(r.v), 0);
 
-  // Dépenses variables — clé 'vars' (objet ou tableau) ou 'depenses' (ancien nom)
+  // Dépenses variables — structure réelle : vars[catKey] = [{id,month,amount,date,comment,method},...]
   let depRows = [];
   const varsRaw = d.vars || d.depenses || null;
-  if (Array.isArray(varsRaw)) {
-    depRows = varsRaw;
-  } else if (varsRaw && typeof varsRaw === 'object') {
-    // vars = { carburant: [v1..v12], courses: [...], ... }
-    // ou vars = { carburant: { label:'Carburant', v:[...] }, ... }
+  if (varsRaw && typeof varsRaw === 'object' && !Array.isArray(varsRaw)) {
     depRows = Object.entries(varsRaw).map(([cat, val]) => {
-      if (Array.isArray(val))                          return { label: cat, cat, v: val };
-      if (val && typeof val === 'object' && val.v)     return { label: val.label || cat, cat, v: val.v };
-      if (val && typeof val === 'object')              return { label: cat, cat, v: Object.values(val).filter(x => typeof x === 'number') };
-      return null;
-    }).filter(Boolean);
+      const monthly = new Array(12).fill(0);
+      if (Array.isArray(val)) {
+        if (val.length === 0) return { label: cat, cat, v: monthly };
+        if (typeof val[0] === 'object' && val[0] !== null && 'amount' in val[0]) {
+          // Transactions : agréger par mois
+          val.forEach(tx => {
+            const m = parseInt(tx.month);
+            if (m >= 0 && m <= 11) monthly[m] += parseFloat(tx.amount) || 0;
+          });
+        } else {
+          // Tableaux de totaux mensuels (format legacy)
+          val.forEach((v, i) => { if (i < 12) monthly[i] = parseFloat(v) || 0; });
+        }
+      } else if (val && typeof val === 'object') {
+        if (val.v && Array.isArray(val.v)) val.v.forEach((v,i) => { if (i<12) monthly[i]=parseFloat(v)||0; });
+      }
+      return { label: cat, cat, v: monthly };
+    }).filter(r => _sum(r.v) > 0); // masquer les catégories vides
   }
   const totalDep = depRows.reduce((s,r) => s + _sum(r.v), 0);
 
@@ -1676,25 +1685,14 @@ function _renderBvYear(year) {
     });
   }
 
-  // Dépenses variables par catégorie
+  // Dépenses variables par catégorie — une ligne par catégorie, triée alphabétiquement
   if (depRows.length) {
     html += '<div class="bv-section-title">🛒 Dépenses variables</div>';
-    // Grouper par catégorie
-    const byCat = {};
-    depRows.forEach(r => {
-      const cat = r.cat || r.category || '—';
-      if (!byCat[cat]) byCat[cat] = [];
-      byCat[cat].push(r);
-    });
-    Object.entries(byCat).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cat, rows]) => {
-      const catTotal = rows.reduce((s,r) => s + _sum(r.v), 0);
-      html += `<div style="margin:6px 0 3px;padding:5px 10px;background:#20243A;border-radius:6px;font-size:11px;font-weight:700;color:#8892B0;display:flex;justify-content:space-between"><span>${_esc(cat)}</span><span>${_fmt(catTotal)}</span></div>`;
-      rows.forEach(r => {
-        const vals = Array.isArray(r.v) ? r.v : [];
-        const total = _sum(vals);
-        const pills = vals.map((v,i) => parseFloat(v) ? `<span class="bv-pill">${MONTHS[i]} ${_fmt(v)}</span>` : '').filter(Boolean).join('');
-        html += `<div class="bv-row" style="padding-left:20px"><span class="bv-row-label" style="font-size:12px">${_esc(r.label||'—')}</span><div class="bv-row-vals">${pills}</div><span class="bv-row-total stat-purple">${_fmt(total)}</span></div>`;
-      });
+    depRows.sort((a,b) => a.label.localeCompare(b.label)).forEach(r => {
+      const vals = Array.isArray(r.v) ? r.v : [];
+      const total = _sum(vals);
+      const pills = vals.map((v,i) => v > 0.005 ? `<span class="bv-pill">${MONTHS[i]} ${_fmt(v)}</span>` : '').filter(Boolean).join('');
+      html += `<div class="bv-row"><span class="bv-row-label">${_esc(r.label||'—')}</span><div class="bv-row-vals">${pills||'<span style="color:#555;font-size:11px">—</span>'}</div><span class="bv-row-total stat-purple">${_fmt(total)}</span></div>`;
     });
   }
 
