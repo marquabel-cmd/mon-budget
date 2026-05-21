@@ -2282,11 +2282,19 @@ function _finishLogin(id) {
         if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
         _backupBeforeCloudReplace();
         const _cloudTxCount = _countAllTx(cloudData);
-        DATA = _mergeBudgetData(DATA, cloudData);
+        const _hadDirty = _cloudDirty; // mémoriser si des changements locaux attendaient un push
+        if (_hadDirty) {
+          // Des changements locaux non poussés existent (catégories, charges, revenus, vars…)
+          // → garder le LOCAL comme base structurelle, ajouter les vars cloud absentes du local
+          DATA = _mergeBudgetData(cloudData, DATA); // args inversés : local devient base
+        } else {
+          // Local propre (rien de non poussé) → le cloud fait autorité
+          DATA = _mergeBudgetData(DATA, cloudData);
+        }
         if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
-        // Si la fusion a récupéré des tx locales absentes du cloud, repousser vers Firebase
-        if (_countAllTx(DATA) > _cloudTxCount) dSave();
-        else _cloudDirty = false; // Données locales = cloud, pas besoin de pousser
+        // Repousser si des tx locales ont été réinjectées, ou si des changements locaux existaient
+        if (_countAllTx(DATA) > _cloudTxCount || _hadDirty) dSave();
+        else _cloudDirty = false;
         document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
         renderTabs();
         getYears().forEach(y => renderYear(y));
