@@ -208,9 +208,11 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
         <button class="btn btn-orange btn-sm" onclick="generateBetaKey()">+ Nouvelle clé</button>
       </div>
     </div>
-    <div id="beta-keys-list" style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:16px;margin-bottom:24px;font-size:13px;color:#8892B0">
+    <div id="beta-keys-list" style="background:#1C1F30;border:1px solid #2C3050;border-radius:12px;padding:16px;margin-bottom:12px;font-size:13px;color:#8892B0">
       Aucune clé générée pour l'instant.
     </div>
+    <!-- Stats par source -->
+    <div id="source-stats" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px"></div>
 
     <!-- Users table -->
     <div class="section-header">
@@ -304,6 +306,17 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
         <select id="bk-type" class="auth-input" style="margin:0" onchange="updateBkModal()">
           <option value="beta">🧪 Bêta — testeur gratuit</option>
           <option value="premium">⭐ Premium — client payant ou offert</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#8892B0;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Source *</label>
+        <select id="bk-source" class="auth-input" style="margin:0">
+          <option value="paid">💳 Payant (client Stripe)</option>
+          <option value="beta_tester">🧪 Bêta testeur</option>
+          <option value="family">👨‍👩‍👧 Famille</option>
+          <option value="friend">👫 Ami / proche</option>
+          <option value="partner">🤝 Partenaire / influenceur</option>
+          <option value="gift">🎁 Offert (autre)</option>
         </select>
       </div>
       <div>
@@ -860,6 +873,7 @@ function filterVisitorsList() {
 
 function generateBetaKey() {
   document.getElementById('bk-type').value     = 'beta';
+  document.getElementById('bk-source').value   = 'beta_tester';
   document.getElementById('bk-name').value     = '';
   document.getElementById('bk-email').value    = '';
   document.getElementById('bk-notes').value    = '';
@@ -872,6 +886,7 @@ function closeBetaKeyModal() {
 }
 async function confirmGenerateBetaKey() {
   const type     = document.getElementById('bk-type').value;
+  const source   = document.getElementById('bk-source').value;
   const name     = document.getElementById('bk-name').value.trim();
   const email    = document.getElementById('bk-email').value.trim();
   const notes    = document.getElementById('bk-notes').value.trim();
@@ -882,7 +897,7 @@ async function confirmGenerateBetaKey() {
   const key      = prefix + '-' + _randKey().slice(5); // garde le format XXXX-XXXX-XXXX
   const now      = Date.now();
   const expiry   = days > 0 ? now + days * 24 * 3600 * 1000 : null;
-  const payload  = { active: true, type, createdAt: now, recipient: name };
+  const payload  = { active: true, type, source, createdAt: now, recipient: name };
   if (email)  payload.email     = email;
   if (notes)  payload.notes     = notes;
   if (expiry) payload.expiresAt = expiry;
@@ -958,6 +973,22 @@ function copyKey(key) {
 function renderBetaKeys() {
   const el = document.getElementById('beta-keys-list');
   const visible = _showRevoked ? _betaKeys : _betaKeys.filter(k => k.active !== false);
+
+  // Stats par source (sur toutes les clés actives)
+  const statsEl = document.getElementById('source-stats');
+  if (statsEl) {
+    const activeKeys = _betaKeys.filter(k => k.active !== false);
+    const counts = {};
+    activeKeys.forEach(k => { const s = k.source || '—'; counts[s] = (counts[s]||0) + 1; });
+    statsEl.innerHTML = Object.entries(counts).map(([src, n]) => {
+      const s = SOURCES[src];
+      const label = s ? `${s.icon} ${s.label}` : '— Non défini';
+      const color = s ? s.color : '#8892B0';
+      const bg    = s ? s.bg    : '#2C3050';
+      return `<div style="background:${bg};border:1px solid ${color}33;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:${color}">${label} <span style="opacity:.7;font-weight:400">(${n})</span></div>`;
+    }).join('');
+  }
+
   if (!visible.length) {
     el.textContent = _betaKeys.length ? 'Aucune clé active — cliquez "Afficher révoquées" pour les voir.' : 'Aucune clé générée.';
     return;
@@ -980,6 +1011,7 @@ function renderBetaKeys() {
             ${k.type === 'premium'
               ? `<span style="font-size:10px;background:#00C89620;color:#00C896;border-radius:4px;padding:1px 6px">⭐ Premium</span>`
               : `<span style="font-size:10px;background:#8B5CF620;color:#8B5CF6;border-radius:4px;padding:1px 6px">🧪 Bêta</span>`}
+            ${_sourceBadge(k.source)}
             ${revoked ? `<span style="font-size:10px;background:#F04F5B20;color:#F04F5B;border-radius:4px;padding:1px 6px">Révoquée</span>` : ''}
             ${used    ? `<span style="font-size:10px;background:#5B6AF020;color:#5B6AF0;border-radius:4px;padding:1px 6px">✓ Utilisée</span>` : ''}
             ${expired && !revoked ? `<span style="font-size:10px;background:#F04F5B20;color:#F04F5B;border-radius:4px;padding:1px 6px">Expirée</span>` : ''}
@@ -1005,6 +1037,21 @@ function renderBetaKeys() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ── SOURCE CONFIG ─────────────────────────────────────────────────────
+const SOURCES = {
+  paid:        { label: 'Payant',             icon: '💳', color: '#00C896', bg: '#00C89622' },
+  beta_tester: { label: 'Bêta testeur',       icon: '🧪', color: '#8B5CF6', bg: '#8B5CF622' },
+  family:      { label: 'Famille',            icon: '👨‍👩‍👧', color: '#5B6AF0', bg: '#5B6AF022' },
+  friend:      { label: 'Ami / proche',       icon: '👫', color: '#06B6D4', bg: '#06B6D422' },
+  partner:     { label: 'Partenaire',         icon: '🤝', color: '#F5A623', bg: '#F5A62322' },
+  gift:        { label: 'Offert (autre)',      icon: '🎁', color: '#8892B0', bg: '#8892B022' },
+};
+function _sourceBadge(source) {
+  const s = SOURCES[source];
+  if (!s) return '<span style="font-size:10px;background:#2C3050;color:#8892B0;border-radius:4px;padding:1px 6px">—</span>';
+  return `<span style="font-size:10px;background:${s.bg};color:${s.color};border-radius:4px;padding:1px 6px">${s.icon} ${s.label}</span>`;
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────
