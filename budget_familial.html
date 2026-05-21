@@ -5046,15 +5046,17 @@ function setCloudStatus(s, errMsg) {
   };
   el.textContent = (map[s]||'') + (lbl[s]||'');
   el.style.color  = col[s]||'';
-  el.style.cursor = s === 'error' ? 'pointer' : 'default';
+  el.style.cursor = (s === 'ok' || s === 'off' || s === 'error') ? 'pointer' : 'default';
   const tips = {
-    off:     hasCloud ? (_lang==='en' ? 'Cloud sync inactive (session expired or offline)' : 'Sync cloud inactive (session expirée ou hors ligne)') : '',
+    off:     hasCloud ? (_lang==='en' ? 'Click to sync now' : 'Cliquer pour synchroniser maintenant') : '',
     syncing: _lang==='en' ? 'Syncing…' : 'Synchronisation en cours…',
-    ok:      _lang==='en' ? 'Cloud sync active' : 'Sync cloud active',
-    error:   _lastSyncError || (_lang==='en' ? 'Sync error' : 'Erreur de sync')
+    ok:      _lang==='en' ? 'Cloud sync active — click to push now' : 'Sync cloud active — cliquer pour pousser maintenant',
+    error:   (_lastSyncError || (_lang==='en' ? 'Sync error' : 'Erreur de sync')) + (_lang==='en' ? ' — click to retry' : ' — cliquer pour réessayer')
   };
   el.title   = tips[s]||'';
-  el.onclick = s === 'error' ? () => showToast('❌ Sync : ' + (_lastSyncError || 'Erreur inconnue')) : null;
+  el.onclick = (s === 'ok' || s === 'off') ? () => { _cloudDirty = true; cloudPush(); }
+             : s === 'error' ? () => { showToast('❌ Sync : ' + (_lastSyncError || 'Erreur inconnue')); _cloudDirty = true; cloudPush(); }
+             : null;
   if (s === 'ok') {
     const now = Date.now();
     localStorage.setItem('budget_last_sync_' + (CURRENT_USER_ID||''), now);
@@ -7320,8 +7322,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.58';
-const SW_VERSION = 'v179';
+const APP_VERSION = '11.59';
+const SW_VERSION = 'v180';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
