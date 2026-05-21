@@ -7320,8 +7320,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.56';
-const SW_VERSION = 'v177';
+const APP_VERSION = '11.58';
+const SW_VERSION = 'v179';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -9179,6 +9179,14 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.58': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔒', text: 'Fix critique sync : les changements locaux (catégories, charges, revenus) sont maintenant préservés lors du pull — le local sert de base si des données n\'avaient pas encore été poussées.' },
+      { icon: '⚡', text: 'Fix race condition : le push ne peut plus écraser Firebase pendant qu\'un pull est en cours au démarrage.' },
+      { icon: '🕐', text: 'Horodatage _lastPush ajouté dans Firebase — l\'admin voit maintenant la date exacte de la dernière synchronisation.' }
+    ]
+  },
   '11.53': {
     date: 'Mai 2026',
     items: [
