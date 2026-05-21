@@ -1548,7 +1548,41 @@ if (_compareMode) {
 // ─────────────────────────────────────────────
 const MONTHS = ['JAN','FÉV','MAR','AVR','MAI','JUIN','JUIL','AOÛT','SEPT','OCT','NOV','DÉC'];
 const f2 = v => (parseFloat(v)||0).toFixed(2).replace('.',',');
-const fmtN = v => { const n=parseFloat(v)||0; return n===0?'0,00':n.toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+// ── MULTI-CURRENCY ──────────────────────────────────────────────────────────
+const CURRENCIES = {
+  EUR: { symbol: '€',    locale: 'fr-BE', pos: 'after'  },
+  USD: { symbol: '$',    locale: 'en-US', pos: 'before' },
+  GBP: { symbol: '£',   locale: 'en-GB', pos: 'before' },
+  CHF: { symbol: 'CHF', locale: 'de-CH', pos: 'after'  },
+  CAD: { symbol: 'CA$', locale: 'fr-CA', pos: 'before' },
+  MAD: { symbol: 'MAD', locale: 'fr-MA', pos: 'after'  },
+  TND: { symbol: 'DT',  locale: 'fr-TN', pos: 'after'  },
+  DZD: { symbol: 'DA',  locale: 'fr-DZ', pos: 'after'  },
+  XOF: { symbol: 'FCFA',locale: 'fr-SN', pos: 'after'  },
+};
+let _cur = localStorage.getItem('mbudget-currency') || 'EUR';
+function getCurInfo() { return CURRENCIES[_cur] || CURRENCIES['EUR']; }
+function curSym() { return getCurInfo().symbol; }
+const fmtN = v => { const n=parseFloat(v)||0; return n===0?'0,00':n.toLocaleString(getCurInfo().locale,{minimumFractionDigits:2,maximumFractionDigits:2}); };
+function fmt(v, sign=false) {
+  const n = parseFloat(v) || 0;
+  const info = getCurInfo();
+  const num = fmtN(v);
+  const s = (sign && n > 0) ? '+' : '';
+  return info.pos === 'before' ? `${s}${info.symbol} ${num}` : `${s}${num} ${info.symbol}`;
+}
+function setCurrency(code) {
+  _cur = CURRENCIES[code] ? code : 'EUR';
+  localStorage.setItem('mbudget-currency', _cur);
+  const sel = document.getElementById('currency-select');
+  if (sel) sel.value = _cur;
+  if (typeof CURRENT_USER_ID !== 'undefined' && CURRENT_USER_ID) {
+    if (typeof getYears === 'function') getYears().forEach(y => renderYear(y));
+    if (typeof renderSummary === 'function') renderSummary();
+    if (typeof renderConfigTab === 'function') renderConfigTab();
+    if (typeof renderDashboard === 'function') renderDashboard();
+  }
+}
 const sum = a => a.reduce((s,x)=>s+(parseFloat(x)||0),0);
 const F12 = () => Array(12).fill(false);
 let _id = 1000;
@@ -2820,7 +2854,7 @@ function showCompteDetail(year, accId) {
   const row = (label, amt, color, note='') =>
     `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px">
       <span style="color:var(--gray);flex:1">${_esc(label)}${note ? `<br><span style="font-size:10px;color:#aaa">${note}</span>` : ''}</span>
-      <span style="font-weight:700;white-space:nowrap;color:${color}">${amt >= 0 ? '+' : ''}${fmtN(amt)} €</span>
+      <span style="font-weight:700;white-space:nowrap;color:${color}">${fmt(amt, true)}</span>
     </div>`;
 
   const section = (title, color, lines) => {
@@ -2835,7 +2869,7 @@ function showCompteDetail(year, accId) {
     revLines.map(r => row(r.label,
       r.skipped ? 0 : r.total,
       r.total < 0 ? '#F04F5B' : '#2ECC71',
-      r.skipped ? r.reason : (r.unpaid > 0 ? `${fmtN(r.unpaid)} € non reçu(s) non comptés` : '')
+      r.skipped ? r.reason : (r.unpaid > 0 ? `${fmt(r.unpaid)} non reçu(s) non comptés` : '')
     )).join(''));
 
   const chgHTML = section('🏠 Charges', '#F04F5B',
@@ -2846,34 +2880,34 @@ function showCompteDetail(year, accId) {
       const note = r.skipped ? r.reason
         : isLivOut ? 'Retrait livret → crédit compte'
         : isLivIn ? 'Virement livret → débit compte'
-        : (r.unpaid > 0 ? `${fmtN(r.unpaid)} € non payé(s) non comptés` : '');
+        : (r.unpaid > 0 ? `${fmt(r.unpaid)} non payé(s) non comptés` : '');
       return row(r.label, r.skipped ? 0 : displayAmt, color, note);
     }).join(''));
 
   const varHTML = section('🛒 Dépenses variables', '#F5A623',
     varLines.map(r => row(r.label, -r.included,
       '#F5A623',
-      r.excluded > 0 ? `${fmtN(r.excluded)} € exclus (mode paiement non compté)` : ''
+      r.excluded > 0 ? `${fmt(r.excluded)} exclus (mode paiement non compté)` : ''
     )).join(''));
 
   const finalColor = bal >= 0 ? '#2ECC71' : '#F04F5B';
 
   const html = `
     <div style="font-size:12px;margin-bottom:14px;background:var(--surface-alt);border-radius:8px;padding:10px 14px;border:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">${t('summary.initial_balance')}</span><span style="font-weight:700">${fmtN(initBal)} €</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">${t('summary.initial_balance')}</span><span style="font-weight:700">${fmt(initBal)}</span></div>
     </div>
     ${revHTML}${chgHTML}${varHTML}
     <div style="background:var(--surface-alt);border-radius:8px;padding:12px 14px;border:2px solid ${finalColor}33;margin-top:4px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:13px;font-weight:700">${t('summary.current_balance')}</span>
-        <span style="font-size:20px;font-weight:800;color:${finalColor}">${fmtN(bal)} €</span>
+        <span style="font-size:20px;font-weight:800;color:${finalColor}">${fmt(bal)}</span>
       </div>
       <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.6">
-        ${fmtN(initBal)} € (01/01)
-        ${totalRev >= 0 ? '<span style="color:#2ECC71">+' : '<span style="color:#F04F5B">'}${fmtN(totalRev)} € revenus</span>
-        ${-totalChg >= 0 ? '<span style="color:#2ECC71">+' : '<span style="color:#F04F5B">'}${fmtN(-totalChg)} € charges</span>
-        ${-totalVar >= 0 ? '<span style="color:#2ECC71">+' : '<span style="color:#F04F5B">'}${fmtN(-totalVar)} € variables</span>
-        = <b>${fmtN(bal)} €</b>
+        ${fmt(initBal)} (01/01)
+        ${totalRev >= 0 ? '<span style="color:#2ECC71">+' : '<span style="color:#F04F5B">'}${fmt(totalRev)} revenus</span>
+        ${-totalChg >= 0 ? '<span style="color:#2ECC71">+' : '<span style="color:#F04F5B">'}${fmt(-totalChg)} charges</span>
+        ${-totalVar >= 0 ? '<span style="color:#2ECC71">+' : '<span style="color:#F04F5B">'}${fmt(-totalVar)} variables</span>
+        = <b>${fmt(bal)}</b>
       </div>
     </div>`;
 
@@ -3000,7 +3034,7 @@ function updateContextBanner(tabId) {
       const dep = sum(depTotal(year));
       const bal = rv - dep;
       const balColor = bal >= 0 ? 'var(--green)' : 'var(--red)';
-      info = `Revenus&nbsp;<b>${fmtN(rv)} €</b><span class="ctx-sep">·</span>Dépenses&nbsp;<b>${fmtN(dep)} €</b><span class="ctx-sep">·</span>Solde&nbsp;<b style="color:${balColor}">${bal>=0?'+':''}${fmtN(bal)} €</b>`;
+      info = `Revenus&nbsp;<b>${fmt(rv)}</b><span class="ctx-sep">·</span>Dépenses&nbsp;<b>${fmt(dep)}</b><span class="ctx-sep">·</span>Solde&nbsp;<b style="color:${balColor}">${fmt(bal, true)}</b>`;
     } catch(e) {}
   } else {
     label = names[tabId] || tabId;
@@ -3013,7 +3047,7 @@ function updateContextBanner(tabId) {
         const dep = (depTotal(yr)||[])[mi] || 0;
         const bal = rv - dep;
         const balColor = bal >= 0 ? 'var(--green)' : 'var(--red)';
-        info = `${getMonths()[mi]} ${yr}&nbsp;<span class="ctx-sep">·</span>&nbsp;Solde du mois&nbsp;<b style="color:${balColor}">${bal>=0?'+':''}${fmtN(bal)} €</b>`;
+        info = `${getMonths()[mi]} ${yr}&nbsp;<span class="ctx-sep">·</span>&nbsp;Solde du mois&nbsp;<b style="color:${balColor}">${fmt(bal, true)}</b>`;
       } catch(e) {}
     }
   }
@@ -3168,7 +3202,7 @@ function addYear() {
     const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
       ? ` <span style="color:#F5A623;font-size:11px">(fin ${getMonths()[r.endMonth]} ${r.endYear})</span>` : '';
     return `<tr><td>${lbl}${endInfo}</td>
-      <td style="color:var(--gray)">${last > 0 ? fmtN(last) + ' €' : '—'}</td>
+      <td style="color:var(--gray)">${last > 0 ? fmt(last) : '—'}</td>
       <td><input class="rev-dialog-input" type="number" step="0.01" id="rev-inp-${i}" placeholder="${last > 0 ? fmtN(last) : '0'}"></td></tr>`;
   }).join('');
 
@@ -3181,7 +3215,7 @@ function addYear() {
     const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
       ? ` <span style="color:#F5A623;font-size:11px">(fin ${getMonths()[r.endMonth]} ${r.endYear})</span>` : '';
     return `<tr><td>${lbl}${endInfo}</td>
-      <td style="color:var(--gray)">${last > 0 ? fmtN(last) + ' €' : '—'}</td>
+      <td style="color:var(--gray)">${last > 0 ? fmt(last) : '—'}</td>
       <td><input class="rev-dialog-input" type="number" step="0.01" id="chg-inp-${i}" placeholder="${last > 0 ? fmtN(last) : '0'}"></td></tr>`;
   }).join('');
 
@@ -3351,17 +3385,17 @@ function renderSoldes(year) {
         <button class="calc-config-btn" data-type="compte" onclick="openCalcConfig('${year}','compte')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
         <button onclick="showCompteDetail('${year}')" title="Voir le détail du calcul" style="margin-left:4px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">🔍</button>
       </label>
-      <span class="computed-val" id="compte-calc-${year}">${fmtN(computeCompte(year))} €</span></div>
+      <span class="computed-val" id="compte-calc-${year}">${fmt(computeCompte(year))}</span></div>
     <div class="solde-card ${hasPrevYear?'computed':''}"><label>${livName} (01/01)${hasPrevYear?` <span style="font-size:10px;color:var(--gray)">(= fin ${prevYear})</span>`:''}</label>
       ${hasPrevYear
-        ? `<span class="computed-val">${fmtN(computeLivret(prevYear,'liv_main'))} €</span>`
+        ? `<span class="computed-val">${fmt(computeLivret(prevYear,'liv_main'))}</span>`
         : `<input type="number" step="0.01" value="${s.livretInitial}"
             oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()">`
       }</div>
     <div class="solde-card computed"><label>${livName} actuel (calculé)
         <button class="calc-config-btn" data-type="livret" onclick="openCalcConfig('${year}','livret')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
       </label>
-      <span class="computed-val" id="livret-calc-${year}">${fmtN(lv)} €</span></div>`;
+      <span class="computed-val" id="livret-calc-${year}">${fmt(lv)}</span></div>`;
 
   // Additional accounts (Premium)
   if (isLicensed()) {
@@ -3374,7 +3408,7 @@ function renderSoldes(year) {
       <input type="number" step="0.01" value="${initBal}"
         oninput="DATA['${year}'].soldes.comptes['${accId}']=+this.value;updateMultiDisplay('${year}','${accId}','compte');dSave()"></div>
     <div class="solde-card computed" style="border-color:${acc.color||'#5B6AF0'}22"><label style="color:${acc.color||'#5B6AF0'}">💳 ${acc.name} actuel (calculé)</label>
-      <span class="computed-val" id="compte-calc-${year}-${accId}">${fmtN(calcBal)} €</span></div>`;
+      <span class="computed-val" id="compte-calc-${year}-${accId}">${fmt(calcBal)}</span></div>`;
     });
     livs.slice(1).forEach(liv => {
       const livId = liv.id;
@@ -3383,12 +3417,12 @@ function renderSoldes(year) {
       html += `
     <div class="solde-card ${hasPrevYear?'computed':''}" style="border-color:#27ae6022"><label style="color:#27ae60">📈 ${liv.name} (01/01)${hasPrevYear?` <span style="font-size:10px;color:var(--gray)">(= fin ${prevYear})</span>`:''}</label>
       ${hasPrevYear
-        ? `<span class="computed-val">${fmtN(prevLivBal)} €</span>`
+        ? `<span class="computed-val">${fmt(prevLivBal)}</span>`
         : `<input type="number" step="0.01" value="${s.livrets_bal[livId]||0}"
             oninput="DATA['${year}'].soldes.livrets_bal['${livId}']=+this.value;updateMultiDisplay('${year}','${livId}','livret');dSave()">`
       }</div>
     <div class="solde-card computed" style="border-color:#27ae6022"><label style="color:#27ae60">📈 ${liv.name} actuel (calculé)</label>
-      <span class="computed-val" id="livret-calc-${year}-${livId}">${fmtN(calcBal)} €</span></div>`;
+      <span class="computed-val" id="livret-calc-${year}-${livId}">${fmt(calcBal)}</span></div>`;
     });
   }
 
@@ -3414,7 +3448,7 @@ function renderMethodPaymentSummary(year) {
         onchange="toggleMethodCalc('${year}','${mo.key}',this.checked)" onclick="event.stopPropagation()"
         style="width:13px;height:13px;accent-color:${mo.color};cursor:pointer;flex-shrink:0">
       <span style="font-weight:700">${mo.label || '(sans nom)'}</span>
-      <span style="opacity:.8">${tot>0?fmtN(tot)+' €':'—'}</span>
+      <span style="opacity:.8">${tot>0?fmt(tot):'—'}</span>
     </span>`;
   }).join('');
   return `<div style="padding:8px 14px 12px;border-top:1px solid var(--border);margin-top:4px">
@@ -3427,29 +3461,29 @@ function renderMethodPaymentSummary(year) {
 }
 function updateLivretDisplay(year) {
   const el = document.getElementById('livret-calc-'+year);
-  if (el) el.textContent = fmtN(computeLivret(year,'liv_main')) + ' €';
+  if (el) el.textContent = fmt(computeLivret(year,'liv_main'));
   // Also update additional livrets
   getLivrets().slice(1).forEach(l => {
     const el2 = document.getElementById(`livret-calc-${year}-${l.id}`);
-    if (el2) el2.textContent = fmtN(computeLivret(year, l.id)) + ' €';
+    if (el2) el2.textContent = fmt(computeLivret(year, l.id));
   });
 }
 function updateCompteDisplay(year) {
   const el = document.getElementById('compte-calc-'+year);
-  if (el) el.textContent = fmtN(computeCompte(year)) + ' €';
+  if (el) el.textContent = fmt(computeCompte(year));
   // Also update additional accounts
   getAccounts().slice(1).forEach(a => {
     const el2 = document.getElementById(`compte-calc-${year}-${a.id}`);
-    if (el2) el2.textContent = fmtN(computeCompte(year, a.id)) + ' €';
+    if (el2) el2.textContent = fmt(computeCompte(year, a.id));
   });
 }
 function updateMultiDisplay(year, id, type) {
   if (type === 'livret') {
     const el = document.getElementById(`livret-calc-${year}-${id}`);
-    if (el) el.textContent = fmtN(computeLivret(year, id)) + ' €';
+    if (el) el.textContent = fmt(computeLivret(year, id));
   } else {
     const el = document.getElementById(`compte-calc-${year}-${id}`);
-    if (el) el.textContent = fmtN(computeCompte(year, id)) + ' €';
+    if (el) el.textContent = fmt(computeCompte(year, id));
   }
 }
 let _calcCfg = {year:null, type:null};
@@ -3537,7 +3571,7 @@ function renderRevSection(year) {
 
   return `<div class="section-card collapsed" data-section="revenus">
     <div class="section-header" onclick="toggleSection(this)">
-      <div style="flex:1;min-width:0"><span class="section-title">💹 ${t('section.revenus')} <span class="badge badge-g" id="rev-badge-${year}">${fmtN(grandTot)} €</span></span>${mthMiniRow(monthTots,false)}</div>
+      <div style="flex:1;min-width:0"><span class="section-title">💹 ${t('section.revenus')} <span class="badge badge-g" id="rev-badge-${year}">${fmt(grandTot)}</span></span>${mthMiniRow(monthTots,false)}</div>
       <button onclick="event.stopPropagation();openAddRowModal('${year}','revenu')" style="flex-shrink:0;background:rgba(46,213,115,.12);color:#2ed573;border:1px solid rgba(46,213,115,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">${t('btn.add_revenu')}</button>
       <span class="chevron">▾</span>
     </div>
@@ -3575,7 +3609,7 @@ function refreshRevTotals(year) {
   const el = document.getElementById(`revtot-${year}`);
   if (el) { el.textContent = fmtN(gt); el.className = `tot-col ${gt<0?'neg':'pos'}`; }
   const b = document.getElementById(`rev-badge-${year}`);
-  if (b) b.textContent = fmtN(gt) + ' €';
+  if (b) b.textContent = fmt(gt);
   refreshMonthSummary(year);
 }
 function toggleRevPaid(year, ri, mi) {
@@ -3645,7 +3679,7 @@ function renderChargeSection(year) {
 
   return `<div class="section-card collapsed" data-section="charges">
     <div class="section-header" onclick="toggleSection(this)">
-      <div style="flex:1;min-width:0"><span class="section-title">🏠 ${t('section.charges')} <span class="badge badge-r" id="chg-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(mths,false)}</div>
+      <div style="flex:1;min-width:0"><span class="section-title">🏠 ${t('section.charges')} <span class="badge badge-r" id="chg-badge-${year}">${fmt(gt)}</span></span>${mthMiniRow(mths,false)}</div>
       <button onclick="event.stopPropagation();openAddRowModal('${year}','fixed')" style="flex-shrink:0;background:rgba(91,106,240,.12);color:#7b8ff7;border:1px solid rgba(91,106,240,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:4px">${t('btn.add_fixed')}</button>
       <button onclick="event.stopPropagation();openAddRowModal('${year}','occasional')" style="flex-shrink:0;background:rgba(245,166,35,.12);color:#F5A623;border:1px solid rgba(245,166,35,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">${t('btn.add_occasional')}</button>
       <span class="chevron">▾</span>
@@ -3717,7 +3751,7 @@ function refreshChargeTotals(year) {
   mths.forEach((v,i) => { const el=document.getElementById(`chmth-${year}-${i}`); if(el) el.textContent=fmtN(v); });
   const gt = sum(mths);
   const el = document.getElementById(`chtot-${year}`); if(el) el.textContent = fmtN(gt);
-  const b = document.getElementById(`chg-badge-${year}`); if(b) b.textContent = fmtN(gt)+' €';
+  const b = document.getElementById(`chg-badge-${year}`); if(b) b.textContent = fmt(gt);
   refreshMonthSummary(year);
 }
 function addCharge(year, cat) {
@@ -3862,7 +3896,7 @@ function updateAddRowPreview() {
   const endLabel = noEnd ? '' : ` → fin ${getMonths()[endMonth]}`;
   const repsLabel = reps > 0 ? ` · <b>${reps} répétition${reps>1?'s':''}</b>` : '';
   const monthsStr = payMonths.length ? payMonths.map(m => getMonths()[m]).join(', ') : t('modal.no_payment');
-  prev.innerHTML = `→ ${freqLabel}${endLabel}${repsLabel} = ${payMonths.length}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${monthsStr}</span>`;
+  prev.innerHTML = `→ ${freqLabel}${endLabel}${repsLabel} = ${payMonths.length}× ${fmt(amount)} = <b>${fmt(annual)}/an</b><br><span style="font-size:11px;opacity:.7">${monthsStr}</span>`;
   prev.style.display = 'block';
 }
 function submitAddRow() {
@@ -3949,8 +3983,8 @@ function renderMethodTotals(year) {
     const tot = sum(t);
     if (tot === 0) return '';
     return `<tr><td class="lbl-col" style="padding-left:14px;border-left:3px solid ${mo.color}">${_esc(mo.label)}</td>
-      ${t.map(v=>`<td style="text-align:right;padding:4px 6px;font-size:12px">${v>0?fmtN(v)+' €':'-'}</td>`).join('')}
-      <td class="tot-col" style="font-weight:700">${fmtN(tot)} €</td><td></td></tr>`;
+      ${t.map(v=>`<td style="text-align:right;padding:4px 6px;font-size:12px">${v>0?fmt(v):'-'}</td>`).join('')}
+      <td class="tot-col" style="font-weight:700">${fmt(tot)}</td><td></td></tr>`;
   }).join('');
   if (!rows) return '';
   return `<div style="padding:0 16px 14px">
@@ -3967,7 +4001,7 @@ function renderVarSection(year) {
   const gt = sum(varMths);
   return `<div class="section-card" id="var-section-${year}" data-section="variables">
     <div class="section-header" onclick="toggleSection(this)">
-      <div style="flex:1;min-width:0"><span class="section-title">🛒 ${t('section.vars')} <span class="badge badge-o" id="var-badge-${year}">${fmtN(gt)} €</span></span>${mthMiniRow(varMths,false)}</div>
+      <div style="flex:1;min-width:0"><span class="section-title">🛒 ${t('section.vars')} <span class="badge badge-o" id="var-badge-${year}">${fmt(gt)}</span></span>${mthMiniRow(varMths,false)}</div>
       <button onclick="event.stopPropagation();openCatModal(null)" style="flex-shrink:0;background:rgba(0,200,150,.12);color:#00C896;border:1px solid rgba(0,200,150,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-right:6px">${t('btn.add_category')}</button>
       <span class="chevron">▾</span>
     </div>
@@ -3998,7 +4032,7 @@ function renderVarCat(year, cat) {
       <td style="font-weight:600;padding-left:10px">${_mths[m]}</td>
       <td id="vsum-n-${year}-${cat.key}-${m}" style="color:var(--gray);text-align:center">${mTxs.length} tx</td>
       <td style="text-align:right;padding:4px 6px">
-        <div id="vsum-t-${year}-${cat.key}-${m}" style="font-weight:700;font-size:12px">${fmtN(mTot)} €</div>
+        <div id="vsum-t-${year}-${cat.key}-${m}" style="font-weight:700;font-size:12px">${fmt(mTot)}</div>
         <div id="vsum-bar-${year}-${cat.key}-${m}">${_mBgt > 0 ? _monthBudgetBar(mTot, _mBgt) : ''}</div>
       </td>
       <td style="text-align:center">
@@ -4042,7 +4076,7 @@ function renderVarCat(year, cat) {
     <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')" style="padding:10px 14px;background:${_cbg};border-left:4px solid ${_cc}">
       <span class="section-title" style="font-size:13px">
         ${cat.icon} ${_esc(cat.label)}
-        <span class="badge badge-o" id="vartot-${year}-${cat.key}">${fmtN(grand)} €</span>
+        <span class="badge badge-o" id="vartot-${year}-${cat.key}">${fmt(grand)}</span>
         ${_bgtBadge}
       </span>
       <div style="display:flex;align-items:center;gap:6px">
@@ -4298,7 +4332,7 @@ function syncMonthSummary(year, catKey, m) {
   const nt = document.getElementById(`vsum-n-${year}-${catKey}-${m}`);
   const tt = document.getElementById(`vsum-t-${year}-${catKey}-${m}`);
   if (nt) nt.textContent = txs.length + ' tx';
-  if (tt) tt.textContent = fmtN(mTot) + ' €';
+  if (tt) tt.textContent = fmt(mTot);
   // Rafraîchir la mini barre mensuelle si un budget est défini
   const barEl = document.getElementById(`vsum-bar-${year}-${catKey}-${m}`);
   if (barEl) {
@@ -4307,10 +4341,10 @@ function syncMonthSummary(year, catKey, m) {
   }
   const grand = sum(DATA[year].vars[catKey].map(t=>t.amount));
   const gb = document.getElementById(`vartot-${year}-${catKey}`);
-  if (gb) gb.textContent = fmtN(grand) + ' €';
+  if (gb) gb.textContent = fmt(grand);
   const allGrand = sum(allVarTotal(year));
   const vb = document.getElementById(`var-badge-${year}`);
-  if (vb) vb.textContent = fmtN(allGrand) + ' €';
+  if (vb) vb.textContent = fmt(allGrand);
   _checkBudgetAlert(year, catKey, true); // alerte si budget franchi
 }
 
@@ -4415,7 +4449,7 @@ function renderKpiCards(year) {
     </div>
     <div class="kpi-card" style="border-top-color:${proj>=0?'#5B6AF0':'#F04F5B'}">
       <div class="kpi-label">${t('dash.projection')}</div>
-      <div class="kpi-value" style="color:${proj>=0?'#5B6AF0':'#F04F5B'};font-size:20px">${proj>=0?'+':''}${fmtN(proj)} €</div>
+      <div class="kpi-value" style="color:${proj>=0?'#5B6AF0':'#F04F5B'};font-size:20px">${fmt(proj, true)}</div>
       <div class="kpi-sub">${proj>=0?t('kpi.on_track'):t('kpi.deficit')}</div>
       <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">${t('kpi.proj_desc', pastMonths)}</div>
       ${projAction}
@@ -4436,7 +4470,7 @@ function _monthBudgetBar(spent, monthBgt) {
       </div>
       <span style="font-size:10px;color:${color};font-weight:800;white-space:nowrap">${realPct}%</span>
     </div>
-    <div style="font-size:10px;color:var(--gray);white-space:nowrap;text-align:right">${fmtN(spent)} / ${fmtN(monthBgt)} €</div>
+    <div style="font-size:10px;color:var(--gray);white-space:nowrap;text-align:right">${fmt(spent)} / ${fmt(monthBgt)}</div>
   </div>`;
 }
 function renderBudgetBarInner(year, key) {
@@ -4459,7 +4493,7 @@ function renderBudgetBarInner(year, key) {
   const customLabel = hasMonthly ? ` <span style="font-size:10px;color:var(--blue);font-weight:700">${t('budget.bar_monthly')}</span>` : '';
   return `<div class="budget-bar-row">
     <span class="budget-bar-lbl">${t('budget.bar_label').replace('{0}', fmtN(budget))}${customLabel}${editBtn}</span>
-    <span class="budget-bar-amt" style="color:${color}">${fmtN(spent)} € · ${pct}%${spent>budget?' ⚠️':''}</span>
+    <span class="budget-bar-amt" style="color:${color}">${fmt(spent)} · ${pct}%${spent>budget?' ⚠️':''}</span>
   </div>
   <div class="budget-bar-row">
     <div class="budget-bar-track"><div class="budget-bar-fill" data-pct="${pct}" style="width:0;background:${color}"></div></div>
@@ -4593,7 +4627,7 @@ function _bgtEdUpdateTotal() {
     if (inp) total += parseFloat(inp.value) || 0;
   }
   const el = document.getElementById('bgt-annual-total');
-  if (el) el.textContent = fmtN(total) + ' €';
+  if (el) el.textContent = fmt(total);
 }
 
 function _bgtEdApply() {
@@ -4669,7 +4703,7 @@ function renderMonthSummary(year) {
 
   return `<div class="section-card" data-section="resume">
     <div class="section-header" onclick="toggleSection(this)">
-      <div style="flex:1;min-width:0"><span class="section-title">${t('summary.monthly_title')} <span class="badge ${balTot<0?'badge-r':'badge-g'}" id="bal-badge-${year}">${fmtN(balTot)} €</span></span>${mthMiniRow(bal,true)}</div>
+      <div style="flex:1;min-width:0"><span class="section-title">${t('summary.monthly_title')} <span class="badge ${balTot<0?'badge-r':'badge-g'}" id="bal-badge-${year}">${fmt(balTot)}</span></span>${mthMiniRow(bal,true)}</div>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body"><table class="charge-table"><thead><tr>
@@ -4698,7 +4732,7 @@ function renderMonthSummary(year) {
       const color = proj >= 0 ? '#5B6AF0' : '#F04F5B';
       return `<div style="margin:10px 0 4px;padding:8px 14px;background:var(--surface-alt);border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--gray)">
         <strong style="color:var(--text)">${t('dash.projection').replace('{0}', year)}</strong> : ${t('dash.projection_desc')}
-        <strong style="color:${color}">${proj>=0?'+':''}${fmtN(proj)} €</strong>
+        <strong style="color:${color}">${fmt(proj, true)}</strong>
         <span style="font-size:11px">${t('dash.avg_balance').replace('{0}', fmtN(avgBal)).replace('{1}', completedM)}</span>
       </div>`;
     })()}
@@ -4722,7 +4756,7 @@ function refreshMonthSummary(year) {
   });
   const bb=document.getElementById(`bal-badge-${year}`);
   const bt=sum(bal);
-  if(bb){bb.textContent=fmtN(bt)+' €';bb.className=`badge ${bt<0?'badge-r':'badge-g'}`;}
+  if(bb){bb.textContent=fmt(bt);bb.className=`badge ${bt<0?'badge-r':'badge-g'}`;}
 }
 
 // ── RÉSUMÉ TAB ──
@@ -4783,11 +4817,11 @@ function renderSummary() {
     const _sm = getMonths();
     statData[year] = {
       rate: `<span style="font-weight:800;color:${savingsRate>=0?'var(--green)':'var(--red)'}">${savingsRate}%</span>`,
-      avg: `<span style="font-weight:700;color:${tBal>=0?'var(--green)':'var(--red)'}">${fmtN(tBal/12)} €</span>`,
-      best: `<span style="color:var(--green);font-weight:700">${_sm[bestMi]}<br><small>${fmtN(bal[bestMi])} €</small></span>`,
-      worst: `<span style="color:var(--red);font-weight:700">${_sm[worstMi]}<br><small>${fmtN(bal[worstMi])} €</small></span>`,
+      avg: `<span style="font-weight:700;color:${tBal>=0?'var(--green)':'var(--red)'}">${fmt(tBal/12)}</span>`,
+      best: `<span style="color:var(--green);font-weight:700">${_sm[bestMi]}<br><small>${fmt(bal[bestMi])}</small></span>`,
+      worst: `<span style="color:var(--red);font-weight:700">${_sm[worstMi]}<br><small>${fmt(bal[worstMi])}</small></span>`,
       bigvr: `<span style="font-weight:700">${_sm[biggestVrMi]}</span>`,
-      topcat: topCat ? `<span style="font-weight:700">${topCat.icon||'🛍️'} ${_esc(topCat.label)}<br><small>${fmtN(topCat.total)} €</small></span>` : '—',
+      topcat: topCat ? `<span style="font-weight:700">${topCat.icon||'🛍️'} ${_esc(topCat.label)}<br><small>${fmt(topCat.total)}</small></span>` : '—',
     };
   });
   let statsHtml = `<div class="section-card" style="margin-top:20px;overflow:auto">
@@ -4811,7 +4845,7 @@ function renderSummary() {
   const b=document.getElementById('sum-badge');
   if(b){
     const t=getYears().reduce((s,y)=>s+sum(balance(y)),0);
-    b.textContent=fmtN(t)+' €';
+    b.textContent=fmt(t);
     b.className='badge '+(t<0?'badge-r':'badge-b');
   }
 }
@@ -5455,8 +5489,8 @@ function buildAnnualTrendChart() {
     },
     options: {
       responsive: true,
-      plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label} : ${fmtN(ctx.raw)} €` } } },
-      scales: { y: { ticks: { callback: v => fmtN(v) + ' €' } } }
+      plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label} : ${fmt(ctx.raw)}` } } },
+      scales: { y: { ticks: { callback: v => fmt(v) } } }
     }
   });
 }
@@ -5494,7 +5528,7 @@ function buildWealthChart(year) {
       {label:'Patrimoine total',data:wData,borderColor:'#5B6AF0',backgroundColor:'#5B6AF022',tension:.3,fill:true,pointRadius:4},
       {label:'Niveau initial',data:Array(12).fill(Math.round(initW*100)/100),borderColor:'#ccc',borderDash:[4,4],pointRadius:0,borderWidth:1.5}
     ]},
-    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>fmtN(v)+' €'}}}}
+    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}
   });
 }
 function buildTopExpensesChart(year) {
@@ -5563,14 +5597,14 @@ function _doSearch(q) {
     (DATA[yr]?.revenus || []).forEach(r => {
       if ((r.label||'').toLowerCase().includes(ql)) {
         const t12 = r.v.reduce((s,v) => s+(parseFloat(v)||0), 0);
-        hits.push({icon:'💹', type:'Revenu', label:r.label, detail:'Total '+yr+' : '+fmtN(t12)+' €', action:"_scrollToSection('"+yr+"','revenus')"});
+        hits.push({icon:'💹', type:'Revenu', label:r.label, detail:'Total '+yr+' : '+fmt(t12), action:"_scrollToSection('"+yr+"','revenus')"});
       }
     });
     // Charges
     (DATA[yr]?.charges || []).forEach(r => {
       if ((r.label||'').toLowerCase().includes(ql)) {
         const t12 = r.v.reduce((s,v) => s+(parseFloat(v)||0), 0);
-        hits.push({icon:'🏠', type:'Charge', label:r.label, detail:'Total '+yr+' : '+fmtN(t12)+' €', action:"_scrollToSection('"+yr+"','charges')"});
+        hits.push({icon:'🏠', type:'Charge', label:r.label, detail:'Total '+yr+' : '+fmt(t12), action:"_scrollToSection('"+yr+"','charges')"});
       }
     });
     // Dépenses variables
@@ -5579,7 +5613,7 @@ function _doSearch(q) {
         const txt = [(tx.label||''), (tx.comment||''), cat.label].join(' ').toLowerCase();
         if (txt.includes(ql)) {
           const mLbl = getMonths()[tx.month] || '';
-          hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmtN(tx.amount)+' €', action:"_scrollToSection('"+yr+"','variables')"});
+          hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount), action:"_scrollToSection('"+yr+"','variables')"});
         }
       });
     });
@@ -5629,10 +5663,10 @@ function openPdfReport() {
     html += `<div style="margin-bottom:36px;page-break-inside:avoid">
       <h2 style="font-size:16px;font-weight:800;background:#1A1D2E;color:#fff;padding:9px 16px;border-radius:8px;margin-bottom:16px">📅 Année ${year}</h2>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
-        <div style="border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">💹 Revenus</div><div style="font-size:17px;font-weight:800;color:#27ae60;margin-top:4px">${fmtN(tRv)} €</div></div>
-        <div style="border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">🏠 Charges</div><div style="font-size:17px;font-weight:800;color:#333;margin-top:4px">${fmtN(tCh)} €</div></div>
-        <div style="border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">🛒 Variables</div><div style="font-size:17px;font-weight:800;color:#333;margin-top:4px">${fmtN(tVr)} €</div></div>
-        <div style="border:1px solid #ddd;border-left:3px solid ${tBal>=0?'#27ae60':'#e74c3c'};border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">💰 Solde</div><div style="font-size:17px;font-weight:800;color:${tBal>=0?'#27ae60':'#e74c3c'};margin-top:4px">${fmtN(tBal)} €</div></div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">💹 Revenus</div><div style="font-size:17px;font-weight:800;color:#27ae60;margin-top:4px">${fmt(tRv)}</div></div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">🏠 Charges</div><div style="font-size:17px;font-weight:800;color:#333;margin-top:4px">${fmt(tCh)}</div></div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">🛒 Variables</div><div style="font-size:17px;font-weight:800;color:#333;margin-top:4px">${fmt(tVr)}</div></div>
+        <div style="border:1px solid #ddd;border-left:3px solid ${tBal>=0?'#27ae60':'#e74c3c'};border-radius:8px;padding:12px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px">💰 Solde</div><div style="font-size:17px;font-weight:800;color:${tBal>=0?'#27ae60':'#e74c3c'};margin-top:4px">${fmt(tBal)}</div></div>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px">
         <thead><tr style="background:#f4f5fa">
@@ -5647,7 +5681,7 @@ function openPdfReport() {
           <tr style="background:#f8f9ff"><td style="border:1px solid #ddd;padding:4px 8px;font-weight:800">💰 Solde</td>${bal.map(v=>`<td style="border:1px solid #ddd;padding:4px 3px;text-align:right;font-weight:700;color:${v>=0?'#27ae60':'#e74c3c'}">${fmtN(v)}</td>`).join('')}<td style="border:1px solid #ddd;padding:4px 8px;text-align:right;font-weight:800;color:${tBal>=0?'#27ae60':'#e74c3c'};background:#eef0fd">${fmtN(tBal)}</td></tr>
         </tbody>
       </table>
-      ${cats.length ? `<div style="page-break-inside:avoid"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">${t('summary.var_split')}</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${cats.map(c=>`<div style="border:1px solid #eee;border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between"><span style="font-size:11px">${c.icon||'🛍️'} ${_esc(c.label)}</span><span style="font-size:11px;font-weight:700;color:#e74c3c">${fmtN(c.total)} €</span></div>`).join('')}</div></div>` : ''}
+      ${cats.length ? `<div style="page-break-inside:avoid"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">${t('summary.var_split')}</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${cats.map(c=>`<div style="border:1px solid #eee;border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between"><span style="font-size:11px">${c.icon||'🛍️'} ${_esc(c.label)}</span><span style="font-size:11px;font-weight:700;color:#e74c3c">${fmt(c.total)}</span></div>`).join('')}</div></div>` : ''}
       ${(() => { const notes = DATA[year]?.notes || {}; const noteEntries = MONTHS.map((m,i)=>({m,i,n:notes[i]})).filter(e=>e.n?.trim()); return noteEntries.length ? `<div style="page-break-inside:avoid;margin-top:12px"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">${t('summary.monthly_notes')}</div>${noteEntries.map(e=>`<div style="display:flex;gap:10px;font-size:11px;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:700;color:#5B6AF0;white-space:nowrap;min-width:40px">${e.m}</span><span>${_esc(e.n)}</span></div>`).join('')}</div>` : ''; })()}
     </div>`;
   });
@@ -5750,12 +5784,12 @@ function renderDashboard() {
       <div class="section-card" style="margin-bottom:14px;border-left:3px solid ${color}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <span style="font-weight:700;font-size:13px">🎯 Objectif épargne</span>
-          <span style="font-size:13px;font-weight:800;color:${color}">${fmtN(bal)} € <span style="font-size:11px;font-weight:400;color:var(--gray)">/ ${fmtN(goal)} €</span></span>
+          <span style="font-size:13px;font-weight:800;color:${color}">${fmt(bal)} <span style="font-size:11px;font-weight:400;color:var(--gray)">/ ${fmt(goal)}</span></span>
         </div>
         <div style="background:var(--border);border-radius:20px;height:10px;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${color};border-radius:20px;transition:width .5s ease"></div>
         </div>
-        <div style="font-size:11px;color:var(--gray);margin-top:5px">${pct >= 100 ? '🎉 Objectif atteint !' : `${pct}% atteint — il manque ${fmtN(goal - bal)} €`}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:5px">${pct >= 100 ? '🎉 Objectif atteint !' : `${pct}% atteint — il manque ${fmt(goal - bal)}`}</div>
       </div>`;
   }
 
@@ -5766,7 +5800,7 @@ function renderDashboard() {
       ${alerts.map(a => `
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)">
           <span>${a.icon} ${_esc(a.label)}</span>
-          <span style="color:var(--red);font-weight:700">${fmtN(a.spent)} € <span style="font-weight:400;color:var(--gray)">/ budget ${fmtN(a.budget)} €</span></span>
+          <span style="color:var(--red);font-weight:700">${fmt(a.spent)} <span style="font-weight:400;color:var(--gray)">/ budget ${fmt(a.budget)}</span></span>
         </div>`).join('')}
     </div>` : '';
 
@@ -5783,7 +5817,7 @@ function renderDashboard() {
       const d = cur - prev;
       if (Math.abs(d) < 0.01) return `<span style="color:var(--gray)">= —</span>`;
       const better = lowerIsBetter ? d < 0 : d > 0;
-      return `<span style="color:${better?'var(--green)':'var(--red)'};font-weight:700">${d>0?'+':''}${fmtN(d)} €</span>`;
+      return `<span style="color:${better?'var(--green)':'var(--red)'};font-weight:700">${fmt(d, true)}</span>`;
     };
     compHtml = `
       <div class="section-card" style="margin-bottom:14px">
@@ -5802,7 +5836,7 @@ function renderDashboard() {
     ? txList.slice(0, 8).map(tx => `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
           <span>${tx.catIcon} <b>${_esc(tx.catLabel)}</b>${tx.comment ? ` <span style="color:var(--gray)">— ${_esc(tx.comment)}</span>` : ''}</span>
-          <span style="font-weight:700;white-space:nowrap;color:var(--text)">${fmtN(tx.amount)} €</span>
+          <span style="font-weight:700;white-space:nowrap;color:var(--text)">${fmt(tx.amount)}</span>
         </div>`).join('')
     : `<p style="color:var(--gray);font-size:12px;text-align:center;padding:14px 0">${t('dash.no_expenses')}</p>`;
 
@@ -5829,18 +5863,18 @@ function renderDashboard() {
       : `<div style="font-size:18px;font-weight:800;margin-bottom:16px">${yr}</div>`;
     wrap.innerHTML = `<div>${viewToggle}${annualYearSel}
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px">
-        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.revenues')}</div><div style="font-size:20px;font-weight:800;color:var(--green);margin-top:6px">${fmtN(tRv)} €</div></div>
-        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.charges')}</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(tCh)} €</div></div>
-        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.vars')}</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(tVr)} €</div></div>
-        <div class="section-card" style="padding:14px;text-align:center;border-left:3px solid ${tBal>=0?'var(--green)':'var(--red)'}"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.balance')}</div><div style="font-size:20px;font-weight:800;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmtN(tBal)} €</div></div>
+        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.revenues')}</div><div style="font-size:20px;font-weight:800;color:var(--green);margin-top:6px">${fmt(tRv)}</div></div>
+        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.charges')}</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmt(tCh)}</div></div>
+        <div class="section-card" style="padding:14px;text-align:center"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.vars')}</div><div style="font-size:20px;font-weight:800;color:var(--text);margin-top:6px">${fmt(tVr)}</div></div>
+        <div class="section-card" style="padding:14px;text-align:center;border-left:3px solid ${tBal>=0?'var(--green)':'var(--red)'}"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${t('dash.balance')}</div><div style="font-size:20px;font-weight:800;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmt(tBal)}</div></div>
       </div>
       <div class="section-card" style="margin-bottom:14px">
         <div style="font-weight:700;font-size:13px;margin-bottom:12px">${t('summary.annual_indicators')}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('dash.savings_rate')}</div><div style="font-weight:800;font-size:20px;color:${savingsRate>=0?'var(--green)':'var(--red)'};margin-top:4px">${savingsRate}%</div></div>
-          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.avg_savings')}</div><div style="font-weight:800;font-size:18px;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:4px">${fmtN(tBal/12)} €</div></div>
-          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.best_month')}</div><div style="font-weight:700;font-size:13px;color:var(--green);margin-top:4px">${getMonths()[bestMi]} · ${fmtN(balArr[bestMi])} €</div></div>
-          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.worst_month')}</div><div style="font-weight:700;font-size:13px;color:var(--red);margin-top:4px">${getMonths()[worstMi]} · ${fmtN(balArr[worstMi])} €</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.avg_savings')}</div><div style="font-weight:800;font-size:18px;color:${tBal>=0?'var(--green)':'var(--red)'};margin-top:4px">${fmt(tBal/12)}</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.best_month')}</div><div style="font-weight:700;font-size:13px;color:var(--green);margin-top:4px">${getMonths()[bestMi]} · ${fmt(balArr[bestMi])}</div></div>
+          <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"><div style="color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.4px">${t('summary.worst_month')}</div><div style="font-weight:700;font-size:13px;color:var(--red);margin-top:4px">${getMonths()[worstMi]} · ${fmt(balArr[worstMi])}</div></div>
         </div>
       </div>
       <div class="section-card">
@@ -5851,7 +5885,7 @@ function renderDashboard() {
           return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
             <div style="width:28px;text-align:right;color:var(--gray);font-size:11px;flex-shrink:0">${getMonths()[i].slice(0,3)}</div>
             <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:4px"></div></div>
-            <div style="width:70px;text-align:right;font-weight:700;color:${col};font-size:11px">${fmtN(v)} €</div>
+            <div style="width:70px;text-align:right;font-weight:700;color:${col};font-size:11px">${fmt(v)}</div>
           </div>`;
         }).join('')}
       </div>
@@ -5894,7 +5928,7 @@ function renderDashboard() {
       return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:12px">
         <div style="width:9px;height:9px;border-radius:50%;background:${donutColors[i%donutColors.length]};flex-shrink:0"></div>
         <span>${c.icon||'🛍️'} ${_esc(c.label)}</span>
-        <span style="margin-left:auto;font-weight:700;white-space:nowrap">${fmtN(c.amount)} € <span style="color:var(--gray);font-weight:400">(${pct}%)</span></span>
+        <span style="margin-left:auto;font-weight:700;white-space:nowrap">${fmt(c.amount)} <span style="color:var(--gray);font-weight:400">(${pct}%)</span></span>
       </div>`;
     }).join('');
     return `<div class="section-card" style="margin-bottom:14px">
@@ -5921,22 +5955,22 @@ function renderDashboard() {
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px">
       <div class="section-card" style="padding:14px;text-align:center">
         <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💹 Revenus</div>
-        <div style="font-size:22px;font-weight:800;color:var(--green);margin-top:6px">${fmtN(rv)} €</div>
+        <div style="font-size:22px;font-weight:800;color:var(--green);margin-top:6px">${fmt(rv)}</div>
         ${_sparkline(spRv,'#2ECC71')}
       </div>
       <div class="section-card" style="padding:14px;text-align:center">
         <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🏠 Charges</div>
-        <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(ch)} €</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:6px">${fmt(ch)}</div>
         ${_sparkline(spCh,'#F04F5B')}
       </div>
       <div class="section-card" style="padding:14px;text-align:center">
         <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🛒 Variables</div>
-        <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:6px">${fmtN(vr)} €</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:6px">${fmt(vr)}</div>
         ${_sparkline(spVr,'#F5A623')}
       </div>
       <div class="section-card" style="padding:14px;text-align:center;border-left:3px solid ${bal>=0?'var(--green)':'var(--red)'}">
         <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px">💰 Solde</div>
-        <div style="font-size:22px;font-weight:800;color:${bal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmtN(bal)} €</div>
+        <div style="font-size:22px;font-weight:800;color:${bal>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmt(bal)}</div>
         ${_sparkline(spBal, bal>=0?'#2ECC71':'#F04F5B')}
       </div>
     </div>
@@ -5956,14 +5990,14 @@ function renderDashboard() {
       return `<div class="section-card" style="margin-bottom:14px">
         <div style="font-weight:700;font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
           <span>🏠 Charges du mois</span>
-          <span style="font-size:11px;color:var(--gray);font-weight:400">${chLines.length} ligne${chLines.length>1?'s':''} · ${fmtN(ch)} € total</span>
+          <span style="font-size:11px;color:var(--gray);font-weight:400">${chLines.length} ligne${chLines.length>1?'s':''} · ${fmt(ch)} total</span>
         </div>
         ${chLines.map(r => {
           const amt = parseFloat(r.v[mi])||0;
           const isLivret = r.cat==='livret_in';
           return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
             <span style="color:${isLivret?'var(--blue)':'var(--text)'}">${isLivret?'📈':''} ${_esc(r.label)}</span>
-            <span style="font-weight:700;white-space:nowrap;color:var(--text)">${fmtN(amt)} €${r.paid&&r.paid[mi]?' <span style="font-size:10px;color:var(--green)">✓</span>':''}</span>
+            <span style="font-weight:700;white-space:nowrap;color:var(--text)">${fmt(amt)}${r.paid&&r.paid[mi]?' <span style="font-size:10px;color:var(--green)">✓</span>':''}</span>
           </div>`;
         }).join('')}
       </div>`;
@@ -5973,7 +6007,7 @@ function renderDashboard() {
     <div class="section-card" style="margin-bottom:14px">
       <div style="font-weight:700;font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
         <span>🛒 Dépenses variables</span>
-        ${txList.length ? `<span style="font-size:11px;color:var(--gray);font-weight:400">${txList.length} transaction${txList.length>1?'s':''} · ${fmtN(vr)} € total</span>` : ''}
+        ${txList.length ? `<span style="font-size:11px;color:var(--gray);font-weight:400">${txList.length} transaction${txList.length>1?'s':''} · ${fmt(vr)} total</span>` : ''}
       </div>
       ${txHtml}
       ${txList.length > 8 ? `<div style="text-align:center;font-size:11px;color:var(--gray);margin-top:8px">… et ${txList.length-8} autre${txList.length-8>1?'s':''}</div>` : ''}
@@ -6342,6 +6376,16 @@ function renderConfigTab() {
           <button onclick="setLang('en')" id="cfg-lang-btn-en" style="flex:1;padding:9px;border-radius:8px;border:2px solid ${_lang==='en'?'var(--blue)':'var(--border)'};background:${_lang==='en'?'var(--blue)':'none'};color:${_lang==='en'?'#fff':'var(--text)'};font-weight:${_lang==='en'?'700':'600'};cursor:pointer;font-size:13px">🇬🇧 English</button>
         </div>
       </div>
+      <div class="config-card" style="margin-top:14px"><h3>${t('settings.currency')}</h3>
+        <div style="margin-top:4px">
+          <select id="currency-select" onchange="setCurrency(this.value)" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface-alt);color:var(--text);font-size:14px">
+            ${Object.entries(CURRENCIES).map(([code, info]) => {
+              const labels = {EUR:'🇪🇺 EUR — Euro (€)',USD:'🇺🇸 USD — Dollar ($)',GBP:'🇬🇧 GBP — Pound Sterling (£)',CHF:'🇨🇭 CHF — Swiss Franc',CAD:'🇨🇦 CAD — Canadian Dollar',MAD:'🇲🇦 MAD — Dirham marocain',TND:'🇹🇳 TND — Dinar tunisien',DZD:'🇩🇿 DZD — Dinar algérien',XOF:'🌍 XOF — Franc CFA'};
+              return `<option value="${code}"${_cur===code?' selected':''}>${labels[code]||code}</option>`;
+            }).join('')}
+          </select>
+        </div>
+      </div>
       <div class="config-card" style="margin-top:14px"><h3>${t('settings.app')}</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn" style="background:#FEF0F1;color:#c0392b;border:2px solid #F04F5B;font-weight:700" onclick="uninstallApp()">🚨 ${t('cfg.uninstall')}</button>
@@ -6381,7 +6425,7 @@ function addVarCat(icon, label, annualBudget) {
   dSave();
   renderConfigTab();
   getYears().forEach(y => renderYear(y));
-  const budgetMsg = annualBudget > 0 ? ` · Budget ${fmtN(annualBudget)} €/an` : '';
+  const budgetMsg = annualBudget > 0 ? ` · Budget ${fmt(annualBudget)}/an` : '';
   showToast(t('toast.cat_added').replace('{0}', label).replace('{1}', budgetMsg));
 }
 function removeVarCat(key) {
@@ -6584,7 +6628,7 @@ function submitCatModal() {
     renderConfigTab();
     // Ajout chirurgical : insère la nouvelle carte dans chaque année sans reconstruire
     _patchVarCatInDOM(key, true);
-    const budgetMsg = annualBudget > 0 ? ` · Budget ${fmtN(annualBudget)} €/an` : '';
+    const budgetMsg = annualBudget > 0 ? ` · Budget ${fmt(annualBudget)}/an` : '';
     showToast(t('toast.cat_added').replace('{0}', label).replace('{1}', budgetMsg));
   }
   document.getElementById('cat-modal').style.display = 'none';
@@ -7094,8 +7138,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.37';
-const SW_VERSION = 'v164';
+const APP_VERSION = '11.38';
+const SW_VERSION = 'v165';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -7206,6 +7250,7 @@ const TRANSLATIONS = {
     // Settings / Config
     'settings.title': 'Paramètres',
     'settings.language': 'Langue / Language',
+    'settings.currency': '💱 Devise',
     'settings.theme': 'Thème',
     'settings.users': '👤 Utilisateurs',
     'settings.account': '👤 Compte & Licence',
@@ -7976,6 +8021,7 @@ const TRANSLATIONS = {
     // Settings / Config
     'settings.title': 'Settings',
     'settings.language': 'Langue / Language',
+    'settings.currency': '💱 Currency',
     'settings.theme': 'Theme',
     'settings.users': '👤 Users',
     'settings.account': '👤 Account & License',
@@ -8877,6 +8923,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.38': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '💱', text: 'Support multi-devises : EUR, USD, GBP, CHF, CAD, MAD, TND, DZD, XOF — sélecteur dans les paramètres' },
+      { icon: '🔢', text: 'Nouveau helper fmt() : affichage du symbole monétaire dans la bonne position selon la devise' }
+    ]
+  },
   '11.37': {
     date: 'Mai 2026',
     items: [
@@ -9858,10 +9911,10 @@ function wizNext(step) {
     const sal = parseFloat(document.getElementById('wiz-salary').value) || 0;
     const totalChg = [...document.querySelectorAll('.wiz-chg-amt')].reduce((s,el) => s + (parseFloat(el.value)||0), 0);
     const bal = sal - totalChg;
-    document.getElementById('wiz-r-rev').textContent = fmtN(sal) + ' €';
-    document.getElementById('wiz-r-chg').textContent = '− ' + fmtN(totalChg) + ' €';
+    document.getElementById('wiz-r-rev').textContent = fmt(sal);
+    document.getElementById('wiz-r-chg').textContent = '− ' + fmt(totalChg);
     const balEl = document.getElementById('wiz-r-bal');
-    balEl.textContent = fmtN(bal) + ' €';
+    balEl.textContent = fmt(bal);
     balEl.style.color = bal >= 0 ? 'var(--green)' : 'var(--red)';
     wizSetStep(3);
     renderYear(year);
@@ -10064,7 +10117,7 @@ function parseAndReview(text, filename) {
       <td style="text-align:center;padding:6px"><input type="checkbox" ${row.include?'checked':''} onchange="csvToggleRow(${i},this.checked)"></td>
       <td style="padding:6px;white-space:nowrap;color:var(--gray)">${MONTHS[row.month]} ${row.day}</td>
       <td style="padding:6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${row.label}">${row.label}${row.isDuplicate?'<span style="margin-left:5px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">⚠️ doublon</span>':''}</td>
-      <td style="padding:6px;text-align:right;font-weight:700;color:var(--red);white-space:nowrap">${fmtN(row.amount)} €</td>
+      <td style="padding:6px;text-align:right;font-weight:700;color:var(--red);white-space:nowrap">${fmt(row.amount)}</td>
       <td style="padding:6px"><select style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;width:100%" onchange="csvSetCat(${i},this.value)">
         ${cats.map(c=>`<option value="${c.key}"${c.key===row.catKey?' selected':''}>${c.icon} ${_esc(c.label)}</option>`).join('')}
       </select></td>
@@ -10120,7 +10173,7 @@ function _csvUpdateCount() {
   if (rc) rc.textContent = `${n} / ${_csvRows.length} sélectionnées${dups>0?' · ⚠️ '+dups+' doublon'+(dups>1?'s':''):''}`;
   const total = selected.reduce((s,r)=>s+(r.amount||0),0);
   const ta = document.getElementById('csv-total-amount');
-  if (ta) ta.textContent = total > 0 ? fmtN(total)+' €' : '';
+  if (ta) ta.textContent = total > 0 ? fmt(total) : '';
 }
 function confirmCsvImport() {
   const year = document.getElementById('csv-year-select').value;
