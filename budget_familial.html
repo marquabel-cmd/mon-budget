@@ -1285,7 +1285,7 @@ body.auth-locked #context-banner {
   <span>👁️ MODE ADMIN — <span id="admin-banner-key" style="font-family:monospace"></span></span>
   <div style="display:flex;gap:8px;align-items:center">
     <button id="compare-overlay-btn" data-i18n="admin.banner_compare" onclick="openCompareView()" style="display:none;background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔍 Compare</button>
-    <a href="admin.html" target="_blank" data-i18n="admin.banner_change" style="background:rgba(0,0,0,.15);color:#1A1D2E;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;text-decoration:none">🔄 Change</a>
+    <button data-i18n="admin.banner_change" onclick="openAdminPanel()" style="background:rgba(0,0,0,.15);color:#1A1D2E;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔄 Change</button>
     <button data-i18n="admin.banner_exit" onclick="exitAdminMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ My data</button>
   </div>
 </div>
@@ -1301,9 +1301,10 @@ body.auth-locked #context-banner {
     <!-- Tabs -->
     <div id="admin-tabs-wrap">
       <div style="display:flex;gap:3px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px;margin-bottom:16px">
-        <button id="admin-tab-btn-view"     data-i18n="admin.tab_clients"  onclick="adminSwitchTab('view')"     style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Clients</button>
-        <button id="admin-tab-btn-license"  data-i18n="admin.tab_licenses" onclick="adminSwitchTab('license')"  style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licenses</button>
-        <button id="admin-tab-btn-feedback" data-i18n="admin.tab_feedback" onclick="adminSwitchTab('feedback')" style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">💬 Feedback</button>
+        <button id="admin-tab-btn-view"      data-i18n="admin.tab_clients"  onclick="adminSwitchTab('view')"      style="flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Clients</button>
+        <button id="admin-tab-btn-license"   data-i18n="admin.tab_licenses" onclick="adminSwitchTab('license')"   style="flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licences</button>
+        <button id="admin-tab-btn-feedback"  data-i18n="admin.tab_feedback" onclick="adminSwitchTab('feedback')"  style="flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">💬 Feedback</button>
+        <button id="admin-tab-btn-visitors"                                  onclick="adminSwitchTab('visitors')"  style="flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">👁️ Visiteurs</button>
       </div>
 
       <!-- TAB: View client data -->
@@ -1344,6 +1345,32 @@ body.auth-locked #context-banner {
         <button data-i18n="admin.load_feedback" onclick="adminLoadFeedback()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px">📋 Load suggestions</button>
         <div id="admin-feedback-list" style="display:flex;flex-direction:column;gap:12px;max-height:420px;overflow-y:auto;padding-right:4px"></div>
       </div>
+
+      <!-- TAB: Visiteurs -->
+      <div id="admin-tab-visitors" style="display:none">
+        <button onclick="adminLoadVisitors()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer;margin-bottom:10px">🔄 Charger les visiteurs</button>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:700;color:#5B6AF0" id="adm-v-total">—</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">Uniques</div>
+          </div>
+          <div style="flex:1;min-width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:700;color:#00C896" id="adm-v-week">—</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">7 jours</div>
+          </div>
+          <div style="flex:1;min-width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:700;color:#F5A623" id="adm-v-today">—</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">Aujourd'hui</div>
+          </div>
+          <div style="flex:1;min-width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:700;color:#8B5CF6" id="adm-v-visits">—</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">Visites</div>
+          </div>
+        </div>
+        <div id="adm-visitors-list" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;max-height:360px;overflow-y:auto">
+          <div style="padding:16px;color:rgba(255,255,255,.4);font-size:13px;text-align:center">Cliquez sur "Charger" pour voir les visiteurs</div>
+        </div>
+      </div>
     </div>
 
     <div style="margin-top:14px">
@@ -1358,7 +1385,7 @@ body.auth-locked #context-banner {
     <div data-i18n="header.subtitle" class="sub app-sub">Monthly income and expense tracker</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
-    <div class="user-switcher" id="user-switcher" onclick="_isAdminMode ? window.open('admin.html','_blank') : goToWelcome()">
+    <div class="user-switcher" id="user-switcher" onclick="_isAdminMode ? openAdminPanel() : goToWelcome()">
       <span class="user-dot" id="user-dot" style="width:10px;height:10px;border-radius:50%;background:#1a6fc4;display:inline-block;flex-shrink:0"></span>
       <span id="user-name-display">–</span>
     </div>
@@ -6443,7 +6470,7 @@ function renderConfigTab() {
       <div class="config-card" style="margin-top:14px;border:2px solid #F5A623;background:var(--orange-light)">
         <h3 style="color:#c07800">🔐 Administration</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <a href="admin.html" target="_blank" class="btn" style="background:#F5A623;color:#1A1D2E;font-weight:700;border:none;text-decoration:none;text-align:center">👁️ Panneau admin complet ↗</a>
+          <button class="btn" onclick="openAdminPanel()" style="background:#F5A623;color:#1A1D2E;font-weight:700;border:none;cursor:pointer;text-align:center">👁️ Panneau admin — Clients &amp; Licences</button>
         </div>
       </div>` : ''}
     </div>
@@ -7186,8 +7213,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.44';
-const SW_VERSION = 'v171';
+const APP_VERSION = '11.45';
+const SW_VERSION = 'v172';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -9045,6 +9072,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.45': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔐', text: 'Panneau admin restauré : bouton Config, bandeau et user-switcher ouvrent à nouveau le modal in-app (clients, licences, feedbacks, visiteurs)' },
+      { icon: '👁️', text: 'Onglet Visiteurs ajouté au modal admin — statistiques directement dans l\'app sans ouvrir admin.html' }
+    ]
+  },
   '11.43': {
     date: 'Mai 2026',
     items: [
@@ -10617,14 +10651,60 @@ function openAdminPanel() {
 function closeAdminPanel() { document.getElementById('admin-modal').style.display = 'none'; }
 
 function adminSwitchTab(tab) {
-  document.getElementById('admin-tab-view').style.display     = tab === 'view'     ? '' : 'none';
-  document.getElementById('admin-tab-license').style.display  = tab === 'license'  ? '' : 'none';
-  document.getElementById('admin-tab-feedback').style.display = tab === 'feedback' ? '' : 'none';
+  ['view','license','feedback','visitors'].forEach(t => {
+    const el = document.getElementById('admin-tab-' + t);
+    if (el) el.style.display = tab === t ? '' : 'none';
+  });
   const active = 'background:rgba(255,255,255,.2);color:#fff';
   const idle   = 'background:transparent;color:rgba(255,255,255,.5)';
-  document.getElementById('admin-tab-btn-view').style.cssText     = 'flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;' + (tab==='view'     ? active : idle);
-  document.getElementById('admin-tab-btn-license').style.cssText  = 'flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;' + (tab==='license'  ? active : idle);
-  document.getElementById('admin-tab-btn-feedback').style.cssText = 'flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;' + (tab==='feedback' ? active : idle);
+  const base   = 'flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;';
+  ['view','license','feedback','visitors'].forEach(t => {
+    const btn = document.getElementById('admin-tab-btn-' + t);
+    if (btn) btn.style.cssText = base + (tab === t ? active : idle);
+  });
+}
+
+async function adminLoadVisitors() {
+  const list = document.getElementById('adm-visitors-list');
+  if (!list) return;
+  list.innerHTML = '<div style="padding:16px;color:rgba(255,255,255,.4);text-align:center">⏳ Chargement…</div>';
+  try {
+    const token = sessionStorage.getItem('mbudget-fb-token');
+    if (!token) { list.innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ Non connecté — connectez-vous d\'abord</div>'; return; }
+    const url = LICENSE_DB + '/analytics/visitors.json?auth=' + token;
+    const r = await fetch(url);
+    if (!r.ok) { list.innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ Accès refusé (status ' + r.status + ')</div>'; return; }
+    const data = await r.json();
+    if (!data) { list.innerHTML = '<div style="padding:16px;color:rgba(255,255,255,.4)">Aucun visiteur enregistré.</div>'; return; }
+    const now = Date.now(), day = 86400000;
+    const entries = Object.entries(data).sort(([,a],[,b]) => (b.lastSeen||0) - (a.lastSeen||0));
+    document.getElementById('adm-v-total').textContent  = entries.length;
+    document.getElementById('adm-v-week').textContent   = entries.filter(([,v]) => now-(v.lastSeen||0) < 7*day).length;
+    document.getElementById('adm-v-today').textContent  = entries.filter(([,v]) => now-(v.lastSeen||0) < day).length;
+    document.getElementById('adm-v-visits').textContent = entries.reduce((s,[,v]) => s+(v.visits||1), 0);
+    const fmtD = ts => ts ? new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    list.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase">
+        <th style="padding:8px 12px;text-align:left">Appareil</th>
+        <th style="padding:8px 6px;text-align:left">Compte</th>
+        <th style="padding:8px 6px;text-align:center">Visites</th>
+        <th style="padding:8px 12px;text-align:right">Dernière visite</th>
+      </tr></thead>
+      <tbody>${entries.map(([,v]) => {
+        const lbl = v.label || 'Inconnu';
+        const icon = /iOS|iPhone|iPad/.test(lbl) ? '📱' : /Android/.test(lbl) ? '📱' : /macOS/.test(lbl) ? '💻' : '🖥️';
+        const online = now-(v.lastSeen||0) < 300000;
+        const dot = online ? '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#7effa0;margin-right:4px;vertical-align:middle"></span>' : '';
+        const acc = v.email ? `<span style="color:#5B6AF0;font-size:11px">${_esc(v.email)}</span>` : '<span style="color:rgba(255,255,255,.3)">Anonyme</span>';
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,.06)">
+          <td style="padding:8px 12px">${dot}${icon} ${_esc(lbl)}</td>
+          <td style="padding:8px 6px">${acc}</td>
+          <td style="padding:8px 6px;text-align:center;font-weight:700;color:#8B5CF6">${v.visits||1}</td>
+          <td style="padding:8px 12px;text-align:right;color:rgba(255,255,255,.4)">${fmtD(v.lastSeen)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  } catch(e) { list.innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ ' + e.message + '</div>'; }
 }
 
 // ── ADMIN FEEDBACK ────────────────────────────────────────────────────────
