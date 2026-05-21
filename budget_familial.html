@@ -1285,7 +1285,7 @@ body.auth-locked #context-banner {
   <span>👁️ MODE ADMIN — <span id="admin-banner-key" style="font-family:monospace"></span></span>
   <div style="display:flex;gap:8px;align-items:center">
     <button id="compare-overlay-btn" data-i18n="admin.banner_compare" onclick="openCompareView()" style="display:none;background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔍 Compare</button>
-    <button data-i18n="admin.banner_change" onclick="openAdminPanel()" style="background:rgba(0,0,0,.15);color:#1A1D2E;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔄 Change</button>
+    <a href="admin.html" target="_blank" data-i18n="admin.banner_change" style="background:rgba(0,0,0,.15);color:#1A1D2E;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;text-decoration:none">🔄 Change</a>
     <button data-i18n="admin.banner_exit" onclick="exitAdminMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ My data</button>
   </div>
 </div>
@@ -1358,7 +1358,7 @@ body.auth-locked #context-banner {
     <div data-i18n="header.subtitle" class="sub app-sub">Monthly income and expense tracker</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
-    <div class="user-switcher" id="user-switcher" onclick="_isAdminMode ? openAdminPanel() : goToWelcome()">
+    <div class="user-switcher" id="user-switcher" onclick="_isAdminMode ? window.open('admin.html','_blank') : goToWelcome()">
       <span class="user-dot" id="user-dot" style="width:10px;height:10px;border-radius:50%;background:#1a6fc4;display:inline-block;flex-shrink:0"></span>
       <span id="user-name-display">–</span>
     </div>
@@ -6443,7 +6443,7 @@ function renderConfigTab() {
       <div class="config-card" style="margin-top:14px;border:2px solid #F5A623;background:var(--orange-light)">
         <h3 style="color:#c07800">🔐 Administration</h3>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn" style="background:#F5A623;color:#1A1D2E;font-weight:700;border:none" onclick="openAdminPanel()">👁️ Panneau admin — Clients &amp; Licences</button>
+          <a href="admin.html" target="_blank" class="btn" style="background:#F5A623;color:#1A1D2E;font-weight:700;border:none;text-decoration:none;text-align:center">👁️ Panneau admin complet ↗</a>
         </div>
       </div>` : ''}
     </div>
@@ -7186,8 +7186,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.43';
-const SW_VERSION = 'v170';
+const APP_VERSION = '11.44';
+const SW_VERSION = 'v171';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
