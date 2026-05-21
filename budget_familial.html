@@ -772,7 +772,7 @@ body.auth-locked #context-banner {
   <div class="pin-box" onclick="event.stopPropagation()">
     <div style="font-size:36px;margin-bottom:8px">🔒</div>
     <div id="pin-user-name" style="font-size:16px;font-weight:800;color:#1a3c6e;margin-bottom:4px"></div>
-    <div id="pin-label" style="font-size:12px;color:#888;margin-bottom:2px">Entrez votre code PIN</div>
+    <div id="pin-label" data-i18n="pin.title" style="font-size:12px;color:#888;margin-bottom:2px">Enter your PIN code</div>
     <div class="pin-inputs">
       <input class="pin-digit" id="pin0" type="password" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinInput(0)" onkeydown="pinKey(event,0)">
       <input class="pin-digit" id="pin1" type="password" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinInput(1)" onkeydown="pinKey(event,1)">
@@ -780,7 +780,7 @@ body.auth-locked #context-banner {
       <input class="pin-digit" id="pin3" type="password" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinInput(3)" onkeydown="pinKey(event,3)">
     </div>
     <div class="pin-error" id="pin-error"></div>
-    <button style="background:none;border:none;color:#aaa;font-size:12px;cursor:pointer;text-decoration:underline" onclick="closePinOverlay()">Annuler</button>
+    <button data-i18n="pin.cancel" style="background:none;border:none;color:#aaa;font-size:12px;cursor:pointer;text-decoration:underline" onclick="closePinOverlay()">Cancel</button>
   </div>
 </div>
 
@@ -788,32 +788,32 @@ body.auth-locked #context-banner {
 <div id="upgrade-overlay" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center" onclick="if(event.target===this)closeUpgrade()">
   <div style="background:#fff;border-radius:20px;width:min(420px,94%);padding:28px 28px 24px;box-shadow:0 24px 64px rgba(0,0,0,.3);text-align:center">
     <div style="font-size:36px;margin-bottom:4px">⭐</div>
-    <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px">Débloquez tout — moins qu'un café</div>
+    <div data-i18n="upgrade.title" style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px">Unlock everything — less than a coffee</div>
     <div id="upgrade-reason" style="font-size:12px;color:var(--gray);margin-bottom:14px;background:rgba(245,166,35,.1);border-radius:6px;padding:6px 10px;display:inline-block"></div>
     <div style="background:var(--blue-light);border-radius:10px;padding:12px 16px;margin-bottom:16px;text-align:left">
-      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:8px">✨ Avec Premium :</div>
-      <div style="font-size:13px;line-height:1.9;color:var(--text)">
-        📅 Historique illimité — gardez toutes vos années<br>
-        🗂️ Catégories illimitées — organisez comme vous voulez<br>
-        👥 Plusieurs utilisateurs sur un même compte<br>
-        ☁️ Sync cloud — retrouvez tout sur chaque appareil<br>
-        🔒 Vos données restent privées — toujours
+      <div data-i18n="upgrade.with_premium" style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:8px">✨ With Premium:</div>
+      <div id="upgrade-features" style="font-size:13px;line-height:1.9;color:var(--text)">
+        <span data-i18n="upgrade.f1">📅 Unlimited history (all years)</span><br>
+        <span data-i18n="upgrade.f3">🗂️ Unlimited categories — organize as you like</span><br>
+        <span data-i18n="upgrade.f4">🔒 Encrypted cloud sync</span><br>
+        <span data-i18n="upgrade.f2">☁️ Real-time sync on 3 devices</span><br>
+        <span data-i18n="upgrade.f5">✅ Cancel anytime</span>
       </div>
     </div>
     <a href="#" onclick="openStripeCheckout('yearly');return false;" style="display:block;background:linear-gradient(135deg,#5B6AF0,#8B5CF6);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:8px;cursor:pointer;position:relative">
-      ⭐ Annuel — 24,99 €/an
-      <span style="display:block;font-size:11px;font-weight:400;opacity:.9">= 2,08 €/mois · Économisez 11€ · Le plus populaire</span>
+      <span data-i18n="upgrade.annual">⭐ Annual — €24.99/year</span>
+      <span data-i18n="upgrade.annual_sub" style="display:block;font-size:11px;font-weight:400;opacity:.9">= €2.08/month · Save €11 · Most popular</span>
       <span style="position:absolute;top:-8px;right:12px;background:#F5A623;color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px">−30%</span>
     </a>
-    <a id="upgrade-stripe-btn" href="#" onclick="openStripeCheckout('monthly');return false;" style="display:block;background:rgba(91,106,240,.1);color:var(--blue);border:1px solid rgba(91,106,240,.3);border-radius:10px;padding:11px;font-size:13px;font-weight:600;text-decoration:none;margin-bottom:16px;cursor:pointer">💳 Mensuel — 2,99 €/mois</a>
+    <a id="upgrade-stripe-btn" data-i18n="upgrade.monthly" href="#" onclick="openStripeCheckout('monthly');return false;" style="display:block;background:rgba(91,106,240,.1);color:var(--blue);border:1px solid rgba(91,106,240,.3);border-radius:10px;padding:11px;font-size:13px;font-weight:600;text-decoration:none;margin-bottom:16px;cursor:pointer">💳 Monthly — €2.99/month</a>
     <div style="border-top:1px solid var(--border);padding-top:14px">
-      <div style="font-size:12px;color:var(--gray);margin-bottom:8px">Déjà une clé de licence ?</div>
+      <div data-i18n="upgrade.have_key" style="font-size:12px;color:var(--gray);margin-bottom:8px">Already have a license key?</div>
       <div style="display:flex;gap:8px">
         <input id="upgrade-key-input" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;letter-spacing:1px">
-        <button onclick="activateLicenseFromOverlay()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">Activer</button>
+        <button data-i18n="upgrade.activate" onclick="activateLicenseFromOverlay()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">Activate</button>
       </div>
     </div>
-    <button onclick="closeUpgrade()" style="margin-top:14px;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Continuer en version gratuite</button>
+    <button data-i18n="upgrade.continue_free" onclick="closeUpgrade()" style="margin-top:14px;background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Continue with free version</button>
   </div>
 </div>
 
@@ -821,7 +821,7 @@ body.auth-locked #context-banner {
 <div id="onboarding-wizard" style="display:none;position:fixed;inset:0;z-index:3500;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center">
   <div style="background:var(--surface);border-radius:20px;width:min(440px,95%);padding:28px;box-shadow:0 24px 64px rgba(0,0,0,.4)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div style="font-size:12px;color:var(--gray);font-weight:600">Étape <span id="wiz-step-num">1</span> / 3</div>
+      <div style="font-size:12px;color:var(--gray);font-weight:600"><span data-i18n="wiz.step">Step</span> <span id="wiz-step-num">1</span> / 3</div>
       <div style="display:flex;gap:4px">
         <div id="wiz-dot-1" style="width:8px;height:8px;border-radius:50%;background:var(--blue)"></div>
         <div id="wiz-dot-2" style="width:8px;height:8px;border-radius:50%;background:var(--border)"></div>
@@ -901,7 +901,7 @@ body.auth-locked #context-banner {
       <a href="mailto:?subject=Une app budget gratuite&body=J%27utilise%20Mon%20Budget%20pour%20g%C3%A9rer%20mes%20finances.%20C%27est%20gratuit%2C%20sans%20pub%2C%20et%20mes%20donn%C3%A9es%20restent%20chez%20moi.%20Essaie%20%3A%20budget.marquabel.be" style="flex:1;background:var(--blue);color:#fff;border-radius:8px;padding:10px;font-size:12px;font-weight:700;text-decoration:none;text-align:center">✉️ Email</a>
       <a href="https://www.facebook.com/sharer/sharer.php?u=https://budget.marquabel.be" target="_blank" style="flex:1;background:#1877F2;color:#fff;border-radius:8px;padding:10px;font-size:12px;font-weight:700;text-decoration:none;text-align:center">👍 Facebook</a>
     </div>
-    <button onclick="closeShareModal()" style="background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Fermer</button>
+    <button onclick="closeShareModal()" data-i18n="btn.close" style="background:none;border:none;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline">Close</button>
   </div>
 </div>
 
@@ -1111,21 +1111,21 @@ body.auth-locked #context-banner {
 <div id="add-row-modal" style="display:none;position:fixed;inset:0;z-index:2600;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)document.getElementById('add-row-modal').style.display='none'">
   <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(400px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <h3 id="ar-modal-title" style="margin:0;font-size:16px;color:var(--blue)">＋ Nouvelle ligne</h3>
+      <h3 id="ar-modal-title" data-i18n="modal.new_row" style="margin:0;font-size:16px;color:var(--blue)">＋ New row</h3>
       <button onclick="document.getElementById('add-row-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text);line-height:1">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
       <div>
         <label data-i18n="modal.type" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Type</label>
         <select id="ar-type" onchange="updateAddRowModal()" style="width:100%;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
-          <option value="revenu">💰 Revenu</option>
-          <option value="fixed">🔒 Charge fixe récurrente</option>
-          <option value="occasional">📌 Charge occasionnelle</option>
+          <option value="revenu" data-i18n="type.revenu">💰 Revenue</option>
+          <option value="fixed" data-i18n="type.fixed">🔒 Recurring fixed cost</option>
+          <option value="occasional" data-i18n="type.occasional">📌 One-time cost</option>
         </select>
       </div>
       <div>
         <label data-i18n="th.label" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Libellé</label>
-        <input id="ar-label" type="text" placeholder="Ex : Salaire, Loyer, Assurance…" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+        <input id="ar-label" type="text" data-i18n-placeholder="modal.example" placeholder="E.g. Salary, Rent, Insurance…" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
@@ -1142,9 +1142,9 @@ body.auth-locked #context-banner {
         <input id="ar-amount" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateAddRowPreview()" onkeydown="if(event.key==='Enter')submitAddRow()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
       </div>
       <div id="ar-reps-wrap">
-        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Nombre de répétitions <span style="font-weight:400">(optionnel — calcule la date de fin)</span></label>
+        <label data-i18n-html="modal.repetitions" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Number of repetitions <span style="font-weight:400">(optional — calculates end date)</span></label>
         <div style="display:flex;align-items:center;gap:8px">
-          <input id="ar-reps" type="number" min="1" placeholder="ex: 48" oninput="_arCalcEndFromReps()"
+          <input id="ar-reps" type="number" min="1" data-i18n-placeholder="modal.rep_example" placeholder="e.g. 48" oninput="_arCalcEndFromReps()"
             style="flex:1;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
           <span id="ar-reps-hint" style="font-size:12px;color:var(--blue);font-weight:700;white-space:nowrap;min-width:90px"></span>
         </div>
@@ -1160,7 +1160,7 @@ body.auth-locked #context-banner {
         </div>
       </div>
       <div id="ar-preview" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);border-left:3px solid var(--blue)"></div>
-      <div id="ar-edit-warning" style="display:none;background:#2a1f3d;border-left:3px solid #8B5CF6;border-radius:6px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,.7)">✏️ Les montants seront remplacés à partir du mois de début choisi. Les mois précédents restent inchangés.</div>
+      <div id="ar-edit-warning" data-i18n="modal.edit_warning" style="display:none;background:#2a1f3d;border-left:3px solid #8B5CF6;border-radius:6px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,.7)">✏️ Amounts will be replaced from the chosen start month. Previous months remain unchanged.</div>
       <div id="ar-error" style="color:#ff6b6b;font-size:12px;min-height:16px"></div>
       <button id="ar-submit-btn" data-i18n="btn.add" onclick="submitAddRow()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--blue),#8B5CF6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">✅ Ajouter</button>
     </div>
@@ -1170,11 +1170,11 @@ body.auth-locked #context-banner {
 <!-- ── PROPAGATE MODAL ── -->
 <div id="propagate-modal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px">
   <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(360px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
-    <h3 style="margin:0 0 10px;font-size:15px;color:var(--text)">↘ Appliquer aux mois suivants ?</h3>
+    <h3 data-i18n="propagate.title" style="margin:0 0 10px;font-size:15px;color:var(--text)">↘ Apply to following months?</h3>
     <p style="margin:0 0 18px;font-size:13px;color:var(--gray);line-height:1.5">Appliquer <b id="prop-amount" style="color:var(--text)"></b> € à partir de <b id="prop-from" style="color:var(--text)"></b> jusqu'en Décembre ?</p>
     <div style="display:flex;gap:8px">
-      <button onclick="confirmPropagate(true)" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">✅ Oui, appliquer</button>
-      <button onclick="confirmPropagate(false)" style="flex:1;padding:11px;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">Non</button>
+      <button data-i18n="propagate.confirm" onclick="confirmPropagate(true)" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">✅ Yes, apply</button>
+      <button data-i18n="propagate.cancel" onclick="confirmPropagate(false)" style="flex:1;padding:11px;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">No, just this month</button>
     </div>
   </div>
 </div>
@@ -1183,48 +1183,48 @@ body.auth-locked #context-banner {
 <div id="cat-modal" style="display:none;position:fixed;inset:0;z-index:2600;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)document.getElementById('cat-modal').style.display='none'">
   <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(400px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <h3 id="cat-modal-title" style="margin:0;font-size:16px;color:var(--text)">Nouvelle catégorie</h3>
+      <h3 id="cat-modal-title" data-i18n="cat.new" style="margin:0;font-size:16px;color:var(--text)">New category</h3>
       <button onclick="document.getElementById('cat-modal').style.display='none'" style="background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
       <div>
-        <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Libellé *</label>
-        <input type="text" id="cat-m-label" placeholder="Ex: Alimentation"
+        <label data-i18n="cat.label" style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Label *</label>
+        <input type="text" id="cat-m-label" data-i18n-placeholder="cat.label_ex" placeholder="E.g. Groceries"
           style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;background:var(--surface-alt);color:var(--text);box-sizing:border-box"
           oninput="_autoSuggestCatIcon()"
           onkeydown="if(event.key==='Enter')submitCatModal()">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Icône</label>
+        <label data-i18n="cat.icon" style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Icon</label>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="text" id="cat-m-icon" placeholder="📦" maxlength="2"
             style="width:52px;border:1px solid var(--border);border-radius:8px;padding:8px 6px;font-size:22px;text-align:center;background:var(--surface-alt);color:var(--text);flex-shrink:0">
           <div id="cat-m-icon-suggestions" style="display:flex;flex-wrap:wrap;gap:5px;flex:1"></div>
         </div>
-        <div style="font-size:10px;color:var(--gray);margin-top:4px">Cliquez une suggestion ou tapez votre propre emoji</div>
+        <div data-i18n="cat.emoji_hint" style="font-size:10px;color:var(--gray);margin-top:4px">Click a suggestion or type your own emoji</div>
       </div>
       <div>
-        <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">🎯 Budget (optionnel)</label>
+        <label data-i18n="cat.budget_title" style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">🎯 Budget (optional)</label>
         <div style="display:flex;gap:6px;align-items:center">
           <input type="number" id="cat-m-budget" placeholder="0" min="0"
             style="width:90px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;text-align:right;background:var(--surface-alt);color:var(--text)">
           <select id="cat-m-period" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;background:var(--surface-alt);color:var(--text)">
-            <option value="month">€/mois → annualisé</option>
-            <option value="year">€/an</option>
+            <option value="month" data-i18n="cat.budget_month">€/month → annualized</option>
+            <option value="year" data-i18n="cat.budget_year">€/year</option>
           </select>
         </div>
-        <div style="font-size:10px;color:var(--gray);margin-top:4px">Laissez vide pour ne pas définir de budget.</div>
+        <div data-i18n="cat.budget_hint" style="font-size:10px;color:var(--gray);margin-top:4px">Leave empty for no budget.</div>
       </div>
       <div>
-        <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:6px">🎨 Couleur</label>
+        <label data-i18n="cat.color" style="font-size:11px;color:var(--gray);display:block;margin-bottom:6px">🎨 Color</label>
         <div id="cat-m-colors" style="display:flex;flex-wrap:wrap;gap:7px"></div>
         <input type="hidden" id="cat-m-color" value="#5B9BD5">
       </div>
       <div id="cat-m-error" style="display:none;color:#ffb3b3;font-size:12px;padding:6px 10px;background:rgba(255,80,80,.1);border-radius:6px"></div>
       <input type="hidden" id="cat-m-key">
-      <button id="cat-m-submit" onclick="submitCatModal()"
+      <button id="cat-m-submit" data-i18n="cat.save" onclick="submitCatModal()"
         style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;margin-top:4px">
-        Enregistrer
+        Save
       </button>
     </div>
   </div>
@@ -1232,18 +1232,18 @@ body.auth-locked #context-banner {
 
 <!-- ── DEMO BANNER ── -->
 <div id="demo-banner">
-  <span>🎮 MODE DÉMO — Les données affichées sont fictives</span>
+  <span data-i18n="demo.banner">🎮 DEMO MODE — Data shown is fictional</span>
   <div style="display:flex;gap:8px;align-items:center">
     <button onclick="openAide()" style="background:rgba(0,0,0,.15);color:#1A1D2E;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">❓ Aide</button>
-    <button onclick="exitDemoMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ Quitter le mode démo</button>
+    <button data-i18n="demo.quit" onclick="exitDemoMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ Exit demo mode</button>
   </div>
 </div>
 
 <!-- ── EXPORT REMINDER BANNER ── -->
 <div id="export-reminder-banner">
   <span>📥</span>
-  <span>Dernier export JSON : <b id="export-reminder-days">il y a plus de 7 jours</b> — Vos données ne sont pas sauvegardées hors du navigateur.</span>
-  <button class="er-action" onclick="exportDataJSON();dismissExportReminder()">⬇️ Exporter maintenant</button>
+  <span id="export-reminder-text">Last JSON export: <b id="export-reminder-days">more than 7 days ago</b> — Your data is not saved outside the browser.</span>
+  <button class="er-action" data-i18n="update.export_now" onclick="exportDataJSON();dismissExportReminder()">⬇️ Export now</button>
   <button class="er-dismiss" onclick="dismissExportReminder()" title="Ignorer pour aujourd'hui">✕</button>
 </div>
 
@@ -1251,7 +1251,7 @@ body.auth-locked #context-banner {
 <div id="tour-overlay">
   <div id="tour-spotlight"></div>
   <div id="tour-tooltip">
-    <button onclick="endTour()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:11px;color:var(--gray);cursor:pointer;font-family:inherit;padding:2px 4px">Passer ✕</button>
+    <button data-i18n="tour.skip" onclick="endTour()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:11px;color:var(--gray);cursor:pointer;font-family:inherit;padding:2px 4px">Skip ✕</button>
     <div id="tour-icon" style="font-size:30px;margin-bottom:8px;line-height:1"></div>
     <div id="tour-title" style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:7px"></div>
     <div id="tour-text" style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:12px"></div>
@@ -1259,8 +1259,8 @@ body.auth-locked #context-banner {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
       <div id="tour-dots" style="display:flex;gap:4px;align-items:center"></div>
       <div style="display:flex;gap:7px">
-        <button id="tour-prev-btn" onclick="tourPrev()" style="background:var(--gray-light);color:var(--gray);border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">← Préc.</button>
-        <button id="tour-next-btn" onclick="tourNext()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Suivant →</button>
+        <button id="tour-prev-btn" data-i18n="tour.prev" onclick="tourPrev()" style="background:var(--gray-light);color:var(--gray);border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">← Prev.</button>
+        <button id="tour-next-btn" data-i18n="tour.next" onclick="tourNext()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Next →</button>
       </div>
     </div>
   </div>
@@ -1273,9 +1273,9 @@ body.auth-locked #context-banner {
 <div id="admin-banner" style="display:none;background:#F5A623;color:#1A1D2E;padding:6px 16px;font-size:12px;font-weight:700;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:200">
   <span>👁️ MODE ADMIN — <span id="admin-banner-key" style="font-family:monospace"></span></span>
   <div style="display:flex;gap:8px;align-items:center">
-    <button id="compare-overlay-btn" onclick="openCompareView()" style="display:none;background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔍 Comparer</button>
-    <button onclick="openAdminPanel()" style="background:rgba(0,0,0,.15);color:#1A1D2E;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔄 Changer</button>
-    <button onclick="exitAdminMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ Mes données</button>
+    <button id="compare-overlay-btn" data-i18n="admin.banner_compare" onclick="openCompareView()" style="display:none;background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔍 Compare</button>
+    <button data-i18n="admin.banner_change" onclick="openAdminPanel()" style="background:rgba(0,0,0,.15);color:#1A1D2E;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔄 Change</button>
+    <button data-i18n="admin.banner_exit" onclick="exitAdminMode()" style="background:#1A1D2E;color:#F5A623;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ My data</button>
   </div>
 </div>
 
@@ -1284,39 +1284,39 @@ body.auth-locked #context-banner {
   <div style="background:#1A1D2E;border-radius:16px;padding:24px;width:min(640px,95vw);max-height:90vh;overflow-y:auto;color:#fff">
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <h3 style="margin:0;font-size:16px">🔐 Mode Admin</h3>
+      <h3 data-i18n="admin.title" style="margin:0;font-size:16px">🔐 Admin Mode</h3>
       <button onclick="closeAdminPanel()" style="background:none;border:none;font-size:20px;cursor:pointer;color:rgba(255,255,255,.5)">✕</button>
     </div>
     <!-- Tabs -->
     <div id="admin-tabs-wrap">
       <div style="display:flex;gap:3px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px;margin-bottom:16px">
-        <button id="admin-tab-btn-view"     onclick="adminSwitchTab('view')"     style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Clients</button>
-        <button id="admin-tab-btn-license"  onclick="adminSwitchTab('license')"  style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licences</button>
-        <button id="admin-tab-btn-feedback" onclick="adminSwitchTab('feedback')" style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">💬 Feedback</button>
+        <button id="admin-tab-btn-view"     data-i18n="admin.tab_clients"  onclick="adminSwitchTab('view')"     style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.2);color:#fff">👁️ Clients</button>
+        <button id="admin-tab-btn-license"  data-i18n="admin.tab_licenses" onclick="adminSwitchTab('license')"  style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">⭐ Licenses</button>
+        <button id="admin-tab-btn-feedback" data-i18n="admin.tab_feedback" onclick="adminSwitchTab('feedback')" style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.5)">💬 Feedback</button>
       </div>
 
       <!-- TAB: View client data -->
       <div id="admin-tab-view">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">UID ou clé de licence client</div>
+        <div data-i18n="admin.uid_placeholder" style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">UID or client license key</div>
         <input type="text" id="admin-license-input" placeholder="-OrSgJYUP… ou UID Firebase" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:8px" onkeydown="if(event.key==='Enter')enterAdminMode()">
-        <button onclick="loadDemoData()" style="width:100%;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px dashed rgba(255,255,255,.3);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;margin-bottom:10px">🎭 Charger données de démo</button>
-        <button onclick="enterAdminMode()" style="width:100%;background:#F5A623;color:#1A1D2E;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">👁️ Voir les données</button>
+        <button data-i18n="admin.load_demo" onclick="loadDemoData()" style="width:100%;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px dashed rgba(255,255,255,.3);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;margin-bottom:10px">🎭 Load demo data</button>
+        <button data-i18n="admin.view_data" onclick="enterAdminMode()" style="width:100%;background:#F5A623;color:#1A1D2E;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">👁️ View data</button>
       </div>
 
       <!-- TAB: Manage licences -->
       <div id="admin-tab-license" style="display:none">
         <!-- Liste des clients -->
-        <button onclick="adminLoadUsers()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer;margin-bottom:8px">📋 Charger la liste des clients</button>
+        <button data-i18n="admin.load_clients" onclick="adminLoadUsers()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer;margin-bottom:8px">📋 Load client list</button>
         <div id="admin-users-list" style="display:none;max-height:200px;overflow-y:auto;border-radius:8px;border:1px solid rgba(255,255,255,.12);margin-bottom:12px"></div>
-        <!-- Gérer par UID -->
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">UID sélectionné / saisi manuellement</div>
-        <input type="text" id="admin-uid-input" placeholder="uid Firebase (ex: abc123xyz…)" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:8px">
+        <!-- Manage by UID -->
+        <div data-i18n="admin.uid_label" style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:5px">Selected / manually entered UID</div>
+        <input type="text" id="admin-uid-input" data-i18n-placeholder="admin.uid_input" placeholder="Firebase UID (e.g. abc123xyz…)" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:8px">
         <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button onclick="adminCheckPremium()" style="flex:1;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer">🔍 Vérifier</button>
-          <button onclick="adminGrantPremium()" style="flex:1;background:#00C896;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">⭐ Accorder</button>
-          <button onclick="adminRevokePremium()" style="flex:1;background:#F04F5B;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">✕ Révoquer</button>
+          <button data-i18n="admin.check"  onclick="adminCheckPremium()" style="flex:1;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer">🔍 Check</button>
+          <button data-i18n="admin.grant"  onclick="adminGrantPremium()" style="flex:1;background:#00C896;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">⭐ Grant</button>
+          <button data-i18n="admin.revoke" onclick="adminRevokePremium()" style="flex:1;background:#F04F5B;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">✕ Revoke</button>
         </div>
-        <div id="admin-license-result" style="font-size:12px;min-height:36px;padding:8px;background:rgba(255,255,255,.05);border-radius:6px;color:rgba(255,255,255,.8)">Sélectionne un client ou entre un UID.</div>
+        <div data-i18n="admin.select_client" id="admin-license-result" style="font-size:12px;min-height:36px;padding:8px;background:rgba(255,255,255,.05);border-radius:6px;color:rgba(255,255,255,.8)">Select a client or enter a UID.</div>
       </div>
 
       <!-- TAB: Feedback -->
@@ -1330,13 +1330,13 @@ body.auth-locked #context-banner {
           <button onclick="adminFilterFeedback('répondu')"  class="fb-filter" data-f="répondu"  style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">🟢 Répondu <span id="fbc-repondu" style="background:#00C896;color:#000;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span></button>
           <button onclick="adminFilterFeedback('clôturé')"  class="fb-filter" data-f="clôturé"  style="padding:6px 12px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)">⚫ Clôturé <span id="fbc-cloture" style="background:#6B7394;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span></button>
         </div>
-        <button onclick="adminLoadFeedback()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px">📋 Charger les suggestions</button>
+        <button data-i18n="admin.load_feedback" onclick="adminLoadFeedback()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px">📋 Load suggestions</button>
         <div id="admin-feedback-list" style="display:flex;flex-direction:column;gap:12px;max-height:420px;overflow-y:auto;padding-right:4px"></div>
       </div>
     </div>
 
     <div style="margin-top:14px">
-      <button onclick="closeAdminPanel()" style="width:100%;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:none;border-radius:8px;padding:9px;font-size:12px;cursor:pointer">Fermer</button>
+      <button data-i18n="admin.close" onclick="closeAdminPanel()" style="width:100%;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:none;border-radius:8px;padding:9px;font-size:12px;cursor:pointer">Close</button>
     </div>
   </div>
 </div>
@@ -1344,7 +1344,7 @@ body.auth-locked #context-banner {
 <header>
   <div>
     <h1 id="app-title" style="cursor:default">💰 Mon Budget</h1>
-    <div class="sub app-sub">Gestion mensuelle des revenus et dépenses</div>
+    <div data-i18n="header.subtitle" class="sub app-sub">Monthly income and expense tracker</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <div class="user-switcher" id="user-switcher" onclick="_isAdminMode ? openAdminPanel() : goToWelcome()">
@@ -1360,11 +1360,11 @@ body.auth-locked #context-banner {
       <div id="tour-help-wrap" style="position:relative">
         <button class="btn" onclick="toggleHelpDropdown(event)" title="Aide & Tour" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:16px;padding:5px 10px">❓</button>
         <div id="tour-help-dropdown">
-          <div class="tour-help-item" onclick="openInstallModal();closeHelpDropdown()">📲 Installer l'application</div>
-          <div class="tour-help-item" onclick="startTour();closeHelpDropdown()">🗺️ Tour guidé</div>
-          <div class="tour-help-item" onclick="openAide();closeHelpDropdown()">📖 Guide complet</div>
-          <div class="tour-help-item" onclick="window.location.href='dashboard.html';closeHelpDropdown()">👤 Mon compte</div>
-          <div class="tour-help-item" onclick="openShareModal();closeHelpDropdown()" style="color:#00C896;font-weight:700">🎁 Inviter un ami</div>
+          <div class="tour-help-item" onclick="openInstallModal();closeHelpDropdown()">📲 Install the app</div>
+          <div class="tour-help-item" onclick="startTour();closeHelpDropdown()">🗺️ Guided tour</div>
+          <div class="tour-help-item" onclick="openAide();closeHelpDropdown()">📖 Full guide</div>
+          <div class="tour-help-item" onclick="window.location.href='dashboard.html';closeHelpDropdown()">👤 My account</div>
+          <div class="tour-help-item" onclick="openShareModal();closeHelpDropdown()" style="color:#00C896;font-weight:700">🎁 Invite a friend</div>
           <div style="padding:7px 14px;font-size:11px;color:var(--gray);border-top:1px solid var(--border);user-select:all">v<span id="app-version-display"></span> · SW <span id="sw-version-display"></span></div>
         </div>
       </div>
@@ -1375,40 +1375,40 @@ body.auth-locked #context-banner {
 
 <div class="modal-overlay" id="del-confirm-modal" onclick="if(event.target===this)cancelDelete()">
   <div class="modal-box" style="max-width:400px">
-    <h3 style="color:var(--red);margin-bottom:10px">⚠️ Confirmer la suppression</h3>
+    <h3 data-i18n="delete.title" style="color:var(--red);margin-bottom:10px">⚠️ Confirm deletion</h3>
     <p class="del-modal-msg" id="del-confirm-msg"></p>
-    <label class="del-modal-backup"><input type="checkbox" id="del-confirm-backup"> Créer une sauvegarde avant de supprimer</label>
+    <label class="del-modal-backup"><input type="checkbox" id="del-confirm-backup"> <span data-i18n="delete.backup_first">Create a backup before deleting</span></label>
     <div class="del-modal-btns">
-      <button class="btn-del-cancel" onclick="cancelDelete()">Annuler</button>
-      <button class="btn-del-confirm" onclick="execDelete()">Supprimer</button>
+      <button data-i18n="delete.cancel" class="btn-del-cancel" onclick="cancelDelete()">Cancel</button>
+      <button data-i18n="delete.confirm" class="btn-del-confirm" onclick="execDelete()">Delete</button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="rev-dialog-modal" onclick="if(event.target===this)cancelRevDialog()">
   <div class="modal-box" style="max-width:600px">
-    <h3>📅 Nouvelle année <span id="rev-dialog-year-title"></span></h3>
-    <p style="font-size:12px;color:var(--gray);margin:6px 0 12px">Laissez vide pour reprendre le dernier montant payé. Saisissez un montant pour le modifier.</p>
+    <h3><span data-i18n="dialog.new_year">📅 New year</span> <span id="rev-dialog-year-title"></span></h3>
+    <p data-i18n="dialog.new_year_hint" style="font-size:12px;color:var(--gray);margin:6px 0 12px">Leave empty to carry over the last paid amount. Enter an amount to change it.</p>
     <div style="overflow:auto;max-height:60vh">
-      <div style="font-size:12px;font-weight:700;color:var(--green);margin:0 0 6px;text-transform:uppercase;letter-spacing:.5px">💰 Revenus</div>
-      <table class="rev-dialog-table"><thead><tr><th>Revenu</th><th>Dernier montant</th><th>Nouveau montant mensuel</th></tr></thead>
+      <div data-i18n="dialog.revenues" style="font-size:12px;font-weight:700;color:var(--green);margin:0 0 6px;text-transform:uppercase;letter-spacing:.5px">💰 Revenues</div>
+      <table class="rev-dialog-table"><thead><tr><th data-i18n="dialog.revenue">Revenue</th><th data-i18n="dialog.last_amount">Last amount</th><th data-i18n="dialog.new_amount">New monthly amount</th></tr></thead>
       <tbody id="rev-dialog-tbody"></tbody></table>
-      <div style="font-size:12px;font-weight:700;color:#F5A623;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px">📋 Charges fixes</div>
-      <table class="rev-dialog-table"><thead><tr><th>Charge</th><th>Dernier montant</th><th>Nouveau montant mensuel</th></tr></thead>
+      <div data-i18n="dialog.fixed_costs" style="font-size:12px;font-weight:700;color:#F5A623;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px">📋 Fixed costs</div>
+      <table class="rev-dialog-table"><thead><tr><th data-i18n="dialog.charge">Cost</th><th data-i18n="dialog.last_amount">Last amount</th><th data-i18n="dialog.new_amount">New monthly amount</th></tr></thead>
       <tbody id="chg-dialog-tbody"></tbody></table>
     </div>
     <div class="rev-dialog-btns">
-      <button class="btn-rev-cancel" onclick="cancelRevDialog()">Annuler</button>
-      <button class="btn-rev-confirm" onclick="confirmRevDialog()">✅ Créer l'année</button>
+      <button data-i18n="btn.cancel" class="btn-rev-cancel" onclick="cancelRevDialog()">Cancel</button>
+      <button data-i18n="confirm.apply_months" class="btn-rev-confirm" onclick="confirmRevDialog()">Yes, apply</button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="backup-modal" onclick="if(event.target===this)closeBackups()">
   <div class="modal-box">
-    <h3>📦 Sauvegardes (20 dernières)</h3>
+    <h3 data-i18n="backup.title">📦 Backups (last 20)</h3>
     <div id="backup-list"></div>
-    <button class="modal-close" onclick="closeBackups()">Fermer</button>
+    <button class="modal-close" data-i18n="btn.close" onclick="closeBackups()">Close</button>
   </div>
 </div>
 
@@ -1417,13 +1417,13 @@ body.auth-locked #context-banner {
   <div style="background:var(--surface);border-radius:16px;max-width:580px;margin:60px auto 40px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
     <div style="padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
       <span style="font-size:20px">🔍</span>
-      <input id="search-input" type="search" placeholder="Rechercher une ligne, une dépense…"
+      <input id="search-input" type="search" data-i18n-placeholder="search.placeholder" placeholder="Search a row, an expense…"
         style="flex:1;background:transparent;border:none;outline:none;font-size:16px;color:var(--text);font-family:inherit"
         oninput="_doSearch(this.value)">
       <button onclick="closeGlobalSearch()" style="background:none;border:none;font-size:22px;color:var(--gray);cursor:pointer;line-height:1">✕</button>
     </div>
     <div id="search-results" style="padding:16px;max-height:62vh;overflow-y:auto">
-      <p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>
+      <p id="search-hint-p" style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Type a keyword to search…</p>
     </div>
   </div>
 </div>
@@ -1517,7 +1517,7 @@ body.auth-locked #context-banner {
   <div id="tab-resume" class="tab-panel active">
     <div class="section-card">
       <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-        <span class="section-title">📈 Vue d'ensemble annuelle <span class="badge badge-b" id="sum-badge">–</span></span>
+        <span class="section-title" id="sum-annual-title">📈 Annual overview <span class="badge badge-b" id="sum-badge">–</span></span>
         <span class="chevron">▾</span>
       </div>
       <div class="section-body summary-wrap"><table class="summary-table" id="summary-table"></table></div>
@@ -1946,7 +1946,7 @@ function startDemoModeFromOnboarding() {
     const tab = tabs[tabs.length-1];
     if (tab) switchTab('y'+ly, tab);
   }, 50);
-  showToast('🎮 Mode démo activé — explorez librement !');
+  showToast(t('toast.demo_activated'));
 }
 
 function goToCreateAccountFromOnboarding() {
@@ -1970,7 +1970,7 @@ function goToCreateAccountFromOnboarding() {
 }
 
 function exitDemoMode() {
-  if (!confirm('Quitter le mode démo et supprimer toutes les données fictives ?')) return;
+  if (!confirm(t('toast.confirm_exit_demo'))) return;
   // Supprimer toutes les données demo
   Object.keys(localStorage).filter(k =>
     k.includes('_demo') || k === 'budget_demo_active'
@@ -2004,10 +2004,10 @@ function _applyCompareHighlights() {
     const syncEl = document.getElementById('cloud-status');
     if (syncEl) {
       if (isPro) {
-        syncEl.textContent = '☁️ Sync actif';
+        syncEl.textContent = t('sync.active');
         syncEl.style.cssText += ';color:#7effa0;font-weight:800;background:rgba(126,255,160,.15);border-radius:6px;padding:2px 8px';
       } else {
-        syncEl.textContent = '🔒 Sync';
+        syncEl.textContent = t('sync.locked');
         syncEl.style.cssText += ';color:#ff8080;text-decoration:line-through;opacity:.7';
       }
     }
@@ -2085,14 +2085,14 @@ function submitPin() {
       document.getElementById('pin-overlay').style.display = 'none';
       doLogin(_pinTarget);
     } else {
-      document.getElementById('pin-error').textContent = '❌ Code incorrect';
+      document.getElementById('pin-error').textContent = t('pin.wrong');
       [0,1,2,3].forEach(i => document.getElementById('pin'+i).value = '');
       document.getElementById('pin0').focus();
     }
   } else if (_pinMode === 'set') {
     if (!_pinFirst) {
       _pinFirst = entered;
-      document.getElementById('pin-label').textContent = 'Confirmez le code PIN';
+      document.getElementById('pin-label').textContent = t('pin.confirm_label');
       document.getElementById('pin-error').textContent = '';
       [0,1,2,3].forEach(i => document.getElementById('pin'+i).value = '');
       document.getElementById('pin0').focus();
@@ -2102,11 +2102,11 @@ function submitPin() {
         saveUsers();
         document.getElementById('pin-overlay').style.display = 'none';
         renderConfigTab();
-        showToast('🔒 Code PIN défini');
+        showToast(t('toast.pin_set'));
       } else {
-        document.getElementById('pin-error').textContent = '❌ Les codes ne correspondent pas';
+        document.getElementById('pin-error').textContent = t('pin.mismatch');
         _pinFirst = null;
-        document.getElementById('pin-label').textContent = 'Définir un code PIN (4 chiffres)';
+        document.getElementById('pin-label').textContent = t('pin.set_label');
         [0,1,2,3].forEach(i => document.getElementById('pin'+i).value = '');
         document.getElementById('pin0').focus();
       }
@@ -2171,7 +2171,7 @@ function _finishLogin(id) {
     const syncEl = document.getElementById('last-sync-time');
     if (syncEl) {
       const d = new Date(parseInt(_storedSync));
-      const fmt = d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'});
+      const fmt = d.toLocaleDateString(_lang==='en'?'en-GB':'fr-BE',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString(_lang==='en'?'en-GB':'fr-BE',{hour:'2-digit',minute:'2-digit'});
       syncEl.textContent = '· ' + fmt;
       syncEl.style.display = '';
     }
@@ -2258,7 +2258,7 @@ function toggleWelcomeAddPanel() {
 function renderWizard() {
   const c = document.getElementById('wizard-content');
   if (!c) return;
-  const stepLabels = ['Profil','Revenus','Charges','Budgets','PIN','Cloud'];
+  const stepLabels = [t('wiz.label.profile'),t('wiz.label.revenues'),t('wiz.label.charges'),t('wiz.label.budgets'),t('wiz.label.pin'),t('wiz.label.cloud')];
   const indicator = `<div style="display:flex;align-items:flex-start;justify-content:center;gap:0;margin-bottom:22px">
     ${stepLabels.map((s,i)=>{
       const done = i+1 < _wiz.step, active = i+1 === _wiz.step;
@@ -2280,28 +2280,28 @@ function renderWizard() {
       class="wiz-swatch" style="width:26px;height:26px;border-radius:50%;background:${col};cursor:pointer;flex-shrink:0;transition:transform .15s"
       onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></div>`).join('');
     body = `
-      <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px">Prénom / Nom</label>
-      <input type="text" id="wiz-name" class="welcome-field" placeholder="Ex : Marie…" value="${_wiz.name}"
+      <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px">${t('wiz.s1.name_label')}</label>
+      <input type="text" id="wiz-name" class="welcome-field" placeholder="${t('wiz.s1.name_placeholder')}" value="${_wiz.name}"
         onkeydown="if(event.key==='Enter')wizardNext()" oninput="_wiz.name=this.value.trim()">
-      <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:8px">Couleur de profil</label>
+      <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:8px">${t('wiz.s1.color_label')}</label>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         ${swatches}
         <input type="color" id="wiz-color-inp" value="${_wiz.color}" style="width:30px;height:30px;border:1px solid rgba(255,255,255,.25);border-radius:50%;cursor:pointer;background:transparent;padding:1px" oninput="_wiz.color=this.value">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
         <div>
-          <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:5px">🏦 Nom du compte</label>
-          <input type="text" id="wiz-acc-name" class="welcome-field" placeholder="Compte principal" value="${_wiz.accountName||''}"
+          <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:5px">${t('wiz.s1.account_label')}</label>
+          <input type="text" id="wiz-acc-name" class="welcome-field" placeholder="${t('wiz.s1.account_placeholder')}" value="${_wiz.accountName||''}"
             style="margin-bottom:0" oninput="_wiz.accountName=this.value.trim()">
         </div>
         <div>
-          <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:5px">📈 Nom du livret</label>
-          <input type="text" id="wiz-liv-name" class="welcome-field" placeholder="Livret A" value="${_wiz.livretName||''}"
+          <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:5px">${t('wiz.s1.livret_label')}</label>
+          <input type="text" id="wiz-liv-name" class="welcome-field" placeholder="${t('wiz.s1.livret_placeholder')}" value="${_wiz.livretName||''}"
             style="margin-bottom:0" oninput="_wiz.livretName=this.value.trim()">
         </div>
       </div>
-      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:12px">Optionnel — vous pourrez renommer ces éléments plus tard dans les réglages.</div>
-      <button class="welcome-create-btn" onclick="wizardNext()">Suivant — Revenus &rarr;</button>`;
+      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:12px">${t('wiz.s1.optional_hint')}</div>
+      <button class="welcome-create-btn" onclick="wizardNext()">${t('wiz.s1.next')}</button>`;
   } else if (_wiz.step === 2) {
     const rows = _wiz.revs.map((r,i)=>`
       <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07)">
@@ -2311,13 +2311,13 @@ function renderWizard() {
         <input type="number" value="${r.amount||''}" placeholder="0" min="0" id="wr-amt-${i}"
           style="width:82px;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 8px;font-size:12px;background:rgba(255,255,255,.1);color:#fff;text-align:right;outline:none;${r.checked?'':'opacity:.35;pointer-events:none'}"
           oninput="_wiz.revs[${i}].amount=+this.value">
-        <span style="font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0">€/mois</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0">${t('wiz.s2.per_month')}</span>
       </div>`).join('');
-    body = `<div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:10px">Cochez et ajustez vos sources de revenus mensuels.</div>
+    body = `<div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:10px">${t('wiz.s2.hint')}</div>
       ${rows}
       <div style="display:flex;gap:8px;margin-top:16px">
-        <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
-        <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">Suivant — Charges &rarr;</button>
+        <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.back')}</button>
+        <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">${t('wiz.s2.next')}</button>
       </div>`;
   } else if (_wiz.step === 3) {
     const rows = _wiz.chgs.map((ch,i)=>`
@@ -2328,13 +2328,13 @@ function renderWizard() {
         <input type="number" value="${ch.amount||''}" placeholder="0" min="0" id="wc-amt-${i}"
           style="width:78px;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 7px;font-size:12px;background:rgba(255,255,255,.1);color:#fff;text-align:right;outline:none;${ch.checked?'':'opacity:.35;pointer-events:none'}"
           oninput="_wiz.chgs[${i}].amount=+this.value">
-        <span style="font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0">€/mois</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0">${t('wiz.s2.per_month')}</span>
       </div>`).join('');
-    body = `<div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:10px">Cochez vos charges fixes et ajustez les montants.</div>
+    body = `<div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:10px">${t('wiz.s3.hint')}</div>
       <div style="max-height:270px;overflow-y:auto;padding-right:4px">${rows}</div>
       <div style="display:flex;gap:8px;margin-top:14px">
-        <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
-        <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">Suivant — Budgets &rarr;</button>
+        <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.back')}</button>
+        <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">${t('wiz.s3.next')}</button>
       </div>`;
   } else if (_wiz.step === 4) {
     const BUDGET_DEF = {carburant:80,courses:300,divers:100,chien:60};
@@ -2348,18 +2348,18 @@ function renderWizard() {
         <input type="number" value="${monthly||''}" placeholder="0" min="0" id="wbgt-${c.key}"
           style="width:72px;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 8px;font-size:13px;background:rgba(255,255,255,.1);color:#fff;text-align:right;outline:none"
           oninput="_wiz.budgets['${c.key}']=Math.round((parseFloat(this.value)||0)*12)">
-        <span style="font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0;min-width:36px">€/mois</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0;min-width:36px">${t('wiz.s2.per_month')}</span>
       </div>`;
     }).join('');
     body = `<div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:12px;line-height:1.6">
-      Définissez un budget mensuel par catégorie. L'app vous affichera votre progression en temps réel.
+      ${t('wiz.s4.hint')}
     </div>
     <div style="max-height:250px;overflow-y:auto;padding-right:4px">${rows}</div>
-    <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:8px">💡 Optionnel — modifiable à tout moment dans Config → Catégories</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:8px">${t('wiz.s4.optional')}</div>
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
-      <button onclick="_wiz.budgets={};_wiz.step=5;renderWizard()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">⏭ Passer</button>
-      <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">Suivant — PIN &rarr;</button>
+      <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.back')}</button>
+      <button onclick="_wiz.budgets={};_wiz.step=5;renderWizard()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.s4.skip')}</button>
+      <button onclick="wizardNext()" class="welcome-create-btn" style="flex:2">${t('wiz.s4.next')}</button>
     </div>`;
   } else if (_wiz.step === 5) {
     const pinInputs = [0,1,2,3].map(i=>`<input id="wpin${i}" type="password" maxlength="1" inputmode="numeric" autocomplete="off"
@@ -2367,44 +2367,44 @@ function renderWizard() {
       oninput="wizPinInput(${i})" onkeydown="wizPinKey(event,${i})">`).join('');
     body = `<div style="text-align:center;padding:4px 0 10px">
       <div style="font-size:36px;margin-bottom:8px">🔒</div>
-      <div style="font-size:14px;color:rgba(255,255,255,.9);font-weight:700;margin-bottom:4px">Protégez votre compte</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:18px">Définissez un code PIN à 4 chiffres pour sécuriser vos données.<br>Vous pouvez aussi ignorer cette étape.</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.9);font-weight:700;margin-bottom:4px">${t('wiz.s5.title')}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:18px">${t('wiz.s5.desc')}</div>
       <div style="display:flex;gap:10px;justify-content:center;margin-bottom:6px">${pinInputs}</div>
       <div id="wiz-pin-err" style="color:#ff6b6b;font-size:12px;min-height:16px;margin-bottom:8px"></div>
     </div>
     <div style="display:flex;gap:8px;margin-top:6px">
-      <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
-      <button onclick="wizardSkipPin()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">⏭ Passer</button>
-      <button onclick="wizardConfirmPin()" class="welcome-create-btn" style="flex:2">Suivant &rarr;</button>
+      <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.back')}</button>
+      <button onclick="wizardSkipPin()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.s5.skip')}</button>
+      <button onclick="wizardConfirmPin()" class="welcome-create-btn" style="flex:2">${t('wiz.s5.next')}</button>
     </div>`;
   } else if (_wiz.step === 6) {
     body = `<div style="text-align:center;padding:4px 0 8px">
       <div style="font-size:36px;margin-bottom:6px">🐙</div>
-      <div style="display:inline-block;background:#27ae60;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px;margin-bottom:8px">100% GRATUIT</div>
-      <div style="font-size:14px;color:#fff;font-weight:700;margin-bottom:4px">Sauvegarde cloud avec GitHub</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:14px;line-height:1.6">Vos données seront automatiquement<br>sauvegardées en ligne à chaque enregistrement.<br><b style="color:#fff">Aucun abonnement. Aucune carte bancaire.</b></div>
+      <div style="display:inline-block;background:#27ae60;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px;margin-bottom:8px">${t('wiz.step6.free_badge')}</div>
+      <div style="font-size:14px;color:#fff;font-weight:700;margin-bottom:4px">${t('wiz.step6.title')}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:14px;line-height:1.6">${t('wiz.step6.desc')}</div>
     </div>
     <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:12px;font-size:11px;color:rgba(255,255,255,.85);line-height:1.9">
-      <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:12px">Comment faire ? (5 minutes)</div>
-      <div>1️⃣ Crée un compte sur <b>github.com</b> (gratuit)</div>
-      <div>2️⃣ Va dans <b>Settings → Developer settings → Personal access tokens → Tokens (classic)</b></div>
-      <div>3️⃣ Clique <b>Generate new token (classic)</b></div>
-      <div>4️⃣ Coche seulement <b>gist</b> ✅</div>
-      <div>5️⃣ Copie le token <b>ghp_…</b> et colle-le ci-dessous</div>
-      <div style="margin-top:6px;font-size:10px;color:rgba(255,255,255,.5)">📖 Guide détaillé disponible dans <b>Aide → Sauvegarde</b></div>
+      <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:12px">${t('wiz.step6.how')}</div>
+      <div>${t('wiz.step6.s1')}</div>
+      <div>${t('wiz.step6.s2')}</div>
+      <div>${t('wiz.step6.s3')}</div>
+      <div>${t('wiz.step6.s4')}</div>
+      <div>${t('wiz.step6.s5')}</div>
+      <div style="margin-top:6px;font-size:10px;color:rgba(255,255,255,.5)">${t('wiz.step6.guide')}</div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
       <input type="text" id="wiz-gist-inp" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
         style="flex:1;border:1px solid rgba(255,255,255,.3);border-radius:7px;padding:8px 10px;font-size:12px;background:rgba(255,255,255,.1);color:#fff;font-family:monospace;outline:none"
         onkeydown="if(event.key==='Enter')wizardGistSave()">
       <button id="wiz-gist-btn" onclick="wizardGistSave()"
-        style="padding:8px 12px;background:#27ae60;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">✅ Valider & connecter</button>
+        style="padding:8px 12px;background:#27ae60;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">${t('wiz.validate_connect')}</button>
     </div>
     <div id="wiz-gist-err" style="color:#ff8f8f;font-size:11px;min-height:16px;margin-bottom:8px"></div>
     <div style="display:flex;gap:8px;margin-top:4px">
-      <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">&larr; Retour</button>
-      <button onclick="wizardFinish()" style="padding:10px 0;flex:2;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">⏭ Passer pour l'instant</button>
-      <button onclick="wizardGistSave()" class="welcome-create-btn" style="flex:2">✅ Créer mon budget</button>
+      <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.step6.back')}</button>
+      <button onclick="wizardFinish()" style="padding:10px 0;flex:2;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.step6.skip')}</button>
+      <button onclick="wizardGistSave()" class="welcome-create-btn" style="flex:2">${t('wiz.step6.create')}</button>
     </div>`;
   }
   c.innerHTML = indicator + body;
@@ -2444,18 +2444,18 @@ function wizPinKey(e, idx) {
 function wizardSkipPin() { _wiz.pin = ''; _wiz.step = 6; renderWizard(); }
 function wizardConfirmPin() {
   const pin = [0,1,2,3].map(i=>document.getElementById('wpin'+i)?.value||'').join('');
-  if (pin.length < 4) { document.getElementById('wiz-pin-err').textContent = '⚠️ Entrez 4 chiffres ou cliquez Passer'; return; }
+  if (pin.length < 4) { document.getElementById('wiz-pin-err').textContent = t('wiz.pin_error'); return; }
   _wiz.pin = pin; _wiz.step = 6; renderWizard();
 }
 async function wizardGistSave() {
   const val = document.getElementById('wiz-gist-inp')?.value.trim();
   if (!val || !val.startsWith('ghp_')) {
     const err = document.getElementById('wiz-gist-err');
-    if (err) err.textContent = '⚠️ Le token doit commencer par ghp_';
+    if (err) err.textContent = t('wiz.token_error');
     return;
   }
   const btn = document.getElementById('wiz-gist-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Vérification…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('wiz.validating'); }
   try {
     const r = await fetch('https://api.github.com/user', { headers: { Authorization: 'token ' + val } });
     if (!r.ok) throw new Error('Token invalide (code ' + r.status + ')');
@@ -2466,7 +2466,7 @@ async function wizardGistSave() {
   } catch(e) {
     const err = document.getElementById('wiz-gist-err');
     if (err) err.textContent = '❌ ' + (e.message || 'Erreur réseau');
-    if (btn) { btn.disabled = false; btn.textContent = '✅ Valider & connecter'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('wiz.validate_connect'); }
   }
 }
 function wizardFinish() {
@@ -2529,7 +2529,7 @@ function _mergeBudgetData(local, cloud) {
       if (missing.length) { result[yr].vars[cat].push(...missing); rescued += missing.length; }
     });
   });
-  if (rescued > 0) { console.warn(`🛡️ Fusion : ${rescued} tx locale(s) réinjectée(s) (absentes du cloud, non supprimées)`); showToast(`🛡️ ${rescued} tx locales préservées`); }
+  if (rescued > 0) { console.warn(`🛡️ Fusion : ${rescued} tx locale(s) réinjectée(s) (absentes du cloud, non supprimées)`); showToast(t('toast.local_tx_preserved').replace('{0}', rescued)); }
   return result;
 }
 // Crée un backup avant remplacement cloud — max 1 par heure, 5 au total
@@ -2606,13 +2606,13 @@ function addUserFromForm() {
   const colorEl = document.getElementById('new-user-color');
   const name = nameEl?.value.trim();
   const color = colorEl?.value || '#e67e22';
-  if (!name) { showToast('⚠️ Entrez un nom'); return; }
+  if (!name) { showToast(t('toast.name_required')); return; }
   const id = name.toLowerCase().replace(/[^a-z0-9]/g,'_') + '_' + Date.now();
   USERS[id] = { name, color };
   saveUsers();
   if (nameEl) nameEl.value = '';
   renderConfigTab();
-  showToast('👤 ' + name + ' ajouté');
+  showToast(t('toast.user_added').replace('{0}', name));
 }
 function renameUser(userId) {
   const current = USERS[userId]?.name || '';
@@ -2620,16 +2620,16 @@ function renameUser(userId) {
   if (!newName || !newName.trim() || newName.trim() === current) return;
   USERS[userId].name = newName.trim();
   saveUsers(); dSave(); renderConfigTab(); updateUserDisplay();
-  showToast('✅ Renommé en "' + newName.trim() + '"');
+  showToast(t('toast.account_renamed').replace('{0}', newName.trim()));
 }
 function confirmDeleteUser(userId) {
   const name = USERS[userId]?.name || userId;
-  confirmDelete(`Supprimer l'utilisateur "${name}" et toutes ses données ?`, () => {
+  confirmDelete(t('confirm.delete_user').replace('{0}', name), () => {
     Object.keys(localStorage).filter(k => k.includes(userId)).forEach(k => localStorage.removeItem(k));
     delete USERS[userId];
     saveUsers();
     renderConfigTab();
-    showToast('🗑 Utilisateur supprimé');
+    showToast(t('toast.user_deleted'));
   });
 }
 
@@ -2860,12 +2860,12 @@ function showCompteDetail(year, accId) {
 
   const html = `
     <div style="font-size:12px;margin-bottom:14px;background:var(--surface-alt);border-radius:8px;padding:10px 14px;border:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">Solde initial 01/01</span><span style="font-weight:700">${fmtN(initBal)} €</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--gray)">${t('summary.initial_balance')}</span><span style="font-weight:700">${fmtN(initBal)} €</span></div>
     </div>
     ${revHTML}${chgHTML}${varHTML}
     <div style="background:var(--surface-alt);border-radius:8px;padding:12px 14px;border:2px solid ${finalColor}33;margin-top:4px">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:13px;font-weight:700">= Compte actuel calculé</span>
+        <span style="font-size:13px;font-weight:700">${t('summary.current_balance')}</span>
         <span style="font-size:20px;font-weight:800;color:${finalColor}">${fmtN(bal)} €</span>
       </div>
       <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.6">
@@ -3080,7 +3080,7 @@ function renderTabs() {
 }
 
 function deleteYear(year) {
-  confirmDelete(`Supprimer l'année ${year} et toutes ses données ?`, () => {
+  confirmDelete(t('confirm.delete_year_full').replace('{0}', year), () => {
     delete DATA[year];
     const panel = document.getElementById('tab-y' + year);
     if (panel) panel.remove();
@@ -3093,7 +3093,7 @@ function deleteYear(year) {
       _switchYearMobile(target);
     }
     dSave(); renderSummary();
-    showToast('🗑 Année ' + year + ' supprimée');
+    showToast(t('toast.year_deleted').replace('{0}', year));
   });
 }
 function _confirmDeleteYear() {
@@ -3102,11 +3102,11 @@ function _confirmDeleteYear() {
   const year = sel.value;
   if (!year) return;
   _showDangerConfirm({
-    title: `Supprimer l'année ${year}`,
-    subtitle: 'Action irréversible — toutes les données seront perdues',
-    items: [`Revenus de ${year}`, `Charges fixes de ${year}`, `Toutes les dépenses variables de ${year}`],
+    title: t('delete.year_title').replace('{0}', year),
+    subtitle: t('delete.year_subtitle'),
+    items: [t('delete.year_item1').replace('{0}', year), t('delete.year_item2').replace('{0}', year), t('delete.year_item3').replace('{0}', year)],
     confirmWord: String(year),
-    buttonLabel: `🗑️ Supprimer ${year} définitivement`,
+    buttonLabel: t('delete.year_btn').replace('{0}', year),
     onConfirm: () => deleteYear(year)
   });
 }
@@ -3122,7 +3122,7 @@ function execDelete() {
     const now = new Date();
     const mk = bakPrefix() + `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     localStorage.setItem(mk, JSON.stringify(DATA));
-    showToast('💾 Backup créé');
+    showToast(t('toast.backup_created'));
   }
   if (_pendingDeleteFn) { _pendingDeleteFn(); _pendingDeleteFn = null; }
   document.getElementById('del-confirm-modal').classList.remove('open');
@@ -3153,7 +3153,7 @@ function addYear() {
   const years = getYears();
   const lastYear = years[years.length - 1];
   const newYear = String(parseInt(lastYear) + 1);
-  if (DATA[newYear]) { showToast('Année ' + newYear + ' existe déjà'); return; }
+  if (DATA[newYear]) { showToast(t('toast.year_exists').replace('{0}', newYear)); return; }
   _pendingNewYear = { lastYear, newYear };
   document.getElementById('rev-dialog-year-title').textContent = newYear;
   const prev = DATA[lastYear];
@@ -3268,7 +3268,7 @@ function confirmRevDialog() {
     }
   });
   dSave(); renderSummary();
-  showToast('📅 Année ' + newYear + ' créée');
+  showToast(t('toast.year_created').replace('{0}', newYear));
 }
 
 function txDay(d) {
@@ -3600,7 +3600,7 @@ function addRevRow(year) {
 }
 function delRevRow(year, ri) {
   const lbl = DATA[year].revenus[ri]?.label || 'ce revenu';
-  confirmDelete(`Supprimer "${lbl}" ?`, () => { DATA[year].revenus.splice(ri,1); renderYear(year); dSave(); });
+  confirmDelete(t('confirm.delete_row').replace('{0}', lbl), () => { DATA[year].revenus.splice(ri,1); renderYear(year); dSave(); });
 }
 
 // ── CHARGES ──
@@ -3726,7 +3726,7 @@ function addCharge(year, cat) {
 }
 function delCharge(year, ri) {
   const lbl = DATA[year].charges[ri]?.label || 'cette charge';
-  confirmDelete(`Supprimer "${lbl}" ?`, () => { DATA[year].charges.splice(ri,1); renderYear(year); dSave(); });
+  confirmDelete(t('confirm.delete_row').replace('{0}', lbl), () => { DATA[year].charges.splice(ri,1); renderYear(year); dSave(); });
 }
 
 // ── ADD ROW MODAL ──
@@ -3742,11 +3742,11 @@ function _arPopulateMonths() {
 function openAddRowModal(year, type) {
   _arYear = year;
   _arEditMode = false; _arEditIdx = null; _arEditDataType = null;
-  document.getElementById('ar-modal-title').textContent = '＋ Nouvelle ligne';
-  document.getElementById('ar-submit-btn').textContent = '✅ Ajouter';
+  document.getElementById('ar-modal-title').textContent = t('modal.new_row');
+  document.getElementById('ar-submit-btn').textContent = t('btn.add_row_submit');
   document.getElementById('ar-edit-warning').style.display = 'none';
   document.getElementById('ar-type').value = type;
-  const labels = {revenu:'Nouveau revenu', fixed:'Nouvelle charge', occasional:'Charge occasionnelle'};
+  const labels = {revenu:t('modal.type_revenu'), fixed:t('modal.type_fixed'), occasional:t('modal.type_occas')};
   document.getElementById('ar-label').value = labels[type] || '';
   document.getElementById('ar-freq').value = 1;
   _arPopulateMonths();
@@ -3766,8 +3766,8 @@ function openAddRowModal(year, type) {
 function openEditRowModal(year, dataType, ri) {
   const row = DATA[year][dataType][ri];
   _arYear = year; _arEditMode = true; _arEditIdx = ri; _arEditDataType = dataType;
-  document.getElementById('ar-modal-title').textContent = '✏️ Modifier la ligne';
-  document.getElementById('ar-submit-btn').textContent = '✏️ Modifier';
+  document.getElementById('ar-modal-title').textContent = t('modal.edit_row');
+  document.getElementById('ar-submit-btn').textContent = t('btn.edit_row_submit');
   document.getElementById('ar-edit-warning').style.display = 'block';
   const type = dataType === 'revenus' ? 'revenu' : (row.cat || 'fixed');
   document.getElementById('ar-type').value = type;
@@ -3858,10 +3858,10 @@ function updateAddRowPreview() {
   }
   const annual = amount * payMonths.length;
   const reps = parseInt(document.getElementById('ar-reps')?.value) || 0;
-  const freqLabel = interval === 1 ? 'mensuel' : `tous les ${interval} mois`;
+  const freqLabel = interval === 1 ? t('modal.freq_monthly') : t('modal.freq_every').replace('{0}', interval);
   const endLabel = noEnd ? '' : ` → fin ${getMonths()[endMonth]}`;
   const repsLabel = reps > 0 ? ` · <b>${reps} répétition${reps>1?'s':''}</b>` : '';
-  const monthsStr = payMonths.length ? payMonths.map(m => getMonths()[m]).join(', ') : 'Aucun paiement cette année';
+  const monthsStr = payMonths.length ? payMonths.map(m => getMonths()[m]).join(', ') : t('modal.no_payment');
   prev.innerHTML = `→ ${freqLabel}${endLabel}${repsLabel} = ${payMonths.length}× ${fmtN(amount)} € = <b>${fmtN(annual)} €/an</b><br><span style="font-size:11px;opacity:.7">${monthsStr}</span>`;
   prev.style.display = 'block';
 }
@@ -3874,7 +3874,7 @@ function submitAddRow() {
   const startMonth = parseInt(document.getElementById('ar-startmonth').value) || 0;
   const errEl = document.getElementById('ar-error');
   errEl.textContent = '';
-  if (!interval || interval < 1 || interval > 12) { errEl.textContent = '⚠️ Intervalle entre 1 et 12 mois'; return; }
+  if (!interval || interval < 1 || interval > 12) { errEl.textContent = t('modal.row_interval_error'); return; }
   const v = Array(12).fill(0);
   for (let m = startMonth; m < 12; m += interval) v[m] += amount;
   const noEnd = document.getElementById('ar-noend').checked;
@@ -3897,7 +3897,7 @@ function submitAddRow() {
     renderYear(year);
     dSave();
     document.getElementById('add-row-modal').style.display = 'none';
-    showToast(`✅ "${label}" modifié`);
+    showToast(t('toast.row_updated').replace('{0}', label));
     _arEditMode = false; _arEditIdx = null; _arEditDataType = null;
     return;
   }
@@ -3909,7 +3909,7 @@ function submitAddRow() {
   renderYear(year);
   dSave();
   document.getElementById('add-row-modal').style.display = 'none';
-  showToast(`✅ "${label}" ajouté`);
+  showToast(t('toast.row_added').replace('{0}', label));
 }
 
 // ── PROPAGATION ──
@@ -3954,9 +3954,9 @@ function renderMethodTotals(year) {
   }).join('');
   if (!rows) return '';
   return `<div style="padding:0 16px 14px">
-    <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-top:8px;border-top:1px solid var(--border)">Répartition par mode de paiement</div>
+    <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-top:8px;border-top:1px solid var(--border)">${t('summary.payment_split')}</div>
     <table class="charge-table"><thead><tr>
-      <th class="lbl-col">Mode</th>
+      <th class="lbl-col">${t('summary.payment_mode')}</th>
       ${MONTHS.map(m=>`<th>${m}</th>`).join('')}
       <th class="tot-col">TOTAL</th><th style="width:28px"></th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -4118,12 +4118,12 @@ function toggleMonthDetail(year, catKey, m, btn) {
   const open = _expandedMonths[key];
   if (open) {
     detRow.style.display = 'none';
-    btn.textContent = '▾ Détail';
+    btn.textContent = t('var.detail_open');
     _expandedMonths[key] = false;
   } else {
     tbody.innerHTML = buildMonthTxRows(year, catKey, m);
     detRow.style.display = '';
-    btn.textContent = '▴ Fermer';
+    btn.textContent = t('var.detail_close');
     _expandedMonths[key] = true;
   }
 }
@@ -4142,9 +4142,9 @@ function openQuickAdd(year, catKey) {
   const overlay = document.getElementById('quick-add-overlay');
   // Reset modal to "add" mode
   const _tEl = document.getElementById('qa-modal-title');
-  if (_tEl) _tEl.textContent = '⚡ Ajout rapide';
+  if (_tEl) _tEl.textContent = t('qa.title');
   const _bEl = document.getElementById('qa-submit-btn');
-  if (_bEl) _bEl.textContent = '✅ Ajouter';
+  if (_bEl) _bEl.textContent = t('qa.add_btn');
   // Populate year selector
   const yrSel = document.getElementById('qa-year');
   const yrs = getYears();
@@ -4192,13 +4192,13 @@ function openEditTx(year, catKey, txId) {
   document.getElementById('qa-day').value = rawDay || '';
   // Mettre à jour titre + bouton
   const titleEl = document.getElementById('qa-modal-title');
-  if (titleEl) titleEl.textContent = '✏️ Modifier la dépense';
+  if (titleEl) titleEl.textContent = t('qa.edit_title');
   const btnEl = document.getElementById('qa-submit-btn');
-  if (btnEl) btnEl.textContent = '✅ Modifier';
+  if (btnEl) btnEl.textContent = t('qa.edit_btn');
 }
 function submitQuickAdd() {
   const amount = parseFloat(document.getElementById('qa-amount').value);
-  if (isNaN(amount) || amount === 0) { document.getElementById('qa-error').textContent = '⚠️ Entrez un montant valide (négatif pour un remboursement)'; return; }
+  if (isNaN(amount) || amount === 0) { document.getElementById('qa-error').textContent = t('qa.amount_error'); return; }
   const year   = document.getElementById('qa-year').value;
   const catKey = document.getElementById('qa-cat').value;
   const month  = +document.getElementById('qa-month').value;
@@ -4233,7 +4233,7 @@ function submitQuickAdd() {
           const tbody = document.getElementById(`vbody-${year}-${catKey}-${month}`);
           if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, month);
         }
-        showToast(`✅ Dépense déplacée vers "${getVarCats().find(c=>c.key===catKey)?.label||catKey}"`);
+        showToast(t('toast.tx_moved').replace('{0}', getVarCats().find(c=>c.key===catKey)?.label||catKey));
       } else {
         tx.amount  = amount; tx.date = dateStr; tx.comment = comment; tx.method = method; tx.month = month;
         syncMonthSummary(year, catKey, oldMonth);
@@ -4246,7 +4246,7 @@ function submitQuickAdd() {
             if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, m);
           }
         });
-        showToast(`✅ Dépense modifiée — ${fmtN(amount)} €`);
+        showToast(t('toast.tx_edited').replace('{0}', fmtN(amount)));
       }
     }
     _qaOrigCatKey = null;
@@ -4265,7 +4265,7 @@ function submitQuickAdd() {
   refreshMonthSummary(year);
   dSave();
   document.getElementById('quick-add-overlay').style.display = 'none';
-  showToast(`✅ ${fmtN(amount)} € ajouté en ${getMonths()[month]} ${year}`);
+  showToast(t('toast.tx_added').replace('{0}', fmtN(amount)).replace('{1}', getMonths()[month]).replace('{2}', year));
 }
 
 function addTxForMonth(year, catKey, m) {
@@ -4279,7 +4279,7 @@ function addTxForMonth(year, catKey, m) {
   if (detRow) {
     tbody.innerHTML = buildMonthTxRows(year, catKey, m);
     detRow.style.display = '';
-    if (btn) btn.textContent = '▴ Fermer';
+    if (btn) btn.textContent = t('var.detail_close');
     _expandedMonths[key] = true;
   }
   syncMonthSummary(year, catKey, m);
@@ -4329,7 +4329,7 @@ function updateTxMethod(year, catKey, id, sel) {
   if (tr) { tr.style.borderLeftColor = mo.color; tr.style.background = _isDk ? 'var(--surface)' : mo.bg; }
 }
 function delTx(year, catKey, id, m) {
-  confirmDelete('Supprimer cette transaction ?', () => {
+  confirmDelete(t('confirm.delete_tx'), () => {
     // Mémoriser l'ID comme supprimé intentionnellement (protection anti-réinjection lors des syncs)
     if (!DATA._deletedIds) DATA._deletedIds = [];
     if (!DATA._deletedIds.includes(id)) DATA._deletedIds.push(id);
@@ -4456,9 +4456,9 @@ function renderBudgetBarInner(year, key) {
   const spent = sum(txs.map(t => t.amount));
   const pct = Math.min(100, Math.round(spent / budget * 100));
   const color = spent > budget ? '#F04F5B' : pct > 80 ? '#F5A623' : '#00C896';
-  const customLabel = hasMonthly ? ' <span style="font-size:10px;color:var(--blue);font-weight:700">(mensuel)</span>' : '';
+  const customLabel = hasMonthly ? ` <span style="font-size:10px;color:var(--blue);font-weight:700">${t('budget.bar_monthly')}</span>` : '';
   return `<div class="budget-bar-row">
-    <span class="budget-bar-lbl">Budget : ${fmtN(budget)} €/an${customLabel}${editBtn}</span>
+    <span class="budget-bar-lbl">${t('budget.bar_label').replace('{0}', fmtN(budget))}${customLabel}${editBtn}</span>
     <span class="budget-bar-amt" style="color:${color}">${fmtN(spent)} € · ${pct}%${spent>budget?' ⚠️':''}</span>
   </div>
   <div class="budget-bar-row">
@@ -4509,7 +4509,7 @@ function _checkBudgetAlert(year, catKey, showToastOnCross = false) {
     el.textContent = `⚠️ ${pct}%`;
     if (showToastOnCross && !wasOver) {
       const cat = getVarCats().find(c => c.key === catKey);
-      showToast(`🚨 Budget "${cat?.label || catKey}" dépassé ! ${fmtN(grand)} € / ${fmtN(budget)} €/an`);
+      showToast(t('toast.budget_exceeded').replace('{0}', cat?.label||catKey).replace('{1}', fmtN(grand)).replace('{2}', fmtN(budget)));
     }
   } else if (isWarn) {
     el.style.cssText = 'font-size:10px;font-weight:800;margin-left:5px;background:rgba(245,166,35,.15);color:#F5A623;padding:1px 6px;border-radius:4px';
@@ -4640,7 +4640,7 @@ function saveBudgetEditor() {
   // Fermer
   const ov = document.getElementById('budget-editor-overlay');
   if (ov) ov.style.display = 'none';
-  showToast(`✅ Budget mensuel enregistré — ${fmtN(total)} €/an`);
+  showToast(t('toast.cat_budget_saved').replace('{0}', fmtN(total)));
 }
 
 function closeBudgetEditor(e) {
@@ -4697,9 +4697,9 @@ function renderMonthSummary(year) {
       const proj = Math.round(avgBal * 12);
       const color = proj >= 0 ? '#5B6AF0' : '#F04F5B';
       return `<div style="margin:10px 0 4px;padding:8px 14px;background:var(--surface-alt);border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--gray)">
-        🔮 <strong style="color:var(--text)">Projection ${year}</strong> : à ce rythme, épargne annuelle estimée à
+        <strong style="color:var(--text)">${t('dash.projection').replace('{0}', year)}</strong> : ${t('dash.projection_desc')}
         <strong style="color:${color}">${proj>=0?'+':''}${fmtN(proj)} €</strong>
-        <span style="font-size:11px">(moy. ${fmtN(avgBal)} €/mois · ${completedM} mois de données)</span>
+        <span style="font-size:11px">${t('dash.avg_balance').replace('{0}', fmtN(avgBal)).replace('{1}', completedM)}</span>
       </div>`;
     })()}
     </div>
@@ -4826,7 +4826,7 @@ function uploadUserPhoto(userId) {
   input.onchange = e => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 800000) { showToast('⚠️ Image trop grande (max 800 Ko)'); return; }
+    if (file.size > 800000) { showToast(t('toast.image_too_large')); return; }
     const reader = new FileReader();
     reader.onload = ev => {
       // Redimensionner via canvas
@@ -4844,7 +4844,7 @@ function uploadUserPhoto(userId) {
         renderWelcomeScreen();
         renderConfigTab();
         if (userId === CURRENT_USER_ID) updateUserDisplay();
-        showToast('✅ Photo mise à jour');
+        showToast(t('toast.photo_updated'));
       };
       img.src = ev.target.result;
     };
@@ -4879,7 +4879,7 @@ function setCloudStatus(s, errMsg) {
   const col = {off:'', syncing:'rgba(255,255,255,.7)', ok:'#7effa0', error:'#ffb3b3'};
   el.textContent = map[s]||''; el.style.color = col[s]||'';
   el.style.cursor = s === 'error' ? 'pointer' : 'default';
-  el.title = s === 'error' ? (_lastSyncError || 'Erreur de synchronisation') : {off:'', syncing:'Synchronisation…', ok:'Synchronisé avec le cloud'}[s]||'';
+  el.title = s === 'error' ? (_lastSyncError || t('sync.error_default')) : {off:'', syncing:t('sync.syncing'), ok:t('sync.ok')}[s]||'';
   el.onclick = s === 'error' ? () => showToast('❌ Sync : ' + (_lastSyncError || 'Erreur inconnue')) : null;
   if (s === 'ok') {
     const now = Date.now();
@@ -4887,7 +4887,7 @@ function setCloudStatus(s, errMsg) {
     const syncEl = document.getElementById('last-sync-time');
     if (syncEl) {
       const d = new Date(now);
-      const fmt = d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'});
+      const fmt = d.toLocaleDateString(_lang==='en'?'en-GB':'fr-BE',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString(_lang==='en'?'en-GB':'fr-BE',{hour:'2-digit',minute:'2-digit'});
       syncEl.textContent = '· ' + fmt;
       syncEl.style.display = '';
     }
@@ -4897,7 +4897,7 @@ async function cloudPush() {
   const url = cloudApiUrl();
   if (!url || !DATA) return;
   if (!_hasYearData(DATA)) return; // Ne jamais écraser le cloud avec des données vides
-  if (!_deviceAllowed) { setCloudStatus('error', `Appareil non autorisé — ${MAX_DEVICES} appareils max`); return; }
+  if (!_deviceAllowed) { setCloudStatus('error', _lang==='en' ? `Device not authorized — max ${MAX_DEVICES} devices` : `Appareil non autorisé — ${MAX_DEVICES} appareils max`); return; }
   const token = await fbGetToken();
   setCloudStatus('syncing');
   try {
@@ -4958,19 +4958,19 @@ async function cloudPull() {
     if (_gistToken && !getGistToken()) {
       localStorage.setItem(gistTokenKey(), _gistToken);
       if (_gistId) localStorage.setItem(gistIdKey(), _gistId);
-      showToast('🐙 Token GitHub Gist restauré depuis le cloud');
+      showToast(t('toast.gist_token_restored'));
       renderConfigTab();
     }
     return budgetData;
   } catch(e) { _lastSyncError = e.message || 'Réseau inaccessible'; return null; }
 }
 async function cloudPullNow() {
-  if (!isLicensed()) { showToast('⚠️ Licence Premium requise pour la sync'); return; }
-  if (!_fbUser) { showToast('⚠️ Connectez-vous avec Google d\'abord'); openAuthModal('login'); return; }
+  if (!isLicensed()) { showToast(t('toast.license_required')); return; }
+  if (!_fbUser) { showToast(t('toast.login_required')); openAuthModal('login'); return; }
   setCloudStatus('syncing');
   const cloudData = await cloudPull();
   if (!cloudData) {
-    if (!_lastSyncError) { setCloudStatus('off'); showToast('ℹ️ Aucune donnée dans le cloud'); }
+    if (!_lastSyncError) { setCloudStatus('off'); showToast(t('toast.cloud_empty')); }
     else { setCloudStatus('error', _lastSyncError); }
     return;
   }
@@ -4982,7 +4982,7 @@ async function cloudPullNow() {
   getYears().forEach(y => renderYear(y));
   renderSummary();
   setCloudStatus('ok');
-  showToast('✅ Données synchronisées depuis le cloud');
+  showToast(t('toast.cloud_synced'));
   startRealtimeSync();
 }
 
@@ -4995,7 +4995,7 @@ function resetAutoLock() {
   if (!CURRENT_USER_ID || CURRENT_USER_ID === '_demo') return;
   clearTimeout(_autoLockTimer);
   clearTimeout(_autoLockWarnTimer);
-  _autoLockWarnTimer = setTimeout(() => showToast('⏳ Verrouillage dans 1 minute (inactivité)'), AUTO_LOCK_WARN_MS);
+  _autoLockWarnTimer = setTimeout(() => showToast(t('toast.auto_lock_warn')), AUTO_LOCK_WARN_MS);
   _autoLockTimer     = setTimeout(lockScreen, AUTO_LOCK_MS);
 }
 function stopAutoLock() {
@@ -5017,7 +5017,7 @@ function lockScreen() {
   renderWelcomeScreen();
   const ws = document.getElementById('welcome-screen');
   if (ws) { ws.style.opacity = '0'; ws.style.display = 'flex'; requestAnimationFrame(() => { ws.style.transition = 'opacity .3s'; ws.style.opacity = '1'; }); }
-  showToast('🔒 Session verrouillée — inactivité de 10 min');
+  showToast(t('toast.auto_locked'));
   // Si l'utilisateur a un PIN → afficher la saisie directement après l'animation
   if (lockedId && USERS[lockedId]?.pin) {
     setTimeout(() => showPinOverlay(lockedId, 'login'), 400);
@@ -5071,7 +5071,7 @@ async function startRealtimeSync() {
     _realtimeReconnectTimer = setTimeout(() => { stopRealtimeSync(); startRealtimeSync(); }, 50 * 60 * 1000);
     // Indicateur "Live"
     const el = document.getElementById('cloud-status');
-    if (el) { el.textContent = '🟢 Live'; el.style.color = '#7effa0'; el.title = 'Synchronisation temps réel active'; }
+    if (el) { el.textContent = t('sync.live_label'); el.style.color = '#7effa0'; el.title = t('sync.live_title'); }
   } catch(e) {}
 }
 
@@ -5106,7 +5106,7 @@ function applyRealtimeData(d) {
     saveUsers();
   }
   // Refuser des données vides si on a des données locales valides
-  if (!_hasYearData(budgetData)) { showToast('⚠️ Sync ignorée : données cloud vides'); return; }
+  if (!_hasYearData(budgetData)) { showToast(t('toast.sync_ignored')); return; }
   // Ne rien faire si données identiques
   if (JSON.stringify(DATA) === JSON.stringify(budgetData)) return;
   // Backup automatique avant tout remplacement
@@ -5129,7 +5129,7 @@ function applyRealtimeData(d) {
     if (yr) { const t = [...document.querySelectorAll('#year-tabs .tab')].find(t => t.textContent.includes(yr)); if(t) switchTab('y'+yr, t); }
   }
   setCloudStatus('ok');
-  showToast('🔄 Mise à jour reçue');
+  showToast(t('toast.update_received'));
 }
 
 // Reconnecter quand la page redevient visible (retour onglet / déverrouillage mobile)
@@ -5172,7 +5172,7 @@ function saveData(silent = false) {
     (pcByDay[m[1]] = pcByDay[m[1]] || []).push(k);
   });
   Object.values(pcByDay).forEach(ks => { if (ks.length > 3) ks.sort().slice(0, ks.length - 3).forEach(k => localStorage.removeItem(k)); });
-  if (!silent) showToast('✅ Sauvegardé');
+  if (!silent) showToast(t('toast.saved'));
   updateLastSaveDisplay();
   // ── Protections multi-couches ──
   cloudPush();                          // Firebase (Premium)
@@ -5230,11 +5230,11 @@ function openBackups() {
     const d = new Date(lastSave);
     const pad = n => String(n).padStart(2,'0');
     html += `<div style="background:var(--green-light);color:var(--green);font-weight:700;font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:12px">
-      ✅ Dernière sauvegarde : ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} à ${pad(d.getHours())}:${pad(d.getMinutes())}
+      ${t('backup.last_save')} ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${_lang==='en'?'at':'à'} ${pad(d.getHours())}:${pad(d.getMinutes())}
     </div>`;
   }
   if (!keys.length) {
-    list.innerHTML = html + '<p class="no-backup">Aucune sauvegarde disponible.</p>';
+    list.innerHTML = html + `<p class="no-backup">${t('backup.no_backup')}</p>`;
     document.getElementById('backup-modal').classList.add('open');
     return;
   }
@@ -5280,7 +5280,7 @@ function openBackups() {
       }
       html += `<div class="backup-item">
         <span class="bk-date">${icon} ${label} <span style="color:var(--gray);font-size:10px">(${size} ko)</span></span>
-        <button class="bk-restore" onclick="restoreBackup('${k}')">Restaurer</button>
+        <button class="bk-restore" onclick="restoreBackup('${k}')">${t('backup.restore_btn')}</button>
       </div>`;
     });
   });
@@ -5291,7 +5291,7 @@ function openBackups() {
 function closeBackups() { document.getElementById('backup-modal').classList.remove('open'); }
 
 function restoreBackup(key) {
-  if (!confirm('Restaurer cette sauvegarde ? Les données actuelles seront remplacées.')) return;
+  if (!confirm(t('toast.confirm_restore'))) return;
   try {
     DATA = JSON.parse(localStorage.getItem(key));
     // Remove panel divs for years no longer in DATA
@@ -5303,8 +5303,8 @@ function restoreBackup(key) {
     getYears().forEach(y => renderYear(y));
     renderSummary();
     closeBackups();
-    showToast('↺ Backup restauré');
-  } catch(e) { showToast('❌ Erreur lors de la restauration'); }
+    showToast(t('toast.backup_restored'));
+  } catch(e) { showToast(t('toast.error') + ' — ' + e.message); }
 }
 function goToWelcome() {
   CURRENT_USER_ID = '';
@@ -5321,22 +5321,22 @@ function resetData() {
   const nbAns = years.length;
   const nbTx = years.reduce((s,y) => s + getVarCats().reduce((ss,c) => ss + (DATA[y]?.vars?.[c.key]?.length||0), 0), 0);
   _showDangerConfirm({
-    title: 'Réinitialiser toutes les données',
-    subtitle: `Compte : ${USERS[CURRENT_USER_ID]?.name || CURRENT_USER_ID}`,
+    title: t('reset.title'),
+    subtitle: `${USERS[CURRENT_USER_ID]?.name || CURRENT_USER_ID}`,
     items: [
-      `<b>${nbAns} année${nbAns>1?'s':''}</b> de budget (${years.join(', ')})`,
-      `<b>${nbTx} dépense${nbTx>1?'s variable':' variable'}${nbTx>1?'s':''}</b> enregistrée${nbTx>1?'s':''}`,
-      'Tous les revenus et charges saisis',
-      'Tous les soldes de départ',
-      '<span style="color:var(--green)">✅ Un backup sera créé automatiquement avant la suppression</span>'
+      `<b>${nbAns} ${_lang==='en'?'year':'année'}${nbAns>1?'s':''}</b> ${_lang==='en'?'of budget':'de budget'} (${years.join(', ')})`,
+      `<b>${nbTx} ${_lang==='en'?'variable expense':'dépense variable'}${nbTx>1?'s':''}</b> ${_lang==='en'?'recorded':'enregistrée'}${nbTx>1&&_lang!=='en'?'s':''}`,
+      t('reset.item3'),
+      t('reset.item4'),
+      t('reset.item5')
     ],
-    confirmWord: 'SUPPRIMER',
-    buttonLabel: '🗑 Tout supprimer',
+    confirmWord: t('reset.word'),
+    buttonLabel: t('reset.btn'),
     onConfirm: () => {
       localStorage.removeItem(dataKey());
       DATA = CURRENT_USER_ID==='pascal' ? buildDefaults() : buildDefaultsForNewUser();
       renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
-      showToast('↺ Réinitialisé — backup créé dans Backups');
+      showToast(t('toast.reset_done'));
     }
   });
 }
@@ -5368,7 +5368,7 @@ let _aideHistoryPushed = false;
 function openAide(anchor) {
   const modal = document.getElementById('aide-modal');
   const iframe = document.getElementById('aide-iframe');
-  if (!modal || !iframe) { showToast('❌ modal introuvable'); window.location.href = 'aide.html'; return; }
+  if (!modal || !iframe) { showToast(t('toast.load_error')); window.location.href = 'aide.html'; return; }
   iframe.src = 'aide.html' + (anchor ? '#' + anchor : '');
   modal.style.display = 'flex';
   history.pushState({ aideModal: true }, '');
@@ -5417,11 +5417,11 @@ function renderCharts() {
     <div class="charts-grid">
       ${years.length > 1 ? `<div class="chart-card" style="grid-column:1/-1"><h4>📅 Bilan annuel — tendances multi-années</h4><canvas id="chart-annual" height="70"></canvas></div>` : ''}
       <div class="chart-card" style="grid-column:1/-1"><h4>💰 Solde mensuel — comparaison des années</h4><canvas id="chart-balance" height="80"></canvas></div>
-      <div class="chart-card" style="grid-column:1/-1"><h4>📈 Taux d'épargne mensuel (%) — toutes années</h4><canvas id="chart-savings" height="80"></canvas></div>
-      <div class="chart-card"><h4>📊 Revenus vs Dépenses — <span id="chart-rd-yr">${_chartYear}</span></h4><canvas id="chart-revdep"></canvas></div>
-      <div class="chart-card"><h4>🗂 Répartition des dépenses — <span id="chart-cat-yr">${_chartYear}</span></h4><canvas id="chart-cat"></canvas></div>
-      <div class="chart-card" style="grid-column:1/-1"><h4>💎 Évolution du patrimoine — <span id="chart-wealth-yr">${_chartYear}</span></h4><canvas id="chart-wealth" height="80"></canvas></div>
-      <div class="chart-card"><h4>🏆 Top catégories de dépenses — <span id="chart-top-yr">${_chartYear}</span></h4><canvas id="chart-top"></canvas></div>
+      <div class="chart-card" style="grid-column:1/-1"><h4>${t('chart.savings_title')}</h4><canvas id="chart-savings" height="80"></canvas></div>
+      <div class="chart-card"><h4>${t('chart.revdep_title')} — <span id="chart-rd-yr">${_chartYear}</span></h4><canvas id="chart-revdep"></canvas></div>
+      <div class="chart-card"><h4>${t('chart.cat_title')} — <span id="chart-cat-yr">${_chartYear}</span></h4><canvas id="chart-cat"></canvas></div>
+      <div class="chart-card" style="grid-column:1/-1"><h4>${t('chart.wealth_title')} — <span id="chart-wealth-yr">${_chartYear}</span></h4><canvas id="chart-wealth" height="80"></canvas></div>
+      <div class="chart-card"><h4>${t('chart.top_title')} — <span id="chart-top-yr">${_chartYear}</span></h4><canvas id="chart-top"></canvas></div>
     </div></div>`;
   Object.values(_charts).forEach(c=>c.destroy());
   _charts = {};
@@ -5598,7 +5598,7 @@ function _doSearch(q) {
         + '</div>';
     }
   });
-  if (!total) html = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Aucun résultat pour « '+_esc(q)+' »</p>';
+  if (!total) html = `<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">${t('search.no_result').replace('{0}', _esc(q))}</p>`;
   res.innerHTML = html;
 }
 
@@ -5607,18 +5607,18 @@ function _doSearch(q) {
 // ─────────────────────────────────────────────
 function openPdfReport() {
   const years = getYears();
-  if (!years.length) { showToast('❌ Aucune donnée à imprimer'); return; }
+  if (!years.length) { showToast(t('toast.no_data_print')); return; }
   const user = USERS[CURRENT_USER_ID]?.name || 'Utilisateur';
   const now = new Date();
-  const dateStr = now.toLocaleDateString('fr-BE', {day:'2-digit', month:'long', year:'numeric'});
+  const dateStr = now.toLocaleDateString(_lang==='en'?'en-GB':'fr-BE', {day:'2-digit', month:'long', year:'numeric'});
   let html = `<div style="font-family:Arial,sans-serif;color:#000;padding:24px;max-width:960px;margin:0 auto">
     <div style="border-bottom:3px solid #5B6AF0;padding-bottom:14px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end">
       <div>
         <div style="font-size:22px;font-weight:800;color:#1A1D2E">💰 Mon Budget</div>
-        <div style="font-size:13px;color:#666;margin-top:2px">Rapport financier — ${_esc(user)}</div>
+        <div style="font-size:13px;color:#666;margin-top:2px">${t('summary.report_header')} — ${_esc(user)}</div>
       </div>
       <div style="text-align:right;font-size:12px;color:#666">
-        <div>Généré le ${dateStr}</div>
+        <div>${t('pdf.generated').replace('{0}', dateStr)}</div>
         <div style="color:#5B6AF0;font-weight:700">v${APP_VERSION}</div>
       </div>
     </div>`;
@@ -5647,11 +5647,11 @@ function openPdfReport() {
           <tr style="background:#f8f9ff"><td style="border:1px solid #ddd;padding:4px 8px;font-weight:800">💰 Solde</td>${bal.map(v=>`<td style="border:1px solid #ddd;padding:4px 3px;text-align:right;font-weight:700;color:${v>=0?'#27ae60':'#e74c3c'}">${fmtN(v)}</td>`).join('')}<td style="border:1px solid #ddd;padding:4px 8px;text-align:right;font-weight:800;color:${tBal>=0?'#27ae60':'#e74c3c'};background:#eef0fd">${fmtN(tBal)}</td></tr>
         </tbody>
       </table>
-      ${cats.length ? `<div style="page-break-inside:avoid"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">🗂 Répartition des dépenses variables</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${cats.map(c=>`<div style="border:1px solid #eee;border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between"><span style="font-size:11px">${c.icon||'🛍️'} ${_esc(c.label)}</span><span style="font-size:11px;font-weight:700;color:#e74c3c">${fmtN(c.total)} €</span></div>`).join('')}</div></div>` : ''}
-      ${(() => { const notes = DATA[year]?.notes || {}; const noteEntries = MONTHS.map((m,i)=>({m,i,n:notes[i]})).filter(e=>e.n?.trim()); return noteEntries.length ? `<div style="page-break-inside:avoid;margin-top:12px"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">📝 Notes mensuelles</div>${noteEntries.map(e=>`<div style="display:flex;gap:10px;font-size:11px;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:700;color:#5B6AF0;white-space:nowrap;min-width:40px">${e.m}</span><span>${_esc(e.n)}</span></div>`).join('')}</div>` : ''; })()}
+      ${cats.length ? `<div style="page-break-inside:avoid"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">${t('summary.var_split')}</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${cats.map(c=>`<div style="border:1px solid #eee;border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between"><span style="font-size:11px">${c.icon||'🛍️'} ${_esc(c.label)}</span><span style="font-size:11px;font-weight:700;color:#e74c3c">${fmtN(c.total)} €</span></div>`).join('')}</div></div>` : ''}
+      ${(() => { const notes = DATA[year]?.notes || {}; const noteEntries = MONTHS.map((m,i)=>({m,i,n:notes[i]})).filter(e=>e.n?.trim()); return noteEntries.length ? `<div style="page-break-inside:avoid;margin-top:12px"><div style="font-size:11px;font-weight:700;color:#333;margin-bottom:8px">${t('summary.monthly_notes')}</div>${noteEntries.map(e=>`<div style="display:flex;gap:10px;font-size:11px;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:700;color:#5B6AF0;white-space:nowrap;min-width:40px">${e.m}</span><span>${_esc(e.n)}</span></div>`).join('')}</div>` : ''; })()}
     </div>`;
   });
-  html += `<div style="border-top:1px solid #ddd;padding-top:10px;margin-top:12px;font-size:9px;color:#aaa;text-align:center">Mon Budget v${APP_VERSION} — budget.marquabel.be — Généré le ${dateStr}</div></div>`;
+  html += `<div style="border-top:1px solid #ddd;padding-top:10px;margin-top:12px;font-size:9px;color:#aaa;text-align:center">Mon Budget v${APP_VERSION} — budget.marquabel.be — ${t('pdf.generated').replace('{0}', dateStr)}</div></div>`;
   document.getElementById('print-report').innerHTML = html;
   window.print();
 }
@@ -5689,8 +5689,8 @@ function renderDashboard() {
   if (!years.length) {
     wrap.innerHTML = `<div style="padding-top:40px;text-align:center;color:var(--gray)">
       <div style="font-size:40px;margin-bottom:16px">📭</div>
-      <p style="font-size:15px;margin-bottom:16px">Aucune donnée pour l'instant.</p>
-      <button class="btn btn-save" onclick="addYear()">＋ Ajouter une année</button>
+      <p style="font-size:15px;margin-bottom:16px">${t('dash.no_data')}</p>
+      <button class="btn btn-save" onclick="addYear()">${t('dash.add_year_btn')}</button>
     </div>`;
     return;
   }
@@ -5898,7 +5898,7 @@ function renderDashboard() {
       </div>`;
     }).join('');
     return `<div class="section-card" style="margin-bottom:14px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:10px">🍩 Répartition des dépenses</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:10px">${t('summary.donut_title')}</div>
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">${svgStr}<div style="flex:1;min-width:100px">${legend}</div></div>
     </div>`;
   })() : '';
@@ -6021,7 +6021,7 @@ function saveSavingsGoal() {
   const cfg = loadUserConfig();
   cfg.savingsGoal = v > 0 ? v : undefined;
   saveUserConfig(cfg);
-  showToast(v > 0 ? `🎯 Objectif : ${fmtN(v)} €/mois enregistré` : '🎯 Objectif supprimé');
+  showToast(v > 0 ? t('toast.savings_goal_saved').replace('{0}', fmtN(v)) : t('toast.savings_goal_deleted'));
   renderConfigTab();
 }
 
@@ -6370,10 +6370,10 @@ function addVarCat(icon, label, annualBudget) {
   if (!isLicensed() && getVarCats().length >= FREE_MAX_CATS) { showUpgrade(`catégories illimitées (max ${FREE_MAX_CATS} en gratuit)`); return; }
   icon = (icon || '').trim();
   label = (label || '').trim();
-  if (!label) { showToast('⚠️ Libellé requis'); return; }
+  if (!label) { showToast(t('toast.label_required')); return; }
   const key = label.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
-  if (!key) { showToast('⚠️ Libellé invalide'); return; }
-  if (getVarCats().find(c => c.key === key)) { showToast('⚠️ Cette catégorie existe déjà'); return; }
+  if (!key) { showToast(t('toast.label_invalid')); return; }
+  if (getVarCats().find(c => c.key === key)) { showToast(t('toast.cat_exists')); return; }
   DATA.varCats = getVarCats();
   DATA.varCats.push({key, icon: icon||'📦', label});
   getYears().forEach(y => { if (DATA[y] && DATA[y].vars) DATA[y].vars[key] = DATA[y].vars[key] || []; });
@@ -6382,19 +6382,19 @@ function addVarCat(icon, label, annualBudget) {
   renderConfigTab();
   getYears().forEach(y => renderYear(y));
   const budgetMsg = annualBudget > 0 ? ` · Budget ${fmtN(annualBudget)} €/an` : '';
-  showToast(`Catégorie "${label}" ajoutée${budgetMsg}`);
+  showToast(t('toast.cat_added').replace('{0}', label).replace('{1}', budgetMsg));
 }
 function removeVarCat(key) {
   const cats = getVarCats();
-  if (cats.length <= 1) { showToast('⚠️ Impossible de supprimer la dernière catégorie'); return; }
+  if (cats.length <= 1) { showToast(t('toast.cat_last')); return; }
   const hasTransactions = getYears().some(y => DATA[y]?.vars?.[key]?.length > 0);
-  if (hasTransactions) { showToast("⚠️ Supprimez d'abord toutes les dépenses de cette catégorie"); return; }
+  if (hasTransactions) { showToast(t('toast.cat_has_tx')); return; }
   DATA.varCats = cats.filter(c => c.key !== key);
   getYears().forEach(y => { if (DATA[y]?.vars) delete DATA[y].vars[key]; });
   dSave();
   renderConfigTab();
   getYears().forEach(y => renderYear(y));
-  showToast('Catégorie supprimée');
+  showToast(t('toast.cat_deleted'));
 }
 function renameVarCat(key) {
   const newIcon = document.getElementById('cat-icon-' + key)?.value.trim();
@@ -6408,7 +6408,7 @@ function renameVarCat(key) {
   DATA.varCats = cats;
   dSave();
   getYears().forEach(y => renderYear(y));
-  showToast('✅ Catégorie mise à jour');
+  showToast(t('toast.cat_updated'));
 }
 const _CAT_ICON_MAP = [
   {k:['aliment','course','courses','nourriture','épicerie','epicerie','supermarché','supermarche','marché','marche','colruyt','lidl','delhaize','carrefour','aldi'],i:'🛒'},
@@ -6516,25 +6516,25 @@ function openCatModal(key) {
   if (key) {
     const cat = getVarCats().find(c => c.key === key);
     if (!cat) return;
-    document.getElementById('cat-modal-title').textContent = 'Modifier la catégorie';
+    document.getElementById('cat-modal-title').textContent = t('cat.edit');
     document.getElementById('cat-m-key').value = key;
     document.getElementById('cat-m-icon').value = cat.icon || '';
     document.getElementById('cat-m-label').value = cat.label || '';
     const budgetVal = DATA.budgets && DATA.budgets[key] ? DATA.budgets[key] : '';
     document.getElementById('cat-m-budget').value = budgetVal;
     document.getElementById('cat-m-period').value = 'year';
-    document.getElementById('cat-m-submit').textContent = '✅ Enregistrer les modifications';
+    document.getElementById('cat-m-submit').textContent = t('cat.save_edit');
     const col = getCatColor(cat);
     document.getElementById('cat-m-color').value = col;
     setTimeout(() => _renderColorPicker(col), 0);
   } else {
-    document.getElementById('cat-modal-title').textContent = 'Nouvelle catégorie';
+    document.getElementById('cat-modal-title').textContent = t('cat.new');
     document.getElementById('cat-m-key').value = '';
     document.getElementById('cat-m-icon').value = '';
     document.getElementById('cat-m-label').value = '';
     document.getElementById('cat-m-budget').value = '';
     document.getElementById('cat-m-period').value = 'month';
-    document.getElementById('cat-m-submit').textContent = '＋ Ajouter la catégorie';
+    document.getElementById('cat-m-submit').textContent = t('cat.add_btn');
     // Auto-choisir la prochaine couleur non utilisée
     const usedColors = getVarCats().map(c => getCatColor(c));
     const nextColor = CAT_PALETTE.find(c => !usedColors.includes(c)) || CAT_PALETTE[getVarCats().length % CAT_PALETTE.length];
@@ -6570,12 +6570,12 @@ function submitCatModal() {
     renderConfigTab();
     // Mise à jour chirurgicale : remplace uniquement la carte de la catégorie dans chaque année
     _patchVarCatInDOM(existingKey, false);
-    showToast(`✅ Catégorie "${label}" mise à jour`);
+    showToast(t('toast.cat_updated'));
   } else {
     if (!isLicensed() && getVarCats().length >= FREE_MAX_CATS) { showUpgrade(`catégories illimitées (max ${FREE_MAX_CATS} en gratuit)`); return; }
     const key = label.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
-    if (!key) { showErr('⚠️ Libellé invalide (utilisez des lettres ou chiffres).'); return; }
-    if (getVarCats().find(c => c.key === key)) { showErr('⚠️ Une catégorie avec ce nom existe déjà.'); return; }
+    if (!key) { showErr(t('toast.label_invalid')); return; }
+    if (getVarCats().find(c => c.key === key)) { showErr(t('toast.cat_exists')); return; }
     DATA.varCats = getVarCats();
     DATA.varCats.push({key, icon, label, color});
     getYears().forEach(y => { if (DATA[y] && DATA[y].vars) DATA[y].vars[key] = DATA[y].vars[key] || []; });
@@ -6585,7 +6585,7 @@ function submitCatModal() {
     // Ajout chirurgical : insère la nouvelle carte dans chaque année sans reconstruire
     _patchVarCatInDOM(key, true);
     const budgetMsg = annualBudget > 0 ? ` · Budget ${fmtN(annualBudget)} €/an` : '';
-    showToast(`Catégorie "${label}" ajoutée${budgetMsg}`);
+    showToast(t('toast.cat_added').replace('{0}', label).replace('{1}', budgetMsg));
   }
   document.getElementById('cat-modal').style.display = 'none';
 }
@@ -6624,23 +6624,23 @@ function addMethodFromForm() {
   const label = document.getElementById('new-method-label').value.trim();
   const color = document.getElementById('new-method-color').value;
   const bg = document.getElementById('new-method-bg').value;
-  if (!key || !label) { showToast('Clé et libellé requis'); return; }
-  if (getMethods().find(m=>m.key===key)) { showToast('Cette clé existe déjà'); return; }
+  if (!key || !label) { showToast(t('toast.method_key_required')); return; }
+  if (getMethods().find(m=>m.key===key)) { showToast(t('toast.method_key_exists')); return; }
   DATA.methods = getMethods();
   DATA.methods.push({key,label,color,bg});
   dSave(); renderConfigTab(); refreshVarLegends();
-  showToast(`Mode "${label}" ajouté`);
+  showToast(t('toast.method_added').replace('{0}', label));
 }
 function removePIN() {
-  confirmDelete('Supprimer le code PIN ?', () => {
+  confirmDelete(t('confirm.delete_pin'), () => {
     delete USERS[CURRENT_USER_ID].pin;
     saveUsers();
     renderConfigTab();
-    showToast('🔓 Code PIN supprimé');
+    showToast(t('toast.pin_deleted'));
   });
 }
 function deleteMethod(i) {
-  confirmDelete(`Supprimer le mode "${getMethods()[i]?.label}" ?`, () => {
+  confirmDelete(t('confirm.delete_method').replace('{0}', getMethods()[i]?.label || ''), () => {
     DATA.methods = getMethods().filter((_,j)=>j!==i);
     dSave(); renderConfigTab(); refreshVarLegends();
   });
@@ -6722,14 +6722,17 @@ async function fbGetToken() {
   return u?.idToken || null;
 }
 function _fbErrMsg(code='') {
-  return ({ EMAIL_EXISTS:'Email déjà utilisé', INVALID_EMAIL:'Email invalide',
-    WEAK_PASSWORD:'Mot de passe trop court (6 car. min)',
-    EMAIL_NOT_FOUND:'Aucun compte avec cet email',
-    INVALID_PASSWORD:'Mot de passe incorrect',
-    INVALID_LOGIN_CREDENTIALS:'Email ou mot de passe incorrect',
-    USER_DISABLED:'Compte désactivé',
-    TOO_MANY_ATTEMPTS_TRY_LATER:'Trop de tentatives, réessayez plus tard'
-  })[code.split(' :')[0]] || code || 'Erreur inconnue';
+  const msgs = {
+    EMAIL_EXISTS: _lang==='en' ? 'Email already in use' : 'Email déjà utilisé',
+    INVALID_EMAIL: _lang==='en' ? 'Invalid email' : 'Email invalide',
+    WEAK_PASSWORD: _lang==='en' ? 'Password too short (min 6 chars)' : 'Mot de passe trop court (6 car. min)',
+    EMAIL_NOT_FOUND: _lang==='en' ? 'No account with this email' : 'Aucun compte avec cet email',
+    INVALID_PASSWORD: _lang==='en' ? 'Incorrect password' : 'Mot de passe incorrect',
+    INVALID_LOGIN_CREDENTIALS: _lang==='en' ? 'Incorrect email or password' : 'Email ou mot de passe incorrect',
+    USER_DISABLED: _lang==='en' ? 'Account disabled' : 'Compte désactivé',
+    TOO_MANY_ATTEMPTS_TRY_LATER: _lang==='en' ? 'Too many attempts, try again later' : 'Trop de tentatives, réessayez plus tard'
+  };
+  return msgs[code.split(' :')[0]] || code || (_lang==='en' ? 'Unknown error' : 'Erreur inconnue');
 }
 async function fbRegister(email, password) {
   const r = await fetch(`${FB_AUTH}:signUp?key=${FB_API_KEY}`, {
@@ -6769,7 +6772,7 @@ function fbLogout() {
   _fbSave(null);
   localStorage.removeItem('mbudget-license');
   renderConfigTab();
-  showToast('👋 Déconnecté');
+  showToast(t('toast.logout'));
 }
 async function fbCheckPremium(uid, idToken) {
   // Le compte admin est toujours Premium
@@ -6789,7 +6792,7 @@ async function fbCheckPremium(uid, idToken) {
       localStorage.setItem('mbudget-premium-exp-'+uid, String(Date.now() + 86400000)); // expire dans 24h
       return true;
     }
-    if (typeof val === 'number' && val <= Date.now()) { showToast('⚠️ Votre licence Premium a expiré'); }
+    if (typeof val === 'number' && val <= Date.now()) { showToast(t('toast.license_expired')); }
   } catch {}
   // Rétro-compat : ancienne clé de licence → migration automatique
   const oldKey = localStorage.getItem('mbudget-license');
@@ -6808,7 +6811,7 @@ async function fbCheckPremium(uid, idToken) {
         localStorage.setItem('mbudget-premium-exp-'+uid, String(Date.now() + 86400000));
         return true;
       }
-      if (keyExpired) showToast('⚠️ Votre clé de licence bêta a expiré');
+      if (keyExpired) showToast(t('toast.beta_expired'));
     } catch {}
   }
   localStorage.removeItem('mbudget-premium-'+uid);
@@ -6928,7 +6931,7 @@ async function fbRegisterDevice(uid, email, idToken) {
     const count    = Object.keys(devices).length;
     if (!isKnown && count >= MAX_DEVICES) {
       _deviceAllowed = false;
-      showToast(`⚠️ ${MAX_DEVICES} appareils max atteints — synchronisation désactivée sur cet appareil`);
+      showToast(t('toast.max_devices').replace('{0}', MAX_DEVICES));
     } else {
       _deviceAllowed = true;
       const info = {
@@ -6990,7 +6993,7 @@ function signInWithGoogle() {
         const params2 = new URLSearchParams(hash.slice(1));
         const token = params2.get('id_token');
         popup.close();
-        if (!token) { showToast('❌ Erreur Google Sign-In'); return; }
+        if (!token) { showToast(t('toast.google_signin_error')); return; }
         try {
           const u = await _fbSignInWithIdp(token);
           await fbCheckPremium(u.uid, u.idToken);
@@ -7001,7 +7004,7 @@ function signInWithGoogle() {
           } else {
             document.getElementById('onboarding-screen').style.display = 'none';
             renderConfigTab();
-            showToast('✅ Connecté avec Google — ' + u.email);
+            showToast(t('toast.google_connected').replace('{0}', u.email));
           }
         } catch(e) {
           const errEl = document.getElementById('auth-login-err') || document.getElementById('auth-reg-err');
@@ -7073,26 +7076,26 @@ async function authDoRegister() {
     await fbCheckPremium(u.uid, u.idToken);
     closeAuthModal();
     renderConfigTab();
-    showToast('🎉 Compte créé — bienvenue !');
+    showToast(t('toast.account_created'));
   } catch(e) { err.textContent = e.message; }
 }
 async function authDoReset() {
   const email = document.getElementById('auth-reset-email').value.trim();
   const err   = document.getElementById('auth-reset-err');
   err.textContent = '';
-  if (!email) { err.textContent = 'Entrez votre email'; return; }
+  if (!email) { err.textContent = _lang==='en' ? 'Enter your email' : 'Entrez votre email'; return; }
   try {
     await fbResetPassword(email);
     err.style.color = 'var(--green)';
-    err.textContent = '✅ Email de réinitialisation envoyé';
+    err.textContent = _lang==='en' ? '✅ Reset email sent' : '✅ Email de réinitialisation envoyé';
   } catch(e) { err.style.color='var(--red)'; err.textContent = e.message; }
 }
 const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.35';
-const SW_VERSION = 'v162';
+const APP_VERSION = '11.37';
+const SW_VERSION = 'v164';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -7490,6 +7493,7 @@ const TRANSLATIONS = {
     // Category modal
     'cat.new': 'Nouvelle catégorie',
     'cat.edit': 'Modifier la catégorie',
+    'cat.icon': 'Icône',
     'cat.label': 'Libellé *',
     'cat.label_ex': 'Ex: Alimentation',
     'cat.emoji_hint': 'Cliquez une suggestion ou tapez votre propre emoji',
@@ -7567,6 +7571,7 @@ const TRANSLATIONS = {
     'toast.cat_exists': '⚠️ Cette catégorie existe déjà',
     'toast.savings_goal_saved': '🎯 Objectif : {0} €/mois enregistré',
     'toast.savings_goal_deleted': '🎯 Objectif supprimé',
+    'toast.cat_budget_saved': '✅ Budget mensuel enregistré — {0} €/an',
     'toast.tx_moved': '✅ Dépense déplacée vers "{0}"',
     // Gist guide
     'gist.guide_title': '📖 Comment créer un compte GitHub et un token ? (guide pas à pas)',
@@ -7588,6 +7593,281 @@ const TRANSLATIONS = {
     'summary.avg_savings': 'Épargne moy./mois',
     'summary.monthly_balance': '📊 Solde mois par mois',
     'summary.annual_balance': 'Solde annuel',
+    // Toast messages (additional)
+    'toast.demo_activated': '🎮 Mode démo activé — explorez librement !',
+    'toast.confirm_exit_demo': 'Quitter le mode démo et supprimer toutes les données fictives ?',
+    'toast.user_added': '👤 {0} ajouté',
+    'toast.user_deleted': '🗑 Utilisateur supprimé',
+    'toast.year_deleted': '🗑 Année {0} supprimée',
+    'toast.backup_created': '💾 Backup créé',
+    'toast.year_created': '📅 Année {0} créée',
+    'toast.year_exists': 'Année {0} existe déjà',
+    'toast.row_added': '✅ "{0}" ajouté',
+    'toast.row_updated': '✅ "{0}" modifié',
+    'toast.tx_added': '✅ {0} € ajouté en {1} {2}',
+    'toast.photo_updated': '✅ Photo mise à jour',
+    'toast.image_too_large': '⚠️ Image trop grande (max 800 Ko)',
+    'toast.gist_token_restored': '🐙 Token GitHub Gist restauré depuis le cloud',
+    'toast.license_required': '⚠️ Licence Premium requise pour la sync',
+    'toast.login_required': '⚠️ Connectez-vous avec Google d\'abord',
+    'toast.cloud_empty': 'ℹ️ Aucune donnée dans le cloud',
+    'toast.cloud_synced': '✅ Données synchronisées depuis le cloud',
+    'toast.auto_lock_warn': '⏳ Verrouillage dans 1 minute (inactivité)',
+    'toast.auto_locked': '🔒 Session verrouillée — inactivité de 10 min',
+    'toast.sync_ignored': '⚠️ Sync ignorée : données cloud vides',
+    'toast.backup_restored': '↺ Backup restauré',
+    'toast.confirm_restore': 'Restaurer cette sauvegarde ? Les données actuelles seront remplacées.',
+    'toast.no_data_print': '❌ Aucune donnée à imprimer',
+    'toast.reset_done': '↺ Réinitialisé — backup créé dans Backups',
+    'toast.cat_added': 'Catégorie "{0}" ajoutée{1}',
+    'toast.cat_last': '⚠️ Impossible de supprimer la dernière catégorie',
+    'toast.cat_has_tx': '⚠️ Supprimez d\'abord toutes les dépenses de cette catégorie',
+    'toast.cat_deleted': 'Catégorie supprimée',
+    'toast.cat_updated': '✅ Catégorie mise à jour',
+    'toast.method_key_required': 'Clé et libellé requis',
+    'toast.method_key_exists': 'Cette clé existe déjà',
+    'toast.method_added': 'Mode "{0}" ajouté',
+    'toast.pin_deleted': '🔓 Code PIN supprimé',
+    'toast.pin_set': '🔒 Code PIN défini',
+    'toast.license_expired': '⚠️ Votre licence Premium a expiré',
+    'toast.beta_expired': '⚠️ Votre clé de licence bêta a expiré',
+    'toast.max_devices': '⚠️ {0} appareils max atteints — synchronisation désactivée sur cet appareil',
+    'toast.google_signin_error': '❌ Erreur Google Sign-In',
+    'toast.account_created': '🎉 Compte créé — bienvenue !',
+    'toast.copied_msg': '✅ Message copié — collez-le où vous voulez !',
+    'toast.copy_manual': 'Copiez manuellement le texte',
+    'toast.login_first': '⚠️ Connectez-vous d\'abord à votre compte',
+    'toast.license_invalid': '❌ Clé invalide ou expirée',
+    'toast.license_used': '❌ Cette clé est déjà utilisée par un autre compte',
+    'toast.license_activated': '🎉 Licence activée — bienvenue en Premium !',
+    'toast.confirm_revoke_license': 'Désactiver la licence Premium sur cet appareil ?',
+    'toast.license_deactivated': 'Licence désactivée',
+    'toast.csv_invalid': '❌ Fichier CSV vide ou invalide',
+    'toast.csv_no_expenses': '❌ Aucune dépense détectée dans ce fichier',
+    'toast.tx_imported': '✅ {0} transaction{1} importée{1}',
+    'toast.app_updated': '✅ Application mise à jour !',
+    'toast.update_checking': '🔄 Recherche de mise à jour…',
+    'toast.update_found': '✅ Mise à jour trouvée — rechargement…',
+    'toast.admin_only': '⛔ Accès réservé à l\'administrateur',
+    'toast.reply_required': '⚠️ Écris une réponse avant d\'envoyer',
+    'toast.confirm_delete_feedback': 'Supprimer ce feedback définitivement ?',
+    'toast.feedback_deleted': '🗑️ Feedback supprimé',
+    'toast.no_data_for_key': '⚠️ Aucune donnée pour cette clé',
+    'toast.admin_mode': '👁️ Mode admin — {0}…',
+    'toast.load_error': '❌ Impossible de charger les données',
+    'toast.back_to_data': '✅ Retour à vos données',
+    'toast.confirm_revoke_premium': 'Révoquer le premium de\n{0} ?',
+    'toast.api_key_saved': '✅ Clé API sauvegardée',
+    'toast.api_key_deleted': 'Clé API supprimée',
+    'toast.opfs_restored': '🔄 Données restaurées depuis la sauvegarde OPFS locale !',
+    'toast.gist_token_required': '⚠️ Configurez d\'abord le token GitHub',
+    'toast.confirm_gist_restore': 'Restaurer les données depuis GitHub Gist ?\n\nSauvegarde du : {0}\n\nCela remplacera vos données actuelles.',
+    'toast.gist_restored': '✅ Données restaurées depuis GitHub Gist',
+    'toast.gist_token_enter': '⚠️ Entrez un token GitHub',
+    'toast.gist_disconnected': '🔌 GitHub Gist déconnecté',
+    'toast.confirm_gist_disconnect': 'Déconnecter GitHub Gist ? Le Gist existant ne sera pas supprimé.',
+    'toast.account_name_required': '⚠️ Nom du compte requis',
+    'toast.account_added': '✅ Compte "{0}" ajouté — carte "{0}" créée',
+    'toast.account_deleted': '🗑 Compte "{0}" supprimé',
+    'toast.account_renamed': '✅ Compte renommé en "{0}"',
+    'toast.account_renamed_simple': '✅ Compte renommé',
+    'toast.livret_name_required': '⚠️ Nom du livret requis',
+    'toast.livret_added': '✅ Livret "{0}" ajouté avec ses 3 lignes de charges',
+    'toast.livret_deleted': '🗑 Livret "{0}" supprimé',
+    'toast.livret_renamed': '✅ Livret renommé en "{0}"',
+    'toast.livret_renamed_simple': '✅ Livret renommé',
+    'toast.json_exported': '✅ Sauvegarde JSON exportée',
+    'toast.confirm_import': 'Importer {0} année(s) de données depuis ce fichier ?\n\nCela remplacera toutes vos données actuelles.',
+    'toast.years_imported': '✅ {0} année(s) importée(s)',
+    'toast.demo_loaded': '🎭 Données de démo chargées — 2025 + 2026',
+    'toast.local_tx_preserved': '🛡️ {0} tx locales préservées',
+    'toast.name_required': '⚠️ Entrez un nom',
+    'toast.update_received': '🔄 Mise à jour reçue',
+    'toast.saved_simple': '✅ Sauvegardé',
+    'toast.installed': '✅ Application installée avec succès !',
+    'toast.install_browser': 'Utilisez le bouton ⊕ dans la barre d\'adresse de votre navigateur',
+    'toast.mic_error': '⚠️ Erreur microphone : {0}',
+    'toast.budget_exceeded': '🚨 Budget "{0}" dépassé ! {1} € / {2} €/an',
+    'toast.google_connected': '✅ Connecté avec Google — {0}',
+    'toast.csv_no_columns': '❌ Colonnes date/montant introuvables — vérifiez le format',
+    'toast.tx_edited': '✅ Dépense modifiée — {0} €',
+    // Confirm delete dialogs
+    'confirm.delete_user': 'Supprimer l\'utilisateur "{0}" et toutes ses données ?',
+    'confirm.delete_row': 'Supprimer "{0}" ?',
+    'confirm.delete_tx': 'Supprimer cette transaction ?',
+    'confirm.delete_pin': 'Supprimer le code PIN ?',
+    'confirm.delete_method': 'Supprimer le mode "{0}" ?',
+    'confirm.delete_account': 'Supprimer le compte "{0}" et sa carte associée ?',
+    'confirm.delete_livret': 'Supprimer le livret "{0}" et ses {1} lignes de charges ?',
+    'confirm.delete_year_full': 'Supprimer l\'année {0} et toutes ses données ?',
+    // Add/Edit row modal
+    'modal.edit_row': '✏️ Modifier la ligne',
+    'btn.add_row_submit': '✅ Ajouter',
+    'btn.edit_row_submit': '✏️ Modifier',
+    'modal.type_revenu': 'Nouveau revenu',
+    'modal.type_fixed': 'Nouvelle charge',
+    'modal.type_occas': 'Charge occasionnelle',
+    'modal.row_interval_error': '⚠️ Intervalle entre 1 et 12 mois',
+    // Category modal
+    'cat.save_edit': '✅ Enregistrer les modifications',
+    'cat.add_btn': '＋ Ajouter la catégorie',
+    // Backup modal
+    'backup.title': '📦 Sauvegardes (20 dernières)',
+    // Search
+    'search.placeholder': 'Rechercher une ligne, une dépense…',
+    'search.hint': 'Tapez un mot-clé pour rechercher…',
+    // Cloud sync status
+    'sync.active': '☁️ Sync actif',
+    'sync.locked': '🔒 Sync',
+    'sync.syncing': 'Synchronisation…',
+    'sync.ok': 'Synchronisé avec le cloud',
+    'sync.error_default': 'Erreur de synchronisation',
+    'sync.live_label': '🟢 Live',
+    'sync.live_title': 'Synchronisation temps réel active',
+    // Gist status
+    'gist.ok_status': 'Synchronisé ✅',
+    'gist.error_status': 'Erreur ❌',
+    'gist.syncing_status': 'Synchronisation…',
+    'gist.off_status': 'Non configuré',
+    'gist.testing_status': 'Test…',
+    // PIN messages
+    'pin.confirm_label': 'Confirmez le code PIN',
+    'pin.set_label': 'Définir un code PIN (4 chiffres)',
+    'pin.wrong': '❌ Code incorrect',
+    'pin.mismatch': '❌ Les codes ne correspondent pas',
+    // Wizard validation
+    'wiz.pin_error': '⚠️ Entrez 4 chiffres ou cliquez Passer',
+    'wiz.token_error': '⚠️ Le token doit commencer par ghp_',
+    'wiz.validating': '⏳ Vérification…',
+    'wiz.validate_connect': '✅ Valider & connecter',
+    // Quick add modal
+    'qa.title': '⚡ Ajout rapide',
+    'qa.add_btn': '✅ Ajouter',
+    'qa.edit_title': '✏️ Modifier la dépense',
+    'qa.edit_btn': '✅ Modifier',
+    'qa.amount_error': '⚠️ Entrez un montant valide (négatif pour un remboursement)',
+    // Variable expand/collapse
+    'var.detail_open': '▾ Détail',
+    'var.detail_close': '▴ Fermer',
+    // Danger confirm dialog
+    'danger.will_delete': '⚠️ Ce qui sera définitivement supprimé :',
+    'danger.irreversible': '⛔ ACTION IRRÉVERSIBLE',
+    'danger.irreversible_sub': 'Il sera impossible de récupérer ces données ensuite.',
+    'danger.type_to_confirm': 'Pour confirmer, tapez exactement',
+    'danger.cancel': '✕ Annuler',
+    // Uninstall
+    'uninstall.title': 'Désinstaller l\'application',
+    'uninstall.subtitle': 'Suppression complète de toutes les données',
+    'uninstall.item1': '<b>Tous les comptes utilisateurs</b> et leurs données',
+    'uninstall.item2': '<b>Toutes les années</b> de budget de tous les utilisateurs',
+    'uninstall.item3': '<b>Tous les backups</b> automatiques sauvegardés',
+    'uninstall.item4': 'La synchronisation cloud (données cloud non affectées)',
+    'uninstall.item5': '<b style="color:var(--red)">⛔ Aucun backup ne sera créé — récupération impossible</b>',
+    'uninstall.word': 'DESINSTALLER',
+    'uninstall.btn': '🗑 Désinstaller définitivement',
+    'uninstall.done_title': 'Application désinstallée',
+    'uninstall.done_msg': 'Vos données ont été effacées.<br>Vous pouvez maintenant supprimer l\'icône de votre écran d\'accueil.',
+    // Delete year danger confirm
+    'delete.year_title': 'Supprimer l\'année {0}',
+    'delete.year_subtitle': 'Action irréversible — toutes les données seront perdues',
+    'delete.year_item1': 'Revenus de {0}',
+    'delete.year_item2': 'Charges fixes de {0}',
+    'delete.year_item3': 'Toutes les dépenses variables de {0}',
+    'delete.year_btn': '🗑️ Supprimer {0} définitivement',
+    // Reset data danger confirm
+    'reset.title': 'Réinitialiser toutes les données',
+    'reset.item3': 'Tous les revenus et charges saisis',
+    'reset.item4': 'Tous les soldes de départ',
+    'reset.item5': '<span style="color:var(--green)">✅ Un backup sera créé automatiquement avant la suppression</span>',
+    'reset.word': 'SUPPRIMER',
+    'reset.btn': '🗑 Tout supprimer',
+    // Misc UI strings
+    'modal.no_payment': 'Aucun paiement cette année',
+    'modal.freq_monthly': 'mensuel',
+    'modal.freq_every': 'tous les {0} mois',
+    'backup.no_backup': 'Aucune sauvegarde disponible.',
+    'backup.last_save': '✅ Dernière sauvegarde :',
+    'backup.restore_btn': 'Restaurer',
+    'search.no_result': 'Aucun résultat pour « {0} »',
+    'search.more_results': '… et {0} autre{1}',
+    'dash.no_data': 'Aucune donnée pour l\'instant.',
+    'dash.add_year_btn': '＋ Ajouter une année',
+    'pdf.generated': 'Généré le {0}',
+    'wiz.step6.title': 'Sauvegarde cloud avec GitHub',
+    'wiz.step6.free': '100% GRATUIT',
+    'wiz.step6.desc': 'Vos données seront automatiquement<br>sauvegardées en ligne à chaque enregistrement.<br><b style="color:#fff">Aucun abonnement. Aucune carte bancaire.</b>',
+    'wiz.step6.how': 'Comment faire ? (5 minutes)',
+    'wiz.step6.s1': '1️⃣ Crée un compte sur <b>github.com</b> (gratuit)',
+    'wiz.step6.s2': '2️⃣ Va dans <b>Settings → Developer settings → Personal access tokens → Tokens (classic)</b>',
+    'wiz.step6.s3': '3️⃣ Clique <b>Generate new token (classic)</b>',
+    'wiz.step6.s4': '4️⃣ Coche seulement <b>gist</b> ✅',
+    'wiz.step6.s5': '5️⃣ Copie le token <b>ghp_…</b> et colle-le ci-dessous',
+    'wiz.step6.guide': '📖 Guide détaillé disponible dans <b>Aide → Sauvegarde</b>',
+    'wiz.step6.skip': '⏭ Passer pour l\'instant',
+    'wiz.step6.back': '← Retour',
+    'wiz.step6.create': '✅ Créer mon budget',
+    // Wizard step labels
+    'wiz.label.profile': 'Profil',
+    'wiz.label.revenues': 'Revenus',
+    'wiz.label.charges': 'Charges',
+    'wiz.label.budgets': 'Budgets',
+    'wiz.label.pin': 'PIN',
+    'wiz.label.cloud': 'Cloud',
+    // Wizard step 1
+    'wiz.s1.name_label': 'Prénom / Nom',
+    'wiz.s1.name_placeholder': 'Ex : Marie…',
+    'wiz.s1.color_label': 'Couleur de profil',
+    'wiz.s1.account_label': '🏦 Nom du compte',
+    'wiz.s1.account_placeholder': 'Compte principal',
+    'wiz.s1.livret_label': '📈 Nom du livret',
+    'wiz.s1.livret_placeholder': 'Livret A',
+    'wiz.s1.optional_hint': 'Optionnel — vous pourrez renommer ces éléments plus tard dans les réglages.',
+    'wiz.s1.next': 'Suivant — Revenus →',
+    // Wizard step 2
+    'wiz.s2.hint': 'Cochez et ajustez vos sources de revenus mensuels.',
+    'wiz.s2.next': 'Suivant — Charges →',
+    'wiz.s2.per_month': '€/mois',
+    // Wizard step 3
+    'wiz.s3.hint': 'Cochez vos charges fixes et ajustez les montants.',
+    'wiz.s3.next': 'Suivant — Budgets →',
+    // Wizard step 4
+    'wiz.s4.hint': 'Définissez un budget mensuel par catégorie. L\'app vous affichera votre progression en temps réel.',
+    'wiz.s4.optional': '💡 Optionnel — modifiable à tout moment dans Config → Catégories',
+    'wiz.s4.skip': '⏭ Passer',
+    'wiz.s4.next': 'Suivant — PIN →',
+    // Wizard step 5
+    'wiz.s5.title': 'Protégez votre compte',
+    'wiz.s5.desc': 'Définissez un code PIN à 4 chiffres pour sécuriser vos données.<br>Vous pouvez aussi ignorer cette étape.',
+    'wiz.s5.skip': '⏭ Passer',
+    'wiz.s5.next': 'Suivant →',
+    // Wizard back button
+    'wiz.back': '← Retour',
+    // Wizard free badge
+    'wiz.step6.free_badge': '100% GRATUIT',
+    // Summary / print report
+    'summary.initial_balance': 'Solde initial 01/01',
+    'summary.current_balance': '= Compte actuel calculé',
+    'summary.payment_split': 'Répartition par mode de paiement',
+    'summary.payment_mode': 'Mode',
+    'summary.var_split': '🗂 Répartition des dépenses variables',
+    'summary.monthly_notes': '📝 Notes mensuelles',
+    'summary.report_header': 'Rapport financier',
+    'summary.donut_title': '🍩 Répartition des dépenses',
+    'chart.cat_title': '🗂 Répartition des dépenses',
+    'chart.savings_title': '📈 Taux d\'épargne mensuel (%) — toutes années',
+    'chart.revdep_title': '📊 Revenus vs Dépenses',
+    'chart.wealth_title': '💎 Évolution du patrimoine',
+    'chart.top_title': '🏆 Top catégories de dépenses',
+    'dash.avg_balance': '(moy. {0} €/mois · {1} mois de données)',
+    'modal.edit_warning': '✏️ Les montants seront remplacés à partir du mois de début choisi. Les mois précédents restent inchangés.',
+    // Budget bar
+    'budget.bar_label': 'Budget : {0} €/an',
+    'budget.bar_monthly': '(mensuel)',
+    // Summary annual view
+    'summary.annual_overview': '📈 Vue d\'ensemble annuelle',
+    // Dashboard projection
+    'dash.projection': '🔮 Projection {0}',
+    'dash.projection_desc': 'à ce rythme, épargne annuelle estimée à',
   },
   en: {
     // Welcome screen
@@ -7983,6 +8263,7 @@ const TRANSLATIONS = {
     // Category modal
     'cat.new': 'New category',
     'cat.edit': 'Edit category',
+    'cat.icon': 'Icon',
     'cat.label': 'Label *',
     'cat.label_ex': 'E.g. Groceries',
     'cat.emoji_hint': 'Click a suggestion or type your own emoji',
@@ -8060,6 +8341,7 @@ const TRANSLATIONS = {
     'toast.cat_exists': '⚠️ This category already exists',
     'toast.savings_goal_saved': '🎯 Goal: {0} €/month saved',
     'toast.savings_goal_deleted': '🎯 Goal removed',
+    'toast.cat_budget_saved': '✅ Monthly budget saved — {0} €/year',
     'toast.tx_moved': '✅ Expense moved to "{0}"',
     // Gist guide
     'gist.guide_title': '📖 How to create a GitHub account and token? (step-by-step guide)',
@@ -8081,6 +8363,281 @@ const TRANSLATIONS = {
     'summary.avg_savings': 'Avg. savings/month',
     'summary.monthly_balance': '📊 Month-by-month balance',
     'summary.annual_balance': 'Annual balance',
+    // Toast messages (additional)
+    'toast.demo_activated': '🎮 Demo mode activated — explore freely!',
+    'toast.confirm_exit_demo': 'Exit demo mode and delete all fictional data?',
+    'toast.user_added': '👤 {0} added',
+    'toast.user_deleted': '🗑 User deleted',
+    'toast.year_deleted': '🗑 Year {0} deleted',
+    'toast.backup_created': '💾 Backup created',
+    'toast.year_created': '📅 Year {0} created',
+    'toast.year_exists': 'Year {0} already exists',
+    'toast.row_added': '✅ "{0}" added',
+    'toast.row_updated': '✅ "{0}" updated',
+    'toast.tx_added': '✅ {0} € added in {1} {2}',
+    'toast.photo_updated': '✅ Photo updated',
+    'toast.image_too_large': '⚠️ Image too large (max 800 KB)',
+    'toast.gist_token_restored': '🐙 GitHub Gist token restored from cloud',
+    'toast.license_required': '⚠️ Premium license required for sync',
+    'toast.login_required': '⚠️ Sign in with Google first',
+    'toast.cloud_empty': 'ℹ️ No data in the cloud',
+    'toast.cloud_synced': '✅ Data synchronized from the cloud',
+    'toast.auto_lock_warn': '⏳ Locking in 1 minute (inactivity)',
+    'toast.auto_locked': '🔒 Session locked — 10 min inactivity',
+    'toast.sync_ignored': '⚠️ Sync skipped: cloud data is empty',
+    'toast.backup_restored': '↺ Backup restored',
+    'toast.confirm_restore': 'Restore this backup? Current data will be replaced.',
+    'toast.no_data_print': '❌ No data to print',
+    'toast.reset_done': '↺ Reset — backup created in Backups',
+    'toast.cat_added': 'Category "{0}" added{1}',
+    'toast.cat_last': '⚠️ Cannot delete the last category',
+    'toast.cat_has_tx': '⚠️ Delete all expenses in this category first',
+    'toast.cat_deleted': 'Category deleted',
+    'toast.cat_updated': '✅ Category updated',
+    'toast.method_key_required': 'Key and label required',
+    'toast.method_key_exists': 'This key already exists',
+    'toast.method_added': 'Method "{0}" added',
+    'toast.pin_deleted': '🔓 PIN code removed',
+    'toast.pin_set': '🔒 PIN code set',
+    'toast.license_expired': '⚠️ Your Premium license has expired',
+    'toast.beta_expired': '⚠️ Your beta license key has expired',
+    'toast.max_devices': '⚠️ Max {0} devices reached — sync disabled on this device',
+    'toast.google_signin_error': '❌ Google Sign-In error',
+    'toast.account_created': '🎉 Account created — welcome!',
+    'toast.copied_msg': '✅ Message copied — paste it wherever you like!',
+    'toast.copy_manual': 'Copy the text manually',
+    'toast.login_first': '⚠️ Sign in to your account first',
+    'toast.license_invalid': '❌ Invalid or expired key',
+    'toast.license_used': '❌ This key is already used by another account',
+    'toast.license_activated': '🎉 License activated — welcome to Premium!',
+    'toast.confirm_revoke_license': 'Disable the Premium license on this device?',
+    'toast.license_deactivated': 'License deactivated',
+    'toast.csv_invalid': '❌ Empty or invalid CSV file',
+    'toast.csv_no_expenses': '❌ No expenses detected in this file',
+    'toast.tx_imported': '✅ {0} transaction{1} imported',
+    'toast.app_updated': '✅ App updated!',
+    'toast.update_checking': '🔄 Checking for updates…',
+    'toast.update_found': '✅ Update found — reloading…',
+    'toast.admin_only': '⛔ Access restricted to administrator',
+    'toast.reply_required': '⚠️ Write a reply before sending',
+    'toast.confirm_delete_feedback': 'Permanently delete this feedback?',
+    'toast.feedback_deleted': '🗑️ Feedback deleted',
+    'toast.no_data_for_key': '⚠️ No data for this key',
+    'toast.admin_mode': '👁️ Admin mode — {0}…',
+    'toast.load_error': '❌ Unable to load data',
+    'toast.back_to_data': '✅ Back to your data',
+    'toast.confirm_revoke_premium': 'Revoke premium for\n{0}?',
+    'toast.api_key_saved': '✅ API key saved',
+    'toast.api_key_deleted': 'API key deleted',
+    'toast.opfs_restored': '🔄 Data restored from local OPFS backup!',
+    'toast.gist_token_required': '⚠️ Configure your GitHub token first',
+    'toast.confirm_gist_restore': 'Restore data from GitHub Gist?\n\nBackup from: {0}\n\nThis will replace your current data.',
+    'toast.gist_restored': '✅ Data restored from GitHub Gist',
+    'toast.gist_token_enter': '⚠️ Enter a GitHub token',
+    'toast.gist_disconnected': '🔌 GitHub Gist disconnected',
+    'toast.confirm_gist_disconnect': 'Disconnect GitHub Gist? The existing Gist will not be deleted.',
+    'toast.account_name_required': '⚠️ Account name required',
+    'toast.account_added': '✅ Account "{0}" added — card "{0}" created',
+    'toast.account_deleted': '🗑 Account "{0}" deleted',
+    'toast.account_renamed': '✅ Account renamed to "{0}"',
+    'toast.account_renamed_simple': '✅ Account renamed',
+    'toast.livret_name_required': '⚠️ Savings account name required',
+    'toast.livret_added': '✅ Savings account "{0}" added with 3 cost lines',
+    'toast.livret_deleted': '🗑 Savings account "{0}" deleted',
+    'toast.livret_renamed': '✅ Savings account renamed to "{0}"',
+    'toast.livret_renamed_simple': '✅ Savings account renamed',
+    'toast.json_exported': '✅ JSON backup exported',
+    'toast.confirm_import': 'Import {0} year(s) of data from this file?\n\nThis will replace all your current data.',
+    'toast.years_imported': '✅ {0} year(s) imported',
+    'toast.demo_loaded': '🎭 Demo data loaded — 2025 + 2026',
+    'toast.local_tx_preserved': '🛡️ {0} local transactions preserved',
+    'toast.name_required': '⚠️ Enter a name',
+    'toast.update_received': '🔄 Update received',
+    'toast.saved_simple': '✅ Saved',
+    'toast.installed': '✅ App installed successfully!',
+    'toast.install_browser': 'Use the ⊕ button in your browser address bar',
+    'toast.mic_error': '⚠️ Microphone error: {0}',
+    'toast.budget_exceeded': '🚨 Budget "{0}" exceeded! {1} € / {2} €/year',
+    'toast.google_connected': '✅ Connected with Google — {0}',
+    'toast.csv_no_columns': '❌ Date/amount columns not found — check the format',
+    'toast.tx_edited': '✅ Expense updated — {0} €',
+    // Confirm delete dialogs
+    'confirm.delete_user': 'Delete user "{0}" and all their data?',
+    'confirm.delete_row': 'Delete "{0}"?',
+    'confirm.delete_tx': 'Delete this transaction?',
+    'confirm.delete_pin': 'Delete PIN code?',
+    'confirm.delete_method': 'Delete payment mode "{0}"?',
+    'confirm.delete_account': 'Delete account "{0}" and its associated card?',
+    'confirm.delete_livret': 'Delete savings account "{0}" and its {1} charge rows?',
+    'confirm.delete_year_full': 'Delete year {0} and all its data?',
+    // Add/Edit row modal
+    'modal.edit_row': '✏️ Edit row',
+    'btn.add_row_submit': '✅ Add',
+    'btn.edit_row_submit': '✏️ Edit',
+    'modal.type_revenu': 'New revenue',
+    'modal.type_fixed': 'New fixed cost',
+    'modal.type_occas': 'Occasional charge',
+    'modal.row_interval_error': '⚠️ Interval must be between 1 and 12 months',
+    // Category modal
+    'cat.save_edit': '✅ Save changes',
+    'cat.add_btn': '＋ Add category',
+    // Backup modal
+    'backup.title': '📦 Backups (last 20)',
+    // Search
+    'search.placeholder': 'Search a row, an expense…',
+    'search.hint': 'Type a keyword to search…',
+    // Cloud sync status
+    'sync.active': '☁️ Sync active',
+    'sync.locked': '🔒 Sync',
+    'sync.syncing': 'Syncing…',
+    'sync.ok': 'Synced with cloud',
+    'sync.error_default': 'Sync error',
+    'sync.live_label': '🟢 Live',
+    'sync.live_title': 'Real-time sync active',
+    // Gist status
+    'gist.ok_status': 'Synced ✅',
+    'gist.error_status': 'Error ❌',
+    'gist.syncing_status': 'Syncing…',
+    'gist.off_status': 'Not configured',
+    'gist.testing_status': 'Testing…',
+    // PIN messages
+    'pin.confirm_label': 'Confirm your PIN code',
+    'pin.set_label': 'Set a PIN code (4 digits)',
+    'pin.wrong': '❌ Incorrect code',
+    'pin.mismatch': '❌ Codes do not match',
+    // Wizard validation
+    'wiz.pin_error': '⚠️ Enter 4 digits or click Skip',
+    'wiz.token_error': '⚠️ Token must start with ghp_',
+    'wiz.validating': '⏳ Validating…',
+    'wiz.validate_connect': '✅ Validate & connect',
+    // Quick add modal
+    'qa.title': '⚡ Quick add',
+    'qa.add_btn': '✅ Add',
+    'qa.edit_title': '✏️ Edit expense',
+    'qa.edit_btn': '✅ Edit',
+    'qa.amount_error': '⚠️ Enter a valid amount (negative for a refund)',
+    // Variable expand/collapse
+    'var.detail_open': '▾ Details',
+    'var.detail_close': '▴ Close',
+    // Danger confirm dialog
+    'danger.will_delete': '⚠️ What will be permanently deleted:',
+    'danger.irreversible': '⛔ IRREVERSIBLE ACTION',
+    'danger.irreversible_sub': 'It will be impossible to recover this data afterwards.',
+    'danger.type_to_confirm': 'To confirm, type exactly',
+    'danger.cancel': '✕ Cancel',
+    // Uninstall
+    'uninstall.title': 'Uninstall application',
+    'uninstall.subtitle': 'Complete deletion of all data',
+    'uninstall.item1': '<b>All user accounts</b> and their data',
+    'uninstall.item2': '<b>All budget years</b> from all users',
+    'uninstall.item3': '<b>All automatic backups</b> saved',
+    'uninstall.item4': 'Cloud sync (cloud data not affected)',
+    'uninstall.item5': '<b style="color:var(--red)">⛔ No backup will be created — recovery impossible</b>',
+    'uninstall.word': 'UNINSTALL',
+    'uninstall.btn': '🗑 Uninstall permanently',
+    'uninstall.done_title': 'Application uninstalled',
+    'uninstall.done_msg': 'Your data has been erased.<br>You can now delete the icon from your home screen.',
+    // Delete year danger confirm
+    'delete.year_title': 'Delete year {0}',
+    'delete.year_subtitle': 'Irreversible action — all data will be lost',
+    'delete.year_item1': 'Revenues from {0}',
+    'delete.year_item2': 'Fixed costs from {0}',
+    'delete.year_item3': 'All variable expenses from {0}',
+    'delete.year_btn': '🗑️ Delete {0} permanently',
+    // Reset data danger confirm
+    'reset.title': 'Reset all data',
+    'reset.item3': 'All entered revenues and fixed costs',
+    'reset.item4': 'All starting balances',
+    'reset.item5': '<span style="color:var(--green)">✅ A backup will be created automatically before deletion</span>',
+    'reset.word': 'DELETE',
+    'reset.btn': '🗑 Delete everything',
+    // Misc UI strings
+    'modal.no_payment': 'No payment this year',
+    'modal.freq_monthly': 'monthly',
+    'modal.freq_every': 'every {0} months',
+    'backup.no_backup': 'No backup available.',
+    'backup.last_save': '✅ Last backup:',
+    'backup.restore_btn': 'Restore',
+    'search.no_result': 'No results for "{0}"',
+    'search.more_results': '… and {0} more',
+    'dash.no_data': 'No data yet.',
+    'dash.add_year_btn': '＋ Add a year',
+    'pdf.generated': 'Generated on {0}',
+    'wiz.step6.title': 'Cloud backup with GitHub',
+    'wiz.step6.free': '100% FREE',
+    'wiz.step6.desc': 'Your data will be automatically<br>saved online with every save.<br><b style="color:#fff">No subscription. No credit card.</b>',
+    'wiz.step6.how': 'How to do it? (5 minutes)',
+    'wiz.step6.s1': '1️⃣ Create an account on <b>github.com</b> (free)',
+    'wiz.step6.s2': '2️⃣ Go to <b>Settings → Developer settings → Personal access tokens → Tokens (classic)</b>',
+    'wiz.step6.s3': '3️⃣ Click <b>Generate new token (classic)</b>',
+    'wiz.step6.s4': '4️⃣ Check only <b>gist</b> ✅',
+    'wiz.step6.s5': '5️⃣ Copy the <b>ghp_…</b> token and paste it below',
+    'wiz.step6.guide': '📖 Detailed guide available in <b>Help → Backup</b>',
+    'wiz.step6.skip': '⏭ Skip for now',
+    'wiz.step6.back': '← Back',
+    'wiz.step6.create': '✅ Create my budget',
+    // Wizard step labels
+    'wiz.label.profile': 'Profile',
+    'wiz.label.revenues': 'Revenues',
+    'wiz.label.charges': 'Costs',
+    'wiz.label.budgets': 'Budgets',
+    'wiz.label.pin': 'PIN',
+    'wiz.label.cloud': 'Cloud',
+    // Wizard step 1
+    'wiz.s1.name_label': 'First / Last name',
+    'wiz.s1.name_placeholder': 'E.g. Marie…',
+    'wiz.s1.color_label': 'Profile color',
+    'wiz.s1.account_label': '🏦 Account name',
+    'wiz.s1.account_placeholder': 'Main account',
+    'wiz.s1.livret_label': '📈 Savings account name',
+    'wiz.s1.livret_placeholder': 'Savings account',
+    'wiz.s1.optional_hint': 'Optional — you can rename these later in Settings.',
+    'wiz.s1.next': 'Next — Revenues →',
+    // Wizard step 2
+    'wiz.s2.hint': 'Check and adjust your monthly revenue sources.',
+    'wiz.s2.next': 'Next — Fixed costs →',
+    'wiz.s2.per_month': '€/month',
+    // Wizard step 3
+    'wiz.s3.hint': 'Check your fixed costs and adjust the amounts.',
+    'wiz.s3.next': 'Next — Budgets →',
+    // Wizard step 4
+    'wiz.s4.hint': 'Set a monthly budget per category. The app will show your progress in real time.',
+    'wiz.s4.optional': '💡 Optional — editable at any time in Config → Categories',
+    'wiz.s4.skip': '⏭ Skip',
+    'wiz.s4.next': 'Next — PIN →',
+    // Wizard step 5
+    'wiz.s5.title': 'Protect your account',
+    'wiz.s5.desc': 'Set a 4-digit PIN code to secure your data.<br>You can also skip this step.',
+    'wiz.s5.skip': '⏭ Skip',
+    'wiz.s5.next': 'Next →',
+    // Wizard back button
+    'wiz.back': '← Back',
+    // Wizard free badge
+    'wiz.step6.free_badge': '100% FREE',
+    // Summary / print report
+    'summary.initial_balance': 'Starting balance Jan 1',
+    'summary.current_balance': '= Calculated current balance',
+    'summary.payment_split': 'Breakdown by payment method',
+    'summary.payment_mode': 'Method',
+    'summary.var_split': '🗂 Variable expenses breakdown',
+    'summary.monthly_notes': '📝 Monthly notes',
+    'summary.report_header': 'Financial report',
+    'summary.donut_title': '🍩 Expense breakdown',
+    'chart.cat_title': '🗂 Expense breakdown',
+    'chart.savings_title': '📈 Monthly savings rate (%) — all years',
+    'chart.revdep_title': '📊 Revenues vs Expenses',
+    'chart.wealth_title': '💎 Wealth evolution',
+    'chart.top_title': '🏆 Top expense categories',
+    'dash.avg_balance': '(avg. {0} €/month · {1} months of data)',
+    'modal.edit_warning': '✏️ Amounts will be replaced from the chosen start month. Previous months remain unchanged.',
+    // Budget bar
+    'budget.bar_label': 'Budget: {0} €/year',
+    'budget.bar_monthly': '(monthly)',
+    // Summary annual view
+    'summary.annual_overview': '📈 Annual overview',
+    // Dashboard projection
+    'dash.projection': '🔮 Projection {0}',
+    'dash.projection_desc': 'at this rate, estimated annual savings of',
   }
 };
 
@@ -8104,6 +8661,32 @@ function setLang(code) {
     const key = el.getAttribute('data-i18n');
     el.textContent = t(key);
   });
+  // Update elements with data-i18n-html (innerHTML)
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    el.innerHTML = t(key);
+  });
+  // Update placeholder attributes
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+  // Update search hint
+  const shp = document.getElementById('search-hint-p');
+  if (shp) shp.textContent = t('search.hint');
+  // Update summary annual overview title
+  const sat = document.getElementById('sum-annual-title');
+  if (sat) { const badge = sat.querySelector('#sum-badge'); sat.textContent = t('summary.annual_overview') + ' '; if (badge) sat.appendChild(badge); }
+  // Update export reminder text
+  const ert = document.getElementById('export-reminder-text');
+  if (ert) {
+    const days = document.getElementById('export-reminder-days');
+    const daysText = days ? days.outerHTML : '';
+    const template = t('update.export_reminder');
+    ert.innerHTML = template.replace('{0}', daysText || '?');
+    // Re-attach the days span ref
+    if (!days && ert.querySelector('b')) { /* already re-rendered */ }
+  }
   // Update lang button styles (wizard buttons)
   ['fr','en'].forEach(c => {
     const btn = document.getElementById('lang-btn-' + c);
@@ -8294,6 +8877,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.37': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🌐', text: 'Traduction 100% EN/FR : modals, wizard, confirm dialogs, status sync, PDF, graphiques, dashboard — plus aucun texte en dur en français' },
+      { icon: '🎯', text: 'setLang() étendu : gist status, cloud sync, PIN messages, quick-add, budget bars, projections' }
+    ]
+  },
   '11.35': {
     date: 'Mai 2026',
     items: [
@@ -9060,6 +9650,15 @@ const CHANGELOG = {
       { icon: '🤖', text: 'Assistant IA disponible pour tous (sans configuration nécessaire)' },
       { icon: '🔧', text: 'Améliorations de stabilité et corrections diverses' }
     ]
+  },
+  '2.6': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🌐', text: 'Internationalisation complète (i18n) — toute l\'interface traduite en anglais' },
+      { icon: '🔠', text: 'Nouveaux attributs data-i18n sur tous les modals, bandeaux et boutons' },
+      { icon: '💬', text: 'Tous les messages toast, confirmations et alertes sont maintenant traduits dynamiquement' },
+      { icon: '⚙️', text: 'setLang() étendu : support data-i18n-placeholder, data-i18n-html et bannière export' }
+    ]
   }
 };
 
@@ -9273,7 +9872,7 @@ function openShareModal() { document.getElementById('share-modal').style.display
 function closeShareModal() { document.getElementById('share-modal').style.display = 'none'; }
 function copyShareText() {
   const txt = document.getElementById('share-text').textContent;
-  navigator.clipboard.writeText(txt).then(() => showToast('✅ Message copié — collez-le où vous voulez !')).catch(() => showToast('Copiez manuellement le texte'));
+  navigator.clipboard.writeText(txt).then(() => showToast(t('toast.copied_msg'))).catch(() => showToast(t('toast.copy_manual')));
 }
 
 // Ouvre Stripe avec client_reference_id = Firebase UID (pour activation automatique via webhook)
@@ -9291,13 +9890,13 @@ function openStripeCheckout(plan) {
 
 async function activateLicense(key) {
   key = (key||'').trim().replace(/[^A-Za-z0-9_-]/g,'');
-  if (!key) { showToast('⚠️ Clé vide'); return false; }
-  if (!_fbUser) { showToast('⚠️ Connectez-vous d\'abord à votre compte'); openAuthModal('login'); return false; }
+  if (!key) { showToast(t('toast.label_required')); return false; }
+  if (!_fbUser) { showToast(t('toast.login_first')); openAuthModal('login'); return false; }
   try {
     const res  = await fetch(`${LICENSE_DB}/licenses/${key}.json`);
     const data = await res.json();
-    if (!data || data.active !== true) { showToast('❌ Clé invalide ou expirée'); return false; }
-    if (data.uid && data.uid !== _fbUser.uid) { showToast('❌ Cette clé est déjà utilisée par un autre compte'); return false; }
+    if (!data || data.active !== true) { showToast(t('toast.license_invalid')); return false; }
+    if (data.uid && data.uid !== _fbUser.uid) { showToast(t('toast.license_used')); return false; }
     // Lier la clé à ce compte
     const tok = await fbGetToken();
     await fetch(`${LICENSE_DB}/licenses/${key}/uid.json`, {
@@ -9306,15 +9905,15 @@ async function activateLicense(key) {
       method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(true) }, tok);
     localStorage.setItem('mbudget-premium-'+_fbUser.uid, '1');
     localStorage.setItem('mbudget-license', key);
-    showToast('🎉 Licence activée — bienvenue en Premium !');
+    showToast(t('toast.license_activated'));
     closeUpgrade(); renderConfigTab(); return true;
-  } catch { showToast('❌ Impossible de vérifier (réseau ?)'); return false; }
+  } catch { showToast(t('toast.error') + ' — réseau ?'); return false; }
 }
 function activateLicenseFromOverlay() {
   activateLicense(document.getElementById('upgrade-key-input').value);
 }
 async function deactivateLicense() {
-  if (!confirm('Désactiver la licence Premium sur cet appareil ?')) return;
+  if (!confirm(t('toast.confirm_revoke_license'))) return;
   if (_fbUser) {
     const tok = await fbGetToken();
     try {
@@ -9324,7 +9923,7 @@ async function deactivateLicense() {
     localStorage.removeItem('mbudget-premium-'+_fbUser.uid);
   }
   localStorage.removeItem('mbudget-license');
-  renderConfigTab(); showToast('Licence désactivée');
+  renderConfigTab(); showToast(t('toast.license_deactivated'));
 }
 
 // ── CSV IMPORT ──
@@ -9422,12 +10021,12 @@ function _csvAutocat(label) {
 }
 function parseAndReview(text, filename) {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) { showToast('❌ Fichier CSV vide ou invalide'); return; }
+  if (lines.length < 2) { showToast(t('toast.csv_invalid')); return; }
   const sep = _csvSep(lines[0]);
   const headers = _csvParseLine(lines[0], sep);
   const cols = _csvDetectCols(headers);
   if (cols.date < 0 || (cols.amount < 0 && cols.debit < 0)) {
-    showToast('❌ Colonnes date/montant introuvables — vérifiez le format');
+    showToast(t('toast.csv_no_columns'));
     return;
   }
   const activeYear = getYears().find(y => document.getElementById('tab-y'+y)?.classList.contains('active')) || getYears()[0];
@@ -9450,7 +10049,7 @@ function parseAndReview(text, filename) {
     const label = cols.label >= 0 ? cells[cols.label] : (cells[1]||'');
     _csvRows.push({month:parsed.month, day:parsed.day, year:parsed.year, label, amount, catKey:_csvAutocat(label), include:true, isDuplicate:false});
   }
-  if (!_csvRows.length) { showToast('❌ Aucune dépense détectée dans ce fichier'); return; }
+  if (!_csvRows.length) { showToast(t('toast.csv_no_expenses')); return; }
   // Détection des doublons vs l'année active
   _csvRows.forEach(row => {
     row.isDuplicate = _csvIsDuplicate(row, activeYear);
@@ -9525,7 +10124,7 @@ function _csvUpdateCount() {
 }
 function confirmCsvImport() {
   const year = document.getElementById('csv-year-select').value;
-  if (!DATA[year]) { showToast('❌ Année introuvable'); return; }
+  if (!DATA[year]) { showToast(t('toast.error') + ' — année introuvable'); return; }
   const method = document.getElementById('csv-method-select')?.value || getMethods()[0]?.key || 'carte';
   let count = 0;
   for (const row of _csvRows) {
@@ -9537,14 +10136,14 @@ function confirmCsvImport() {
   closeCsvImport();
   renderYear(year);
   dSave();
-  showToast(`✅ ${count} transaction${count>1?'s importées':' importée'}`);
+  showToast(t('toast.tx_imported').replace('{0}', count).replace(/\{1\}/g, count>1?'s':''));
 }
 
 // ── INIT ──
 // Notifier si l'app vient d'être mise à jour
 if (sessionStorage.getItem('app-updated')) {
   sessionStorage.removeItem('app-updated');
-  setTimeout(() => showToast('✅ Application mise à jour !'), 800);
+  setTimeout(() => showToast(t('toast.app_updated')), 800);
 }
 initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
 
@@ -9590,22 +10189,22 @@ function _showDangerConfirm({ title, subtitle, items, confirmWord, buttonLabel, 
         <div style="color:rgba(255,255,255,.8);font-size:12px">${subtitle}</div>
       </div>
       <div style="padding:22px 24px">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">⚠️ Ce qui sera définitivement supprimé :</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${t('danger.will_delete')}</div>
         <ul style="font-size:13px;color:var(--gray);padding-left:18px;margin-bottom:16px;line-height:2">
           ${items.map(i=>`<li>${i}</li>`).join('')}
         </ul>
         <div style="background:#FEF0F1;border:2px solid #F04F5B;border-radius:10px;padding:12px 14px;margin-bottom:18px;text-align:center">
-          <div style="font-size:13px;font-weight:800;color:#c0392b">⛔ ACTION IRRÉVERSIBLE</div>
-          <div style="font-size:12px;color:#c0392b;margin-top:3px">Il sera impossible de récupérer ces données ensuite.</div>
+          <div style="font-size:13px;font-weight:800;color:#c0392b">${t('danger.irreversible')}</div>
+          <div style="font-size:12px;color:#c0392b;margin-top:3px">${t('danger.irreversible_sub')}</div>
         </div>
-        <div style="font-size:12px;color:var(--gray);margin-bottom:7px">Pour confirmer, tapez exactement <b style="color:#F04F5B;letter-spacing:1px">${confirmWord}</b> ci-dessous :</div>
-        <input id="_danger-inp" type="text" placeholder="Tapez ${confirmWord}…" autocomplete="off" spellcheck="false"
+        <div style="font-size:12px;color:var(--gray);margin-bottom:7px">${t('danger.type_to_confirm')} <b style="color:#F04F5B;letter-spacing:1px">${confirmWord}</b> :</div>
+        <input id="_danger-inp" type="text" placeholder="${confirmWord}…" autocomplete="off" spellcheck="false"
           style="width:100%;border:2px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:700;letter-spacing:1px;box-sizing:border-box;margin-bottom:14px;background:var(--surface);color:var(--text);outline:none;text-transform:uppercase"
           oninput="const b=document.getElementById('_danger-btn');const ok=this.value.toUpperCase()==='${confirmWord}';b.disabled=!ok;b.style.opacity=ok?'1':'.4';b.style.cursor=ok?'pointer':'not-allowed'">
         <div style="display:flex;gap:10px">
           <button onclick="document.getElementById('_danger-overlay').remove()"
             style="flex:1;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">
-            ✕ Annuler
+            ${t('danger.cancel')}
           </button>
           <button id="_danger-btn" disabled onclick="_confirmDanger()"
             style="flex:1;background:#F04F5B;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:not-allowed;opacity:.4;transition:opacity .15s">
@@ -9624,7 +10223,7 @@ function _confirmDanger() {
 
 // ── FORCE UPDATE & UNINSTALL ──
 async function forceUpdate() {
-  showToast('🔄 Recherche de mise à jour…');
+  showToast(t('toast.update_checking'));
   try {
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -9632,24 +10231,24 @@ async function forceUpdate() {
     }
     const keys = await caches.keys();
     for (const k of keys) await caches.delete(k);
-    showToast('✅ Mise à jour trouvée — rechargement…');
+    showToast(t('toast.update_found'));
     setTimeout(() => window.location.reload(true), 800);
   } catch(e) { window.location.reload(true); }
 }
 
 async function uninstallApp() {
   _showDangerConfirm({
-    title: 'Désinstaller l\'application',
-    subtitle: 'Suppression complète de toutes les données',
+    title: t('uninstall.title'),
+    subtitle: t('uninstall.subtitle'),
     items: [
-      '<b>Tous les comptes utilisateurs</b> et leurs données',
-      '<b>Toutes les années</b> de budget de tous les utilisateurs',
-      '<b>Tous les backups</b> automatiques sauvegardés',
-      'La synchronisation cloud (données cloud non affectées)',
-      '<b style="color:var(--red)">⛔ Aucun backup ne sera créé — récupération impossible</b>'
+      t('uninstall.item1'),
+      t('uninstall.item2'),
+      t('uninstall.item3'),
+      t('uninstall.item4'),
+      t('uninstall.item5')
     ],
-    confirmWord: 'DESINSTALLER',
-    buttonLabel: '🗑 Désinstaller définitivement',
+    confirmWord: t('uninstall.word'),
+    buttonLabel: t('uninstall.btn'),
     onConfirm: async () => {
       try {
         if ('serviceWorker' in navigator) {
@@ -9661,8 +10260,8 @@ async function uninstallApp() {
         localStorage.clear();
         document.body.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:Inter,sans-serif;text-align:center;padding:20px;background:#F4F5FA">
           <div style="font-size:48px;margin-bottom:16px">✅</div>
-          <h2 style="margin:0 0 8px;color:#1A1D2E">Application désinstallée</h2>
-          <p style="color:#6b7280;font-size:14px">Vos données ont été effacées.<br>Vous pouvez maintenant supprimer l'icône de votre écran d'accueil.</p>
+          <h2 style="margin:0 0 8px;color:#1A1D2E">${t('uninstall.done_title')}</h2>
+          <p style="color:#6b7280;font-size:14px">${t('uninstall.done_msg')}</p>
         </div>`;
       } catch(e) { localStorage.clear(); window.location.reload(true); }
     }
@@ -9734,7 +10333,7 @@ window.addEventListener('message', async (e) => {
   if (!googleToken) return;
   try {
     const u = await _fbSignInWithIdp(googleToken);
-    showToast('✅ Connecté avec Google — ' + u.email);
+    showToast(t('toast.google_connected').replace('{0}', u.email));
     await fbCheckPremium(u.uid, u.idToken);
     closeAuthModal();
     document.getElementById('onboarding-screen').style.display = 'none';
@@ -9796,7 +10395,7 @@ function adminTitleClick() {
   // Hidden admin trigger removed — use the admin button in Settings
 }
 function openAdminPanel() {
-  if (!_isFbAdmin()) { showToast('⛔ Accès réservé à l\'administrateur'); return; }
+  if (!_isFbAdmin()) { showToast(t('toast.admin_only')); return; }
   document.getElementById('admin-modal').style.display = 'flex';
   document.getElementById('admin-license-input').value = '';
   adminSwitchTab('view');
@@ -9919,7 +10518,7 @@ function adminRenderFeedback() {
 async function adminSendReply(id, email, subject) {
   const textarea = document.getElementById('reply-' + id);
   const message = textarea?.value?.trim();
-  if (!message) { showToast('⚠️ Écris une réponse avant d\'envoyer'); return; }
+  if (!message) { showToast(t('toast.reply_required')); return; }
   const token = await fbGetToken();
   const replyId = 'r_' + Date.now().toString(36);
   const replyData = { message, createdAt: Date.now(), from: 'admin' };
@@ -9944,8 +10543,8 @@ async function adminSendReply(id, email, subject) {
     _feedbackData[id].replies[replyId] = replyData;
     _feedbackData[id].status = 'répondu';
     adminRenderFeedback();
-    showToast('✅ Réponse envoyée !');
-  } catch(e) { showToast('❌ Erreur lors de l\'envoi'); }
+    showToast(t('toast.saved_simple'));
+  } catch(e) { showToast(t('toast.error') + ' — ' + e.message); }
 }
 
 async function adminUpdateFeedbackStatus(id, status) {
@@ -9957,19 +10556,19 @@ async function adminUpdateFeedbackStatus(id, status) {
 }
 
 async function adminDeleteFeedback(id) {
-  if (!confirm('Supprimer ce feedback définitivement ?')) return;
+  if (!confirm(t('toast.confirm_delete_feedback'))) return;
   const token = await fbGetToken();
   await _fbFetch(`${LICENSE_DB}/feedback/${id}.json`, { method:'DELETE' }, token);
   delete _feedbackData[id];
   adminRenderFeedback();
-  showToast('🗑️ Feedback supprimé');
+  showToast(t('toast.feedback_deleted'));
 }
 
 async function enterAdminMode() {
-  if (!_isFbAdmin()) { showToast('⛔ Accès réservé à l\'administrateur'); return; }
+  if (!_isFbAdmin()) { showToast(t('toast.admin_only')); return; }
   const key = document.getElementById('admin-license-input').value.trim().replace(/[^A-Za-z0-9_-]/g,'');
-  if (!key) { showToast('⚠️ Entrez une clé ou UID'); return; }
-  showToast('🔄 Chargement…');
+  if (!key) { showToast(t('toast.label_required')); return; }
+  showToast(t('toast.update_received'));
   try {
     // Try UID-based path first, then legacy key path
     const token = await fbGetToken();
@@ -9979,10 +10578,10 @@ async function enterAdminMode() {
     if (!d || typeof d !== 'object' || Array.isArray(d)) {
       url = LICENSE_DB.replace(/\/+$/,'') + '/user-data/' + key + '/budget.json';
       r = await fetch(url);
-      if (!r.ok) { showToast('❌ Erreur Firebase ' + r.status); return; }
+      if (!r.ok) { showToast(t('toast.error') + ' Firebase ' + r.status); return; }
       d = await r.json();
     }
-    if (!d || typeof d !== 'object' || Array.isArray(d)) { showToast('⚠️ Aucune donnée pour cette clé'); return; }
+    if (!d || typeof d !== 'object' || Array.isArray(d)) { showToast(t('toast.no_data_for_key')); return; }
     if (!_isAdminMode) _adminSavedData = JSON.stringify(DATA);
     _isAdminMode = true;
     _adminLabel = 'Client ' + key.slice(0,8) + '…';
@@ -9998,8 +10597,8 @@ async function enterAdminMode() {
     renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary(); updateUserDisplay();
     const ly = getYears().slice(-1)[0];
     if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
-    showToast('👁️ Mode admin — ' + key.slice(0,16) + '…');
-  } catch(e) { showToast('❌ Impossible de charger les données'); }
+    showToast(t('toast.admin_mode').replace('{0}', key.slice(0,16)));
+  } catch(e) { showToast(t('toast.load_error')); }
 }
 
 function exitAdminMode() {
@@ -10015,7 +10614,7 @@ function exitAdminMode() {
   renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary(); updateUserDisplay();
   const ly = getYears().slice(-1)[0];
   if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
-  showToast('✅ Retour à vos données');
+  showToast(t('toast.back_to_data'));
 }
 
 function adminSelectUser(uid) {
@@ -10054,7 +10653,7 @@ async function adminGrantPremium() {
     }, token);
     if (!r.ok) throw new Error(`HTTP ${r.status} — vérifiez les règles Firebase (admins/)`);
     res.innerHTML = `<span style="color:#00C896;font-weight:700">✅ Premium accordé !</span><br><small style="color:rgba(255,255,255,.5)">UID: ${_esc(uid)}</small>`;
-    showToast('⭐ Premium accordé à ' + uid.slice(0,12) + '…');
+    showToast('⭐ Premium granted to ' + uid.slice(0,12) + '…');
   } catch(e) { res.innerHTML = `<span style="color:#F04F5B">❌ ${_esc(e.message)}</span>`; }
 }
 
@@ -10062,7 +10661,7 @@ async function adminRevokePremium() {
   const uid = document.getElementById('admin-uid-input').value.trim();
   const res = document.getElementById('admin-license-result');
   if (!uid) { res.textContent = '⚠️ Entrez un UID Firebase'; return; }
-  if (!confirm(`Révoquer le premium de\n${uid} ?`)) return;
+  if (!confirm(t('toast.confirm_revoke_premium').replace('{0}', uid))) return;
   res.textContent = '🔄 Révocation…';
   try {
     const token = await fbGetToken();
@@ -10072,7 +10671,7 @@ async function adminRevokePremium() {
     }, token);
     if (!r.ok) throw new Error(`HTTP ${r.status} — vérifiez les règles Firebase`);
     res.innerHTML = `<span style="color:#F5A623;font-weight:700">✕ Premium révoqué</span><br><small style="color:rgba(255,255,255,.5)">UID: ${_esc(uid)}</small>`;
-    showToast('✕ Premium révoqué pour ' + uid.slice(0,12) + '…');
+    showToast('✕ Premium revoked for ' + uid.slice(0,12) + '…');
   } catch(e) { res.innerHTML = `<span style="color:#F04F5B">❌ ${_esc(e.message)}</span>`; }
 }
 
@@ -10127,11 +10726,11 @@ function saveGeminiKey(key) {
   if (key) {
     localStorage.setItem(AI_KEY_STORAGE, key);
     localStorage.removeItem('mbudget-gemini-key'); // nettoyage ancienne clé
-    showToast('✅ Clé API sauvegardée');
+    showToast(t('toast.api_key_saved'));
   } else {
     localStorage.removeItem(AI_KEY_STORAGE);
     localStorage.removeItem('mbudget-gemini-key');
-    showToast('Clé API supprimée');
+    showToast(t('toast.api_key_deleted'));
   }
 }
 
@@ -10256,7 +10855,7 @@ window.addEventListener('beforeinstallprompt', e => {
 });
 window.addEventListener('appinstalled', () => {
   _deferredInstall = null;
-  showToast('✅ Application installée avec succès !');
+  showToast(t('toast.installed'));
 });
 
 function _detectPlatform() {
@@ -10368,7 +10967,7 @@ function showInstallPlatform(plat) {
 }
 
 async function triggerInstall() {
-  if (!_deferredInstall) { showToast('Utilisez le bouton ⊕ dans la barre d\'adresse de votre navigateur'); return; }
+  if (!_deferredInstall) { showToast(t('toast.install_browser')); return; }
   _deferredInstall.prompt();
   const { outcome } = await _deferredInstall.userChoice;
   if (outcome === 'accepted') { closeInstallModal(); _deferredInstall = null; }
@@ -10432,7 +11031,7 @@ function toggleVoiceInput() {
     if (e.error === 'not-allowed' || e.error === 'permission-denied')
       _appendAiMsg('bot', '🎤 Accès au microphone refusé.<br>Autorisez le microphone dans les paramètres de votre navigateur et réessayez.');
     else
-      showToast('⚠️ Erreur microphone : ' + e.error);
+      showToast(t('toast.mic_error').replace('{0}', e.error));
   };
 
   rec.onend = () => {
@@ -10678,7 +11277,7 @@ async function opfsRestoreIfNeeded() {
   const data = await opfsLoad(CURRENT_USER_ID);
   if (!data) return false;
   localStorage.setItem(dataKey(), JSON.stringify(data));
-  showToast('🔄 Données restaurées depuis la sauvegarde OPFS locale !');
+  showToast(t('toast.opfs_restored'));
   return true;
 }
 
@@ -10747,7 +11346,7 @@ function setGistStatus(s, msg) {
   const txt = document.getElementById('gist-status-txt');
   if (!dot || !txt) return;
   dot.className = 'gist-status-dot ' + s;
-  const labels = { ok:'Synchronisé ✅', error:'Erreur ❌', syncing:'Synchronisation…', off:'Non configuré', testing:'Test…' };
+  const labels = { ok:t('gist.ok_status'), error:t('gist.error_status'), syncing:t('gist.syncing_status'), off:t('gist.off_status'), testing:t('gist.testing_status') };
   txt.textContent = (msg || labels[s] || s);
 }
 
@@ -10796,7 +11395,7 @@ async function gistPush() {
 async function gistPull() {
   const token = getGistToken();
   const gistId = getGistId();
-  if (!token || !gistId) { showToast('⚠️ Configurez d\'abord le token GitHub'); return; }
+  if (!token || !gistId) { showToast(t('toast.gist_token_required')); return; }
   setGistStatus('syncing');
   try {
     const res = await fetch(`https://api.github.com/gists/${gistId}`, {
@@ -10808,13 +11407,13 @@ async function gistPull() {
     if (!content) { setGistStatus('error', 'Fichier vide dans le Gist'); return; }
     const backup = JSON.parse(content);
     if (!backup?.data) { setGistStatus('error', 'Format invalide'); return; }
-    if (!confirm(`Restaurer les données depuis GitHub Gist ?\n\nSauvegarde du : ${new Date(backup.savedAt).toLocaleString('fr-BE')}\n\nCela remplacera vos données actuelles.`)) { setGistStatus('ok'); return; }
+    if (!confirm(t('toast.confirm_gist_restore').replace('{0}', new Date(backup.savedAt).toLocaleString()))) { setGistStatus('ok'); return; }
     DATA = backup.data;
     dSave();
     document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
     renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
     setGistStatus('ok');
-    showToast('✅ Données restaurées depuis GitHub Gist');
+    showToast(t('toast.gist_restored'));
   } catch(e) {
     setGistStatus('error', e.message || 'Erreur réseau');
   }
@@ -10822,7 +11421,7 @@ async function gistPull() {
 
 async function gistTest() {
   const token = document.getElementById('gist-token-inp')?.value.trim();
-  if (!token) { showToast('⚠️ Entrez un token GitHub'); return; }
+  if (!token) { showToast(t('toast.gist_token_enter')); return; }
   setGistStatus('testing', 'Test du token…');
   try {
     const res = await fetch('https://api.github.com/user', {
@@ -10843,17 +11442,17 @@ async function gistTest() {
 }
 
 function gistDisconnect() {
-  if (!confirm('Déconnecter GitHub Gist ? Le Gist existant ne sera pas supprimé.')) return;
+  if (!confirm(t('toast.confirm_gist_disconnect'))) return;
   localStorage.removeItem(gistTokenKey());
   localStorage.removeItem(gistIdKey());
   renderConfigTab();
-  showToast('🔌 GitHub Gist déconnecté');
+  showToast(t('toast.gist_disconnected'));
 }
 
 // ── ACCOUNT MANAGEMENT ──
 function addAccount(name, color) {
   if (!isLicensed()) { showUpgrade('gestion multi-comptes'); return; }
-  if (!name.trim()) { showToast('⚠️ Nom du compte requis'); return; }
+  if (!name.trim()) { showToast(t('toast.account_name_required')); return; }
   ensureAccounts();
   const id = 'acc_' + Date.now();
   const col = color || '#5B6AF0';
@@ -10871,14 +11470,14 @@ function addAccount(name, color) {
   });
   dSave(); renderConfigTab();
   getYears().forEach(y => renderYear(y));
-  showToast(`✅ Compte "${name}" ajouté — carte "${name}" créée`);
+  showToast(t('toast.account_added').replace(/\{0\}/g, name));
 }
 
 function removeAccount(id) {
   if (!DATA.accounts) return;
   const acc = DATA.accounts.find(a => a.id === id);
   if (!acc) return;
-  confirmDelete(`Supprimer le compte "${acc.name}" et sa carte associée ?`, () => {
+  confirmDelete(t('confirm.delete_account').replace('{0}', acc.name), () => {
     DATA.accounts = DATA.accounts.filter(a => a.id !== id);
     if (!DATA.accounts.length) delete DATA.accounts;
     // Remove associated payment method
@@ -10886,7 +11485,7 @@ function removeAccount(id) {
     getYears().forEach(y => { if (DATA[y].soldes.comptes) delete DATA[y].soldes.comptes[id]; });
     dSave(); renderConfigTab();
     getYears().forEach(y => renderYear(y));
-    showToast(`🗑 Compte "${acc.name}" supprimé`);
+    showToast(t('toast.account_deleted').replace('{0}', acc.name));
   });
 }
 
@@ -10894,17 +11493,17 @@ function renameAccount(id, name) {
   if (!name.trim()) return;
   ensureAccounts();
   const acc = DATA.accounts.find(a => a.id === id);
-  if (!acc) { if (id === 'acc_main') { DATA._accountName = name.trim(); dSave(); getYears().forEach(y=>renderYear(y)); renderConfigTab(); showToast(`✅ Compte renommé`); } return; }
+  if (!acc) { if (id === 'acc_main') { DATA._accountName = name.trim(); dSave(); getYears().forEach(y=>renderYear(y)); renderConfigTab(); showToast(t('toast.account_renamed_simple')); } return; }
   acc.name = name.trim();
   if (id === 'acc_main') DATA._accountName = name.trim();
   dSave(); getYears().forEach(y => renderYear(y)); renderConfigTab();
-  showToast(`✅ Compte renommé en "${name}"`);
+  showToast(t('toast.account_renamed').replace('{0}', name));
 }
 
 // ── LIVRET MANAGEMENT ──
 function addLivret(name, linkedAccId) {
   if (!isLicensed()) { showUpgrade('gestion multi-livrets'); return; }
-  if (!name.trim()) { showToast('⚠️ Nom du livret requis'); return; }
+  if (!name.trim()) { showToast(t('toast.livret_name_required')); return; }
   ensureLivrets();
   const id = 'liv_' + Date.now();
   const accId = linkedAccId || getAccounts()[0]?.id || 'acc_main';
@@ -10921,14 +11520,14 @@ function addLivret(name, linkedAccId) {
   dSave(); renderConfigTab();
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
   renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
-  showToast(`✅ Livret "${name}" ajouté avec ses 3 lignes de charges`);
+  showToast(t('toast.livret_added').replace('{0}', name));
 }
 
 function removeLivret(id) {
   if (!DATA.livrets) return;
   const liv = DATA.livrets.find(l => l.id === id);
   if (!liv) return;
-  confirmDelete(`Supprimer le livret "${liv.name}" et ses ${getYears().length * 3} lignes de charges ?`, () => {
+  confirmDelete(t('confirm.delete_livret').replace('{0}', liv.name).replace('{1}', getYears().length * 3), () => {
     DATA.livrets = DATA.livrets.filter(l => l.id !== id);
     if (!DATA.livrets.length) delete DATA.livrets;
     getYears().forEach(y => {
@@ -10938,7 +11537,7 @@ function removeLivret(id) {
     dSave(); renderConfigTab();
     document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
     renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
-    showToast(`🗑 Livret "${liv.name}" supprimé`);
+    showToast(t('toast.livret_deleted').replace('{0}', liv.name));
   });
 }
 
@@ -10946,11 +11545,11 @@ function renameLivret(id, name) {
   if (!name.trim()) return;
   ensureLivrets();
   const liv = DATA.livrets.find(l => l.id === id);
-  if (!liv) { if (id === 'liv_main') { DATA._livretName = name.trim(); dSave(); getYears().forEach(y=>renderYear(y)); renderConfigTab(); showToast(`✅ Livret renommé`); } return; }
+  if (!liv) { if (id === 'liv_main') { DATA._livretName = name.trim(); dSave(); getYears().forEach(y=>renderYear(y)); renderConfigTab(); showToast(t('toast.livret_renamed_simple')); } return; }
   liv.name = name.trim();
   if (id === 'liv_main') DATA._livretName = name.trim();
   dSave(); getYears().forEach(y => renderYear(y)); renderConfigTab();
-  showToast(`✅ Livret renommé en "${name}"`);
+  showToast(t('toast.livret_renamed').replace('{0}', name));
 }
 
 // ── JSON EXPORT / IMPORT ──
@@ -10971,7 +11570,7 @@ function exportDataJSON() {
   localStorage.removeItem('budget_reminder_dismissed_' + CURRENT_USER_ID);
   const el = document.getElementById('export-reminder-banner');
   if (el) el.style.display = 'none';
-  showToast('✅ Sauvegarde JSON exportée');
+  showToast(t('toast.json_exported'));
 }
 
 function importDataJSON() {
@@ -10988,15 +11587,15 @@ function importDataJSON() {
         if (!backup.data) throw new Error('Format invalide — clé "data" introuvable');
         const years = Object.keys(backup.data).filter(k => /^\d{4}$/.test(k));
         if (!years.length) throw new Error('Aucune année trouvée dans le fichier');
-        if (!confirm(`Importer ${years.length} année(s) de données depuis ce fichier ?\n\nCela remplacera toutes vos données actuelles.`)) return;
+        if (!confirm(t('toast.confirm_import').replace('{0}', years.length))) return;
         DATA = backup.data;
         dSave();
         document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
         renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
         renderConfigTab();
-        showToast(`✅ ${years.length} année(s) importée(s)`);
+        showToast(t('toast.years_imported').replace('{0}', years.length));
       } catch(err) {
-        showToast('❌ ' + err.message);
+        showToast(t('toast.error') + ' — ' + err.message);
       }
     };
     reader.readAsText(file);
@@ -11130,7 +11729,7 @@ function loadDemoData() {
   // Afficher le bouton Comparer
   const btn = document.getElementById('compare-overlay-btn');
   if (btn) btn.style.display = 'inline-flex';
-  showToast('🎭 Données de démo chargées — 2025 + 2026');
+  showToast(t('toast.demo_loaded'));
 }
 
 // ── COMPARE OVERLAY ──

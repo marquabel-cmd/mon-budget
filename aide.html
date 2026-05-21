@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aide — Mon Budget</title>
+<title>Help — Mon Budget</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -149,7 +149,7 @@ a:hover{text-decoration:underline}
 
 <!-- ── BARRE MOBILE ── -->
 <div class="nav-mobile-bar">
-  <span class="nav-mobile-title">❓ Aide</span>
+  <span class="nav-mobile-title">❓ Help</span>
   <button class="nav-mobile-toggle" id="nav-mobile-toggle" onclick="this.classList.toggle('open');document.getElementById('app-nav').classList.toggle('nav-expanded');this.querySelector('span').textContent=document.getElementById('app-nav').classList.contains('nav-expanded')?'✕':'☰'" aria-label="Menu">
     <span>☰</span> Menu
   </button>
@@ -158,29 +158,29 @@ a:hover{text-decoration:underline}
 <!-- ── TOOLBAR ── -->
 <nav class="app-nav" id="app-nav">
   <div class="nav-group nav-group-donnees">
-    <span class="nav-group-lbl">Données</span>
+    <span class="nav-group-lbl">Data</span>
     <div class="nav-group-items">
-      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📂</span><span class="nav-label">Importer</span></a>
-      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📥</span><span class="nav-label">Exporter</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📂</span><span class="nav-label">Import</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📥</span><span class="nav-label">Export</span></a>
       <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🖨️</span><span class="nav-label">PDF</span></a>
     </div>
   </div>
   <div class="nav-group nav-group-main nav-group-nav">
     <span class="nav-group-lbl">Navigation</span>
     <div class="nav-group-items">
-      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🏠</span><span class="nav-label">Accueil</span></a>
-      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📊</span><span class="nav-label">Résumé</span></a>
-      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📈</span><span class="nav-label">Graphiques</span></a>
-      <a class="nav-btn active" href="aide.html"><span class="nav-icon">❓</span><span class="nav-label">Aide</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📊</span><span class="nav-label">Summary</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📈</span><span class="nav-label">Charts</span></a>
+      <a class="nav-btn active" href="aide.html"><span class="nav-icon">❓</span><span class="nav-label">Help</span></a>
     </div>
   </div>
   <div class="nav-group nav-group-gestion">
-    <span class="nav-group-lbl">Gestion</span>
+    <span class="nav-group-lbl">Manage</span>
     <div class="nav-group-items">
-      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📅＋</span><span class="nav-label">Année</span></a>
-      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">⚙️</span><span class="nav-label">Config</span></a>
-      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🔍</span><span class="nav-label">Recherche</span></a>
-      <a class="nav-btn" href="dashboard.html"><span class="nav-icon">👤</span><span class="nav-label">Compte</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">📅＋</span><span class="nav-label">Year</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></a>
+      <a class="nav-btn" href="budget_familial.html"><span class="nav-icon">🔍</span><span class="nav-label">Search</span></a>
+      <a class="nav-btn" href="dashboard.html"><span class="nav-icon">👤</span><span class="nav-label">Account</span></a>
     </div>
   </div>
 </nav>
@@ -190,31 +190,31 @@ a:hover{text-decoration:underline}
   <!-- Sidebar -->
   <aside class="sidebar">
     <nav class="sidebar-nav">
-      <h4>Sommaire</h4>
-      <a href="#guide" style="background:#EEF0FD;color:#5B6AF0;font-weight:700">📋 Guide d'installation</a>
-      <a href="#demarrage">🚀 Démarrage</a>
-      <a href="#premium" class="nav-premium">⭐ Gratuit vs Premium</a>
-      <a href="#demo">🎮 Mode démo</a>
+      <h4>Contents</h4>
+      <a href="#guide" style="background:#EEF0FD;color:#5B6AF0;font-weight:700">📋 Installation guide</a>
+      <a href="#demarrage">🚀 Getting started</a>
+      <a href="#premium" class="nav-premium">⭐ Free vs Premium</a>
+      <a href="#demo">🎮 Demo mode</a>
       <a href="#interface">🖥️ Interface</a>
-      <a href="#accueil">🏠 Tableau de bord</a>
-      <a href="#objectif-epargne">🎯 Objectif d'épargne</a>
-      <a href="#recherche">🔍 Recherche globale</a>
-      <a href="#revenus">💼 Revenus</a>
-      <a href="#charges">🏠 Charges</a>
-      <a href="#variables">🛒 Dépenses variables</a>
-      <a href="#budget-cible">🎯 Budgets par catégorie</a>
-      <a href="#livret">💰 Livret d'épargne</a>
-      <a href="#indicateurs">📈 Indicateurs financiers</a>
-      <a href="#resume">📊 Résumé mensuel</a>
-      <a href="#graphiques">📉 Graphiques</a>
-      <a href="#sauvegarde">💾 Sauvegarde</a>
-      <a href="#github-gist" style="background:#e8f8f0;color:#27ae60;border-color:#27ae60">🐙 GitHub Gist gratuit</a>
-      <a href="#dark">🌙 Mode nuit</a>
-      <a href="#annee">📅 Nouvelle année</a>
-      <a href="#connexion">🔐 Connexion &amp; Compte</a>
-      <a href="#ajout-rapide">➕ Ajout rapide</a>
-      <a href="#assistant-ia">🤖 Assistant IA</a>
-      <a href="#feedback">💬 Feedback & Suggestions</a>
+      <a href="#accueil">🏠 Dashboard</a>
+      <a href="#objectif-epargne">🎯 Savings goal</a>
+      <a href="#recherche">🔍 Global search</a>
+      <a href="#revenus">💼 Revenues</a>
+      <a href="#charges">🏠 Fixed costs</a>
+      <a href="#variables">🛒 Variable expenses</a>
+      <a href="#budget-cible">🎯 Category budgets</a>
+      <a href="#livret">💰 Savings account</a>
+      <a href="#indicateurs">📈 Financial indicators</a>
+      <a href="#resume">📊 Monthly summary</a>
+      <a href="#graphiques">📉 Charts</a>
+      <a href="#sauvegarde">💾 Backup</a>
+      <a href="#github-gist" style="background:#e8f8f0;color:#27ae60;border-color:#27ae60">🐙 GitHub Gist (free)</a>
+      <a href="#dark">🌙 Dark mode</a>
+      <a href="#annee">📅 New year</a>
+      <a href="#connexion">🔐 Login &amp; Account</a>
+      <a href="#ajout-rapide">➕ Quick add</a>
+      <a href="#assistant-ia">🤖 AI Assistant</a>
+      <a href="#feedback">💬 Feedback &amp; Suggestions</a>
       <div style="margin-top:14px;padding:8px 10px;border-top:1px solid #e8eaf6;font-size:10px;color:#9BA3C9;line-height:1.6">
         📱 App <b>11.35</b><br>
         🔧 SW <b>v162</b>
@@ -226,301 +226,301 @@ a:hover{text-decoration:underline}
   <main class="content">
 
     <!-- ══════════════════════════════════════════ -->
-    <!-- GUIDE D'INSTALLATION                      -->
+    <!-- INSTALLATION GUIDE                        -->
     <!-- ══════════════════════════════════════════ -->
     <div class="section" id="guide" style="border-top:4px solid #5B6AF0">
-      <h2><span>📋</span> Guide d'installation pas à pas</h2>
-      <p class="lead">Suivez ces étapes dans l'ordre. Chaque étape est illustrée d'une capture d'écran réelle. Même un enfant peut le faire ! 😊</p>
+      <h2><span>📋</span> Step-by-step installation guide</h2>
+      <p class="lead">Follow these steps in order. Each step is illustrated with a real screenshot. Anyone can do it! 😊</p>
 
-      <!-- ÉTAPE 1 -->
+      <!-- STEP 1 -->
       <div class="install-step">
         <div class="step-num">1</div>
         <div class="step-body">
-          <h4>Ouvre l'application dans ton navigateur</h4>
-          <p>Va sur l'adresse de l'application (ou ouvre le fichier <b>budget_familial.html</b>). L'écran de démarrage apparaît avec deux choix.</p>
-          <img class="step-img" src="screenshots/01_welcome.png" alt="Écran de bienvenue">
-          <div class="step-img-caption">L'écran de bienvenue avec les profils utilisateurs</div>
-          <div class="step-tip">💡 Si c'est la toute première fois, tu verras d'abord l'écran d'onboarding avec deux grandes cartes : <b>Mode Démo</b> et <b>Créer mon compte</b>.</div>
+          <h4>Open the app in your browser</h4>
+          <p>Go to the app's URL (or open the file <b>budget_familial.html</b>). The start screen appears with two choices.</p>
+          <img class="step-img" src="screenshots/01_welcome.png" alt="Welcome screen">
+          <div class="step-img-caption">The welcome screen with user profiles</div>
+          <div class="step-tip">💡 If it's your very first time, you'll first see the onboarding screen with two big cards: <b>Demo Mode</b> and <b>Create my account</b>.</div>
         </div>
       </div>
 
-      <!-- ÉTAPE 2 -->
+      <!-- STEP 2 -->
       <div class="install-step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <h4>Clique sur ton nom pour te connecter</h4>
-          <p>Clique sur la carte avec ton prénom. Si tu as mis un code PIN, il te sera demandé. Une fois connecté, l'application s'ouvre directement.</p>
-          <img class="step-img" src="screenshots/10_tour.png" alt="Tour guidé au premier lancement">
-          <div class="step-img-caption">Au premier lancement, le tour guidé démarre automatiquement 🎉</div>
-          <div class="step-tip">💡 Le tour guidé te présente chaque partie de l'application en <b>12 étapes</b> (y compris l'ajout rapide, la connexion Google et l'assistant IA). Tu peux naviguer avec les flèches ← → de ton clavier.</div>
+          <h4>Click your name to log in</h4>
+          <p>Click on the card with your name. If you set a PIN code, you will be asked for it. Once logged in, the app opens directly.</p>
+          <img class="step-img" src="screenshots/10_tour.png" alt="Guided tour on first launch">
+          <div class="step-img-caption">On first launch, the guided tour starts automatically 🎉</div>
+          <div class="step-tip">💡 The guided tour walks you through each part of the app in <b>12 steps</b> (including quick add, Google sign-in and the AI assistant). You can navigate with the ← → arrow keys.</div>
         </div>
       </div>
 
-      <!-- ÉTAPE 3 -->
+      <!-- STEP 3 -->
       <div class="install-step">
         <div class="step-num">3</div>
         <div class="step-body">
-          <h4>Découvre les boutons du haut (header)</h4>
-          <p>En haut de la page se trouvent tous les boutons importants :</p>
-          <img class="step-img" src="screenshots/03_header.png" alt="Header de l'application">
-          <div class="step-img-caption">La barre du haut avec tous les boutons de contrôle</div>
+          <h4>Discover the header buttons</h4>
+          <p>At the top of the page you'll find all the important buttons:</p>
+          <img class="step-img" src="screenshots/03_header.png" alt="App header">
+          <div class="step-img-caption">The top bar with all control buttons</div>
           <ul style="margin-top:10px">
-            <li>🔵 <b>Ton prénom</b> — clique pour changer d'utilisateur</li>
-            <li>💾 <b>Sauvegarder</b> — <span style="color:#F04F5B;font-weight:700">TRÈS IMPORTANT</span> : clique ici après chaque modification !</li>
-            <li>📥 <b>Export CSV</b> — exporte tes données dans un fichier Excel</li>
-            <li>📦 <b>Backups</b> — retrouve tes sauvegardes automatiques</li>
-            <li>❓ <b>Aide</b> — relance le tour guidé ou ouvre ce guide</li>
-            <li>🌙 <b>Mode nuit</b> — change le thème clair/sombre</li>
+            <li>🔵 <b>Your name</b> — click to switch user</li>
+            <li>💾 <b>Save</b> — <span style="color:#F04F5B;font-weight:700">VERY IMPORTANT</span>: click here after every change!</li>
+            <li>📥 <b>Export CSV</b> — export your data to an Excel file</li>
+            <li>📦 <b>Backups</b> — access your automatic backups</li>
+            <li>❓ <b>Help</b> — restart the guided tour or open this guide</li>
+            <li>🌙 <b>Dark mode</b> — switch between light/dark theme</li>
           </ul>
-          <div class="step-warn">⚠️ <b>N'oublie jamais de cliquer sur 💾 Sauvegarder</b> après avoir saisi des données ! Sinon tout sera perdu si tu fermes la page.</div>
+          <div class="step-warn">⚠️ <b>Never forget to click 💾 Save</b> after entering data! Otherwise everything will be lost if you close the page.</div>
         </div>
       </div>
 
-      <!-- ÉTAPE 4 -->
+      <!-- STEP 4 -->
       <div class="install-step">
         <div class="step-num">4</div>
         <div class="step-body">
-          <h4>Navigue entre les années avec les onglets</h4>
-          <p>En dessous du header, tu vois les onglets d'années. Clique sur une année pour l'afficher. Utilise <b>＋ Année</b> pour créer une nouvelle année.</p>
-          <img class="step-img" src="screenshots/04_tabs.png" alt="Onglets d'années">
-          <div class="step-img-caption">Les onglets : Résumé global, 2025, 2026, + Année, Graphiques, Config</div>
-          <div class="step-tip">💡 <b>En version gratuite</b>, tu peux avoir <b>1 seule année</b>. Avec la licence Premium tu en as autant que tu veux.</div>
+          <h4>Navigate between years using the tabs</h4>
+          <p>Below the header, you can see the year tabs. Click on a year to display it. Use <b>＋ Year</b> to create a new year.</p>
+          <img class="step-img" src="screenshots/04_tabs.png" alt="Year tabs">
+          <div class="step-img-caption">The tabs: Global Summary, 2025, 2026, + Year, Charts, Settings</div>
+          <div class="step-tip">💡 <b>In the free version</b>, you can have <b>1 year only</b>. With a Premium licence you can have as many as you want.</div>
         </div>
       </div>
 
-      <!-- ÉTAPE 5 -->
+      <!-- STEP 5 -->
       <div class="install-step">
         <div class="step-num">5</div>
         <div class="step-body">
-          <h4>Renseigne les soldes de départ</h4>
-          <p>En haut de chaque année, il y a 4 cases importantes que tu dois remplir une seule fois :</p>
-          <img class="step-img" src="screenshots/05_soldes.png" alt="Section soldes">
-          <div class="step-img-caption">Les 4 indicateurs de solde en haut de chaque année</div>
+          <h4>Enter your starting balances</h4>
+          <p>At the top of each year, there are 4 important fields you only need to fill in once:</p>
+          <img class="step-img" src="screenshots/05_soldes.png" alt="Balance section">
+          <div class="step-img-caption">The 4 balance indicators at the top of each year</div>
           <ul style="margin-top:10px">
-            <li><b>Compte (01/01)</b> — Ton solde de compte courant au 1er janvier</li>
-            <li><b>Compte actuel</b> — Se calcule tout seul ✨</li>
-            <li><b>Livret initial</b> — Ton solde de livret d'épargne au 1er janvier</li>
-            <li><b>Livret actuel</b> — Se calcule tout seul ✨</li>
+            <li><b>Account (01/01)</b> — Your checking account balance on January 1st</li>
+            <li><b>Current account</b> — Calculated automatically ✨</li>
+            <li><b>Initial savings</b> — Your savings account balance on January 1st</li>
+            <li><b>Current savings</b> — Calculated automatically ✨</li>
           </ul>
-          <div class="step-tip">💡 Pour les années suivantes, le livret initial est rempli automatiquement avec le solde de fin de l'année précédente.</div>
+          <div class="step-tip">💡 For subsequent years, the initial savings balance is filled in automatically from the ending balance of the previous year.</div>
         </div>
       </div>
 
-      <!-- ÉTAPE 6 -->
+      <!-- STEP 6 -->
       <div class="install-step">
         <div class="step-num">6</div>
         <div class="step-body">
-          <h4>Saisis tes revenus mensuels</h4>
-          <p>Dans la section verte <b>💼 Revenus</b>, clique sur chaque case pour saisir le montant de chaque mois. Tu peux avoir plusieurs lignes de revenus (salaire, allocations, etc.).</p>
-          <img class="step-img" src="screenshots/06_revenus.png" alt="Section revenus">
-          <div class="step-img-caption">Section Revenus avec les montants mois par mois — ici 4 500 €/mois</div>
-          <div class="step-tip">💡 Si ton salaire est le même tous les mois, clique droit sur la cellule de janvier pour copier la valeur sur toute la ligne.</div>
+          <h4>Enter your monthly revenues</h4>
+          <p>In the green <b>💼 Revenues</b> section, click on each cell to enter the amount for each month. You can have multiple revenue rows (salary, benefits, etc.).</p>
+          <img class="step-img" src="screenshots/06_revenus.png" alt="Revenue section">
+          <div class="step-img-caption">Revenue section with amounts month by month — here €4,500/month</div>
+          <div class="step-tip">💡 If your salary is the same every month, enter the value in January then right-click on the cell to copy it across the whole row.</div>
         </div>
       </div>
 
-      <!-- ÉTAPE 7 -->
+      <!-- STEP 7 -->
       <div class="install-step">
         <div class="step-num">7</div>
         <div class="step-body">
-          <h4>Renseigne tes charges fixes et coche quand c'est payé</h4>
-          <p>Dans la section rose <b>🏠 Charges &amp; Dépenses fixes</b>, saisis tes charges régulières (loyer, électricité, abonnements…). Chaque mois, <b>clique sur la case pour la cocher en vert</b> quand tu as payé.</p>
-          <img class="step-img" src="screenshots/07_charges.png" alt="Section charges">
-          <div class="step-img-caption">Section Charges — clique sur une cellule pour la marquer "payée" (vert)</div>
-          <div class="step-warn">⚠️ Seules les charges cochées (payées) sont comptées dans le calcul de ton solde réel. N'oublie pas de cocher !</div>
+          <h4>Enter your fixed costs and check them when paid</h4>
+          <p>In the pink <b>🏠 Fixed Costs &amp; Expenses</b> section, enter your recurring costs (rent, electricity, subscriptions…). Each month, <b>click on the cell to check it green</b> when you have paid.</p>
+          <img class="step-img" src="screenshots/07_charges.png" alt="Fixed costs section">
+          <div class="step-img-caption">Fixed costs section — click a cell to mark it as "paid" (green)</div>
+          <div class="step-warn">⚠️ Only checked (paid) costs are counted in your real balance calculation. Don't forget to check them!</div>
         </div>
       </div>
 
-      <!-- ÉTAPE 8 -->
+      <!-- STEP 8 -->
       <div class="install-step">
         <div class="step-num">8</div>
         <div class="step-body">
-          <h4>Note tes dépenses variables au fil du mois</h4>
-          <p>Dans la section jaune <b>🛒 Dépenses variables</b>, clique sur le <b>petit ＋</b> dans la colonne du bon mois pour ajouter une dépense (courses, carburant, divers…).</p>
-          <img class="step-img" src="screenshots/08_variables.png" alt="Section dépenses variables">
-          <div class="step-img-caption">Section Dépenses variables avec les catégories colorées</div>
-          <div class="step-tip">💡 Tu peux indiquer le commentaire (ex: "Lidl"), la date du jour et le mode de paiement (carte, liquide, chèque repas).</div>
+          <h4>Record your variable expenses as you go</h4>
+          <p>In the yellow <b>🛒 Variable Expenses</b> section, click the <b>small ＋</b> in the correct month column to add an expense (groceries, fuel, miscellaneous…).</p>
+          <img class="step-img" src="screenshots/08_variables.png" alt="Variable expenses section">
+          <div class="step-img-caption">Variable expenses section with colour-coded categories</div>
+          <div class="step-tip">💡 You can add a comment (e.g. "Lidl"), today's date and the payment method (card, cash, meal voucher).</div>
         </div>
       </div>
 
-      <!-- ÉTAPE 9 -->
+      <!-- STEP 9 -->
       <div class="install-step">
         <div class="step-num">9</div>
         <div class="step-body">
-          <h4>Consulte le résumé mensuel automatique</h4>
-          <p>La section bleue <b>📊 Résumé mensuel</b> calcule tout automatiquement pour chaque mois de l'année.</p>
-          <img class="step-img" src="screenshots/09_resume.png" alt="Section résumé mensuel">
-          <div class="step-img-caption">Le résumé mensuel — tout se calcule automatiquement !</div>
+          <h4>Check the automatic monthly summary</h4>
+          <p>The blue <b>📊 Monthly Summary</b> section calculates everything automatically for each month of the year.</p>
+          <img class="step-img" src="screenshots/09_resume.png" alt="Monthly summary section">
+          <div class="step-img-caption">The monthly summary — everything is calculated automatically!</div>
           <ul style="margin-top:10px">
-            <li>🟢 <b>Revenus</b> — total des salaires du mois</li>
-            <li>🔴 <b>Charges payées</b> — total des charges cochées</li>
-            <li>🟡 <b>Dépenses variables</b> — total des dépenses saisies</li>
-            <li>🔵 <b>Solde réel</b> — ton solde bancaire réel calculé</li>
-            <li>💰 <b>Livret</b> — ton solde d'épargne calculé</li>
+            <li>🟢 <b>Revenues</b> — total income for the month</li>
+            <li>🔴 <b>Paid costs</b> — total of checked costs</li>
+            <li>🟡 <b>Variable expenses</b> — total of entered expenses</li>
+            <li>🔵 <b>Real balance</b> — your calculated actual bank balance</li>
+            <li>💰 <b>Savings</b> — your calculated savings account balance</li>
           </ul>
         </div>
       </div>
 
-      <!-- ÉTAPE 10 -->
+      <!-- STEP 10 -->
       <div class="install-step">
         <div class="step-num">10</div>
         <div class="step-body">
-          <h4>Sauvegarde et c'est terminé ! 🎉</h4>
-          <p>Clique sur le bouton <b>💾 Sauvegarder</b> dans le header. L'application affiche "Sauvegardé ✅" et la date/heure du dernier enregistrement.</p>
-          <div class="step-tip">💡 L'application crée automatiquement une sauvegarde de sécurité chaque jour. Tu peux retrouver jusqu'à 20 jours d'historique dans <b>📦 Backups</b>.</div>
-          <div class="step-tip" style="margin-top:8px;background:#E6FAF5;border-left-color:#00C896">🎯 <b>Conseil :</b> installe l'application sur ton téléphone ou tablette ! Sur Chrome/Edge, clique sur l'icône d'installation dans la barre d'adresse. Elle fonctionnera même sans internet. <a href="#demarrage" style="color:#5B6AF0">→ En savoir plus</a></div>
+          <h4>Save and you're done! 🎉</h4>
+          <p>Click the <b>💾 Save</b> button in the header. The app shows "Saved ✅" and the date/time of the last save.</p>
+          <div class="step-tip">💡 The app automatically creates a safety backup every day. You can access up to 20 days of history in <b>📦 Backups</b>.</div>
+          <div class="step-tip" style="margin-top:8px;background:#E6FAF5;border-left-color:#00C896">🎯 <b>Tip:</b> install the app on your phone or tablet! On Chrome/Edge, click the install icon in the address bar. It will work even without internet. <a href="#demarrage" style="color:#5B6AF0">→ Learn more</a></div>
         </div>
       </div>
 
     </div>
 
-    <!-- Démarrage -->
+    <!-- Getting Started -->
     <div class="section" id="demarrage">
-      <h2><span>🚀</span> Démarrage</h2>
-      <p class="lead">Mon Budget est une application web progressive (PWA). Elle fonctionne hors ligne et peut être installée sur votre appareil comme une vraie application.</p>
+      <h2><span>🚀</span> Getting Started</h2>
+      <p class="lead">Mon Budget is a Progressive Web App (PWA). It works offline and can be installed on your device just like a native app.</p>
 
-      <h3>Première ouverture</h3>
-      <p>Lors de la première ouverture, vous avez le choix entre :</p>
+      <h3>First launch</h3>
+      <p>On first launch, you can choose between:</p>
       <div class="feature-grid">
         <div class="feature-card">
           <div class="fc-icon">🎮</div>
-          <div class="fc-title">Mode Démo</div>
-          <div class="fc-desc">Explorez avec des données fictives sans rien configurer. Idéal pour découvrir.</div>
+          <div class="fc-title">Demo Mode</div>
+          <div class="fc-desc">Explore with fictional data without any setup. Perfect for getting started.</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">➕</div>
-          <div class="fc-title">Créer un compte</div>
-          <div class="fc-desc">Configurez votre profil, vos revenus et charges habituelles en 6 étapes.</div>
+          <div class="fc-title">Create an account</div>
+          <div class="fc-desc">Set up your profile, revenues and regular expenses in 6 steps.</div>
         </div>
       </div>
 
-      <h3>Création de compte (assistant en 6 étapes)</h3>
+      <h3>Account creation (6-step wizard)</h3>
       <ol>
-        <li><b>Profil</b> — Votre prénom et couleur d'avatar</li>
-        <li><b>Revenus</b> — Vos revenus mensuels habituels (salaires, allocations…)</li>
-        <li><b>Charges</b> — Vos charges fixes récurrentes (loyer, énergie, abonnements…)</li>
-        <li><b>Budgets</b> — Budget mensuel suggéré pour chaque catégorie de dépenses (converti automatiquement en annuel)</li>
-        <li><b>PIN</b> — Code de sécurité facultatif pour protéger vos données</li>
-        <li><b>Cloud</b> — Connexion Google optionnelle pour la sync Premium</li>
+        <li><b>Profile</b> — Your name and avatar colour</li>
+        <li><b>Revenues</b> — Your usual monthly revenues (salary, benefits…)</li>
+        <li><b>Fixed costs</b> — Your recurring fixed costs (rent, energy, subscriptions…)</li>
+        <li><b>Budgets</b> — Suggested monthly budget for each expense category (automatically converted to annual)</li>
+        <li><b>PIN</b> — Optional security code to protect your data</li>
+        <li><b>Cloud</b> — Optional Google sign-in for Premium sync</li>
       </ol>
       <div class="tip">
-        <b>💡 Budgets suggérés</b> — À l'étape Budgets, l'assistant pré-remplit des montants courants (ex : courses 300 €/mois). Modifiez-les selon votre situation, ou laissez 0 pour ne pas définir de budget. Les montants sont automatiquement annualisés (×12).
+        <b>💡 Suggested budgets</b> — At the Budgets step, the wizard pre-fills common amounts (e.g. groceries €300/month). Adjust them to your situation, or leave 0 to skip. Amounts are automatically annualised (×12).
       </div>
 
-      <h3>Installation sur mobile / bureau</h3>
-      <p>Sur mobile (Chrome/Safari), appuyez sur <b>« Ajouter à l'écran d'accueil »</b>. Sur PC (Chrome/Edge), cliquez sur l'icône d'installation dans la barre d'adresse. L'app fonctionne ensuite hors ligne.</p>
+      <h3>Install on mobile / desktop</h3>
+      <p>On mobile (Chrome/Safari), tap <b>"Add to Home Screen"</b>. On PC (Chrome/Edge), click the install icon in the address bar. The app then works offline.</p>
     </div>
 
     <!-- ══════════════════════════════════════════ -->
     <!-- PREMIUM SECTION                           -->
     <!-- ══════════════════════════════════════════ -->
     <div class="section section-premium" id="premium">
-      <h2><span>⭐</span> Version Gratuite vs Premium</h2>
-      <p class="lead">Mon Budget est disponible en version gratuite avec des fonctionnalités essentielles, ou en version Premium pour un usage complet et sans limites.</p>
+      <h2><span>⭐</span> Free vs Premium</h2>
+      <p class="lead">Mon Budget is available in a free version with essential features, or as Premium for full, unlimited use.</p>
 
       <div class="compare-grid">
 
         <!-- FREE -->
         <div class="compare-col free">
-          <div class="compare-col-title">🔓 Version Gratuite</div>
-          <div class="compare-col-price">Gratuit — pour toujours</div>
+          <div class="compare-col-title">🔓 Free Version</div>
+          <div class="compare-col-price">Free — forever</div>
 
           <div class="compare-row">
             <div class="cr-icon">👤</div>
             <div class="cr-text">
-              <b>1 seul utilisateur</b>
-              <span>Un seul profil par installation</span>
+              <b>1 user only</b>
+              <span>One profile per installation</span>
             </div>
           </div>
           <div class="compare-row">
             <div class="cr-icon">📅</div>
             <div class="cr-text">
-              <b>1 année d'historique</b>
-              <span>Impossible d'ajouter une 2ᵉ année</span>
+              <b>1 year of history</b>
+              <span>Cannot add a 2nd year</span>
             </div>
           </div>
           <div class="compare-row">
             <div class="cr-icon">🛒</div>
             <div class="cr-text">
-              <b>3 catégories de dépenses max</b>
-              <span>Courses, carburant, divers</span>
+              <b>Max 3 expense categories</b>
+              <span>Groceries, fuel, miscellaneous</span>
             </div>
           </div>
           <div class="compare-row compare-lock">
             <div class="cr-icon">🏦</div>
             <div class="cr-text">
-              <b>1 seul compte bancaire</b>
-              <span>Pas de gestion multi-comptes</span>
+              <b>1 bank account only</b>
+              <span>No multi-account management</span>
             </div>
           </div>
           <div class="compare-row compare-lock">
             <div class="cr-icon">📈</div>
             <div class="cr-text">
-              <b>1 seul livret d'épargne</b>
-              <span>Pas de gestion multi-livrets</span>
+              <b>1 savings account only</b>
+              <span>No multi-savings management</span>
             </div>
           </div>
           <div class="compare-row compare-lock">
             <div class="cr-icon">☁️</div>
             <div class="cr-text">
-              <b>Pas de sync cloud</b>
-              <span>Données uniquement en local</span>
+              <b>No cloud sync</b>
+              <span>Data stored locally only</span>
             </div>
           </div>
           <div class="compare-row compare-lock">
             <div class="cr-icon">📱</div>
             <div class="cr-text">
-              <b>Pas de multi-appareils</b>
-              <span>Impossible d'accéder depuis un autre appareil</span>
+              <b>No multi-device</b>
+              <span>Cannot access from another device</span>
             </div>
           </div>
         </div>
 
         <!-- PREMIUM -->
         <div class="compare-col premium">
-          <div class="compare-col-badge">⭐ RECOMMANDÉ</div>
-          <div class="compare-col-title">✨ Version Premium</div>
-          <div class="compare-col-price">2,99 €/mois &nbsp;·&nbsp; 24,99 €/an — paiement sécurisé Stripe</div>
+          <div class="compare-col-badge">⭐ RECOMMENDED</div>
+          <div class="compare-col-title">✨ Premium Version</div>
+          <div class="compare-col-price">€2.99/month &nbsp;·&nbsp; €24.99/year — secure Stripe payment</div>
 
           <div class="compare-row">
             <div class="cr-icon">✅</div>
             <div class="cr-text">
-              <b>Utilisateurs illimités</b>
-              <span>Famille, couple, colocation…</span>
+              <b>Unlimited users</b>
+              <span>Family, couple, flatmates…</span>
             </div>
           </div>
           <div class="compare-row">
             <div class="cr-icon">✅</div>
             <div class="cr-text">
-              <b>Historique multi-années illimité</b>
-              <span>Conservez toutes vos années sans restriction</span>
+              <b>Unlimited multi-year history</b>
+              <span>Keep all your years without restriction</span>
             </div>
           </div>
           <div class="compare-row">
             <div class="cr-icon">✅</div>
             <div class="cr-text">
-              <b>Catégories illimitées</b>
-              <span>Créez autant de catégories que vous voulez</span>
+              <b>Unlimited categories</b>
+              <span>Create as many categories as you want</span>
             </div>
           </div>
           <div class="compare-row">
             <div class="cr-icon">✅</div>
             <div class="cr-text">
-              <b>Multi-comptes bancaires + livrets</b>
-              <span>Gérez Compte A, Compte B, Livret B… chacun avec sa carte et ses lignes dédiées</span>
+              <b>Multiple bank accounts + savings accounts</b>
+              <span>Manage Account A, Account B, Savings B… each with its own card and dedicated rows</span>
             </div>
           </div>
           <div class="compare-row">
             <div class="cr-icon">✅</div>
             <div class="cr-text">
-              <b>Synchronisation cloud Firebase</b>
-              <span>Données sauvegardées et accessibles partout</span>
+              <b>Firebase cloud sync</b>
+              <span>Data backed up and accessible everywhere</span>
             </div>
           </div>
           <div class="compare-row">
             <div class="cr-icon">✅</div>
             <div class="cr-text">
-              <b>Multi-appareils</b>
-              <span>PC, téléphone, tablette — toujours à jour</span>
+              <b>Multi-device</b>
+              <span>PC, phone, tablet — always up to date</span>
             </div>
           </div>
         </div>
@@ -528,760 +528,760 @@ a:hover{text-decoration:underline}
 
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">
         <a class="buy-btn" href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank" style="flex:1;min-width:200px">
-          💳 Mensuel — 2,99 € / mois
+          💳 Monthly — €2.99 / month
         </a>
         <a class="buy-btn" href="https://buy.stripe.com/4gMfZhb3G6hZflx2c9g7e00" target="_blank" style="flex:1;min-width:200px;background:linear-gradient(135deg,#5B6AF0,#3b4cd0);box-shadow:0 6px 20px rgba(91,106,240,.4)">
-          💳 Annuel — 24,99 € / an <span style="font-size:11px;opacity:.8">(économisez 30%)</span>
+          💳 Annual — €24.99 / year <span style="font-size:11px;opacity:.8">(save 30%)</span>
         </a>
       </div>
 
-      <h3>Activation automatique après paiement</h3>
+      <h3>Automatic activation after payment</h3>
       <div class="activate-box">
-        <p>L'activation est <b>entièrement automatique</b>. Aucune clé à saisir, aucun email à attendre.</p>
+        <p>Activation is <b>entirely automatic</b>. No key to enter, no email to wait for.</p>
         <ol class="activate-steps">
-          <li>Cliquez sur un bouton Premium dans l'app (⚙️ Paramètres ou l'overlay Premium)</li>
-          <li>Vous êtes redirigé vers la page de paiement sécurisée <b>Stripe</b></li>
-          <li>Renseignez votre carte bancaire et validez le paiement</li>
-          <li>Retournez dans l'app — le statut passe automatiquement à <b>✨ Premium actif</b></li>
+          <li>Click a Premium button in the app (⚙️ Settings or the Premium overlay)</li>
+          <li>You are redirected to the secure <b>Stripe</b> payment page</li>
+          <li>Enter your card details and confirm payment</li>
+          <li>Return to the app — the status automatically switches to <b>✨ Premium active</b></li>
         </ol>
       </div>
 
-      <h3>Ce que vous voyez selon votre version</h3>
-      <p style="color:rgba(255,255,255,.7)">Les fonctionnalités verrouillées en version gratuite affichent une fenêtre « Passez à Premium » quand vous tentez de les utiliser. Vous n'êtes jamais bloqué — vous savez toujours ce qui est disponible.</p>
+      <h3>What you see depending on your version</h3>
+      <p style="color:rgba(255,255,255,.7)">Features locked in the free version show an "Upgrade to Premium" window when you try to use them. You are never blocked — you always know what is available.</p>
     </div>
 
-    <!-- Mode démo -->
+    <!-- Demo mode -->
     <div class="section" id="demo">
-      <h2><span>🎮</span> Mode Démo</h2>
-      <p class="lead">Le mode démo charge des données fictives pour vous permettre d'explorer toutes les fonctionnalités sans risque.</p>
+      <h2><span>🎮</span> Demo Mode</h2>
+      <p class="lead">Demo mode loads fictional data so you can explore all features without any risk.</p>
 
-      <h3>Activer le mode démo</h3>
-      <p>Au premier lancement, cliquez sur la carte <b>Mode Démo</b>. L'application se charge avec des données d'exemple (Jean &amp; Marie, 2025–2026).</p>
+      <h3>Activate demo mode</h3>
+      <p>On first launch, click the <b>Demo Mode</b> card. The app loads with sample data (Jean &amp; Marie, 2025–2026).</p>
 
       <div class="demo-tip">
-        <b>Bannière orange</b> — Quand le mode démo est actif, une bannière jaune/orange s'affiche en haut de l'écran pour vous rappeler que les données sont fictives.
+        <b>Orange banner</b> — When demo mode is active, a yellow/orange banner is displayed at the top of the screen to remind you that the data is fictional.
       </div>
 
-      <h3>Quitter le mode démo</h3>
-      <p>Cliquez sur <b>✕ Quitter le mode démo</b> dans la bannière. Confirmez la suppression : toutes les données fictives sont effacées et vous revenez à l'écran de démarrage pour créer votre vrai compte.</p>
+      <h3>Exit demo mode</h3>
+      <p>Click <b>✕ Exit demo mode</b> in the banner. Confirm the deletion: all fictional data is erased and you return to the start screen to create your real account.</p>
 
       <div class="warn">
-        <b>⚠️ Attention</b> — Quitter le mode démo supprime définitivement les données fictives. Vos vraies données (si vous en avez) ne sont pas affectées.
+        <b>⚠️ Warning</b> — Exiting demo mode permanently deletes the fictional data. Your real data (if any) is not affected.
       </div>
     </div>
 
     <!-- Interface -->
     <div class="section" id="interface">
-      <h2><span>🖥️</span> Interface générale</h2>
-      <p class="lead">L'application est organisée par années (onglets) et par mois (colonnes dans chaque tableau).</p>
+      <h2><span>🖥️</span> General interface</h2>
+      <p class="lead">The app is organised by years (tabs) and by months (columns in each table).</p>
 
       <div class="screenshot">
         <div class="screenshot-icon">📸</div>
-        Capture d'écran de l'interface principale
+        Screenshot of the main interface
       </div>
 
-      <h3>En-tête (header)</h3>
+      <h3>Header</h3>
       <ul>
-        <li><b>💾 Sauvegarder</b> — Enregistre toutes les modifications dans le navigateur</li>
-        <li><b>📥 Export CSV</b> — Exporte les données du mois actuel en CSV</li>
-        <li><b>🖨️ PDF</b> — Génère un rapport PDF structuré : KPIs annuels, tableau mensuel complet et répartition des dépenses par catégorie pour chaque année</li>
-        <li><b>📂 Import CSV</b> — Importe des transactions depuis un relevé bancaire CSV (détection automatique des colonnes, choix de catégorie, méthode de paiement, total sélectionné et <b>détection automatique des doublons</b> ⚠️)</li>
-        <li><b>📦 Backups</b> — Affiche la liste des sauvegardes automatiques (une par jour, 20 max)</li>
-        <li><b>🔐 Connexion</b> — Connexion avec Google pour la synchronisation cloud Premium</li>
-        <li><b>❓ Aide</b> — Relance le tour guidé ou ouvre ce guide</li>
-        <li><b>🌙 / ☀️</b> — Bascule entre mode jour et mode nuit</li>
+        <li><b>💾 Save</b> — Saves all changes in the browser</li>
+        <li><b>📥 Export CSV</b> — Exports the current month's data as CSV</li>
+        <li><b>🖨️ PDF</b> — Generates a structured PDF report: annual KPIs, full monthly table and expense breakdown by category for each year</li>
+        <li><b>📂 Import CSV</b> — Imports transactions from a bank statement CSV (automatic column detection, category choice, payment method, selected total and <b>automatic duplicate detection</b> ⚠️)</li>
+        <li><b>📦 Backups</b> — Shows the list of automatic backups (one per day, 20 max)</li>
+        <li><b>🔐 Login</b> — Sign in with Google for Premium cloud sync</li>
+        <li><b>❓ Help</b> — Restart the guided tour or open this guide</li>
+        <li><b>🌙 / ☀️</b> — Switch between light and dark mode</li>
       </ul>
 
-      <h3>Boutons flottants (bas à droite)</h3>
+      <h3>Floating buttons (bottom right)</h3>
       <ul>
-        <li><b>➕ Vert</b> — <a href="#ajout-rapide">Ajout rapide</a> d'une dépense variable</li>
-        <li><b>🤖 Violet</b> — <a href="#assistant-ia">Assistant IA</a> Gemini (chat)</li>
+        <li><b>➕ Green</b> — <a href="#ajout-rapide">Quick add</a> a variable expense</li>
+        <li><b>🤖 Purple</b> — <a href="#assistant-ia">AI Assistant</a> (chat)</li>
       </ul>
 
-      <h3>Onglets d'années</h3>
-      <p>Chaque onglet représente une année. Cliquez sur <b>＋ Année</b> pour créer une nouvelle année.<span class="limit-badge">1 an max en gratuit</span> <span class="pro-badge">Illimité en Premium</span></p>
+      <h3>Year tabs</h3>
+      <p>Each tab represents a year. Click <b>＋ Year</b> to create a new year.<span class="limit-badge">1 year max in free</span> <span class="pro-badge">Unlimited in Premium</span></p>
 
-      <h3>Colonnes de mois</h3>
-      <p>Chaque tableau a 12 colonnes (Jan–Déc). Saisissez directement les montants dans les cellules. Appuyez sur <b>Entrée</b> ou <b>Tab</b> pour passer à la cellule suivante.</p>
+      <h3>Month columns</h3>
+      <p>Each table has 12 columns (Jan–Dec). Enter amounts directly in the cells. Press <b>Enter</b> or <b>Tab</b> to move to the next cell.</p>
 
     </div>
 
-    <!-- Tableau de bord mensuel -->
+    <!-- Monthly Dashboard -->
     <div class="section" id="accueil">
-      <h2><span>🏠</span> Tableau de bord mensuel</h2>
-      <p class="lead">L'onglet <b>Accueil</b> est votre vue synthèse du mois : d'un coup d'œil, vous voyez où vous en êtes financièrement sans avoir à parcourir les tableaux détaillés.</p>
+      <h2><span>🏠</span> Monthly Dashboard</h2>
+      <p class="lead">The <b>Home</b> tab is your monthly overview: at a glance you can see where you stand financially without browsing the detailed tables.</p>
 
-      <h3>Navigation entre les mois</h3>
-      <p>Utilisez les boutons <b>←</b> et <b>→</b> pour naviguer d'un mois à l'autre. Le changement d'année s'effectue automatiquement (janvier → décembre de l'année précédente et inversement). Utilisez le sélecteur d'année pour sauter directement à une année.</p>
+      <h3>Navigating between months</h3>
+      <p>Use the <b>←</b> and <b>→</b> buttons to move from one month to another. Year changes happen automatically (January → December of the previous year and vice versa). Use the year selector to jump directly to a year.</p>
 
-      <h3>📅 Vue mensuelle / 📊 Vue annuelle</h3>
-      <p>Un toggle en haut à droite permet de basculer entre la <b>vue mensuelle</b> (détail d'un mois) et la <b>vue annuelle</b> qui affiche les totaux de l'année, le taux d'épargne, l'épargne moyenne mensuelle, le meilleur et pire mois, et un graphique en barres des soldes mois par mois.</p>
+      <h3>📅 Monthly view / 📊 Annual view</h3>
+      <p>A toggle at the top right lets you switch between the <b>monthly view</b> (detail of one month) and the <b>annual view</b> which shows yearly totals, savings rate, average monthly savings, best and worst month, and a bar chart of balances month by month.</p>
 
-      <h3>4 indicateurs clés (KPIs)</h3>
-      <p>Chaque carte affiche la valeur du mois sélectionné et une <b>sparkline SVG</b> — une mini-courbe représentant la tendance sur les 12 mois de l'année. D'un coup d'œil, vous voyez si un indicateur monte ou descend.</p>
+      <h3>4 key indicators (KPIs)</h3>
+      <p>Each card shows the selected month's value and an <b>SVG sparkline</b> — a mini chart representing the trend over the 12 months of the year. At a glance, you can see whether an indicator is rising or falling.</p>
 
-      <h3>🍩 Graphique donut</h3>
-      <p>Lorsqu'il y a au moins 2 catégories de dépenses variables actives dans le mois, un <b>graphique donut</b> SVG apparaît sous les KPIs. Il montre la répartition des dépenses par catégorie avec le montant et le pourcentage.</p>
+      <h3>🍩 Donut chart</h3>
+      <p>When there are at least 2 active variable expense categories in the month, an SVG <b>donut chart</b> appears below the KPIs. It shows the expense breakdown by category with the amount and percentage.</p>
       <div class="feature-grid">
         <div class="feature-card" style="border-top:3px solid #27ae60">
           <div class="fc-icon">💹</div>
-          <div class="fc-title">Revenus</div>
-          <div class="fc-desc">Total des revenus perçus ce mois.</div>
+          <div class="fc-title">Revenues</div>
+          <div class="fc-desc">Total income received this month.</div>
         </div>
         <div class="feature-card" style="border-top:3px solid #5B6AF0">
           <div class="fc-icon">🏠</div>
-          <div class="fc-title">Charges</div>
-          <div class="fc-desc">Charges récurrentes + versements livret d'épargne de ce mois.</div>
+          <div class="fc-title">Fixed costs</div>
+          <div class="fc-desc">Recurring costs + savings transfers for this month.</div>
         </div>
         <div class="feature-card" style="border-top:3px solid #e67e22">
           <div class="fc-icon">🛒</div>
-          <div class="fc-title">Variables</div>
-          <div class="fc-desc">Total des dépenses variables (courses, loisirs…) du mois.</div>
+          <div class="fc-title">Variable</div>
+          <div class="fc-desc">Total variable expenses (groceries, leisure…) for the month.</div>
         </div>
         <div class="feature-card" style="border-top:3px solid #8B5CF6">
           <div class="fc-icon">💰</div>
-          <div class="fc-title">Solde</div>
-          <div class="fc-desc">Revenus − Charges − Variables. En vert si positif, en rouge si négatif.</div>
+          <div class="fc-title">Balance</div>
+          <div class="fc-desc">Revenues − Fixed costs − Variable. Green if positive, red if negative.</div>
         </div>
       </div>
 
-      <h3>🔄 Comparaison vs année précédente</h3>
-      <p>Si vous avez des données pour l'année précédente, un tableau comparatif s'affiche automatiquement pour le même mois. Il indique pour chaque indicateur le delta (+ ou −) avec une couleur verte (amélioration) ou rouge (régression).</p>
+      <h3>🔄 Comparison vs previous year</h3>
+      <p>If you have data for the previous year, a comparison table is displayed automatically for the same month. It shows the delta (+ or −) for each indicator with green (improvement) or red (regression) colouring.</p>
 
-      <h3>⚠️ Alertes budgets dépassés</h3>
-      <p>Si une catégorie de dépenses variables dépasse son budget mensuel (défini dans la gestion des catégories), une alerte rouge apparaît dans le tableau de bord avec le montant dépensé vs le budget.</p>
+      <h3>⚠️ Budget exceeded alerts</h3>
+      <p>If a variable expense category exceeds its monthly budget (defined in category management), a red alert appears in the dashboard with the amount spent vs the budget.</p>
 
-      <h3>🛒 Dernières dépenses</h3>
-      <p>La liste des dépenses variables du mois est affichée, triées par montant décroissant (jusqu'à 8 entrées + compteur des autres).</p>
+      <h3>🛒 Latest expenses</h3>
+      <p>The list of variable expenses for the month is displayed, sorted by descending amount (up to 8 entries + a counter for the rest).</p>
 
-      <h3>📅 Bouton "Aller à l'année en cours"</h3>
-      <p>Un bouton rapide permet de naviguer directement vers l'onglet de l'année actuelle (ex: 2026) depuis le tableau de bord.</p>
+      <h3>📅 "Go to current year" button</h3>
+      <p>A quick button lets you navigate directly to the current year's tab (e.g. 2026) from the dashboard.</p>
 
-      <h3>🏠 Détail des charges du mois</h3>
-      <p>En dessous des KPIs et de la comparaison, une section liste toutes les charges du mois en cours (loyer, abonnements, versements livret…) avec leur montant et leur statut payé ✓.</p>
+      <h3>🏠 Monthly fixed costs detail</h3>
+      <p>Below the KPIs and comparison, a section lists all costs for the current month (rent, subscriptions, savings transfers…) with their amount and paid status ✓.</p>
 
-      <h3>📱 Navigation par swipe (mobile)</h3>
-      <p>Sur mobile, un <b>glissement vers la gauche</b> passe au mois suivant, un <b>glissement vers la droite</b> revient au mois précédent — sans avoir à toucher les boutons ← →.</p>
+      <h3>📱 Swipe navigation (mobile)</h3>
+      <p>On mobile, <b>swiping left</b> goes to the next month, <b>swiping right</b> goes back to the previous month — without needing to tap the ← → buttons.</p>
 
-      <h3>📝 Note du mois</h3>
-      <p>En bas de l'Accueil, un champ texte libre permet d'ajouter une <b>note mensuelle</b> (ex : "mois chargé, vacances", "bonus reçu"). La note est sauvegardée automatiquement et apparaît dans le <b>rapport PDF</b> dans une section dédiée.</p>
+      <h3>📝 Monthly note</h3>
+      <p>At the bottom of Home, a free text field lets you add a <b>monthly note</b> (e.g. "busy month, holidays", "bonus received"). The note is saved automatically and appears in the <b>PDF report</b> in a dedicated section.</p>
 
       <div class="tip">
-        <b>💡 Astuce</b> — Commencez votre session par l'onglet Accueil pour voir rapidement où vous en êtes. Si le solde est rouge, consultez les catégories dépassées pour identifier les postes à réduire.
+        <b>💡 Tip</b> — Start your session on the Home tab to quickly see where you stand. If the balance is red, check the exceeded categories to identify areas to reduce.
       </div>
     </div>
 
-    <!-- Recherche globale -->
+    <!-- Global search -->
     <div class="section" id="recherche">
-      <h2><span>🔍</span> Recherche globale</h2>
-      <p class="lead">Retrouvez instantanément n'importe quelle ligne de revenu, charge ou dépense variable dans toutes vos années, sans naviguer dans les tableaux.</p>
+      <h2><span>🔍</span> Global search</h2>
+      <p class="lead">Instantly find any revenue, fixed cost or variable expense row across all your years, without browsing the tables.</p>
 
-      <h3>Ouvrir la recherche</h3>
-      <p>Cliquez sur l'onglet <b>🔍</b> dans la barre de navigation (tout à droite). La recherche peut aussi être fermée avec la touche <b>Échap</b>.</p>
+      <h3>Open search</h3>
+      <p>Click the <b>🔍</b> tab in the navigation bar (far right). Search can also be closed with the <b>Escape</b> key.</p>
 
-      <h3>Ce qui est indexé</h3>
+      <h3>What is indexed</h3>
       <ul style="margin:8px 0 12px 20px;line-height:2">
-        <li><b>Libellés des revenus</b> — ex : "Salaire", "Prime"</li>
-        <li><b>Libellés des charges</b> — ex : "Loyer", "Assurance"</li>
-        <li><b>Dépenses variables</b> — libellé, catégorie et commentaire de chaque transaction</li>
+        <li><b>Revenue labels</b> — e.g. "Salary", "Bonus"</li>
+        <li><b>Fixed cost labels</b> — e.g. "Rent", "Insurance"</li>
+        <li><b>Variable expenses</b> — label, category and comment of each transaction</li>
       </ul>
 
-      <h3>Résultats</h3>
-      <p>Les résultats sont groupés par année avec le type et le montant. Cliquer sur un résultat <b>navigue directement</b> vers la section correspondante et ferme la recherche.</p>
+      <h3>Results</h3>
+      <p>Results are grouped by year with the type and amount. Clicking a result <b>navigates directly</b> to the corresponding section and closes search.</p>
     </div>
 
-    <!-- Objectif d'épargne -->
+    <!-- Savings goal -->
     <div class="section" id="objectif-epargne">
-      <h2><span>🎯</span> Objectif d'épargne mensuel</h2>
-      <p class="lead">Définissez un objectif d'épargne mensuel en euros. Une barre de progression s'affiche dans l'onglet Accueil pour suivre votre avancement.</p>
+      <h2><span>🎯</span> Monthly savings goal</h2>
+      <p class="lead">Set a monthly savings goal in euros. A progress bar is displayed in the Home tab to track your progress.</p>
 
-      <h3>Configurer l'objectif</h3>
+      <h3>Configure the goal</h3>
       <ol style="margin:8px 0 12px 20px;line-height:2">
-        <li>Ouvrez l'onglet <b>⚙️ Config</b></li>
-        <li>Descendez jusqu'à la section <b>🎯 Objectif d'épargne mensuel</b></li>
-        <li>Saisissez le montant cible (ex : 500 €/mois)</li>
-        <li>Cliquez sur <b>✅</b> pour enregistrer</li>
+        <li>Open the <b>⚙️ Settings</b> tab</li>
+        <li>Scroll down to the <b>🎯 Monthly savings goal</b> section</li>
+        <li>Enter the target amount (e.g. €500/month)</li>
+        <li>Click <b>✅</b> to save</li>
       </ol>
 
-      <h3>Barre de progression</h3>
-      <p>Dans l'onglet <b>🏠 Accueil</b>, la barre indique le pourcentage d'objectif atteint pour le mois affiché :</p>
+      <h3>Progress bar</h3>
+      <p>In the <b>🏠 Home</b> tab, the bar shows the percentage of the goal reached for the displayed month:</p>
       <ul>
-        <li><b>Vert</b> — Objectif atteint ou dépassé 🎉</li>
-        <li><b>Bleu</b> — En bonne voie (solde positif mais sous l'objectif)</li>
-        <li><b>Rouge</b> — Solde négatif, objectif non atteignable ce mois</li>
+        <li><b>Green</b> — Goal reached or exceeded 🎉</li>
+        <li><b>Blue</b> — On track (positive balance but below the goal)</li>
+        <li><b>Red</b> — Negative balance, goal not achievable this month</li>
       </ul>
 
       <div class="tip">
-        <b>💡 Conseil</b> — Un bon objectif d'épargne représente 10–20% de vos revenus mensuels nets. Commencez modestement et augmentez progressivement.
+        <b>💡 Tip</b> — A good savings goal is 10–20% of your net monthly income. Start modestly and increase gradually.
       </div>
     </div>
 
-    <!-- Revenus -->
+    <!-- Revenues -->
     <div class="section" id="revenus">
-      <h2><span>💼</span> Revenus</h2>
-      <p class="lead">Saisissez vos revenus mensuels (salaires, allocations, primes…) dans la section verte.</p>
+      <h2><span>💼</span> Revenues</h2>
+      <p class="lead">Enter your monthly revenues (salary, benefits, bonuses…) in the green section.</p>
 
-      <h3>Ajouter un revenu</h3>
-      <p>Cliquez sur <b>＋ Ajouter un revenu</b> en bas de la section. Saisissez le libellé et les montants mois par mois.</p>
+      <h3>Add a revenue</h3>
+      <p>Click <b>＋ Add a revenue</b> at the bottom of the section. Enter the label and amounts month by month.</p>
 
-      <h3>Cocher « En calcul »</h3>
-      <p>La colonne <b>∑</b> (en calcul) détermine si ce revenu est pris en compte dans le résumé mensuel. Décochez pour exclure temporairement un revenu sans le supprimer.</p>
+      <h3>Toggle "Included in calculation"</h3>
+      <p>The <b>∑</b> column (included in calculation) determines whether this revenue is counted in the monthly summary. Uncheck to temporarily exclude a revenue without deleting it.</p>
 
-      <h3>Supprimer une ligne</h3>
-      <p>Passez la souris sur le libellé d'une ligne pour faire apparaître le bouton <b>✕</b> rouge. Cliquez dessus pour supprimer (une confirmation est demandée).</p>
+      <h3>Delete a row</h3>
+      <p>Hover over the label of a row to reveal the red <b>✕</b> button. Click it to delete (confirmation is requested).</p>
 
       <div class="tip">
-        <b>Astuce</b> — Pour les revenus identiques chaque mois, saisissez la valeur dans janvier, puis faites un clic droit sur la cellule pour la dupliquer sur tous les mois.
+        <b>Tip</b> — For revenues that are the same every month, enter the value in January then right-click the cell to duplicate it across all months.
       </div>
     </div>
 
-    <!-- Charges -->
+    <!-- Fixed Costs -->
     <div class="section" id="charges">
-      <h2><span>🏠</span> Charges fixes</h2>
-      <p class="lead">Les charges sont les dépenses récurrentes : loyer, énergie, abonnements, assurances…</p>
+      <h2><span>🏠</span> Fixed Costs</h2>
+      <p class="lead">Fixed costs are recurring expenses: rent, energy, subscriptions, insurance…</p>
 
-      <h3>Statut « Payé »</h3>
-      <p>Chaque cellule de charge a un indicateur de paiement. Cliquez sur la cellule pour basculer entre <b>payé</b> (vert) et <b>non payé</b> (gris). Seules les charges marquées payées sont incluses dans le calcul du solde réel.</p>
+      <h3>"Paid" status</h3>
+      <p>Each cost cell has a payment indicator. Click the cell to toggle between <b>paid</b> (green) and <b>unpaid</b> (grey). Only costs marked as paid are included in the real balance calculation.</p>
 
-      <h3>Types de charges</h3>
+      <h3>Cost types</h3>
       <ul>
-        <li><b>Fixe</b> — Montant identique chaque mois</li>
-        <li><b>Occasionnelle</b> — Montant variable selon le mois</li>
-        <li><b>Livret ↑</b> — Virement vers le livret d'épargne</li>
-        <li><b>Livret ↓</b> — Retrait du livret vers le compte courant</li>
+        <li><b>Fixed</b> — Same amount every month</li>
+        <li><b>Occasional</b> — Variable amount depending on the month</li>
+        <li><b>Savings ↑</b> — Transfer to the savings account</li>
+        <li><b>Savings ↓</b> — Withdrawal from savings to checking account</li>
       </ul>
 
-      <h3>Reste à payer</h3>
-      <p>En bas de chaque tableau de résumé, une ligne <b>« Reste à payer »</b> affiche le total des charges non encore payées pour le mois.</p>
+      <h3>Remaining to pay</h3>
+      <p>At the bottom of each summary table, a <b>"Remaining to pay"</b> row shows the total of costs not yet paid for the month.</p>
     </div>
 
-    <!-- Dépenses variables -->
+    <!-- Variable Expenses -->
     <div class="section" id="variables">
-      <h2><span>🛒</span> Dépenses variables</h2>
-      <p class="lead">Les dépenses variables (courses, carburant, divers…) sont saisies sous forme de transactions individuelles.</p>
+      <h2><span>🛒</span> Variable Expenses</h2>
+      <p class="lead">Variable expenses (groceries, fuel, miscellaneous…) are entered as individual transactions.</p>
 
-      <h3>Catégories disponibles</h3>
-      <p>En version gratuite, vous disposez de <b>3 catégories</b> (courses, carburant, divers). En version Premium, créez-en autant que vous voulez depuis <b>⚙️ Paramètres → Catégories</b>.<span class="limit-badge">3 max en gratuit</span> <span class="pro-badge">Illimité en Premium</span></p>
+      <h3>Available categories</h3>
+      <p>In the free version you have <b>3 categories</b> (groceries, fuel, miscellaneous). In Premium, create as many as you want from <b>⚙️ Settings → Categories</b>.<span class="limit-badge">3 max in free</span> <span class="pro-badge">Unlimited in Premium</span></p>
 
-      <h3>🔎 Filtrer les catégories</h3>
-      <p>Un champ de recherche en haut de la section "Dépenses variables" permet de <b>filtrer les catégories</b> par nom en temps réel. Utile quand vous avez beaucoup de catégories (Premium).</p>
+      <h3>🔎 Filter categories</h3>
+      <p>A search field at the top of the "Variable Expenses" section lets you <b>filter categories</b> by name in real time. Useful when you have many categories (Premium).</p>
 
-      <h3>Ajouter une dépense</h3>
-      <p>Cliquez sur le bouton <b>＋</b> dans la colonne du bon mois. Une ligne s'ajoute avec le montant, un commentaire optionnel, la date et le mode de paiement.</p>
+      <h3>Add an expense</h3>
+      <p>Click the <b>＋</b> button in the correct month column. A row is added with the amount, an optional comment, the date and the payment method.</p>
 
-      <h3>Modes de paiement</h3>
+      <h3>Payment methods</h3>
       <ul>
-        <li><b>Carte</b> — Paiement par carte bancaire (par défaut)</li>
-        <li><b>Liquide</b> — Paiement en espèces</li>
-        <li><b>Repas</b> — Tickets restaurant / chèques repas</li>
+        <li><b>Card</b> — Bank card payment (default)</li>
+        <li><b>Cash</b> — Cash payment</li>
+        <li><b>Meal voucher</b> — Restaurant tickets / meal vouchers</li>
       </ul>
 
-      <h3>Couleurs des catégories</h3>
+      <h3>Category colours</h3>
       <div class="feature-grid">
         <div class="feature-card" style="border-left:4px solid #5B9BD5">
           <div class="fc-icon">⛽</div>
-          <div class="fc-title">Carburant</div>
-          <div class="fc-desc">Bleu clair</div>
+          <div class="fc-title">Fuel</div>
+          <div class="fc-desc">Light blue</div>
         </div>
         <div class="feature-card" style="border-left:4px solid #3CB371">
           <div class="fc-icon">🛒</div>
-          <div class="fc-title">Courses</div>
-          <div class="fc-desc">Vert</div>
+          <div class="fc-title">Groceries</div>
+          <div class="fc-desc">Green</div>
         </div>
         <div class="feature-card" style="border-left:4px solid #9B59B6">
           <div class="fc-icon">📦</div>
-          <div class="fc-title">Divers</div>
-          <div class="fc-desc">Violet</div>
+          <div class="fc-title">Miscellaneous</div>
+          <div class="fc-desc">Purple</div>
         </div>
         <div class="feature-card" style="border-left:4px solid #F0A500">
           <div class="fc-icon">🐕</div>
-          <div class="fc-title">Chien / Animaux</div>
-          <div class="fc-desc">Jaune/Ambre</div>
+          <div class="fc-title">Pet / Animals</div>
+          <div class="fc-desc">Yellow/Amber</div>
         </div>
       </div>
 
       <div class="tip">
-        <b>Ajout rapide</b> — Utilisez le bouton <b>⚡ Ajout rapide</b> pour saisir plusieurs dépenses d'un coup depuis n'importe quelle vue.
+        <b>Quick add</b> — Use the <b>⚡ Quick add</b> button to enter multiple expenses at once from any view.
       </div>
     </div>
 
-    <!-- Budgets par catégorie -->
+    <!-- Category Budgets -->
     <div class="section" id="budget-cible">
-      <h2><span>🎯</span> Budgets par catégorie</h2>
-      <p class="lead">Définissez un budget annuel pour chaque catégorie de dépenses variables et suivez vos progrès en temps réel.</p>
+      <h2><span>🎯</span> Category budgets</h2>
+      <p class="lead">Set an annual budget for each variable expense category and track your progress in real time.</p>
 
-      <h3>Comment ça fonctionne</h3>
-      <p>Pour chaque catégorie (courses, carburant…), vous pouvez fixer un budget annuel. Une barre de progression s'affiche sous le titre de la catégorie, indiquant combien vous avez dépensé par rapport à l'objectif.</p>
+      <h3>How it works</h3>
+      <p>For each category (groceries, fuel…), you can set an annual budget. A progress bar is displayed below the category title, showing how much you have spent relative to the goal.</p>
 
       <div class="feature-grid">
         <div class="feature-card" style="border-left:4px solid #00C896">
           <div class="fc-icon">🟢</div>
-          <div class="fc-title">Sous les 80%</div>
-          <div class="fc-desc">Barre verte — vous êtes dans les clous.</div>
+          <div class="fc-title">Below 80%</div>
+          <div class="fc-desc">Green bar — you are on track.</div>
         </div>
         <div class="feature-card" style="border-left:4px solid #F5A623">
           <div class="fc-icon">🟡</div>
-          <div class="fc-title">Entre 80% et 100%</div>
-          <div class="fc-desc">Barre orange — approchez de la limite, attention !</div>
+          <div class="fc-title">Between 80% and 100%</div>
+          <div class="fc-desc">Orange bar — approaching the limit, be careful!</div>
         </div>
         <div class="feature-card" style="border-left:4px solid #F04F5B">
           <div class="fc-icon">🔴</div>
-          <div class="fc-title">Dépassement</div>
-          <div class="fc-desc">Barre rouge avec ⚠️ — budget dépassé pour l'année.</div>
+          <div class="fc-title">Exceeded</div>
+          <div class="fc-desc">Red bar with ⚠️ — budget exceeded for the year.</div>
         </div>
       </div>
 
-      <h3>Définir un budget</h3>
-      <p>Trois façons de définir un budget :</p>
+      <h3>Set a budget</h3>
+      <p>Three ways to set a budget:</p>
       <ol>
-        <li><b>À la création du compte</b> — L'assistant wizard propose des montants suggérés (ex : courses 300 €/mois) à l'étape 4. Modifiez-les, puis confirmez. Les montants €/mois sont automatiquement convertis en €/an.</li>
-        <li><b>En ajoutant une catégorie</b> — Dans <b>⚙️ Config → Catégories</b>, saisissez un montant €/mois ou €/an lors de l'ajout d'une nouvelle catégorie.</li>
-        <li><b>Via la Config</b> — Dans <b>⚙️ Config → Catégories</b>, modifiez le champ <b>Budget/an €</b> directement sur la ligne de la catégorie existante.</li>
+        <li><b>At account creation</b> — The setup wizard suggests amounts (e.g. groceries €300/month) at step 4. Adjust them, then confirm. Amounts in €/month are automatically converted to €/year.</li>
+        <li><b>When adding a category</b> — In <b>⚙️ Settings → Categories</b>, enter an amount in €/month or €/year when adding a new category.</li>
+        <li><b>Via Settings</b> — In <b>⚙️ Settings → Categories</b>, edit the <b>Budget/year €</b> field directly on the existing category row.</li>
       </ol>
 
-      <h3>Alerte budget manquant</h3>
-      <p>Quand vous cliquez sur <b>⚡ +</b> ou utilisez l'<b>Ajout rapide</b> pour une catégorie sans budget, une alerte orange s'affiche dans le formulaire avec un lien <b>Définir un budget →</b>. Cliquez dessus pour saisir un montant mensuel immédiatement.</p>
+      <h3>Missing budget alert</h3>
+      <p>When you click <b>⚡ +</b> or use <b>Quick add</b> for a category without a budget, an orange alert appears in the form with a <b>Set a budget →</b> link. Click it to enter a monthly amount immediately.</p>
 
-      <h3>Modifier une catégorie</h3>
-      <p>Dans <b>⚙️ Config → Catégories</b>, vous pouvez désormais modifier directement l'<b>icône</b> et le <b>libellé</b> d'une catégorie existante en cliquant sur les champs correspondants. Inutile de supprimer et recréer.</p>
+      <h3>Edit a category</h3>
+      <p>In <b>⚙️ Settings → Categories</b>, you can now directly edit the <b>icon</b> and <b>label</b> of an existing category by clicking the corresponding fields. No need to delete and recreate.</p>
 
       <div class="tip">
-        <b>💡 Le budget est partagé par toutes les années</b> — Le budget défini pour une catégorie s'applique à toutes les années. La barre de progression affiche la consommation de l'année affichée.
+        <b>💡 The budget is shared across all years</b> — The budget set for a category applies to all years. The progress bar shows the consumption for the displayed year.
       </div>
     </div>
 
-    <!-- Livret -->
+    <!-- Savings Account -->
     <div class="section" id="livret">
-      <h2><span>💰</span> Livret d'épargne</h2>
-      <p class="lead">Le livret d'épargne est géré automatiquement à partir des lignes de charge spéciales.</p>
+      <h2><span>💰</span> Savings account</h2>
+      <p class="lead">The savings account is managed automatically from special cost rows.</p>
 
-      <h3>Lignes dédiées au livret</h3>
+      <h3>Dedicated savings rows</h3>
       <ul>
-        <li><b>📈 Ordre permanent Livret</b> (cat: <code>livret_in</code>) — Virement mensuel automatique depuis le compte courant vers le livret. Augmente le solde livret, diminue le compte courant.</li>
-        <li><b>💰 Compte → Livret</b> (cat: <code>livret_in</code>) — Dépôt manuel. Même effet.</li>
-        <li><b>📉 Retrait Livret → compte</b> (cat: <code>livret_out</code>) — Retrait du livret vers le compte courant. Diminue le livret, augmente le compte courant.</li>
+        <li><b>📈 Standing order — Savings</b> (cat: <code>livret_in</code>) — Automatic monthly transfer from checking to savings. Increases savings balance, decreases checking balance.</li>
+        <li><b>💰 Account → Savings</b> (cat: <code>livret_in</code>) — Manual deposit. Same effect.</li>
+        <li><b>📉 Savings withdrawal → account</b> (cat: <code>livret_out</code>) — Withdrawal from savings to checking. Decreases savings, increases checking.</li>
       </ul>
 
-      <h3>Solde livret initial</h3>
-      <p>Pour la première année, saisissez le solde du livret au 1er janvier dans le champ <b>Livret initial (01/01)</b>.</p>
-      <p>Pour les années suivantes, ce champ est calculé <b>automatiquement</b> à partir du solde de fin de l'année précédente — vous n'avez rien à saisir.</p>
+      <h3>Initial savings balance</h3>
+      <p>For the first year, enter the savings balance on January 1st in the <b>Initial savings (01/01)</b> field.</p>
+      <p>For subsequent years, this field is calculated <b>automatically</b> from the ending balance of the previous year — nothing to enter.</p>
 
-      <h3>Saisie des montants</h3>
-      <p>Saisissez toujours des valeurs <b>positives</b>. L'application gère automatiquement le sens (ajout ou retrait) selon le type de ligne.</p>
+      <h3>Entering amounts</h3>
+      <p>Always enter <b>positive</b> values. The app automatically handles the direction (deposit or withdrawal) based on the row type.</p>
 
       <div class="tip">
-        <b>Statut payé automatique</b> — Dès qu'une valeur non nulle est saisie dans une ligne livret, le statut est automatiquement marqué comme payé.
+        <b>Automatic paid status</b> — As soon as a non-zero value is entered in a savings row, the status is automatically marked as paid.
       </div>
     </div>
 
-    <!-- Résumé -->
+    <!-- Monthly Summary -->
     <div class="section" id="resume">
-      <h2><span>📊</span> Résumé mensuel</h2>
-      <p class="lead">Le tableau de résumé affiche pour chaque mois le bilan complet : revenus, charges, dépenses et soldes.</p>
+      <h2><span>📊</span> Monthly summary</h2>
+      <p class="lead">The summary table shows the full breakdown for each month: revenues, costs, expenses and balances.</p>
 
-      <h3>Lignes du résumé</h3>
+      <h3>Summary rows</h3>
       <ul>
-        <li><b>Revenus</b> — Total des revenus marqués « en calcul »</li>
-        <li><b>Charges payées</b> — Total des charges marquées payées</li>
-        <li><b>Dépenses variables</b> — Total des transactions saisies</li>
-        <li><b>🔴 Reste à payer</b> — Charges non encore payées</li>
-        <li><b>Disponible</b> — Revenus − charges payées − dépenses variables</li>
-        <li><b>SOLDE RÉEL</b> — Solde du compte courant calculé depuis le début de l'année</li>
-        <li><b>Livret</b> — Solde du livret d'épargne à la fin du mois</li>
+        <li><b>Revenues</b> — Total revenues marked as "included in calculation"</li>
+        <li><b>Paid costs</b> — Total costs marked as paid</li>
+        <li><b>Variable expenses</b> — Total of entered transactions</li>
+        <li><b>🔴 Remaining to pay</b> — Costs not yet paid</li>
+        <li><b>Available</b> — Revenues − paid costs − variable expenses</li>
+        <li><b>REAL BALANCE</b> — Checking account balance calculated from the start of the year</li>
+        <li><b>Savings</b> — Savings account balance at the end of the month</li>
       </ul>
 
-      <h3>🏆 Statistiques annuelles</h3>
-      <p>Sous le tableau de résumé, des <b>cartes de statistiques</b> s'affichent pour chaque année : taux d'épargne annuel, épargne moyenne par mois, meilleur et pire mois (par solde), mois le plus dépensier en variables, et la catégorie de dépenses variables la plus coûteuse.</p>
+      <h3>🏆 Annual statistics</h3>
+      <p>Below the summary table, <b>statistics cards</b> are displayed for each year: annual savings rate, average monthly savings, best and worst month (by balance), highest variable spending month, and the most costly variable expense category.</p>
 
-      <h3>Soldes initiaux</h3>
-      <p>En haut de la page (section <b>Soldes de départ</b>), renseignez :</p>
+      <h3>Starting balances</h3>
+      <p>At the top of the page (section <b>Starting balances</b>), enter:</p>
       <ul>
-        <li><b>Compte ING</b> — Solde du compte courant au 1er janvier</li>
-        <li><b>Livret initial</b> — Solde du livret au 1er janvier (auto-calculé pour les années suivantes)</li>
+        <li><b>Account (01/01)</b> — Checking account balance on January 1st</li>
+        <li><b>Initial savings</b> — Savings balance on January 1st (auto-calculated for subsequent years)</li>
       </ul>
     </div>
 
-    <!-- Indicateurs financiers KPI -->
+    <!-- Financial Indicators KPI -->
     <div class="section" id="indicateurs">
-      <h2><span>📈</span> Indicateurs financiers (KPI)</h2>
-      <p class="lead">Quatre indicateurs clés s'affichent automatiquement en haut de chaque année pour évaluer votre santé financière d'un coup d'œil.</p>
+      <h2><span>📈</span> Financial indicators (KPI)</h2>
+      <p class="lead">Four key indicators are displayed automatically at the top of each year to evaluate your financial health at a glance.</p>
 
       <div class="feature-grid">
         <div class="feature-card" style="border-top:3px solid #5B6AF0">
           <div class="fc-icon">💚</div>
-          <div class="fc-title">Taux d'épargne</div>
-          <div class="fc-desc">% de vos revenus mis de côté. Objectif recommandé : ≥ 20%.</div>
+          <div class="fc-title">Savings rate</div>
+          <div class="fc-desc">% of your income set aside. Recommended goal: ≥ 20%.</div>
         </div>
         <div class="feature-card" style="border-top:3px solid #F04F5B">
           <div class="fc-icon">🏠</div>
-          <div class="fc-title">Charges / Revenus</div>
-          <div class="fc-desc">% de vos revenus consommés par les charges fixes. En dessous de 50% c'est sain.</div>
+          <div class="fc-title">Costs / Revenues</div>
+          <div class="fc-desc">% of your income consumed by fixed costs. Below 50% is healthy.</div>
         </div>
         <div class="feature-card" style="border-top:3px solid #F5A623">
           <div class="fc-icon">🛡️</div>
-          <div class="fc-title">Mois de réserve</div>
-          <div class="fc-desc">Combien de mois de dépenses votre solde actuel peut couvrir.</div>
+          <div class="fc-title">Reserve months</div>
+          <div class="fc-desc">How many months of expenses your current balance can cover.</div>
         </div>
         <div class="feature-card" style="border-top:3px solid #8B5CF6">
           <div class="fc-icon">🔮</div>
-          <div class="fc-title">Projection annuelle</div>
-          <div class="fc-desc">Épargne estimée sur l'année complète basée sur les mois déjà renseignés.</div>
+          <div class="fc-title">Annual projection</div>
+          <div class="fc-desc">Estimated savings for the full year based on months already entered.</div>
         </div>
       </div>
 
-      <h3>Projection fin d'année</h3>
-      <p>Dans le résumé mensuel, une ligne de projection s'affiche si vous avez au moins 1 mois de données et que l'année n'est pas encore terminée. Elle calcule votre épargne annuelle estimée sur la base de votre moyenne mensuelle actuelle.</p>
+      <h3>Year-end projection</h3>
+      <p>In the monthly summary, a projection row appears if you have at least 1 month of data and the year is not yet over. It calculates your estimated annual savings based on your current monthly average.</p>
       <div class="tip">
-        <b>💡 Interprétation</b> — Un taux d'épargne vert (≥ 20%) et une projection positive (bleue) indiquent une situation financière saine. Un ratio charges/revenus rouge (> 70%) signale un risque de déséquilibre.
+        <b>💡 Interpretation</b> — A green savings rate (≥ 20%) and a positive (blue) projection indicate a healthy financial situation. A red costs/revenues ratio (> 70%) signals a risk of imbalance.
       </div>
     </div>
 
-    <!-- Graphiques -->
+    <!-- Charts -->
     <div class="section" id="graphiques">
-      <h2><span>📉</span> Graphiques</h2>
-      <p class="lead">L'onglet <b>Graphiques</b> offre plusieurs visualisations de vos finances, filtrables par année. Un bouton <b>📅 Aller à [année en cours]</b> permet de revenir directement à l'onglet de l'année actuelle.</p>
+      <h2><span>📉</span> Charts</h2>
+      <p class="lead">The <b>Charts</b> tab offers several visualisations of your finances, filterable by year. A <b>📅 Go to [current year]</b> button lets you jump back directly to the current year's tab.</p>
 
       <div class="feature-grid">
         <div class="feature-card">
           <div class="fc-icon">📊</div>
-          <div class="fc-title">Revenus vs Dépenses</div>
-          <div class="fc-desc">Histogramme comparant mois par mois vos revenus, charges et dépenses variables.</div>
+          <div class="fc-title">Revenues vs Expenses</div>
+          <div class="fc-desc">Bar chart comparing your revenues, fixed costs and variable expenses month by month.</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">💰</div>
-          <div class="fc-title">Évolution du solde</div>
-          <div class="fc-desc">Courbe de votre solde bancaire mois par mois.</div>
+          <div class="fc-title">Balance trend</div>
+          <div class="fc-desc">Line chart of your bank balance month by month.</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">📈</div>
-          <div class="fc-title">Taux d'épargne mensuel</div>
-          <div class="fc-desc">Courbe du % d'épargne chaque mois, avec lignes de référence à 10% (seuil) et 20% (objectif). Toutes les années sont affichées.</div>
+          <div class="fc-title">Monthly savings rate</div>
+          <div class="fc-desc">Line chart of your % savings each month, with reference lines at 10% (threshold) and 20% (goal). All years are shown.</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">🏦</div>
-          <div class="fc-title">Évolution du patrimoine</div>
-          <div class="fc-desc">Courbe cumulative de votre solde + livret mois par mois pour l'année sélectionnée.</div>
+          <div class="fc-title">Wealth trend</div>
+          <div class="fc-desc">Cumulative line chart of your balance + savings month by month for the selected year.</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">🛒</div>
-          <div class="fc-title">Top catégories</div>
-          <div class="fc-desc">Barres horizontales des catégories de dépenses les plus importantes, du plus élevé au plus faible.</div>
+          <div class="fc-title">Top categories</div>
+          <div class="fc-desc">Horizontal bars of the highest expense categories, from highest to lowest.</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">🔄</div>
-          <div class="fc-title">Répartition des charges</div>
-          <div class="fc-desc">Camembert des charges fixes selon votre mode de paiement.</div>
+          <div class="fc-title">Fixed cost breakdown</div>
+          <div class="fc-desc">Pie chart of fixed costs by payment method.</div>
         </div>
       </div>
 
       <div class="tip">
-        <b>💡 Astuce</b> — Sur le graphique du taux d'épargne, vous pouvez comparer plusieurs années simultanément. Chaque année a sa propre couleur de courbe.
+        <b>💡 Tip</b> — On the savings rate chart, you can compare multiple years simultaneously. Each year has its own line colour.
       </div>
     </div>
 
-    <!-- Sauvegarde -->
+    <!-- Backup -->
     <div class="section" id="sauvegarde">
-      <h2><span>💾</span> Sauvegarde et backups</h2>
-      <p class="lead">Toutes les données sont stockées localement dans votre navigateur (localStorage). Pensez à sauvegarder régulièrement.</p>
+      <h2><span>💾</span> Backup and backups</h2>
+      <p class="lead">All data is stored locally in your browser (localStorage). Remember to save regularly.</p>
 
-      <h3>Sauvegarde manuelle</h3>
-      <p>Cliquez sur <b>💾 Sauvegarder</b> dans le header. Une notification verte confirme l'enregistrement. La date/heure de la dernière sauvegarde s'affiche à droite.</p>
+      <h3>Manual save</h3>
+      <p>Click <b>💾 Save</b> in the header. A green notification confirms the save. The date/time of the last save is displayed on the right.</p>
 
-      <h3>Sauvegarde automatique quotidienne</h3>
-      <p>À chaque sauvegarde, une copie datée est créée automatiquement. L'application conserve les <b>20 derniers backups</b> (un par jour).</p>
+      <h3>Automatic daily backup</h3>
+      <p>With each save, a dated copy is created automatically. The app keeps the <b>last 20 backups</b> (one per day).</p>
 
-      <h3>Restaurer un backup</h3>
-      <p>Cliquez sur <b>📦 Backups</b> dans le header. La liste des sauvegardes apparaît avec leur date. Cliquez sur <b>Restaurer</b> pour revenir à un état antérieur.</p>
+      <h3>Restore a backup</h3>
+      <p>Click <b>📦 Backups</b> in the header. The list of backups appears with their dates. Click <b>Restore</b> to go back to a previous state.</p>
 
-      <h3>📥 Sauvegarde externe — Export / Import JSON</h3>
-      <p>Pour éviter tout risque de perte lors d'un vidage de cache, vous pouvez exporter vos données en fichier <b>JSON</b> :</p>
+      <h3>📥 External backup — Export / Import JSON</h3>
+      <p>To avoid any risk of loss when clearing cache, you can export your data as a <b>JSON</b> file:</p>
       <ol style="margin:8px 0 12px 20px;line-height:1.8">
-        <li>Allez dans <b>⚙️ Réglages</b></li>
-        <li>Dans la section <b>📥 Sauvegarde externe</b>, cliquez sur <b>⬇️ Exporter JSON</b></li>
-        <li>Un fichier <code>budget_backup_XXXX.json</code> est téléchargé — conservez-le en lieu sûr (cloud, clé USB…)</li>
-        <li>Pour restaurer, cliquez sur <b>⬆️ Importer JSON</b> et sélectionnez le fichier</li>
+        <li>Go to <b>⚙️ Settings</b></li>
+        <li>In the <b>📥 External backup</b> section, click <b>⬇️ Export JSON</b></li>
+        <li>A file <code>budget_backup_XXXX.json</code> is downloaded — keep it somewhere safe (cloud, USB drive…)</li>
+        <li>To restore, click <b>⬆️ Import JSON</b> and select the file</li>
       </ol>
       <div class="tip">
-        💡 <b>Bonne pratique :</b> exportez en JSON après chaque session importante. Le fichier contient toutes vos années, revenus, charges et dépenses variables.
+        💡 <b>Best practice:</b> export to JSON after each important session. The file contains all your years, revenues, fixed costs and variable expenses.
       </div>
 
       <div class="warn">
-        <b>⚠️ Attention</b> — Les données sont stockées dans votre navigateur. Effacer le cache ou changer de navigateur/appareil entraîne la perte des données. Utilisez l'export JSON ou la sync GitHub Gist pour une sauvegarde externe garantie.
+        <b>⚠️ Warning</b> — Data is stored in your browser. Clearing the cache or switching browser/device will cause data loss. Use JSON export or GitHub Gist sync for guaranteed external backup.
       </div>
 
       <div class="premium-tip">
-        <b>⭐ Avec la licence Premium</b> — La synchronisation cloud Firebase sauvegarde automatiquement vos données à chaque modification. Vos données sont accessibles depuis n'importe quel appareil, n'importe où.
+        <b>⭐ With a Premium licence</b> — Firebase cloud sync automatically backs up your data on every change. Your data is accessible from any device, anywhere.
       </div>
 
-      <h3 id="github-gist">🐙 Sync cloud gratuit via GitHub Gist</h3>
+      <h3 id="github-gist">🐙 Free cloud sync via GitHub Gist</h3>
       <div style="background:#e8f8f0;border:2px solid #27ae60;border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px">
         <span style="font-size:32px;line-height:1">🆓</span>
         <div>
-          <div style="font-size:15px;font-weight:800;color:#27ae60;margin-bottom:3px">100% GRATUIT — aucune carte bancaire, aucun abonnement</div>
-          <div style="font-size:13px;color:#2d6a4f;line-height:1.6">GitHub est une plateforme gratuite utilisée par des millions de développeurs. En créant un compte gratuit, vous pouvez sauvegarder vos données budgétaires automatiquement dans le cloud, accessibles partout.</div>
+          <div style="font-size:15px;font-weight:800;color:#27ae60;margin-bottom:3px">100% FREE — no credit card, no subscription</div>
+          <div style="font-size:13px;color:#2d6a4f;line-height:1.6">GitHub is a free platform used by millions of developers. By creating a free account, you can automatically back up your budget data in the cloud, accessible from anywhere.</div>
         </div>
       </div>
-      <p>La synchronisation GitHub Gist permet de sauvegarder vos données en ligne <b>automatiquement à chaque enregistrement</b>. Si vous videz votre cache ou changez d'appareil, vos données sont récupérables en un clic.</p>
+      <p>GitHub Gist sync saves your data online <b>automatically with every save</b>. If you clear your cache or switch device, your data can be recovered in one click.</p>
 
       <div style="background:var(--card,#fff);border:1px solid #ddd;border-radius:12px;overflow:hidden;margin:16px 0">
 
         <div style="background:#24292f;color:#fff;padding:12px 16px;font-weight:700;font-size:14px">
-          📋 Étape 1 — Créer un compte GitHub gratuit
+          📋 Step 1 — Create a free GitHub account
         </div>
         <div style="padding:14px 16px;line-height:2;font-size:13px">
-          <div>1. Ouvre ton navigateur et va sur <a href="https://github.com/join" target="_blank" style="color:#0969da;font-weight:600">https://github.com/join</a></div>
-          <div>2. Remplis le formulaire :</div>
+          <div>1. Open your browser and go to <a href="https://github.com/join" target="_blank" style="color:#0969da;font-weight:600">https://github.com/join</a></div>
+          <div>2. Fill in the form:</div>
           <ul style="margin:4px 0 4px 24px;line-height:2">
-            <li><b>Username</b> : choisis un pseudo (ex: <code>pascal-budget</code>)</li>
-            <li><b>Email address</b> : ton adresse e-mail</li>
-            <li><b>Password</b> : un mot de passe sécurisé</li>
+            <li><b>Username</b>: choose a username (e.g. <code>pascal-budget</code>)</li>
+            <li><b>Email address</b>: your email address</li>
+            <li><b>Password</b>: a secure password</li>
           </ul>
-          <div>3. Clique le bouton vert <b>"Continue"</b></div>
-          <div>4. Résous le petit puzzle de vérification (cliquer sur des images)</div>
-          <div>5. Ouvre ta boîte mail → tu as reçu un e-mail de GitHub → clique <b>"Verify email address"</b></div>
-          <div>6. Tu es connecté ! GitHub te demande quelques préférences → clique <b>"Skip personalization"</b> (tout en bas)</div>
+          <div>3. Click the green <b>"Continue"</b> button</div>
+          <div>4. Solve the small verification puzzle (click on images)</div>
+          <div>5. Open your inbox → you received an email from GitHub → click <b>"Verify email address"</b></div>
+          <div>6. You are logged in! GitHub asks for some preferences → click <b>"Skip personalization"</b> (at the bottom)</div>
           <div style="background:#d1ecf1;border:1px solid #bee5eb;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#0c5460">
-            ✅ <b>C'est fait !</b> Ton compte GitHub est créé. Tu peux maintenant passer à l'étape 2.
+            ✅ <b>Done!</b> Your GitHub account is created. You can now move on to step 2.
           </div>
         </div>
 
         <div style="background:#24292f;color:#fff;padding:12px 16px;font-weight:700;font-size:14px;border-top:1px solid #444">
-          🔑 Étape 2 — Créer le token de sécurité (Personal Access Token)
+          🔑 Step 2 — Create the security token (Personal Access Token)
         </div>
         <div style="padding:14px 16px;line-height:2;font-size:13px">
-          <p style="margin:0 0 8px">Un "token" est comme un mot de passe spécial que tu donnes à Mon Budget pour qu'il puisse sauvegarder tes données. Il n'a accès qu'aux Gists (notes privées), rien d'autre.</p>
-          <div>1. Sur GitHub, clique sur ta <b>photo de profil</b> en haut à droite</div>
-          <div>2. Dans le menu déroulant, clique sur <b>Settings</b> (⚙️ Paramètres)</div>
-          <div>3. Fais défiler tout le menu gauche jusqu'en bas → clique <b>Developer settings</b> (Paramètres développeur)</div>
-          <div>4. Clique sur <b>Personal access tokens</b></div>
-          <div>5. Clique sur <b>Tokens (classic)</b></div>
-          <div>6. Clique le bouton <b>Generate new token</b> → puis <b>Generate new token (classic)</b></div>
-          <div>7. Dans le champ <b>Note</b>, écris : <code style="background:#f6f8fa;padding:2px 6px;border-radius:4px;border:1px solid #ddd">Mon Budget</code></div>
-          <div>8. Dans <b>Expiration</b>, sélectionne <b>No expiration</b> (pas de date d'expiration)</div>
-          <div>9. Dans la liste <b>Select scopes</b>, coche UNIQUEMENT la case <b>gist</b> ☑️</div>
+          <p style="margin:0 0 8px">A "token" is like a special password you give to Mon Budget so it can save your data. It only has access to Gists (private notes), nothing else.</p>
+          <div>1. On GitHub, click your <b>profile photo</b> at the top right</div>
+          <div>2. In the dropdown menu, click <b>Settings</b> (⚙️)</div>
+          <div>3. Scroll all the way to the bottom of the left menu → click <b>Developer settings</b></div>
+          <div>4. Click <b>Personal access tokens</b></div>
+          <div>5. Click <b>Tokens (classic)</b></div>
+          <div>6. Click the <b>Generate new token</b> button → then <b>Generate new token (classic)</b></div>
+          <div>7. In the <b>Note</b> field, type: <code style="background:#f6f8fa;padding:2px 6px;border-radius:4px;border:1px solid #ddd">Mon Budget</code></div>
+          <div>8. Under <b>Expiration</b>, select <b>No expiration</b></div>
+          <div>9. In the <b>Select scopes</b> list, check ONLY the <b>gist</b> checkbox ☑️</div>
           <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 10px;margin:6px 0;font-size:12px;color:#856404">
-            ⚠️ Ne coche <b>aucune autre case</b> — cela limiterait les risques si le token était compromis.
+            ⚠️ Do <b>not check any other box</b> — this limits the risk if the token is compromised.
           </div>
-          <div>10. Clique le grand bouton vert <b>Generate token</b> tout en bas</div>
+          <div>10. Click the big green <b>Generate token</b> button at the bottom</div>
           <div style="background:#f8d7da;border:1px solid #f5c6cb;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#721c24">
-            🚨 <b>ATTENTION :</b> GitHub affiche le token <b>une seule fois</b> ! Il ressemble à <code>ghp_AbCdEf123456...</code><br>
-            <b>Copie-le immédiatement</b> (Ctrl+C) avant de quitter la page !
+            🚨 <b>IMPORTANT:</b> GitHub shows the token <b>only once</b>! It looks like <code>ghp_AbCdEf123456...</code><br>
+            <b>Copy it immediately</b> (Ctrl+C) before leaving the page!
           </div>
         </div>
 
         <div style="background:#24292f;color:#fff;padding:12px 16px;font-weight:700;font-size:14px;border-top:1px solid #444">
-          ✅ Étape 3 — Connecter Mon Budget à GitHub
+          ✅ Step 3 — Connect Mon Budget to GitHub
         </div>
         <div style="padding:14px 16px;line-height:2;font-size:13px">
-          <div>1. Dans Mon Budget, va dans <b>⚙️ Réglages</b></div>
-          <div>2. Section <b>🛡 Protection des données</b></div>
-          <div>3. Dans le bloc <b>🐙 GitHub Gist</b>, colle ton token dans le champ (Ctrl+V)</div>
-          <div>4. Clique <b>✅ Connecter</b></div>
-          <div>5. Un point vert 🟢 apparaît → <b>Connecté !</b></div>
-          <div>6. Dès maintenant, chaque fois que tu cliques <b>💾 Sauvegarder</b>, tes données sont aussi envoyées sur GitHub.</div>
+          <div>1. In Mon Budget, go to <b>⚙️ Settings</b></div>
+          <div>2. Section <b>🛡 Data protection</b></div>
+          <div>3. In the <b>🐙 GitHub Gist</b> block, paste your token in the field (Ctrl+V)</div>
+          <div>4. Click <b>✅ Connect</b></div>
+          <div>5. A green dot 🟢 appears → <b>Connected!</b></div>
+          <div>6. From now on, every time you click <b>💾 Save</b>, your data is also sent to GitHub.</div>
           <div style="background:#d4edda;border:1px solid #c3e6cb;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#155724">
-            🎉 <b>C'est configuré !</b> Pour récupérer tes données sur un autre appareil, connecte-toi à GitHub depuis ce nouvel appareil, crée un nouveau token, et clique <b>"⬇️ Récupérer depuis Gist"</b>.
+            🎉 <b>All set!</b> To recover your data on another device, sign in to GitHub from that device, create a new token, and click <b>"⬇️ Retrieve from Gist"</b>.
           </div>
         </div>
       </div>
 
       <div class="tip">
-        💡 <b>Tu changes d'appareil ou de navigateur ?</b> Crée un nouveau token sur GitHub et colle-le dans Réglages → GitHub Gist. Puis clique "⬇️ Récupérer depuis Gist" pour restaurer toutes tes données.
+        💡 <b>Switching device or browser?</b> Create a new token on GitHub and paste it in Settings → GitHub Gist. Then click "⬇️ Retrieve from Gist" to restore all your data.
       </div>
 
       <h3>Export CSV</h3>
-      <p>Cliquez sur <b>📥 Export CSV</b> pour télécharger vos données mensuelles en tableau. Ce fichier peut être réimporté via <b>📂 Import CSV</b>.</p>
+      <p>Click <b>📥 Export CSV</b> to download your monthly data as a spreadsheet. This file can be re-imported via <b>📂 Import CSV</b>.</p>
     </div>
 
     <!-- Dark mode -->
     <div class="section" id="dark">
-      <h2><span>🌙</span> Mode nuit / jour</h2>
-      <p class="lead">Basculez entre le thème clair et le thème sombre à tout moment.</p>
+      <h2><span>🌙</span> Dark mode / Light mode</h2>
+      <p class="lead">Switch between light and dark theme at any time.</p>
 
-      <p>Cliquez sur le bouton <b>🌙</b> (mode nuit) ou <b>☀️</b> (mode jour) dans le coin supérieur droit du header. Le choix est mémorisé et persistera à la prochaine ouverture.</p>
+      <p>Click the <b>🌙</b> (dark mode) or <b>☀️</b> (light mode) button in the top right corner of the header. The choice is remembered and will persist on the next visit.</p>
 
       <div class="tip">
-        <b>Astuce</b> — Le mode nuit est recommandé en soirée pour réduire la fatigue oculaire. Tous les tableaux, modales et bannières s'adaptent automatiquement.
+        <b>Tip</b> — Dark mode is recommended in the evening to reduce eye strain. All tables, modals and banners adapt automatically.
       </div>
     </div>
 
-    <!-- Nouvelle année -->
+    <!-- New year -->
     <div class="section" id="annee">
-      <h2><span>📅</span> Créer une nouvelle année</h2>
-      <p class="lead">Chaque année est indépendante. Créez une nouvelle année pour commencer le suivi d'un nouvel exercice.<span class="limit-badge">1 an max en gratuit</span> <span class="pro-badge">Illimité en Premium</span></p>
+      <h2><span>📅</span> Create a new year</h2>
+      <p class="lead">Each year is independent. Create a new year to start tracking a new financial period.<span class="limit-badge">1 year max in free</span> <span class="pro-badge">Unlimited in Premium</span></p>
 
-      <h3>Procédure</h3>
+      <h3>Procedure</h3>
       <ol>
-        <li>Cliquez sur <b>＋ Année</b> à droite des onglets d'années</li>
-        <li>Une fenêtre s'affiche avec vos revenus habituels (basés sur la moyenne de l'année précédente)</li>
-        <li>Ajustez les montants si nécessaire</li>
-        <li>Cliquez sur <b>✅ Créer l'année</b></li>
+        <li>Click <b>＋ Year</b> to the right of the year tabs</li>
+        <li>A window appears with your usual revenues (based on the average of the previous year)</li>
+        <li>Adjust the amounts if needed</li>
+        <li>Click <b>✅ Create year</b></li>
       </ol>
 
-      <p>L'année est créée avec :</p>
+      <p>The year is created with:</p>
       <ul>
-        <li>Les revenus que vous avez confirmés</li>
-        <li>Les mêmes charges que l'année précédente</li>
-        <li>Le solde livret initial calculé automatiquement depuis la fin de l'année précédente</li>
-        <li>Aucune dépense variable (à saisir au fil de l'année)</li>
+        <li>The revenues you confirmed</li>
+        <li>The same fixed costs as the previous year</li>
+        <li>The initial savings balance calculated automatically from the end of the previous year</li>
+        <li>No variable expenses (to be entered throughout the year)</li>
       </ul>
 
-      <h3>Supprimer une année</h3>
-      <p>Survolez l'onglet de l'année → cliquez sur le <b>✕</b> qui apparaît. Une confirmation est demandée avec option de backup automatique.</p>
+      <h3>Delete a year</h3>
+      <p>Hover over the year tab → click the <b>✕</b> that appears. Confirmation is requested with an option for automatic backup.</p>
     </div>
 
-    <!-- Connexion -->
+    <!-- Login -->
     <div class="section" id="connexion">
-      <h2><span>🔐</span> Connexion &amp; Compte Cloud</h2>
-      <p class="lead">Créez un compte avec votre adresse email pour accéder à la synchronisation cloud et activer le Premium.</p>
+      <h2><span>🔐</span> Login &amp; Cloud Account</h2>
+      <p class="lead">Create an account with your email address to access cloud sync and activate Premium.</p>
 
-      <h3>Pourquoi se connecter ?</h3>
-      <p>Sans connexion, vos données sont stockées uniquement dans votre navigateur. Avec un compte connecté :</p>
+      <h3>Why log in?</h3>
+      <p>Without a login, your data is stored only in your browser. With a connected account:</p>
       <ul>
-        <li>✅ Synchronisation automatique dans le cloud Firebase (Premium)</li>
-        <li>✅ Accès depuis plusieurs appareils (PC, téléphone, tablette)</li>
-        <li>✅ Vos données sont récupérables si vous changez de navigateur</li>
-        <li>✅ Activation Premium automatique après paiement Stripe</li>
+        <li>✅ Automatic sync in Firebase cloud (Premium)</li>
+        <li>✅ Access from multiple devices (PC, phone, tablet)</li>
+        <li>✅ Your data is recoverable if you change browser</li>
+        <li>✅ Automatic Premium activation after Stripe payment</li>
       </ul>
 
-      <h3>Comment créer un compte / se connecter</h3>
+      <h3>How to create an account / log in</h3>
       <ol>
-        <li>Allez dans l'onglet <b>⚙️ Paramètres</b> et cliquez sur <b>🔐 Se connecter</b></li>
-        <li>Saisissez votre <b>adresse email</b> et un <b>mot de passe</b></li>
-        <li>Si c'est la première fois : cliquez <b>Créer un compte</b> — un email de vérification est envoyé</li>
-        <li>Si vous avez déjà un compte : cliquez <b>Se connecter</b></li>
-        <li>Votre email apparaît dans Paramètres — vous êtes connecté ✅</li>
+        <li>Go to the <b>⚙️ Settings</b> tab and click <b>🔐 Log in</b></li>
+        <li>Enter your <b>email address</b> and a <b>password</b></li>
+        <li>If it's your first time: click <b>Create account</b> — a verification email is sent</li>
+        <li>If you already have an account: click <b>Log in</b></li>
+        <li>Your email appears in Settings — you are logged in ✅</li>
       </ol>
 
       <div class="tip">
-        <b>💡 Connexion persistante</b> — Vous restez connecté sur cet appareil. Le token de session est effacé automatiquement à la fermeture du navigateur pour plus de sécurité.
+        <b>💡 Persistent login</b> — You stay logged in on this device. The session token is automatically cleared when the browser is closed for added security.
       </div>
 
       <div class="warn">
-        <b>⚠️ Premium requis pour la sync</b> — La connexion est disponible gratuitement, mais la synchronisation cloud automatique nécessite une licence Premium active.
+        <b>⚠️ Premium required for sync</b> — Login is available for free, but automatic cloud sync requires an active Premium licence.
       </div>
     </div>
 
-    <!-- Ajout rapide -->
+    <!-- Quick add -->
     <div class="section" id="ajout-rapide">
-      <h2><span>➕</span> Bouton Ajout Rapide</h2>
-      <p class="lead">Le bouton vert ➕ en bas à droite permet d'ajouter une dépense variable rapidement, depuis n'importe quelle vue.</p>
+      <h2><span>➕</span> Quick Add button</h2>
+      <p class="lead">The green ➕ button at the bottom right lets you add a variable expense quickly, from any view.</p>
 
-      <h3>Comment l'utiliser</h3>
+      <h3>How to use it</h3>
       <ol>
-        <li>Cliquez sur le bouton <b>➕ vert</b> en bas à droite de l'écran</li>
-        <li>Un formulaire apparaît avec les champs : catégorie, montant, mois, commentaire, mode de paiement, jour</li>
-        <li>L'<b>année et le mois</b> sont pré-remplis selon l'onglet actif</li>
-        <li>Saisissez le montant et cliquez sur <b>✅ Ajouter</b></li>
+        <li>Click the <b>green ➕</b> button at the bottom right of the screen</li>
+        <li>A form appears with fields: category, amount, month, comment, payment method, day</li>
+        <li>The <b>year and month</b> are pre-filled based on the active tab</li>
+        <li>Enter the amount and click <b>✅ Add</b></li>
       </ol>
 
       <div class="tip">
-        <b>💡 Astuce</b> — L'ajout rapide détecte automatiquement l'année en cours selon l'onglet affiché. Si vous êtes sur l'onglet 2026, la dépense sera ajoutée en 2026.
+        <b>💡 Tip</b> — Quick add automatically detects the current year based on the displayed tab. If you are on the 2026 tab, the expense will be added in 2026.
       </div>
       <div class="tip" style="background:#FEF6E6;border-left-color:#F5A623">
-        <b>⚠️ Alerte budget</b> — Si la catégorie sélectionnée n'a pas de budget défini, une alerte orange s'affiche dans le formulaire. Cliquez sur <b>Définir un budget →</b> pour en saisir un directement. <a href="#budget-cible">En savoir plus sur les budgets →</a>
+        <b>⚠️ Budget alert</b> — If the selected category has no budget defined, an orange alert appears in the form. Click <b>Set a budget →</b> to enter one directly. <a href="#budget-cible">Learn more about budgets →</a>
       </div>
 
-      <h3>Champs disponibles</h3>
+      <h3>Available fields</h3>
       <ul>
-        <li><b>Catégorie</b> — Courses, carburant, divers, ou vos catégories personnalisées <span class="pro-badge">Premium</span></li>
-        <li><b>Montant</b> — La somme de la dépense en euros</li>
-        <li><b>Mois</b> — Le mois auquel rattacher la dépense</li>
-        <li><b>Commentaire</b> — Note optionnelle (ex : "Lidl", "Plein carburant")</li>
-        <li><b>Mode de paiement</b> — Carte, liquide, chèque repas…</li>
-        <li><b>Jour</b> — Le jour du mois (optionnel)</li>
+        <li><b>Category</b> — Groceries, fuel, miscellaneous, or your custom categories <span class="pro-badge">Premium</span></li>
+        <li><b>Amount</b> — The expense amount in euros</li>
+        <li><b>Month</b> — The month to assign the expense to</li>
+        <li><b>Comment</b> — Optional note (e.g. "Lidl", "Full tank")</li>
+        <li><b>Payment method</b> — Card, cash, meal voucher…</li>
+        <li><b>Day</b> — The day of the month (optional)</li>
       </ul>
     </div>
 
-    <!-- Assistant IA -->
+    <!-- AI Assistant -->
     <div class="section" id="assistant-ia">
-      <h2><span>🤖</span> Assistant IA (Groq)</h2>
-      <p class="lead">L'assistant IA analyse vos données budget en temps réel et répond à vos questions financières en langage naturel. Propulsé par <b>Groq</b> — gratuit, sans carte bancaire.</p>
+      <h2><span>🤖</span> AI Assistant (Groq)</h2>
+      <p class="lead">The AI assistant analyses your budget data in real time and answers your financial questions in natural language. Powered by <b>Groq</b> — free, no credit card required.</p>
 
-      <h3>Activer l'assistant (2 minutes)</h3>
+      <h3>Activate the assistant (2 minutes)</h3>
       <ol>
-        <li>Allez sur <a href="https://console.groq.com/keys" target="_blank"><b>console.groq.com/keys</b></a></li>
-        <li>Créez un compte gratuit (email + mot de passe, aucune carte bancaire)</li>
-        <li>Cliquez sur <b>Create API Key</b></li>
-        <li>Donnez un nom (ex : "Mon Budget") et copiez la clé générée (commence par <code>gsk_…</code>)</li>
-        <li>Dans l'application, allez dans <b>⚙️ Paramètres → Assistant IA</b></li>
-        <li>Collez la clé dans le champ et cliquez <b>✅ Sauver</b></li>
+        <li>Go to <a href="https://console.groq.com/keys" target="_blank"><b>console.groq.com/keys</b></a></li>
+        <li>Create a free account (email + password, no credit card)</li>
+        <li>Click <b>Create API Key</b></li>
+        <li>Give it a name (e.g. "Mon Budget") and copy the generated key (starts with <code>gsk_…</code>)</li>
+        <li>In the app, go to <b>⚙️ Settings → AI Assistant</b></li>
+        <li>Paste the key in the field and click <b>✅ Save</b></li>
       </ol>
 
       <div class="tip">
-        <b>💡 Entièrement gratuit, sans carte bancaire</b> — Groq offre 14 400 requêtes/jour sur le modèle Llama 3.1. Largement suffisant pour un usage quotidien.
+        <b>💡 Completely free, no credit card</b> — Groq offers 14,400 requests/day on the Llama 3.1 model. More than enough for daily use.
       </div>
 
-      <h3>Utiliser le chat</h3>
+      <h3>Using the chat</h3>
       <ol>
-        <li>Cliquez sur le bouton <b>🤖 violet</b> en bas à droite</li>
-        <li>Le panneau de chat s'ouvre</li>
-        <li>Tapez votre question en français et appuyez sur <b>Entrée</b></li>
-        <li>L'assistant répond en se basant sur <b>vos vraies données</b></li>
+        <li>Click the <b>purple 🤖</b> button at the bottom right</li>
+        <li>The chat panel opens</li>
+        <li>Type your question and press <b>Enter</b></li>
+        <li>The assistant replies based on <b>your real data</b></li>
       </ol>
 
-      <h3>Exemples de questions</h3>
+      <h3>Example questions</h3>
       <div class="feature-grid">
         <div class="feature-card">
           <div class="fc-icon">💰</div>
-          <div class="fc-title">Soldes</div>
-          <div class="fc-desc">« Quel est mon solde actuel ? »<br>« Combien ai-je sur le livret ? »</div>
+          <div class="fc-title">Balances</div>
+          <div class="fc-desc">"What is my current balance?"<br>"How much do I have in savings?"</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">📊</div>
-          <div class="fc-title">Analyse</div>
-          <div class="fc-desc">« Quel mois j'ai le plus dépensé ? »<br>« Compare 2025 et 2026 »</div>
+          <div class="fc-title">Analysis</div>
+          <div class="fc-desc">"Which month did I spend the most?"<br>"Compare 2025 and 2026"</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">🛒</div>
-          <div class="fc-title">Dépenses</div>
-          <div class="fc-desc">« Combien en courses ce mois ? »<br>« Total carburant 2026 ? »</div>
+          <div class="fc-title">Expenses</div>
+          <div class="fc-desc">"How much on groceries this month?"<br>"Total fuel 2026?"</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">💡</div>
-          <div class="fc-title">Conseils</div>
-          <div class="fc-desc">« Comment économiser ? »<br>« Où je dépense le plus ? »</div>
+          <div class="fc-title">Advice</div>
+          <div class="fc-desc">"How can I save more?"<br>"Where do I spend the most?"</div>
         </div>
       </div>
 
-      <h3>Confidentialité</h3>
-      <p>Vos données budget sont envoyées à l'API Groq <b>uniquement au moment où vous posez une question</b>. Groq utilise le modèle Llama 3.1 (open-source). La clé API est stockée uniquement dans votre navigateur, jamais sur nos serveurs.</p>
+      <h3>Privacy</h3>
+      <p>Your budget data is sent to the Groq API <b>only when you ask a question</b>. Groq uses the Llama 3.1 model (open-source). The API key is stored only in your browser, never on our servers.</p>
 
       <div class="warn">
-        <b>⚠️ Ne partagez pas votre clé API</b> — Si vous partagez l'accès à votre navigateur, supprimez la clé dans Paramètres → Assistant IA.
+        <b>⚠️ Do not share your API key</b> — If you share access to your browser, delete the key in Settings → AI Assistant.
       </div>
     </div>
 
     <!-- Feedback -->
     <div class="section" id="feedback">
       <h2><span>💬</span> Feedback &amp; Suggestions</h2>
-      <p class="lead">Envoyez vos idées, signalements de bugs ou questions directement depuis l'application. Chaque message est lu et traité personnellement.</p>
+      <p class="lead">Send your ideas, bug reports or questions directly from the app. Every message is read and handled personally.</p>
 
-      <h3>Envoyer un message</h3>
+      <h3>Send a message</h3>
       <ol>
-        <li>Cliquez sur l'icône <b>💬</b> en bas à droite de l'application</li>
-        <li>Choisissez la catégorie : 🐛 Bug, 💡 Idée, ❓ Question ou 💬 Autre</li>
-        <li>Saisissez un sujet et votre message</li>
-        <li>Donnez une note ⭐ optionnelle</li>
-        <li>Cliquez sur <b>📤 Envoyer</b></li>
+        <li>Click the <b>💬</b> icon at the bottom right of the app</li>
+        <li>Choose the category: 🐛 Bug, 💡 Idea, ❓ Question or 💬 Other</li>
+        <li>Enter a subject and your message</li>
+        <li>Give an optional ⭐ rating</li>
+        <li>Click <b>📤 Send</b></li>
       </ol>
 
       <div class="tip">
-        <b>💡 Connexion requise</b> — Vous devez être connecté pour envoyer un feedback. Cela permet de vous répondre directement par email.
+        <b>💡 Login required</b> — You must be logged in to send feedback. This allows us to reply to you directly by email.
       </div>
 
-      <h3>Suivi de votre demande</h3>
-      <p>Chaque feedback reçoit un statut qui évolue au fil du traitement :</p>
+      <h3>Tracking your request</h3>
+      <p>Each feedback receives a status that evolves as it is processed:</p>
       <ul>
-        <li>🟠 <b>Nouveau</b> — reçu, pas encore lu</li>
-        <li>🔵 <b>Lu</b> — pris en compte</li>
-        <li>🟣 <b>En cours</b> — en cours de traitement</li>
-        <li>🟢 <b>Répondu</b> — une réponse vous a été envoyée par email</li>
-        <li>⚫ <b>Clôturé</b> — traitement terminé</li>
+        <li>🟠 <b>New</b> — received, not yet read</li>
+        <li>🔵 <b>Read</b> — taken into account</li>
+        <li>🟣 <b>In progress</b> — being processed</li>
+        <li>🟢 <b>Replied</b> — a reply has been sent to you by email</li>
+        <li>⚫ <b>Closed</b> — processing complete</li>
       </ul>
 
       <div class="tip">
-        <b>💡 Réponse par email</b> — Si une réponse vous est envoyée, vous la recevez directement dans votre boîte mail. L'expéditeur est <b>Mon Budget</b>.
+        <b>💡 Reply by email</b> — If a reply is sent to you, you receive it directly in your inbox. The sender is <b>Mon Budget</b>.
       </div>
     </div>
 
@@ -1343,39 +1343,38 @@ const AIDE_TRANSLATIONS = {
     sb_charts: '📉 Charts', sb_backup: '💾 Backup', sb_gist: '🐙 GitHub Gist (free)',
     sb_dark: '🌙 Dark mode', sb_year: '📅 New year', sb_login: '🔐 Login & Account',
     sb_quick: '➕ Quick add', sb_ai: '🤖 AI Assistant', sb_feedback: '💬 Feedback & Suggestions',
-    frBanner: '🇫🇷 This page is currently in French. English translation is in progress.',
+    frBanner: null,
   }
 };
 
 // Section h2 translations
 const SECTION_TITLES = {
   guide:          { fr: 'Guide d\'installation pas à pas', en: 'Step-by-step installation guide' },
-  demarrage:      { fr: 'Démarrage rapide', en: 'Quick start' },
-  premium:        { fr: 'Gratuit vs Premium — Que choisir ?', en: 'Free vs Premium — Which to choose?' },
+  demarrage:      { fr: 'Démarrage', en: 'Getting Started' },
+  premium:        { fr: 'Gratuit vs Premium', en: 'Free vs Premium' },
   demo:           { fr: 'Mode Démo', en: 'Demo Mode' },
-  interface:      { fr: 'Interface', en: 'Interface' },
-  accueil:        { fr: 'Tableau de bord (Accueil)', en: 'Dashboard (Home)' },
+  interface:      { fr: 'Interface générale', en: 'General interface' },
+  accueil:        { fr: 'Tableau de bord mensuel', en: 'Monthly Dashboard' },
   'objectif-epargne': { fr: 'Objectif d\'épargne mensuel', en: 'Monthly savings goal' },
   recherche:      { fr: 'Recherche globale', en: 'Global search' },
   revenus:        { fr: 'Revenus', en: 'Revenues' },
-  charges:        { fr: 'Charges & Dépenses fixes', en: 'Fixed costs' },
-  variables:      { fr: 'Dépenses variables', en: 'Variable expenses' },
+  charges:        { fr: 'Charges fixes', en: 'Fixed Costs' },
+  variables:      { fr: 'Dépenses variables', en: 'Variable Expenses' },
   'budget-cible': { fr: 'Budgets par catégorie', en: 'Category budgets' },
   livret:         { fr: 'Livret d\'épargne', en: 'Savings account' },
-  indicateurs:    { fr: 'Indicateurs financiers', en: 'Financial indicators' },
+  indicateurs:    { fr: 'Indicateurs financiers (KPI)', en: 'Financial indicators (KPI)' },
   resume:         { fr: 'Résumé mensuel', en: 'Monthly summary' },
   graphiques:     { fr: 'Graphiques', en: 'Charts' },
-  sauvegarde:     { fr: 'Sauvegarde & Cloud', en: 'Backup & Cloud' },
-  'github-gist':  { fr: 'Sync gratuite via GitHub Gist', en: 'Free sync via GitHub Gist' },
-  dark:           { fr: 'Mode nuit', en: 'Dark mode' },
-  annee:          { fr: 'Nouvelle année', en: 'New year' },
-  connexion:      { fr: 'Connexion & Compte', en: 'Login & Account' },
-  'ajout-rapide': { fr: 'Ajout rapide', en: 'Quick add' },
-  'assistant-ia': { fr: 'Assistant IA', en: 'AI Assistant' },
+  sauvegarde:     { fr: 'Sauvegarde et backups', en: 'Backup and backups' },
+  dark:           { fr: 'Mode nuit / jour', en: 'Dark mode / Light mode' },
+  annee:          { fr: 'Créer une nouvelle année', en: 'Create a new year' },
+  connexion:      { fr: 'Connexion & Compte Cloud', en: 'Login & Cloud Account' },
+  'ajout-rapide': { fr: 'Bouton Ajout Rapide', en: 'Quick Add button' },
+  'assistant-ia': { fr: 'Assistant IA (Groq)', en: 'AI Assistant (Groq)' },
   feedback:       { fr: 'Feedback & Suggestions', en: 'Feedback & Suggestions' },
 };
 
-function _aideLang() { return localStorage.getItem('mbudget-lang') || 'fr'; }
+function _aideLang() { return localStorage.getItem('mbudget-lang') || 'en'; }
 function _aideSetLang(code) {
   localStorage.setItem('mbudget-lang', code);
   applyAideLang(code);
