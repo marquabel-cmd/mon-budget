@@ -1350,27 +1350,50 @@ body.auth-locked #context-banner {
 
       <!-- TAB: Visiteurs -->
       <div id="admin-tab-visitors" style="display:none">
-        <button onclick="adminLoadVisitors()" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px;font-size:12px;cursor:pointer;margin-bottom:10px">🔄 Charger les visiteurs</button>
+        <!-- Header : live indicator + refresh -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="adm-v-live-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#444"></span>
+            <span id="adm-v-live-txt" style="font-size:10px;color:rgba(255,255,255,.35)">—</span>
+          </div>
+          <button onclick="adminLoadVisitors()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer">🔄 Rafraîchir</button>
+        </div>
+        <!-- KPIs -->
         <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-          <div style="flex:1;min-width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
+          <div style="flex:1;min-width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
             <div style="font-size:20px;font-weight:700;color:#5B6AF0" id="adm-v-total">—</div>
             <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">Uniques</div>
           </div>
-          <div style="flex:1;min-width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
+          <div style="flex:1;min-width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
             <div style="font-size:20px;font-weight:700;color:#00C896" id="adm-v-week">—</div>
             <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">7 jours</div>
           </div>
-          <div style="flex:1;min-width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
+          <div style="flex:1;min-width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
             <div style="font-size:20px;font-weight:700;color:#F5A623" id="adm-v-today">—</div>
             <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">Aujourd'hui</div>
           </div>
-          <div style="flex:1;min-width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
+          <div style="flex:1;min-width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center">
             <div style="font-size:20px;font-weight:700;color:#8B5CF6" id="adm-v-visits">—</div>
             <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">Visites</div>
           </div>
+          <div style="flex:1;min-width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(72,255,140,.15);border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:700;color:#7effa0" id="adm-v-online">—</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">En ligne</div>
+          </div>
         </div>
-        <div id="adm-visitors-list" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;max-height:360px;overflow-y:auto">
-          <div style="padding:16px;color:rgba(255,255,255,.4);font-size:13px;text-align:center">Cliquez sur "Charger" pour voir les visiteurs</div>
+        <!-- Funnel conversion -->
+        <div id="adm-v-funnel" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:10px;display:none">
+          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📊 Entonnoir de conversion</div>
+          <div id="adm-v-funnel-body"></div>
+        </div>
+        <!-- Graphique 7 jours -->
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📈 Visites — 7 derniers jours</div>
+          <canvas id="adm-v-chart" height="80"></canvas>
+        </div>
+        <!-- Liste visiteurs -->
+        <div id="adm-visitors-list" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;max-height:260px;overflow-y:auto">
+          <div style="padding:16px;color:rgba(255,255,255,.4);font-size:13px;text-align:center">Chargement automatique…</div>
         </div>
       </div>
     </div>
@@ -7215,7 +7238,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.47';
+const APP_VERSION = '11.48';
 const SW_VERSION = 'v172';
 
 // ── INTERNATIONALISATION ──
@@ -9074,6 +9097,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.48': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📊', text: 'Onglet Visiteurs : entonnoir de conversion (visiteurs → comptes → premium) + graphique barres 7 jours + KPI "En ligne maintenant"' },
+      { icon: '🔴', text: 'Auto-refresh temps réel toutes les 30s quand l\'onglet Visiteurs est ouvert — indicateur heure de dernière mise à jour' }
+    ]
+  },
   '11.47': {
     date: 'Mai 2026',
     items: [
@@ -10673,7 +10703,7 @@ function openAdminPanel() {
   adminSwitchTab('view');
   setTimeout(() => document.getElementById('admin-license-input').focus(), 100);
 }
-function closeAdminPanel() { document.getElementById('admin-modal').style.display = 'none'; }
+function closeAdminPanel() { _stopVisitorsAutoRefresh(); document.getElementById('admin-modal').style.display = 'none'; }
 
 function adminSwitchTab(tab) {
   ['view','license','feedback','visitors'].forEach(t => {
@@ -10687,26 +10717,126 @@ function adminSwitchTab(tab) {
     const btn = document.getElementById('admin-tab-btn-' + t);
     if (btn) btn.style.cssText = base + (tab === t ? active : idle);
   });
+  // Auto-refresh visiteurs
+  if (tab === 'visitors') { _startVisitorsAutoRefresh(); }
+  else { _stopVisitorsAutoRefresh(); }
+}
+
+let _visitorsRefreshTimer = null;
+let _visitorsChart = null;
+
+function _startVisitorsAutoRefresh() {
+  adminLoadVisitors();
+  if (_visitorsRefreshTimer) clearInterval(_visitorsRefreshTimer);
+  _visitorsRefreshTimer = setInterval(() => {
+    const tab = document.getElementById('admin-tab-visitors');
+    if (tab && tab.style.display !== 'none') adminLoadVisitors();
+  }, 30000);
+}
+
+function _stopVisitorsAutoRefresh() {
+  if (_visitorsRefreshTimer) { clearInterval(_visitorsRefreshTimer); _visitorsRefreshTimer = null; }
 }
 
 async function adminLoadVisitors() {
   const list = document.getElementById('adm-visitors-list');
   if (!list) return;
-  list.innerHTML = '<div style="padding:16px;color:rgba(255,255,255,.4);text-align:center">⏳ Chargement…</div>';
+  const liveDot = document.getElementById('adm-v-live-dot');
+  const liveTxt = document.getElementById('adm-v-live-txt');
+  if (liveDot) liveDot.style.background = '#F5A623';
+  if (liveTxt) liveTxt.textContent = '⏳ Chargement…';
   try {
     const token = sessionStorage.getItem('mbudget-fb-token');
-    if (!token) { list.innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ Non connecté — connectez-vous d\'abord</div>'; return; }
-    const url = LICENSE_DB + '/analytics/visitors.json?auth=' + token;
-    const r = await fetch(url);
-    if (!r.ok) { list.innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ Accès refusé (status ' + r.status + ')</div>'; return; }
-    const data = await r.json();
+    if (!token) { list.innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ Non connecté</div>'; return; }
+
+    // Fetch visiteurs + utilisateurs en parallèle
+    const [rVis, rUsers] = await Promise.all([
+      fetch(LICENSE_DB + '/analytics/visitors.json?auth=' + token),
+      fetch(LICENSE_DB + '/users.json?auth=' + token)
+    ]);
+    const data  = rVis.ok   ? await rVis.json()   : null;
+    const users = rUsers.ok ? await rUsers.json() : null;
+
     if (!data) { list.innerHTML = '<div style="padding:16px;color:rgba(255,255,255,.4)">Aucun visiteur enregistré.</div>'; return; }
+
     const now = Date.now(), day = 86400000;
     const entries = Object.entries(data).sort(([,a],[,b]) => (b.lastSeen||0) - (a.lastSeen||0));
+    const totalVisits = entries.reduce((s,[,v]) => s+(v.visits||1), 0);
+    const onlineCount = entries.filter(([,v]) => now-(v.lastSeen||0) < 300000).length;
+
+    // KPIs
     document.getElementById('adm-v-total').textContent  = entries.length;
     document.getElementById('adm-v-week').textContent   = entries.filter(([,v]) => now-(v.lastSeen||0) < 7*day).length;
     document.getElementById('adm-v-today').textContent  = entries.filter(([,v]) => now-(v.lastSeen||0) < day).length;
-    document.getElementById('adm-v-visits').textContent = entries.reduce((s,[,v]) => s+(v.visits||1), 0);
+    document.getElementById('adm-v-visits').textContent = totalVisits;
+    document.getElementById('adm-v-online').textContent = onlineCount;
+
+    // Live indicator
+    if (liveDot) { liveDot.style.background = onlineCount > 0 ? '#7effa0' : '#5B6AF0'; }
+    if (liveTxt) liveTxt.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    // ── Funnel de conversion ──
+    const funnelEl = document.getElementById('adm-v-funnel');
+    const funnelBody = document.getElementById('adm-v-funnel-body');
+    if (funnelEl && funnelBody && users) {
+      const userEntries = Object.entries(users);
+      const totalAccounts = userEntries.length;
+      const premiumCount  = userEntries.filter(([,u]) => u?.premium === true).length;
+      const totalVisitors = entries.length;
+      const pct = (n, d) => d > 0 ? Math.round(n/d*100) : 0;
+      const bar = (val, max, color) => {
+        const w = max > 0 ? Math.max(4, Math.round(val/max*100)) : 4;
+        return `<div style="height:8px;border-radius:4px;background:rgba(255,255,255,.08);margin-top:4px"><div style="height:8px;border-radius:4px;background:${color};width:${w}%"></div></div>`;
+      };
+      funnelBody.innerHTML = [
+        { icon:'👁️', label:'Visiteurs uniques', val:totalVisitors, pct:100,                        color:'#5B6AF0' },
+        { icon:'👤', label:'Comptes créés',      val:totalAccounts, pct:pct(totalAccounts,totalVisitors), color:'#00C896' },
+        { icon:'⭐', label:'Premium',             val:premiumCount,  pct:pct(premiumCount,totalVisitors),  color:'#F5A623' },
+      ].map(row => `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="font-size:16px;width:22px;text-align:center;flex-shrink:0">${row.icon}</div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;font-size:11px">
+              <span style="color:rgba(255,255,255,.7)">${row.label}</span>
+              <span style="font-weight:700;color:#fff">${row.val} <span style="color:rgba(255,255,255,.35);font-weight:400">(${row.pct}%)</span></span>
+            </div>
+            ${bar(row.val, totalVisitors, row.color)}
+          </div>
+        </div>`).join('');
+      funnelEl.style.display = '';
+    }
+
+    // ── Graphique 7 jours ──
+    const days7 = Array.from({length:7}, (_,i) => {
+      const d = new Date(now - (6-i)*day);
+      return { label: d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}), ts: d.setHours(0,0,0,0) };
+    });
+    const visitsByDay = days7.map(d => {
+      return entries.filter(([,v]) => {
+        const t = v.lastSeen||0;
+        return t >= d.ts && t < d.ts + day;
+      }).length;
+    });
+    const chartCanvas = document.getElementById('adm-v-chart');
+    if (chartCanvas) {
+      if (_visitorsChart) { _visitorsChart.destroy(); _visitorsChart = null; }
+      _visitorsChart = new Chart(chartCanvas, {
+        type: 'bar',
+        data: {
+          labels: days7.map(d => d.label),
+          datasets: [{ data: visitsByDay, backgroundColor: 'rgba(91,106,240,.7)', borderRadius: 4, borderSkipped: false }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color:'rgba(255,255,255,.4)', font:{size:10} }, grid: { color:'rgba(255,255,255,.05)' } },
+            y: { ticks: { color:'rgba(255,255,255,.4)', font:{size:10}, stepSize:1 }, grid: { color:'rgba(255,255,255,.05)' }, beginAtZero:true }
+          }
+        }
+      });
+    }
+
+    // ── Liste visiteurs ──
     const fmtD = ts => ts ? new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
     list.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr style="border-bottom:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase">
@@ -10729,7 +10859,12 @@ async function adminLoadVisitors() {
         </tr>`;
       }).join('')}</tbody>
     </table>`;
-  } catch(e) { list.innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ ' + e.message + '</div>'; }
+  } catch(e) {
+    const list2 = document.getElementById('adm-visitors-list');
+    if (list2) list2.innerHTML = '<div style="padding:16px;color:#ffb3b3">❌ ' + _esc(e.message) + '</div>';
+    const liveTxt2 = document.getElementById('adm-v-live-txt');
+    if (liveTxt2) liveTxt2.textContent = '❌ Erreur';
+  }
 }
 
 // ── ADMIN FEEDBACK ────────────────────────────────────────────────────────
