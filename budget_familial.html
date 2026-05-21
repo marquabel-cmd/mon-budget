@@ -1957,6 +1957,13 @@ function buildDefaultsForNewUser() {
   if (!revenus.some(r => r.cat === 'boite_dep')) {
     revenus.push({label:'💵 Dépôt Boîte → Compte',            cat:'boite_dep', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true});
   }
+  // Lignes bancaires (transferts cash ↔ compte, exclues du calcul budget)
+  if (!charges.some(c => c.cat === 'retrait_banc')) {
+    charges.push({label:'🏧 Retrait bancaire', cat:'retrait_banc', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:false});
+  }
+  if (!revenus.some(r => r.cat === 'depot_banc')) {
+    revenus.push({label:'🏧 Dépôt bancaire',   cat:'depot_banc',  v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:false});
+  }
   const d = { methods: [...DEFAULT_METHODS], varCats: JSON.parse(JSON.stringify(DEFAULT_VAR_CATS)) };
   const varsForYear = {};
   DEFAULT_VAR_CATS.forEach(c => { varsForYear[c.key] = []; });
@@ -2836,6 +2843,20 @@ function loadData() {
     });
     localStorage.setItem('boite_lines_v1', '1');
   }
+  // Migration: ajouter lignes retrait_banc et depot_banc à toutes les années existantes
+  if (!localStorage.getItem('banc_lines_v1')) {
+    getYears().forEach(y => {
+      const charges = DATA[y].charges || [];
+      const revenus = DATA[y].revenus || [];
+      if (!charges.some(c => c.cat === 'retrait_banc')) {
+        charges.push({label:'🏧 Retrait bancaire', cat:'retrait_banc', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:false});
+      }
+      if (!revenus.some(r => r.cat === 'depot_banc')) {
+        revenus.push({label:'🏧 Dépôt bancaire', cat:'depot_banc', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:false});
+      }
+    });
+    localStorage.setItem('banc_lines_v1', '1');
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -3316,7 +3337,7 @@ function addYear() {
   document.getElementById('rev-dialog-tbody').innerHTML = prev.revenus.map((r, i) => {
     if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < newYearInt) return '';
     const last = _lastPaidAmt(r);
-    const isProtected = r.cat === 'boite_dep';
+    const isProtected = r.cat === 'boite_dep' || r.cat === 'depot_banc';
     const lbl = isProtected ? `<span style="color:#5B6AF0;font-weight:700">${_esc(r.label)}</span>` : `<span style="font-weight:600">${_esc(r.label)}</span>`;
     const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
       ? ` <span style="color:#F5A623;font-size:11px">(fin ${getMonths()[r.endMonth]} ${r.endYear})</span>` : '';
@@ -3385,7 +3406,7 @@ function confirmRevDialog() {
     }).filter(r => r !== null),
     charges: prev.charges.map((r, i) => {
       const ny = parseInt(newYear);
-      const isSpecialRow = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in';
+      const isSpecialRow = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in' || r.cat === 'retrait_banc';
       // Ligne terminée avant la nouvelle année → ne pas reprendre (sauf lignes protégées)
       if (!isSpecialRow && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
       const inp = document.getElementById(`chg-inp-${i}`);
@@ -3677,7 +3698,7 @@ function renderRevSection(year) {
           oninput="DATA['${year}'].revenus[${ri}].v[${mi}]=+this.value;refreshRevTotals('${year}');dSave()"
           onblur="proposePropagate(this,'${year}','revenus',${ri},${mi})" onclick="event.stopPropagation()"></td>`;
     }).join('');
-    const isProtectedRev = r.cat === 'boite_dep';
+    const isProtectedRev = r.cat === 'boite_dep' || r.cat === 'depot_banc';
     return `<tr><td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check cal-check-compte" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','compte',${ri},this.checked)" onclick="event.stopPropagation()">
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
@@ -3780,7 +3801,7 @@ function renderChargeSection(year) {
         </div></td>`;
     }).join('');
     const isLivretRow = r.cat==='livret_in'||r.cat==='livret_out';
-    const isProtectedChg = isLivretRow || r.cat==='boite_in';
+    const isProtectedChg = isLivretRow || r.cat==='boite_in' || r.cat==='retrait_banc';
     const chkClass = isLivretRow ? 'cal-check-livret' : 'cal-check-compte';
     tbody += `<tr class="${r.cat==='occasional'?'occ-row':''}">
       <td class="lbl-col"><div class="lbl-inner">
@@ -7328,8 +7349,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.64';
-const SW_VERSION = 'v185';
+const APP_VERSION = '11.65';
+const SW_VERSION = 'v186';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
