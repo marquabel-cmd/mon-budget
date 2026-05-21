@@ -2844,10 +2844,10 @@ function loadData() {
     localStorage.setItem('boite_lines_v1', '1');
   }
   // Migration: ajouter lignes retrait_banc et depot_banc à toutes les années existantes
-  if (!localStorage.getItem('banc_lines_v1')) {
+  if (!localStorage.getItem('banc_lines_v2')) {
     getYears().forEach(y => {
-      const charges = DATA[y].charges || [];
-      const revenus = DATA[y].revenus || [];
+      const charges = DATA[y]?.charges || [];
+      const revenus = DATA[y]?.revenus || [];
       if (!charges.some(c => c.cat === 'retrait_banc')) {
         charges.push({label:'🏧 Retrait bancaire', cat:'retrait_banc', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:false});
       }
@@ -2855,7 +2855,9 @@ function loadData() {
         revenus.push({label:'🏧 Dépôt bancaire', cat:'depot_banc', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:false});
       }
     });
-    localStorage.setItem('banc_lines_v1', '1');
+    localStorage.setItem('banc_lines_v2', '1');
+    // Persister immédiatement en localStorage (sinon perdu au prochain rechargement sans modification)
+    try { localStorage.setItem(dataKey(), JSON.stringify(DATA)); } catch(e) {}
   }
 }
 
@@ -7371,8 +7373,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.66';
-const SW_VERSION = 'v187';
+const APP_VERSION = '11.67';
+const SW_VERSION = 'v188';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
