@@ -2272,8 +2272,8 @@ function _finishLogin(id) {
       setCloudStatus('syncing');
       cloudPull().then(cloudData => {
         if (cloudData === null && !_lastSyncError) {
-          // Cloud vide ou données locales plus récentes — tenter un push immédiat
-          if (_hasYearData(DATA)) { setTimeout(() => cloudPush(), 2000); }
+          // Cloud vide ou données locales plus récentes — pousser les données locales
+          if (_hasYearData(DATA)) { _cloudDirty = true; setTimeout(() => cloudPush(), 2000); }
           else { setCloudStatus('off'); }
           return;
         }
@@ -5056,13 +5056,26 @@ function setCloudStatus(s, errMsg) {
     }
   }
 }
+function _schedSyncRetry(delaySec) {
+  if (_syncRetryTimer) return; // un retry est déjà planifié
+  _syncRetryTimer = setTimeout(async () => {
+    _syncRetryTimer = null;
+    if (_cloudDirty && cloudApiUrl() && _hasYearData(DATA)) cloudPush();
+  }, delaySec * 1000);
+}
 async function cloudPush() {
   const url = cloudApiUrl();
   if (!url || !DATA) return;
   if (!_hasYearData(DATA)) return; // Ne jamais écraser le cloud avec des données vides
   if (!_deviceAllowed) { setCloudStatus('error', _lang==='en' ? `Device not authorized — max ${MAX_DEVICES} devices` : `Appareil non autorisé — ${MAX_DEVICES} appareils max`); return; }
   const token = await fbGetToken();
-  if (!token) { setCloudStatus('off'); return; } // Session expirée — pas de push silencieux
+  if (!token) {
+    // Token expiré — signaler et réessayer automatiquement dans 90s
+    setCloudStatus('error', _lang==='en' ? 'Session expired — retrying…' : 'Session expirée — nouvelle tentative dans 1 min…');
+    _schedSyncRetry(90);
+    return;
+  }
+  if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
   setCloudStatus('syncing');
   try {
     // Inclure les profils utilisateurs dans la sync (sans photos pour limiter la taille)
@@ -5091,10 +5104,13 @@ async function cloudPush() {
       ...(gistId    ? { _gistId:    gistId    } : {})
     };
     const r = await _fbFetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}, token);
-    if (r.ok) { _lastPushTime = Date.now(); setCloudStatus('ok'); _lastSyncError = ''; }
-    else if (r.status === 401) { setCloudStatus('off'); } // Session expirée — on masque silencieusement
-    else { setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); }
-  } catch(e) { setCloudStatus('error', e.message || 'Réseau inaccessible'); }
+    if (r.ok) { _lastPushTime = Date.now(); _cloudDirty = false; setCloudStatus('ok'); _lastSyncError = ''; }
+    else if (r.status === 401) {
+      setCloudStatus('error', _lang==='en' ? 'Session expired — retrying…' : 'Session expirée — nouvelle tentative…');
+      _schedSyncRetry(90);
+    }
+    else { setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); _schedSyncRetry(120); }
+  } catch(e) { setCloudStatus('error', e.message || 'Réseau inaccessible'); _schedSyncRetry(120); }
 }
 async function cloudPull() {
   const url = cloudApiUrl();
@@ -5200,6 +5216,8 @@ let _alThrottle = 0;
 let _realtimeSource = null;
 let _lastPushTime = 0;
 let _realtimeReconnectTimer = null;
+let _cloudDirty = false;      // true si des données locales n'ont pas encore été poussées
+let _syncRetryTimer = null;   // timer de réessai automatique en cas d'échec
 let _pendingRealtimeData = null;
 
 async function startRealtimeSync() {
@@ -5300,7 +5318,11 @@ function applyRealtimeData(d) {
 
 // Reconnecter quand la page redevient visible (retour onglet / déverrouillage mobile)
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && isLicensed() && _fbUser && !_realtimeSource) startRealtimeSync();
+  if (document.visibilityState === 'visible' && isLicensed() && _fbUser) {
+    if (!_realtimeSource) startRealtimeSync();
+    // Pousser les données locales non synchronisées si l'onglet reprend le focus
+    if (_cloudDirty && cloudApiUrl() && _hasYearData(DATA)) setTimeout(() => cloudPush(), 1000);
+  }
 });
 window.addEventListener('online',  () => { if (isLicensed() && _fbUser && !_realtimeSource) startRealtimeSync(); });
 window.addEventListener('offline', () => stopRealtimeSync());
@@ -5341,6 +5363,7 @@ function saveData(silent = false) {
   if (!silent) showToast(t('toast.saved'));
   updateLastSaveDisplay();
   // ── Protections multi-couches ──
+  _cloudDirty = true;                   // données locales à pousser
   cloudPush();                          // Firebase (Premium)
   opfsSave();                           // OPFS local persistant (tous)
   gistPush();                           // GitHub Gist (si configuré)
@@ -7283,7 +7306,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.54';
+const APP_VERSION = '11.55';
 const SW_VERSION = 'v177';
 
 // ── INTERNATIONALISATION ──
@@ -10716,16 +10739,17 @@ if ('serviceWorker' in navigator) {
       reg.update();
       setInterval(() => reg.update(), 30 * 60 * 1000);
 
-      // ── Auto-sync périodique (toutes les 60 min) ──
-      // Gist et Firebase sont déclenchés silencieusement si configurés
+      // ── Auto-sync périodique (toutes les 10 min) ──
+      // Gist et Firebase sont déclenchés silencieusement si des données locales ont changé
       setInterval(() => {
         if (getGistToken() && !_gistSyncing && !_compareMode && !_isAdminMode && _hasYearData(DATA)) {
           gistPush();
         }
-        if (cloudApiUrl() && _deviceAllowed && !_compareMode && !_isAdminMode && _hasYearData(DATA)) {
+        // Firebase : pousser si données modifiées depuis le dernier push
+        if (_cloudDirty && cloudApiUrl() && _deviceAllowed && !_compareMode && !_isAdminMode && _hasYearData(DATA)) {
           cloudPush();
         }
-      }, 60 * 60 * 1000);
+      }, 10 * 60 * 1000);
 
       // Si un nouveau SW est déjà en attente (ex: onglet resté ouvert longtemps), l'activer tout de suite
       function _activateWaiting(worker) {
