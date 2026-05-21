@@ -4326,7 +4326,11 @@ function openQuickAdd(year, catKey) {
   yrSel.innerHTML = yrs.map(y=>`<option value="${y}"${y==year?' selected':''}>${y}</option>`).join('');
   // Populate category
   const catSel = document.getElementById('qa-cat');
-  catSel.innerHTML = getVarCats().map(c=>`<option value="${c.key}"${c.key===catKey?' selected':''}>${c.icon} ${_esc(c.label)}</option>`).join('');
+  catSel.innerHTML =
+    getVarCats().map(c=>`<option value="${c.key}"${c.key===catKey?' selected':''}>${c.icon} ${_esc(c.label)}</option>`).join('') +
+    `<option disabled>──────────────</option>` +
+    `<option value="retrait_banc"${catKey==='retrait_banc'?' selected':''}>🏧 Retrait bancaire</option>` +
+    `<option value="depot_banc"${catKey==='depot_banc'?' selected':''}>🏧 Dépôt bancaire</option>`;
   catSel.onchange = () => updateQaBudgetNotice(catSel.value);
   updateQaBudgetNotice(catKey || catSel.value);
   // Populate months
@@ -4380,7 +4384,23 @@ function submitQuickAdd() {
   const dayVal = document.getElementById('qa-day').value.trim();
   const comment= document.getElementById('qa-comment').value.trim();
   const dateStr = dayVal ? `${String(+dayVal).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${year}` : '';
-  if (!DATA[year]) { DATA[year] = {revenus:{},charges:{},vars:{}}; }
+  if (!DATA[year]) { DATA[year] = {revenus:[],charges:[],vars:{}}; }
+
+  // Cas spéciaux : Retrait bancaire (charge) et Dépôt bancaire (revenu)
+  if (catKey === 'retrait_banc' || catKey === 'depot_banc') {
+    const section = catKey === 'retrait_banc' ? 'charges' : 'revenus';
+    const rows = DATA[year][section] || [];
+    const ri = rows.findIndex(r => r.cat === catKey);
+    if (ri === -1) { document.getElementById('qa-error').textContent = '⚠️ Ligne introuvable — rechargez la page'; return; }
+    DATA[year][section][ri].v[month] = Math.round(((DATA[year][section][ri].v[month] || 0) + Math.abs(amount)) * 100) / 100;
+    DATA[year][section][ri].paid[month] = true;
+    renderYear(year);
+    dSave();
+    document.getElementById('quick-add-overlay').style.display = 'none';
+    showToast(catKey === 'retrait_banc' ? `🏧 Retrait ${Math.abs(amount)} € enregistré` : `🏧 Dépôt ${Math.abs(amount)} € enregistré`);
+    return;
+  }
+
   if (!DATA[year].vars[catKey]) DATA[year].vars[catKey] = [];
 
   if (_qaEditTxId !== null) {
@@ -4702,6 +4722,8 @@ function _checkBudgetAlert(year, catKey, showToastOnCross = false) {
 function updateQaBudgetNotice(catKey) {
   const notice = document.getElementById('qa-budget-notice');
   if (!notice) return;
+  // Lignes bancaires : pas de notion de budget, ne pas afficher le message
+  if (catKey === 'retrait_banc' || catKey === 'depot_banc') { notice.style.display = 'none'; return; }
   const hasBudget = !!(DATA.budgets && DATA.budgets[catKey]);
   notice.style.display = hasBudget ? 'none' : 'block';
 }
@@ -7349,8 +7371,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.65';
-const SW_VERSION = 'v186';
+const APP_VERSION = '11.66';
+const SW_VERSION = 'v187';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
