@@ -7215,7 +7215,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.46';
+const APP_VERSION = '11.47';
 const SW_VERSION = 'v172';
 
 // ── INTERNATIONALISATION ──
@@ -9074,6 +9074,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.47': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🤖', text: 'Fix IA : revenus et charges fixes affichaient 0€/an — la structure tableau était mal lue (Object.entries sur un Array). Totaux annuels maintenant corrects dans le contexte IA.' }
+    ]
+  },
   '11.46': {
     date: 'Mai 2026',
     items: [
@@ -11088,28 +11094,24 @@ function _buildBudgetContext() {
     const d = DATA[year];
     if (!d) return;
     ctx += `═══ ANNÉE ${year} ═══\n`;
-    // Revenus
-    const revEntries = Object.entries(d.revenus || {});
-    if (revEntries.length) {
+    // Revenus (tableau [{label, v:[m0..m11]}])
+    const revRows = Array.isArray(d.revenus) ? d.revenus : [];
+    if (revRows.length) {
       ctx += '💼 REVENUS :\n';
-      revEntries.forEach(([label, months]) => {
-        const arr = Array.isArray(months) ? months : Array.from({length:12}, (_,i) => months[i]||0);
+      revRows.forEach(row => {
+        const arr = Array.isArray(row.v) ? row.v : [];
         const total = arr.reduce((s,v) => s+(parseFloat(v)||0), 0);
-        ctx += `  ${label}: ${total.toFixed(0)}€/an\n`;
+        ctx += `  ${row.label}: ${total.toFixed(0)}€/an\n`;
       });
     }
-    // Charges
-    const chargeEntries = Object.entries(d.charges || {});
-    if (chargeEntries.length) {
+    // Charges (tableau [{label, v:[m0..m11], paid:[...]}])
+    const chargeRows = Array.isArray(d.charges) ? d.charges : [];
+    if (chargeRows.length) {
       ctx += '🏠 CHARGES FIXES :\n';
-      chargeEntries.forEach(([label, data]) => {
-        let total = 0;
-        if (data?.amounts) {
-          total = Object.values(data.amounts).reduce((s,v)=>s+(parseFloat(v)||0),0);
-        } else if (Array.isArray(data)) {
-          total = data.reduce((s,v)=>s+(parseFloat(v)||0),0);
-        }
-        ctx += `  ${label}: ${total.toFixed(0)}€/an\n`;
+      chargeRows.forEach(row => {
+        const arr = Array.isArray(row.v) ? row.v : [];
+        const total = arr.reduce((s,v) => s+(parseFloat(v)||0), 0);
+        ctx += `  ${row.label}: ${total.toFixed(0)}€/an\n`;
       });
     }
     // Variables
