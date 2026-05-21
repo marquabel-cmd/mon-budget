@@ -5740,13 +5740,11 @@ function _goToYear(y) {
   if (tab) tab.click();
 }
 function _goToTab(id) {
-  const map = { resume: "📊 Résumé", charts: "📈 Graphiques" };
-  if (id === 'resume' || id === 'charts') {
-    const tab = [...document.querySelectorAll('.tabs .tab')].find(t => t.textContent.trim().startsWith(map[id]?.slice(0,3) || ''));
-    if (tab) tab.click();
-  } else if (id.startsWith('y')) {
-    _goToYear(id.slice(1));
-  }
+  if (id.startsWith('y')) { _goToYear(id.slice(1)); return; }
+  // Utiliser data-tabid en priorité (fiable), sinon chercher dans onclick
+  const tab = document.querySelector(`[data-tabid="${id}"]`)
+    || [...document.querySelectorAll('.tab')].find(t => (t.getAttribute('onclick')||'').includes(`'${id}'`));
+  if (tab) tab.click();
 }
 // ─────────────────────────────────────────────
 // 🔍 RECHERCHE GLOBALE
@@ -7330,8 +7328,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.61';
-const SW_VERSION = 'v182';
+const APP_VERSION = '11.62';
+const SW_VERSION = 'v183';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
