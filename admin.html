@@ -864,6 +864,7 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
         <input id="bv-search-input" class="auth-input" style="margin:0;padding:6px 10px;font-size:12px;width:240px;background:#12141F"
           placeholder="UID ou clé BETA-XXXX…" onkeydown="if(event.key==='Enter')bvSearchAndLoad()">
         <button class="btn btn-primary btn-sm" onclick="bvSearchAndLoad()">👁️ Charger</button>
+        <button class="btn btn-ghost btn-sm" id="bv-reload-btn" onclick="bvReload()" title="Recharger depuis Firebase">🔄</button>
         <button class="btn btn-ghost btn-sm" onclick="closeBudgetViewer()">✕</button>
       </div>
     </div>
@@ -1518,6 +1519,7 @@ async function sendFbReply(id, email, subject) {
 // ── BUDGET VIEWER ──────────────────────────────────────────────────────
 let _bvData = null;
 let _bvYear = null;
+let _bvCurrentUid = null;
 
 function closeBudgetViewer() {
   document.getElementById('budget-viewer-modal').style.display = 'none';
@@ -1575,8 +1577,17 @@ async function refreshAll() {
   }
 }
 
+async function bvReload() {
+  if (!_bvCurrentUid) return;
+  const btn = document.getElementById('bv-reload-btn');
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  await viewUserBudget(_bvCurrentUid);
+  if (btn) { btn.textContent = '🔄'; btn.disabled = false; }
+}
+
 async function viewUserBudget(uid) {
   if (!uid) return;
+  _bvCurrentUid = uid;
   const info = _allUsers[uid] || {};
   document.getElementById('bv-email').textContent = info.email || uid;
   document.getElementById('bv-uid').textContent = uid;
