@@ -220,7 +220,7 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
     <div class="header-right">
       <span id="admin-email" style="font-size:12px;color:#8892B0"></span>
       <button class="btn btn-ghost btn-sm" id="refresh-btn" onclick="refreshAll()" title="Rafraîchir toutes les données">🔄</button>
-      <a href="budget_familial.html" class="btn btn-ghost btn-sm">← App</a>
+      <button class="btn btn-ghost btn-sm" onclick="window.close();setTimeout(()=>{window.location.href='budget_familial.html'},100)">← App</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Déconnexion</button>
     </div>
   </div>
