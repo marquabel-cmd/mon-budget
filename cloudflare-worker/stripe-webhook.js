@@ -192,7 +192,15 @@ async function handleContact(request, env) {
       template_id:     'template_6wantmt',
       user_id:         EMAILJS_PUBLIC_KEY,
       accessToken:     env.EMAILJS_PRIVATE_KEY,
-      template_params: { from_name: name, from_email: email, message },
+      template_params: {
+        category: 'Contact Web',
+        subject:  message,
+        name,
+        email,
+        stars: '',
+        uid:  '',
+        date: new Date().toLocaleDateString('fr-BE'),
+      },
     }),
   });
   const text = await ejsRes.text();
