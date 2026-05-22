@@ -7514,8 +7514,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.71';
-const SW_VERSION = 'v192';
+const APP_VERSION = '11.72';
+const SW_VERSION = 'v193';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -10973,6 +10973,8 @@ if ('serviceWorker' in navigator) {
       // Vérifier les mises à jour immédiatement + toutes les 30 minutes
       reg.update();
       setInterval(() => reg.update(), 30 * 60 * 1000);
+      // Vérifier aussi à chaque retour sur l'onglet
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update(); });
 
       // ── Auto-sync périodique (toutes les 10 min) ──
       // Gist et Firebase sont déclenchés silencieusement si des données locales ont changé
