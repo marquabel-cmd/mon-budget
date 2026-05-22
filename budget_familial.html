@@ -7517,6 +7517,18 @@ const FREE_MAX_YEARS = 1;
 const APP_VERSION = '11.72';
 const SW_VERSION = 'v193';
 
+// ── AUTO-UPDATE CHECK ──
+(function() {
+  function checkVersion() {
+    fetch('./version.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => { if (data.v && data.v !== APP_VERSION) location.reload(true); })
+      .catch(() => {});
+  }
+  setInterval(checkVersion, 5 * 60 * 1000); // toutes les 5 min
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
+})();
+
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
   fr: {
