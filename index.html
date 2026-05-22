@@ -662,13 +662,14 @@ footer{padding:40px 24px;background:var(--dark2);border-top:1px solid var(--bord
       <a href="budget_familial.html">Ouvrir l'app</a>
       <a href="aide.html">Aide</a>
       <a href="privacy.html">Confidentialité</a>
-      <a href="mailto:marquabel@gmail.com">Contact</a>
+      <a href="#" id="footer-contact">Contact</a>
     </div>
     <div class="footer-copy">© 2026 Mon Budget · Fait en Belgique 🇧🇪</div>
   </div>
 </footer>
 
 <script>
+(function(){var e=document.getElementById('footer-contact');if(e){e.addEventListener('click',function(ev){ev.preventDefault();location.href=['mai','lto:mar','quabel','@gma','il.com'].join('');});}})();
 function toggleFaq(btn){
   const a=btn.nextElementSibling;
   const isOpen=btn.classList.contains('open');
