@@ -4747,15 +4747,18 @@ async function processScannedTicket(input) {
   const status = document.getElementById('qa-scan-status');
   status.style.display = 'block';
   status.textContent = '🔍 Analyse du ticket en cours…';
-  input.value = ''; // reset pour permettre un 2ème scan du même fichier
+  input.value = '';
   try {
-    // Convertir l'image en base64
+    // Convertir en base64
     const base64 = await new Promise((res, rej) => {
       const reader = new FileReader();
       reader.onload = e => res(e.target.result);
       reader.onerror = rej;
       reader.readAsDataURL(file);
     });
+    // Construire la liste des catégories existantes pour le prompt
+    const cats = getVarCats();
+    const catList = cats.map(c => `${c.icon || ''} ${c.label}`).join(', ');
     // Appel Groq Vision
     const resp = await fetch(GROQ_PROXY_URL, {
       method: 'POST',
@@ -4765,33 +4768,62 @@ async function processScannedTicket(input) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: 'Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC en number>, "jour": <jour 1-31 ou null>, "mois": <mois 1-12 ou null>, "commercant": "<nom du commerce ou null>"}. Si illisible: {"erreur": "illisible"}.' },
+            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>"}. Si illisible: {"erreur": "illisible"}.` },
             { type: 'image_url', image_url: { url: base64 } }
           ]
         }],
-        max_tokens: 150,
+        max_tokens: 200,
         temperature: 0
       })
     });
     if (!resp.ok) throw new Error('Erreur réseau');
     const data = await resp.json();
     const raw = data.choices?.[0]?.message?.content?.trim() || '';
-    // Extraire le JSON même s'il y a du texte autour
-    const jsonMatch = raw.match(/\{[^}]+\}/);
+    const jsonMatch = raw.match(/\{[\s\S]*?\}/);
     if (!jsonMatch) throw new Error('Réponse invalide');
     const ticket = JSON.parse(jsonMatch[0]);
     if (ticket.erreur) { status.textContent = '⚠️ Ticket illisible — remplis manuellement.'; return; }
-    // Pré-remplir le formulaire
-    if (ticket.montant)   document.getElementById('qa-amount').value  = ticket.montant;
-    if (ticket.jour)      document.getElementById('qa-day').value     = ticket.jour;
-    if (ticket.mois)      document.getElementById('qa-month').value   = ticket.mois - 1;
+    // Pré-remplir date
+    if (ticket.montant) document.getElementById('qa-amount').value = ticket.montant;
+    if (ticket.jour)    document.getElementById('qa-day').value    = ticket.jour;
+    if (ticket.mois)    document.getElementById('qa-month').value  = ticket.mois - 1;
+    if (ticket.annee) {
+      const yrSel = document.getElementById('qa-year');
+      const opt = [...yrSel.options].find(o => o.value == ticket.annee);
+      if (opt) yrSel.value = ticket.annee;
+    }
     if (ticket.commercant) document.getElementById('qa-comment').value = ticket.commercant;
-    status.textContent = '✅ Ticket lu — vérifie et ajuste si besoin.';
+    // Pré-remplir catégorie
+    let catMsg = '';
+    if (ticket.categorie) {
+      const suggested = ticket.categorie.toLowerCase().replace(/^[\p{Emoji}\s]+/u,'').trim();
+      const match = cats.find(c =>
+        c.label.toLowerCase().includes(suggested) || suggested.includes(c.label.toLowerCase())
+      );
+      if (match) {
+        document.getElementById('qa-cat').value = match.key;
+        catMsg = ` · Catégorie : ${match.icon || ''} ${match.label}`;
+      } else {
+        // Catégorie inconnue → proposer de la créer
+        const icon = ticket.categorie.match(/^\p{Emoji}/u)?.[0] || '📦';
+        const label = ticket.categorie.replace(/^\p{Emoji}\s*/u,'').trim() || ticket.categorie;
+        catMsg = ` · <a href="#" style="color:#8B5CF6;font-weight:700" onclick="event.preventDefault();_createCatFromScan('${label.replace(/'/g,"\\'")}','${icon}')">➕ Créer « ${label} »</a>`;
+      }
+    }
+    status.innerHTML = `✅ Ticket lu — vérifie et ajuste si besoin.${catMsg}`;
     document.getElementById('qa-amount').focus();
   } catch(e) {
     status.textContent = '❌ Échec de l\'analyse — remplis manuellement.';
     console.error('Scan ticket:', e);
   }
+}
+function _createCatFromScan(label, icon) {
+  closeQuickAdd();
+  openCatModal(null);
+  setTimeout(() => {
+    document.getElementById('cat-m-label').value = label;
+    document.getElementById('cat-m-icon').value  = icon;
+  }, 150);
 }
 
 // ── BUDGET EDITOR ──
@@ -7430,8 +7462,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.68';
-const SW_VERSION = 'v189';
+const APP_VERSION = '11.69';
+const SW_VERSION = 'v190';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
