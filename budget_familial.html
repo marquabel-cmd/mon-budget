@@ -1023,6 +1023,9 @@ body.auth-locked #context-banner {
         ⚠️ Pas de budget défini pour cette catégorie.
         <a href="#" onclick="event.preventDefault();openBudgetSetFromQA()" style="color:#e08800;font-weight:700;text-decoration:underline">Définir un budget →</a>
       </div>
+      <input type="file" id="qa-scan-input" accept="image/*" capture="environment" style="display:none" onchange="processScannedTicket(this)">
+      <button type="button" onclick="document.getElementById('qa-scan-input').click()" style="width:100%;padding:9px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">📷 Scanner un ticket</button>
+      <div id="qa-scan-status" style="display:none;font-size:12px;text-align:center;padding:4px 0;color:var(--gray)"></div>
       <div id="qa-error" style="color:var(--red);font-size:12px;font-weight:600;min-height:16px"></div>
       <button id="qa-submit-btn" data-i18n="btn.add" onclick="submitQuickAdd()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--blue),#2980b9);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:2px">✅ Ajouter</button>
     </div>
@@ -4737,6 +4740,60 @@ function openBudgetSetFromQA() {
   openBudgetEditor(activeYear, catKey);
 }
 
+// ── Scan ticket via Groq Vision ───────────────────────────────────────────
+async function processScannedTicket(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const status = document.getElementById('qa-scan-status');
+  status.style.display = 'block';
+  status.textContent = '🔍 Analyse du ticket en cours…';
+  input.value = ''; // reset pour permettre un 2ème scan du même fichier
+  try {
+    // Convertir l'image en base64
+    const base64 = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = e => res(e.target.result);
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    });
+    // Appel Groq Vision
+    const resp = await fetch(GROQ_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC en number>, "jour": <jour 1-31 ou null>, "mois": <mois 1-12 ou null>, "commercant": "<nom du commerce ou null>"}. Si illisible: {"erreur": "illisible"}.' },
+            { type: 'image_url', image_url: { url: base64 } }
+          ]
+        }],
+        max_tokens: 150,
+        temperature: 0
+      })
+    });
+    if (!resp.ok) throw new Error('Erreur réseau');
+    const data = await resp.json();
+    const raw = data.choices?.[0]?.message?.content?.trim() || '';
+    // Extraire le JSON même s'il y a du texte autour
+    const jsonMatch = raw.match(/\{[^}]+\}/);
+    if (!jsonMatch) throw new Error('Réponse invalide');
+    const ticket = JSON.parse(jsonMatch[0]);
+    if (ticket.erreur) { status.textContent = '⚠️ Ticket illisible — remplis manuellement.'; return; }
+    // Pré-remplir le formulaire
+    if (ticket.montant)   document.getElementById('qa-amount').value  = ticket.montant;
+    if (ticket.jour)      document.getElementById('qa-day').value     = ticket.jour;
+    if (ticket.mois)      document.getElementById('qa-month').value   = ticket.mois - 1;
+    if (ticket.commercant) document.getElementById('qa-comment').value = ticket.commercant;
+    status.textContent = '✅ Ticket lu — vérifie et ajuste si besoin.';
+    document.getElementById('qa-amount').focus();
+  } catch(e) {
+    status.textContent = '❌ Échec de l\'analyse — remplis manuellement.';
+    console.error('Scan ticket:', e);
+  }
+}
+
 // ── BUDGET EDITOR ──
 let _bgtEdYear = null, _bgtEdCat = null;
 
@@ -7373,8 +7430,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.67';
-const SW_VERSION = 'v188';
+const APP_VERSION = '11.68';
+const SW_VERSION = 'v189';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
