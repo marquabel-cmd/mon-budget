@@ -1002,11 +1002,15 @@ body.auth-locked #context-banner {
         </div>
       </div>
       <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <label data-i18n="th.category" style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">Catégorie</label>
-          <button type="button" onclick="closeQuickAdd();openCatModal(null)" style="background:none;border:none;font-size:11px;font-weight:700;color:#00C896;cursor:pointer;padding:0">➕ Nouvelle</button>
-        </div>
+        <label data-i18n="th.category" style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Catégorie</label>
         <select id="qa-cat" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
+        <div id="qa-new-cat" style="display:none;margin-top:6px;background:var(--blue-light,#EEF2FF);border:1px solid var(--border);border-radius:8px;padding:8px">
+          <div style="display:grid;grid-template-columns:44px 1fr 36px;gap:6px;align-items:center">
+            <input id="qa-nc-icon" type="text" placeholder="📦" maxlength="2" style="border:1px solid var(--border);border-radius:6px;padding:6px;font-size:18px;text-align:center;background:var(--surface);color:var(--text);box-sizing:border-box;width:100%">
+            <input id="qa-nc-label" type="text" placeholder="Nom de la catégorie" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;background:var(--surface);color:var(--text);box-sizing:border-box;width:100%" onkeydown="if(event.key==='Enter')createCatInline()">
+            <button type="button" onclick="createCatInline()" style="background:#00C896;color:#fff;border:none;border-radius:6px;padding:6px;font-size:16px;cursor:pointer;width:100%">✓</button>
+          </div>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
@@ -4338,8 +4342,18 @@ function openQuickAdd(year, catKey) {
     getVarCats().map(c=>`<option value="${c.key}"${c.key===catKey?' selected':''}>${c.icon} ${_esc(c.label)}</option>`).join('') +
     `<option disabled>──────────────</option>` +
     `<option value="retrait_banc"${catKey==='retrait_banc'?' selected':''}>🏧 Retrait bancaire</option>` +
-    `<option value="depot_banc"${catKey==='depot_banc'?' selected':''}>🏧 Dépôt bancaire</option>`;
-  catSel.onchange = () => updateQaBudgetNotice(catSel.value);
+    `<option value="depot_banc"${catKey==='depot_banc'?' selected':''}>🏧 Dépôt bancaire</option>` +
+    `<option disabled>──────────────</option>` +
+    `<option value="__new__">➕ Nouvelle catégorie…</option>`;
+  catSel.onchange = () => {
+    if (catSel.value === '__new__') {
+      document.getElementById('qa-new-cat').style.display = 'block';
+      setTimeout(() => document.getElementById('qa-nc-label').focus(), 50);
+    } else {
+      document.getElementById('qa-new-cat').style.display = 'none';
+      updateQaBudgetNotice(catSel.value);
+    }
+  };
   updateQaBudgetNotice(catKey || catSel.value);
   // Populate months
   const mSel = document.getElementById('qa-month');
@@ -4821,12 +4835,47 @@ async function processScannedTicket(input) {
   }
 }
 function _createCatFromScan(label, icon) {
-  closeQuickAdd();
-  openCatModal(null);
-  setTimeout(() => {
-    document.getElementById('cat-m-label').value = label;
-    document.getElementById('cat-m-icon').value  = icon;
-  }, 150);
+  const catSel = document.getElementById('qa-cat');
+  if (catSel) {
+    // Sélectionner __new__ et afficher le mini-formulaire pré-rempli
+    catSel.value = '__new__';
+    document.getElementById('qa-new-cat').style.display = 'block';
+    document.getElementById('qa-nc-icon').value  = icon || '📦';
+    document.getElementById('qa-nc-label').value = label || '';
+    setTimeout(() => document.getElementById('qa-nc-label').focus(), 50);
+  }
+}
+function createCatInline() {
+  const icon  = document.getElementById('qa-nc-icon').value.trim()  || '📦';
+  const label = document.getElementById('qa-nc-label').value.trim();
+  const errEl = document.getElementById('qa-error');
+  if (!label) { errEl.textContent = '⚠️ Saisis un nom de catégorie.'; return; }
+  if (!isLicensed() && getVarCats().length >= FREE_MAX_CATS) { showUpgrade(`catégories illimitées (max ${FREE_MAX_CATS} en gratuit)`); return; }
+  const key = label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  if (!key) { errEl.textContent = '⚠️ Nom invalide.'; return; }
+  if (getVarCats().find(c => c.key === key)) { errEl.textContent = '⚠️ Cette catégorie existe déjà.'; return; }
+  // Créer la catégorie
+  DATA.varCats = getVarCats();
+  const usedColors = DATA.varCats.map(c => getCatColor(c));
+  const color = CAT_PALETTE.find(c => !usedColors.includes(c)) || CAT_PALETTE[DATA.varCats.length % CAT_PALETTE.length];
+  DATA.varCats.push({key, icon, label, color});
+  getYears().forEach(y => { if (DATA[y] && DATA[y].vars) DATA[y].vars[key] = DATA[y].vars[key] || []; });
+  dSave();
+  _patchVarCatInDOM(key, true);
+  // Ajouter l'option dans le select et la sélectionner
+  const catSel = document.getElementById('qa-cat');
+  const newOpt = document.createElement('option');
+  newOpt.value = key; newOpt.textContent = `${icon} ${label}`;
+  const sepIdx = [...catSel.options].findIndex(o => o.disabled);
+  catSel.insertBefore(newOpt, sepIdx >= 0 ? catSel.options[sepIdx] : null);
+  catSel.value = key;
+  // Masquer le mini-formulaire et nettoyer
+  document.getElementById('qa-new-cat').style.display = 'none';
+  document.getElementById('qa-nc-icon').value  = '';
+  document.getElementById('qa-nc-label').value = '';
+  errEl.textContent = '';
+  updateQaBudgetNotice(key);
+  showToast(`✅ Catégorie « ${label} » créée`);
 }
 
 // ── BUDGET EDITOR ──
@@ -7465,8 +7514,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.70';
-const SW_VERSION = 'v191';
+const APP_VERSION = '11.71';
+const SW_VERSION = 'v192';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
