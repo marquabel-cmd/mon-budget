@@ -189,7 +189,7 @@ async function handleContact(request, env) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       service_id:      EMAILJS_SERVICE_ID,
-      template_id:     'contact_web',
+      template_id:     'template_6wantmt',
       user_id:         EMAILJS_PUBLIC_KEY,
       accessToken:     env.EMAILJS_PRIVATE_KEY,
       template_params: { from_name: name, from_email: email, message },
