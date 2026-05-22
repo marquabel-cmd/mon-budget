@@ -1002,7 +1002,10 @@ body.auth-locked #context-banner {
         </div>
       </div>
       <div>
-        <label data-i18n="th.category" style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Catégorie</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label data-i18n="th.category" style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">Catégorie</label>
+          <button type="button" onclick="closeQuickAdd();openCatModal(null)" style="background:none;border:none;font-size:11px;font-weight:700;color:#00C896;cursor:pointer;padding:0">➕ Nouvelle</button>
+        </div>
         <select id="qa-cat" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -4351,7 +4354,7 @@ function openQuickAdd(year, catKey) {
   document.getElementById('qa-comment').value = '';
   document.getElementById('qa-error').textContent = '';
   overlay.style.display = 'flex';
-  setTimeout(()=>document.getElementById('qa-amount').focus(), 50);
+  setTimeout(()=>{ if (!('ontouchstart' in window)) document.getElementById('qa-amount').focus(); }, 50);
 }
 function closeQuickAdd(e) {
   if (e && e.target !== document.getElementById('quick-add-overlay')) return;
@@ -7462,8 +7465,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.69';
-const SW_VERSION = 'v190';
+const APP_VERSION = '11.70';
+const SW_VERSION = 'v191';
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
