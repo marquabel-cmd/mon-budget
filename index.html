@@ -668,8 +668,70 @@ footer{padding:40px 24px;background:var(--dark2);border-top:1px solid var(--bord
   </div>
 </footer>
 
+<!-- Modal Contact -->
+<div id="contact-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:460px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <button onclick="document.getElementById('contact-overlay').style.display='none'" style="position:absolute;top:14px;right:18px;background:none;border:none;font-size:22px;cursor:pointer;color:#888;">✕</button>
+    <h2 style="margin:0 0 6px;font-size:20px;">Nous contacter</h2>
+    <p style="margin:0 0 20px;color:#666;font-size:14px;">Une question, une suggestion ? On vous répond rapidement.</p>
+    <div id="contact-success" style="display:none;text-align:center;padding:24px 0;">
+      <div style="font-size:40px;margin-bottom:12px;">✅</div>
+      <p style="font-weight:600;margin:0 0 4px;">Message envoyé !</p>
+      <p style="color:#666;font-size:14px;margin:0;">On vous répond dans les 24h.</p>
+    </div>
+    <form id="contact-form" onsubmit="submitContact(event)">
+      <input name="honey" style="display:none" tabindex="-1" autocomplete="off">
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Nom</label>
+        <input id="c-name" type="text" required placeholder="Votre nom" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Email</label>
+        <input id="c-email" type="email" required placeholder="votre@email.com" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Message</label>
+        <textarea id="c-msg" required placeholder="Votre message..." rows="4" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>
+      </div>
+      <div id="contact-error" style="display:none;color:#e53e3e;font-size:13px;margin-bottom:12px;"></div>
+      <button type="submit" id="c-btn" style="width:100%;padding:12px;background:#4F46E5;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">Envoyer le message</button>
+    </form>
+  </div>
+</div>
+
 <script>
-(function(){var e=document.getElementById('footer-contact');if(e){e.addEventListener('click',function(ev){ev.preventDefault();location.href=['mai','lto:mar','quabel','@gma','il.com'].join('');});}})();
+function openContact(e){e.preventDefault();document.getElementById('contact-overlay').style.display='flex';document.getElementById('contact-success').style.display='none';document.getElementById('contact-form').style.display='block';document.getElementById('contact-error').style.display='none';}
+document.getElementById('footer-contact').addEventListener('click',openContact);
+document.getElementById('contact-overlay').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
+async function submitContact(e){
+  e.preventDefault();
+  const btn=document.getElementById('c-btn');
+  const err=document.getElementById('contact-error');
+  btn.textContent='Envoi…';btn.disabled=true;err.style.display='none';
+  const honey=document.querySelector('#contact-form input[name="honey"]').value;
+  try{
+    const res=await fetch('https://stripe-webhook-mon-budget.marquabel.workers.dev/contact',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:document.getElementById('c-name').value,
+        email:document.getElementById('c-email').value,
+        message:document.getElementById('c-msg').value,
+        honey
+      })
+    });
+    if(res.ok){
+      document.getElementById('contact-form').style.display='none';
+      document.getElementById('contact-success').style.display='block';
+    } else {
+      throw new Error('Erreur serveur');
+    }
+  } catch(ex){
+    err.textContent='Erreur lors de l\'envoi. Réessayez.';err.style.display='block';
+    btn.textContent='Envoyer le message';btn.disabled=false;
+  }
+}
+
 function toggleFaq(btn){
   const a=btn.nextElementSibling;
   const isOpen=btn.classList.contains('open');

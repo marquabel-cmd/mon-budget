@@ -172,6 +172,34 @@ async function handleEmail(request, env) {
   return new Response(text, { status: ejsRes.ok ? 200 : ejsRes.status, headers: cors });
 }
 
+// ── Contact form (sans auth — honeypot anti-spam) ─────────────────────────
+async function handleContact(request, env) {
+  const cors = getCorsHeaders(request);
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: cors });
+  let body;
+  try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400, headers: cors }); }
+  const { name, email, message, honey } = body;
+  // Honeypot : champ caché rempli = bot
+  if (honey) return new Response('OK', { status: 200, headers: cors });
+  if (!name || !email || !message) return new Response('Champs manquants', { status: 400, headers: cors });
+  if (!env.EMAILJS_PRIVATE_KEY) return new Response('Config error', { status: 500, headers: cors });
+  const ejsRes = await fetch(EMAILJS_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      service_id:      EMAILJS_SERVICE_ID,
+      template_id:     'contact_web',
+      user_id:         EMAILJS_PUBLIC_KEY,
+      accessToken:     env.EMAILJS_PRIVATE_KEY,
+      template_params: { from_name: name, from_email: email, message },
+    }),
+  });
+  const text = await ejsRes.text();
+  console.log(`Contact form EmailJS: ${ejsRes.status} ${text}`);
+  return new Response(ejsRes.ok ? 'OK' : 'Error', { status: ejsRes.ok ? 200 : 500, headers: cors });
+}
+
 // ── Handler principal ──────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
@@ -179,6 +207,9 @@ export default {
 
     // Route /email → relay EmailJS avec clé privée
     if (url.pathname === '/email') return handleEmail(request, env);
+
+    // Route /contact → formulaire de contact (sans auth)
+    if (url.pathname === '/contact') return handleContact(request, env);
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
     if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
