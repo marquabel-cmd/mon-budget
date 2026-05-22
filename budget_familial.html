@@ -4779,6 +4779,8 @@ async function processScannedTicket(input) {
     // Construire la liste des catégories existantes pour le prompt
     const cats = getVarCats();
     const catList = cats.map(c => `${c.icon || ''} ${c.label}`).join(', ');
+    const methods = getMethods();
+    const methodList = methods.map(m => m.key + "=" + m.label).join(", ");
     // Appel Groq Vision
     const resp = await fetch(GROQ_PROXY_URL, {
       method: 'POST',
@@ -4788,7 +4790,7 @@ async function processScannedTicket(input) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>"}. Si illisible: {"erreur": "illisible"}.` },
+            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "mode_paiement": "<choisis la clé exacte parmi: ${methodList} — ou null si non visible>"}. Si illisible: {"erreur": "illisible"}.` },
             { type: 'image_url', image_url: { url: base64 } }
           ]
         }],
@@ -4830,7 +4832,16 @@ async function processScannedTicket(input) {
         catMsg = ` · <a href="#" style="color:#8B5CF6;font-weight:700" onclick="event.preventDefault();_createCatFromScan('${label.replace(/'/g,"\\'")}','${icon}')">➕ Créer « ${label} »</a>`;
       }
     }
-    status.innerHTML = `✅ Ticket lu — vérifie et ajuste si besoin.${catMsg}`;
+    // Pré-remplir mode de paiement
+    let methodMsg = '';
+    if (ticket.mode_paiement) {
+      const mMatch = methods.find(m => m.key === ticket.mode_paiement);
+      if (mMatch) {
+        const methSel = document.getElementById('qa-method');
+        if (methSel) { methSel.value = mMatch.key; methodMsg = ` · 💳 ${mMatch.label}`; }
+      }
+    }
+    status.innerHTML = `✅ Ticket lu — vérifie et ajuste si besoin.${catMsg}${methodMsg}`;
     document.getElementById('qa-amount').focus();
   } catch(e) {
     status.textContent = '❌ Échec de l\'analyse — remplis manuellement.';
@@ -7530,8 +7541,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.74';
-const SW_VERSION = 'v195';
+const APP_VERSION = '11.75';
+const SW_VERSION = 'v196';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
