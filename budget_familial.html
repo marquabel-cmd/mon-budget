@@ -5273,11 +5273,20 @@ async function cloudPush() {
   if (!_deviceAllowed) { setCloudStatus('error', _lang==='en' ? `Device not authorized — max ${MAX_DEVICES} devices` : `Appareil non autorisé — ${MAX_DEVICES} appareils max`); return; }
   const token = await fbGetToken();
   if (!token) {
-    // Token expiré — signaler et réessayer automatiquement dans 90s
+    _sessionExpiredCount++;
+    if (_sessionExpiredCount >= 2) {
+      // 2 échecs consécutifs → reconnexion automatique
+      _sessionExpiredCount = 0;
+      setCloudStatus('error', _lang==='en' ? 'Session expired' : 'Session expirée');
+      showToast(_lang==='en' ? '⚠️ Session expired — please reconnect' : '⚠️ Session expirée — reconnexion requise');
+      setTimeout(() => openAuthModal('login'), 1500);
+      return;
+    }
     setCloudStatus('error', _lang==='en' ? 'Session expired — retrying…' : 'Session expirée — nouvelle tentative dans 1 min…');
-    _schedSyncRetry(90);
+    _schedSyncRetry(60);
     return;
   }
+  _sessionExpiredCount = 0;
   if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
   setCloudStatus('syncing');
   try {
@@ -5422,6 +5431,7 @@ let _lastPushTime = 0;
 let _realtimeReconnectTimer = null;
 let _cloudDirty = false;      // true si des données locales n'ont pas encore été poussées
 let _syncRetryTimer = null;   // timer de réessai automatique en cas d'échec
+let _sessionExpiredCount = 0; // nombre de tentatives échouées pour session expirée
 let _pullInProgress = false;  // true pendant un cloudPull — bloque tout push pour éviter la race condition
 let _pendingRealtimeData = null;
 
@@ -7514,8 +7524,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.72';
-const SW_VERSION = 'v193';
+const APP_VERSION = '11.73';
+const SW_VERSION = 'v194';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -9385,6 +9395,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.73': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔄', text: 'Fix sync temps réel : session Firebase expirée détectée automatiquement — reconnexion proposée après 2 échecs pour rétablir la synchronisation entre appareils.' }
+    ]
+  },
   '11.60': {
     date: 'Mai 2026',
     items: [
