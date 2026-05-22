@@ -1022,6 +1022,18 @@ body.auth-locked #context-banner {
           <select id="qa-method" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
         </div>
       </div>
+      <div style="text-align:center;margin:-2px 0">
+        <button type="button" id="qa-split-btn" onclick="toggleSplitPayment()" style="background:none;border:1px dashed var(--border);border-radius:6px;padding:3px 14px;font-size:11px;color:var(--gray);cursor:pointer">🔀 Paiement partagé</button>
+      </div>
+      <div id="qa-split-row" style="display:none;border:1px dashed var(--orange,#F5A623);border-radius:8px;padding:10px;background:rgba(245,166,35,.06)">
+        <div style="font-size:10px;font-weight:700;color:var(--orange,#F5A623);text-transform:uppercase;margin-bottom:6px">🔀 2ème partie du paiement</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Montant 2 (€)</label>
+            <input id="qa-amount2" type="number" step="0.01" placeholder="0,00" style="width:100%;border:1px solid var(--orange,#F5A623);border-radius:7px;padding:8px 10px;font-size:15px;font-weight:700;box-sizing:border-box"></div>
+          <div><label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Paiement 2</label>
+            <select id="qa-method2" style="width:100%;border:1px solid var(--orange,#F5A623);border-radius:7px;padding:8px 10px;font-size:13px"></select></div>
+        </div>
+      </div>
       <div>
         <label data-i18n="th.comment" style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Commentaire (optionnel)</label>
         <input id="qa-comment" type="text" placeholder="ex: Supermarché, Total..." style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
@@ -4370,8 +4382,29 @@ function openQuickAdd(year, catKey) {
   document.getElementById('qa-day').value = '';
   document.getElementById('qa-comment').value = '';
   document.getElementById('qa-error').textContent = '';
+  // Reset split payment
+  const _splitRow = document.getElementById('qa-split-row');
+  const _splitBtn = document.getElementById('qa-split-btn');
+  if (_splitRow) { _splitRow.style.display = 'none'; }
+  if (_splitBtn) { _splitBtn.style.color = 'var(--gray)'; _splitBtn.style.borderColor = 'var(--border)'; }
+  const _a2 = document.getElementById('qa-amount2'); if (_a2) _a2.value = '';
+  document.getElementById('qa-scan-status').style.display = 'none';
+  document.getElementById('qa-new-cat').style.display = 'none';
   overlay.style.display = 'flex';
   setTimeout(()=>{ if (!('ontouchstart' in window)) document.getElementById('qa-amount').focus(); }, 50);
+}
+function toggleSplitPayment() {
+  const row = document.getElementById('qa-split-row');
+  const btn = document.getElementById('qa-split-btn');
+  const isOpen = row.style.display !== 'none';
+  row.style.display = isOpen ? 'none' : '';
+  btn.style.color = isOpen ? 'var(--gray)' : 'var(--orange,#F5A623)';
+  btn.style.borderColor = isOpen ? 'var(--border)' : 'var(--orange,#F5A623)';
+  if (!isOpen) {
+    const m2 = document.getElementById('qa-method2');
+    if (m2) m2.innerHTML = getMethods().map(mo => '<option value="' + mo.key + '">' + _esc(mo.label) + '</option>').join('');
+    setTimeout(() => document.getElementById('qa-amount2')?.focus(), 50);
+  }
 }
 function closeQuickAdd(e) {
   if (e && e.target !== document.getElementById('quick-add-overlay')) return;
@@ -4475,6 +4508,15 @@ function submitQuickAdd() {
 
   // Mode ajout
   DATA[year].vars[catKey].push({id:_id++, month, amount, date:dateStr, comment, method});
+  // Paiement partagé : ajouter la 2e transaction si active
+  const _splitRow2 = document.getElementById('qa-split-row');
+  if (_splitRow2 && _splitRow2.style.display !== 'none') {
+    const amount2 = parseFloat(document.getElementById('qa-amount2')?.value);
+    const method2 = document.getElementById('qa-method2')?.value;
+    if (!isNaN(amount2) && amount2 !== 0 && method2) {
+      DATA[year].vars[catKey].push({id:_id++, month, amount:amount2, date:dateStr, comment, method:method2});
+    }
+  }
   syncMonthSummary(year, catKey, month);
   // Rafraîchir la liste des transactions si le mois est déjà ouvert
   if (_expandedMonths[`${year}-${catKey}-${month}`]) {
@@ -4790,7 +4832,7 @@ async function processScannedTicket(input) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "mode_paiement": "<choisis la clé exacte parmi: ${methodList} — ou null si non visible>"}. Si illisible: {"erreur": "illisible"}.` },
+            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "mode_paiement": "<clé exacte parmi: ${methodList} ou null si non visible>", "montant2": <2ème montant si paiement partagé ou null>, "mode_paiement2": "<2ème clé parmi: ${methodList} ou null>"}. Si illisible: {"erreur": "illisible"}.` },
             { type: 'image_url', image_url: { url: base64 } }
           ]
         }],
@@ -4839,6 +4881,18 @@ async function processScannedTicket(input) {
       if (mMatch) {
         const methSel = document.getElementById('qa-method');
         if (methSel) { methSel.value = mMatch.key; methodMsg = ` · 💳 ${mMatch.label}`; }
+      }
+    }
+    // Paiement partagé : activer automatiquement si 2 montants détectés
+    if (ticket.montant2 && ticket.mode_paiement2) {
+      const splitRow = document.getElementById('qa-split-row');
+      if (splitRow && splitRow.style.display === 'none') toggleSplitPayment();
+      const a2 = document.getElementById('qa-amount2');
+      if (a2) a2.value = ticket.montant2;
+      const m2sel = document.getElementById('qa-method2');
+      if (m2sel) {
+        const mMatch2 = methods.find(m => m.key === ticket.mode_paiement2);
+        if (mMatch2) { m2sel.value = mMatch2.key; methodMsg += ' + ' + mMatch2.label; }
       }
     }
     status.innerHTML = `✅ Ticket lu — vérifie et ajuste si besoin.${catMsg}${methodMsg}`;
@@ -7541,8 +7595,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.75';
-const SW_VERSION = 'v196';
+const APP_VERSION = '11.76';
+const SW_VERSION = 'v197';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
