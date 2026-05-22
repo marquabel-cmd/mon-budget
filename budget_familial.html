@@ -4235,6 +4235,9 @@ function renderVarCat(year, cat) {
         <button onclick="event.stopPropagation();openCatModal('${cat.key}')"
           title="Modifier la catégorie"
           style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--gray);white-space:nowrap">✏️</button>
+        <button onclick="event.stopPropagation();removeVarCat('${cat.key}')"
+          title="Supprimer la catégorie"
+          style="background:none;border:1px solid var(--red,#e74c3c);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--red,#e74c3c);white-space:nowrap">🗑️</button>
         <button onclick="event.stopPropagation();openBudgetEditor('${year}','${cat.key}')"
           title="Modifier le budget mensuel"
           style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--gray);white-space:nowrap">🎯</button>
@@ -6807,12 +6810,15 @@ function removeVarCat(key) {
   if (cats.length <= 1) { showToast(t('toast.cat_last')); return; }
   const hasTransactions = getYears().some(y => DATA[y]?.vars?.[key]?.length > 0);
   if (hasTransactions) { showToast(t('toast.cat_has_tx')); return; }
-  DATA.varCats = cats.filter(c => c.key !== key);
-  getYears().forEach(y => { if (DATA[y]?.vars) delete DATA[y].vars[key]; });
-  dSave();
-  renderConfigTab();
-  getYears().forEach(y => renderYear(y));
-  showToast(t('toast.cat_deleted'));
+  const cat = cats.find(c => c.key === key);
+  confirmDelete(t('confirm.delete_row').replace('{0}', cat?.label || key), () => {
+    DATA.varCats = cats.filter(c => c.key !== key);
+    getYears().forEach(y => { if (DATA[y]?.vars) delete DATA[y].vars[key]; });
+    dSave();
+    renderConfigTab();
+    getYears().forEach(y => renderYear(y));
+    showToast(t('toast.cat_deleted'));
+  });
 }
 function renameVarCat(key) {
   const newIcon = document.getElementById('cat-icon-' + key)?.value.trim();
@@ -7524,8 +7530,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.73';
-const SW_VERSION = 'v194';
+const APP_VERSION = '11.74';
+const SW_VERSION = 'v195';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -9395,6 +9401,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.74': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🗑️', text: 'Bouton supprimer catégorie rétabli sur chaque ligne — avec confirmation avant suppression (protégé si la catégorie contient des transactions).' }
+    ]
+  },
   '11.73': {
     date: 'Mai 2026',
     items: [
