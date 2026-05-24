@@ -4835,18 +4835,18 @@ async function processScannedTicket(input) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "mode_paiement": "<clé exacte parmi: ${methodList} ou null si non visible>", "paiements_supplementaires": [{"montant":<montant>,"mode":"<clé parmi: ${methodList}>"}] ou [] si un seul mode}. Si illisible: {"erreur": "illisible"}.` },
+            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "mode_paiement": "<clé exacte parmi: ${methodList} ou null si non visible>", "paiements_supplementaires": [] (si 1 seul mode) ou [{"montant":<n>,"mode":"<clé parmi: ${methodList}>"},…] (si plusieurs modes)}. Si illisible: {"erreur": "illisible"}.` },
             { type: 'image_url', image_url: { url: base64 } }
           ]
         }],
-        max_tokens: 200,
+        max_tokens: 400,
         temperature: 0
       })
     });
     if (!resp.ok) throw new Error('Erreur réseau');
     const data = await resp.json();
     const raw = data.choices?.[0]?.message?.content?.trim() || '';
-    const jsonMatch = raw.match(/\{[\s\S]*?\}/);
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Réponse invalide');
     const ticket = JSON.parse(jsonMatch[0]);
     if (ticket.erreur) { status.textContent = '⚠️ Ticket illisible — remplis manuellement.'; return; }
@@ -7596,8 +7596,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.77';
-const SW_VERSION = 'v198';
+const APP_VERSION = '11.78';
+const SW_VERSION = 'v199';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
