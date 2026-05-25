@@ -4835,7 +4835,7 @@ async function processScannedTicket(input) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "mode_paiement": "<clé exacte parmi: ${methodList} ou null si non visible>", "paiements_supplementaires": [] (si 1 seul mode) ou [{"montant":<n>,"mode":"<clé parmi: ${methodList}>"},…] (si plusieurs modes)}. Si illisible: {"erreur": "illisible"}.` },
+            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "paiements": [{"montant":<montant payé avec ce mode>,"mode":"<clé exacte parmi: ${methodList} ou null>"}]}. Mets UN objet par mode de paiement visible sur le ticket (ex: chèque repas 8€ + carte 17.50€ → 2 objets avec leurs montants respectifs). Si illisible: {"erreur": "illisible"}.` },
             { type: 'image_url', image_url: { url: base64 } }
           ]
         }],
@@ -4851,7 +4851,26 @@ async function processScannedTicket(input) {
     const ticket = JSON.parse(jsonMatch[0]);
     if (ticket.erreur) { status.textContent = '⚠️ Ticket illisible — remplis manuellement.'; return; }
     // Pré-remplir date
-    if (ticket.montant) document.getElementById('qa-amount').value = ticket.montant;
+    // Pré-remplir montant + mode depuis le tableau paiements
+    let methodMsg = '';
+    if (Array.isArray(ticket.paiements) && ticket.paiements.length > 0) {
+      const firstP = ticket.paiements[0];
+      if (firstP.montant) document.getElementById('qa-amount').value = firstP.montant;
+      if (firstP.mode) {
+        const mMatch = methods.find(m => m.key === firstP.mode);
+        if (mMatch) { document.getElementById('qa-method').value = mMatch.key; methodMsg = ` · 💳 ${mMatch.label}`; }
+      }
+      // Modes supplémentaires → lignes de split
+      ticket.paiements.slice(1).forEach(p => {
+        if (p && p.montant && p.mode) {
+          const mMatch2 = methods.find(m => m.key === p.mode);
+          addSplitRow(p.montant, mMatch2 ? mMatch2.key : p.mode);
+          if (mMatch2) methodMsg += ' + ' + mMatch2.label;
+        }
+      });
+    } else if (ticket.montant) {
+      document.getElementById('qa-amount').value = ticket.montant;
+    }
     if (ticket.jour)    document.getElementById('qa-day').value    = ticket.jour;
     if (ticket.mois)    document.getElementById('qa-month').value  = ticket.mois - 1;
     if (ticket.annee) {
@@ -4877,25 +4896,7 @@ async function processScannedTicket(input) {
         catMsg = ` · <a href="#" style="color:#8B5CF6;font-weight:700" onclick="event.preventDefault();_createCatFromScan('${label.replace(/'/g,"\\'")}','${icon}')">➕ Créer « ${label} »</a>`;
       }
     }
-    // Pré-remplir mode de paiement
-    let methodMsg = '';
-    if (ticket.mode_paiement) {
-      const mMatch = methods.find(m => m.key === ticket.mode_paiement);
-      if (mMatch) {
-        const methSel = document.getElementById('qa-method');
-        if (methSel) { methSel.value = mMatch.key; methodMsg = ` · 💳 ${mMatch.label}`; }
-      }
-    }
-    // Paiements supplémentaires : ajouter une ligne par mode détecté
-    if (Array.isArray(ticket.paiements_supplementaires)) {
-      ticket.paiements_supplementaires.forEach(p => {
-        if (p && p.montant && p.mode) {
-          const mMatch2 = methods.find(m => m.key === p.mode);
-          addSplitRow(p.montant, mMatch2 ? mMatch2.key : p.mode);
-          if (mMatch2) methodMsg += ' + ' + mMatch2.label;
-        }
-      });
-    }
+
     status.innerHTML = `✅ Ticket lu — vérifie et ajuste si besoin.${catMsg}${methodMsg}`;
     document.getElementById('qa-amount').focus();
   } catch(e) {
@@ -7596,8 +7597,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.78';
-const SW_VERSION = 'v199';
+const APP_VERSION = '11.79';
+const SW_VERSION = 'v200';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
