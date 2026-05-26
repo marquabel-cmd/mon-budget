@@ -4806,6 +4806,17 @@ function openBudgetSetFromQA() {
 }
 
 // ── Scan ticket via Groq Vision ───────────────────────────────────────────
+// Recherche flexible dun mode de paiement (exact → insensible casse → label → partiel)
+function findMethod(methods, key) {
+  if (!key) return null;
+  const k = key.toLowerCase().replace(/[-_\s]/g, '');
+  return methods.find(m => m.key === key) ||
+         methods.find(m => m.key.toLowerCase() === key.toLowerCase()) ||
+         methods.find(m => m.label.toLowerCase().replace(/[-_\s]/g, '') === k) ||
+         methods.find(m => k.includes(m.key.toLowerCase()) || m.key.toLowerCase().includes(k)) ||
+         null;
+}
+
 async function processScannedTicket(input) {
   const file = input.files[0];
   if (!file) return;
@@ -4835,7 +4846,7 @@ async function processScannedTicket(input) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "paiements": [{"montant":<montant payé avec ce mode>,"mode":"<clé exacte parmi: ${methodList} ou null>"}]}. Mets UN objet par mode de paiement visible sur le ticket (ex: chèque repas 8€ + carte 17.50€ → 2 objets avec leurs montants respectifs). Si illisible: {"erreur": "illisible"}.` },
+            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "paiements": [{"montant":<montant payé avec ce mode>,"mode":"<clé parmi: ${methodList}>"}]}. IMPORTANT: utilise UNIQUEMENT les clés exactes listées dans methodList (ex: si methodList contient repas=Chèque repas, utilise "repas" pas "cheque_repas"). Mets UN objet par mode de paiement visible sur le ticket. Si illisible: {"erreur": "illisible"}.` },
             { type: 'image_url', image_url: { url: base64 } }
           ]
         }],
@@ -4857,14 +4868,14 @@ async function processScannedTicket(input) {
       const firstP = ticket.paiements[0];
       if (firstP.montant) document.getElementById('qa-amount').value = firstP.montant;
       if (firstP.mode) {
-        const mMatch = methods.find(m => m.key === firstP.mode);
+        const mMatch = findMethod(methods, firstP.mode);
         if (mMatch) { document.getElementById('qa-method').value = mMatch.key; methodMsg = ` · 💳 ${mMatch.label}`; }
       }
       // Modes supplémentaires → lignes de split
       ticket.paiements.slice(1).forEach(p => {
         if (p && p.montant && p.mode) {
-          const mMatch2 = methods.find(m => m.key === p.mode);
-          addSplitRow(p.montant, mMatch2 ? mMatch2.key : p.mode);
+          const mMatch2 = findMethod(methods, p.mode);
+          addSplitRow(p.montant, mMatch2 ? mMatch2.key : null);
           if (mMatch2) methodMsg += ' + ' + mMatch2.label;
         }
       });
@@ -7597,8 +7608,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.79';
-const SW_VERSION = 'v200';
+const APP_VERSION = '11.80';
+const SW_VERSION = 'v201';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
