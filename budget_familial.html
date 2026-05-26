@@ -7280,13 +7280,11 @@ async function fbResetPassword(email) {
   if (!r.ok) throw new Error(_fbErrMsg(d.error?.message));
 }
 function fbLogout() {
-  stopAutoLock();
-  stopRealtimeSync();
   const uid = _fbUser?.uid || localStorage.getItem('mbudget-fb-uid');
   if (uid) localStorage.removeItem('mbudget-premium-' + uid);
-  _fbSave(null);
   localStorage.removeItem('mbudget-license');
-  renderConfigTab();
+  _fbSave(null); // Efface _fbUser et les tokens
+  lockScreen();  // Vide DATA, arrête sync, retourne à l'accueil
   showToast(t('toast.logout'));
 }
 async function fbCheckPremium(uid, idToken) {
@@ -7613,8 +7611,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.83';
-const SW_VERSION = 'v204';
+const APP_VERSION = '11.84';
+const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
