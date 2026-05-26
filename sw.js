@@ -1,4 +1,4 @@
-const CACHE = 'mon-budget-v201';
+const CACHE = 'mon-budget-v202';
 const STATIC = [
   './manifest.json',
   './icon-192.png',
@@ -27,7 +27,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   // Ignorer tout ce qui n'est pas http/https (ex: chrome-extension://)
   if (url.protocol === 'http:' || url.protocol === 'https:') {
-    const isHtml = url.pathname.endsWith('.html') || url.pathname.endsWith('/') || url.pathname === '/';
+    const isHtml = url.pathname.endsWith('.html') || url.pathname.endsWith('/') || url.pathname === '/' || url.pathname.endsWith('version.json');
 
     if (isHtml) {
       // Network-first pour le HTML : toujours la derniÃ¨re version
