@@ -7512,7 +7512,9 @@ function signInWithGoogle() {
         try {
           const u = await _fbSignInWithIdp(token);
           await fbCheckPremium(u.uid, u.idToken);
+          await fbInitTrial(u.uid, u.idToken);
           closeAuthModal();
+          renderTrialBanner();
           const onboarding = document.getElementById('onboarding-screen');
           if (onboarding && onboarding.style.display !== 'none') {
             _autoRestoreFromFirebase();
@@ -7569,8 +7571,10 @@ async function authDoLogin() {
   try {
     const u = await fbLogin(email, pass);
     await fbCheckPremium(u.uid, u.idToken);
+    await fbInitTrial(u.uid, u.idToken);
     closeAuthModal();
     renderConfigTab();
+    renderTrialBanner();
     showToast('✅ Connecté — ' + u.email);
   } catch(e) { err.textContent = e.message; }
 }
@@ -7609,8 +7613,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.82';
-const SW_VERSION = 'v203';
+const APP_VERSION = '11.83';
+const SW_VERSION = 'v204';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -10401,7 +10405,6 @@ function isLicensed()  {
   if (uid && localStorage.getItem('mbudget-premium-'+uid) === '1') {
     const exp = parseInt(localStorage.getItem('mbudget-premium-exp-'+uid) || '0');
     if (exp && Date.now() > exp) {
-      // Cache expiré → invalider et forcer re-vérification Firebase
       localStorage.removeItem('mbudget-premium-'+uid);
       localStorage.removeItem('mbudget-premium-exp-'+uid);
       if (_fbUser) fbCheckPremium(_fbUser.uid, _fbUser.idToken).then(() => renderConfigTab());
@@ -10409,8 +10412,82 @@ function isLicensed()  {
     }
     return true;
   }
+  // Essai gratuit 30 jours
+  if (uid) {
+    const ts = parseInt(localStorage.getItem('mbudget-trial-start-'+uid) || '0');
+    if (ts && Date.now() < ts + TRIAL_DAYS * 86400000) return true;
+  }
   return !!localStorage.getItem('mbudget-license'); // rétro-compat
 }
+// ── ESSAI GRATUIT 30 JOURS ────────────────────────────────────────────────
+function trialDaysLeft(uid) {
+  const ts = parseInt(localStorage.getItem('mbudget-trial-start-' + uid) || '0');
+  if (!ts) return -1;
+  return Math.ceil((ts + TRIAL_DAYS * 86400000 - Date.now()) / 86400000);
+}
+async function fbInitTrial(uid, idToken) {
+  try {
+    const r = await _fbFetch(`${LICENSE_DB}/users/${uid}/trialStart.json`, {}, idToken);
+    const val = await r.json();
+    if (val && typeof val === 'number') {
+      localStorage.setItem('mbudget-trial-start-' + uid, String(val));
+      return;
+    }
+    const now = Date.now();
+    await _fbFetch(`${LICENSE_DB}/users/${uid}/trialStart.json`, {
+      method: 'PUT', body: JSON.stringify(now)
+    }, idToken);
+    localStorage.setItem('mbudget-trial-start-' + uid, String(now));
+  } catch(e) { console.warn('fbInitTrial error', e); }
+}
+async function openStripeCheckout(plan) {
+  const token = await fbGetToken();
+  if (!token) { openAuthModal('login'); return; }
+  const uid   = _fbUser?.uid;
+  const email = _fbUser?.email || '';
+  const ts    = parseInt(localStorage.getItem('mbudget-trial-start-' + uid) || '0');
+  const trialEnd = ts ? Math.floor((ts + TRIAL_DAYS * 86400000) / 1000) : null;
+  const inTrial  = trialEnd && Date.now() < trialEnd * 1000;
+  showToast('⏳ Ouverture du paiement…');
+  try {
+    const resp = await fetch(CHECKOUT_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ plan, trialEnd: inTrial ? trialEnd : null, email }),
+    });
+    const data = await resp.json();
+    if (data.url) window.open(data.url, '_blank');
+    else showToast('❌ Erreur paiement : ' + (data.error || ''));
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+function renderTrialBanner() {
+  const uid = _fbUser?.uid;
+  // Masquer si premium actif
+  if (!uid || localStorage.getItem('mbudget-premium-' + uid) === '1') {
+    document.getElementById('trial-banner')?.remove(); return;
+  }
+  const days = trialDaysLeft(uid);
+  if (days < 0) { document.getElementById('trial-banner')?.remove(); return; }
+  let el = document.getElementById('trial-banner');
+  if (!el) { el = document.createElement('div'); el.id = 'trial-banner'; document.body.prepend(el); }
+  const btnStyle = 'background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:20px;padding:2px 12px;cursor:pointer;font-size:12px;margin-left:6px';
+  const btnStyleY = 'background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:20px;padding:2px 12px;cursor:pointer;font-size:12px;margin-left:4px';
+  const wrap = 'position:fixed;top:0;left:0;right:0;z-index:9999;text-align:center;padding:6px 12px;font-size:13px;font-weight:600;color:#fff';
+  if (days > 0) {
+    el.innerHTML = '<div style="' + wrap + ';background:linear-gradient(90deg,#5B6AF0,#8B5CF6)">'
+      + '⭐ Essai Premium — <b>' + days + ' jour' + (days > 1 ? 's' : '') + ' restant' + (days > 1 ? 's' : '') + '</b>'
+      + '<button onclick="openStripeCheckout(\'monthly\')" style="' + btnStyle + '">S\'abonner 2,99€/mois</button>'
+      + '<button onclick="openStripeCheckout(\'yearly\')" style="' + btnStyleY + '">Annuel 24,99€ −40%</button>'
+      + '</div>';
+  } else {
+    el.innerHTML = '<div style="' + wrap + ';background:#e74c3c">'
+      + '⏰ Essai terminé — Vos données sont préservées ✅'
+      + '<button onclick="openStripeCheckout(\'monthly\')" style="' + btnStyle + '">Reprendre 2,99€/mois</button>'
+      + '<button onclick="openStripeCheckout(\'yearly\')" style="' + btnStyleY + '">Annuel 24,99€</button>'
+      + '</div>';
+  }
+}
+
 function getLicenseKey(){
   // Préférer UID Firebase (chemin des données cloud)
   const uid = _fbUser?.uid || localStorage.getItem('mbudget-fb-uid');
@@ -10421,6 +10498,8 @@ function getLicenseKey(){
 // ── FEEDBACK ──────────────────────────────────────────────────────────────
 // Emails relayés via Cloudflare Worker (clé privée EmailJS côté serveur)
 const EMAIL_WORKER_URL    = 'https://stripe-webhook-mon-budget.marquabel.workers.dev/email';
+const CHECKOUT_WORKER_URL = 'https://stripe-webhook-mon-budget.marquabel.workers.dev/create-checkout';
+const TRIAL_DAYS          = 30;
 const EMAILJS_TEMPLATE    = 'template_6wantmt';
 
 async function sendEmailViaWorker(templateId, templateParams) {

@@ -208,6 +208,77 @@ async function handleContact(request, env) {
   return new Response(ejsRes.ok ? 'OK' : 'Error', { status: ejsRes.ok ? 200 : 500, headers: cors });
 }
 
+// ── Création session Stripe Checkout avec trial_end dynamique ─────────────
+async function handleCreateCheckout(request, env) {
+  const cors = getCorsHeaders(request);
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: cors });
+
+  // Vérifier token Firebase
+  const authHeader = request.headers.get('Authorization') || '';
+  const idToken = authHeader.replace('Bearer ', '').trim();
+  if (!idToken) return new Response('Unauthorized', { status: 401, headers: cors });
+
+  const verifyRes = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) }
+  );
+  if (!verifyRes.ok) return new Response('Invalid token', { status: 401, headers: cors });
+  const verifyData = await verifyRes.json();
+  const uid = verifyData.users?.[0]?.localId;
+  if (!uid) return new Response('Invalid token', { status: 401, headers: cors });
+
+  let body;
+  try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400, headers: cors }); }
+
+  const { plan, trialEnd, email } = body;
+  const priceId = plan === 'yearly'
+    ? 'price_1TYk8MF9AqjMVwgWXdtbjpWX'
+    : 'price_1TYk8JF9AqjMVwgWhDLJf4Gz';
+
+  if (!env.STRIPE_SECRET_KEY) return new Response('Config error', { status: 500, headers: cors });
+
+  // Construire les params de la session Checkout
+  const params = new URLSearchParams({
+    'mode': 'subscription',
+    'success_url': 'https://budget.marquabel.be/budget_familial.html?premium=success',
+    'cancel_url': 'https://budget.marquabel.be/budget_familial.html?premium=cancel',
+    'client_reference_id': uid,
+    'line_items[0][price]': priceId,
+    'line_items[0][quantity]': '1',
+    'payment_method_types[0]': 'card',
+    'payment_method_types[1]': 'bancontact',
+    'payment_method_types[2]': 'sepa_debit',
+  });
+
+  // Ajouter trial_end si l'essai n'est pas encore terminé
+  if (trialEnd && trialEnd > Math.floor(Date.now() / 1000)) {
+    params.set('subscription_data[trial_end]', String(trialEnd));
+  }
+
+  if (email) params.set('customer_email', email);
+
+  const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + btoa(env.STRIPE_SECRET_KEY + ':'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
+
+  const stripeData = await stripeRes.json();
+  if (!stripeRes.ok) {
+    console.error('Stripe error:', JSON.stringify(stripeData));
+    return new Response(JSON.stringify({ error: stripeData.error?.message }), { status: 500, headers: cors });
+  }
+
+  return new Response(JSON.stringify({ url: stripeData.url }), {
+    status: 200,
+    headers: { ...cors, 'Content-Type': 'application/json' },
+  });
+}
+
 // ── Handler principal ──────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
@@ -218,6 +289,9 @@ export default {
 
     // Route /contact → formulaire de contact (sans auth)
     if (url.pathname === '/contact') return handleContact(request, env);
+
+    // Route /create-checkout → session Stripe dynamique avec trial_end
+    if (url.pathname === '/create-checkout') return handleCreateCheckout(request, env);
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
     if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
