@@ -7833,7 +7833,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.91';
+const APP_VERSION = '11.92';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -12069,10 +12069,12 @@ function _buildBudgetContext() {
       });
     });
     if (allTx.length) {
-      // Trier par date desc puis par mois desc
+      // Trier par mois desc puis par date desc (date peut être string ou absent)
       allTx.sort((a, b) => {
-        if (a.date && b.date) return b.date.localeCompare(a.date);
-        return (b.month ?? 0) - (a.month ?? 0);
+        const mDiff = (b.month ?? 0) - (a.month ?? 0);
+        if (mDiff !== 0) return mDiff;
+        const da = String(a.date || ''), db = String(b.date || '');
+        return db.localeCompare(da);
       });
       ctx += `📋 TRANSACTIONS INDIVIDUELLES (${year}) :\n`;
       allTx.forEach(tx => {
