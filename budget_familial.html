@@ -3516,13 +3516,37 @@ function renderYear(year) {
   const _bodyScrolls = _bodies.map(sb => sb.scrollLeft);
 
   // Mémoriser l'état ouvert/fermé des sections avant de reconstruire
+  // data-section (revenus/charges/variables) ET data-cat (catégories dépenses)
   const _secOpen = {};
-  wrap.querySelectorAll('.section-card').forEach(c => { const k = c.dataset.section||c.id; if(k) _secOpen[k] = !c.classList.contains('collapsed'); });
+  wrap.querySelectorAll('.section-card').forEach(c => {
+    const k = c.dataset.section || c.dataset.cat || c.id;
+    if (k) _secOpen[k] = !c.classList.contains('collapsed');
+  });
+  // Mémoriser les mois détails ouverts pour cette année
+  const _openDetails = Object.keys(_expandedMonths).filter(k => _expandedMonths[k] && k.startsWith(String(year) + '-'));
   try {
     wrap.innerHTML = renderKpiCards(year) + renderSoldes(year) + renderRevSection(year) +
       renderChargeSection(year) + renderVarSection(year) + renderMonthSummary(year);
-    // Restaurer l'état des sections
-    wrap.querySelectorAll('.section-card').forEach(c => { const k = c.dataset.section||c.id; if(k && _secOpen[k]) c.classList.remove('collapsed'); });
+    // Restaurer l'état des sections (incluant catégories dépenses par data-cat)
+    wrap.querySelectorAll('.section-card').forEach(c => {
+      const k = c.dataset.section || c.dataset.cat || c.id;
+      if (k && _secOpen[k]) c.classList.remove('collapsed');
+    });
+    // Restaurer les mois détails ouverts
+    _openDetails.forEach(key => {
+      const parts = key.split('-');
+      const m = parseInt(parts[parts.length - 1]);
+      const catKey = parts.slice(1, -1).join('-');
+      const detRow = document.getElementById(`vdetrow-${year}-${catKey}-${m}`);
+      const tbody  = document.getElementById(`vbody-${year}-${catKey}-${m}`);
+      const btn    = document.getElementById(`vexp-btn-${year}-${catKey}-${m}`);
+      if (detRow && tbody) {
+        tbody.innerHTML = buildMonthTxRows(year, catKey, m);
+        detRow.style.display = '';
+        if (btn) btn.textContent = t('var.detail_close');
+        _expandedMonths[key] = true;
+      }
+    });
     updateLivretDisplay(year);
     updateCompteDisplay(year);
     setTimeout(animateBudgetBars, 60);
@@ -4478,7 +4502,17 @@ function submitQuickAdd() {
     if (ri === -1) { document.getElementById('qa-error').textContent = '⚠️ Ligne introuvable — rechargez la page'; return; }
     DATA[year][section][ri].v[month] = Math.round(((DATA[year][section][ri].v[month] || 0) + Math.abs(amount)) * 100) / 100;
     DATA[year][section][ri].paid[month] = true;
-    renderYear(year);
+    // Mise à jour ciblée : mettre à jour la cellule sans reconstruire toute l'année
+    const cellId = section === 'charges' ? `cc-${year}-${ri}-${month}` : `rc-${year}-${ri}-${month}`;
+    const td = document.getElementById(cellId);
+    if (td) {
+      const inp = td.querySelector('.cell-amt');
+      if (inp) inp.value = DATA[year][section][ri].v[month];
+      td.className = 'is-paid';
+    }
+    if (section === 'charges') refreshChargeTotals(year);
+    else refreshRevTotals(year);
+    updateCompteDisplay(year);
     dSave();
     document.getElementById('quick-add-overlay').style.display = 'none';
     showToast(catKey === 'retrait_banc' ? `🏧 Retrait ${Math.abs(amount)} € enregistré` : `🏧 Dépôt ${Math.abs(amount)} € enregistré`);
@@ -5433,8 +5467,10 @@ async function cloudPush() {
       ...(gistToken ? { _gistToken: gistToken } : {}),
       ...(gistId    ? { _gistId:    gistId    } : {})
     };
+    _lastPushTime = Date.now(); // Marquer AVANT le fetch pour éviter la race condition avec l'écho SSE
     const r = await _fbFetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}, token);
-    if (r.ok) { _lastPushTime = Date.now(); _cloudDirty = false; setCloudStatus('ok'); _lastSyncError = ''; }
+    if (r.ok) { _cloudDirty = false; setCloudStatus('ok'); _lastSyncError = ''; }
+    else { _lastPushTime = 0; } // reset si erreur pour permettre un vrai sync entrant
     else if (r.status === 401) {
       setCloudStatus('error', _lang==='en' ? 'Session expired — retrying…' : 'Session expirée — nouvelle tentative…');
       _schedSyncRetry(90);
@@ -5571,7 +5607,7 @@ async function startRealtimeSync() {
         if (typeof incoming !== 'object' || Array.isArray(incoming)) { firstEvent = false; return; }
         const wasFirst = firstEvent; firstEvent = false;
         // Ignorer notre propre push (5s window)
-        if (Date.now() - _lastPushTime < 5000) return;
+        if (Date.now() - _lastPushTime < 10000) return;
         // Premier event = état initial Firebase : appliquer seulement si données différentes
         const { _syncedUsers: su, _gistToken: gt, _gistId: gi, ...budgetData } = incoming;
         if (wasFirst && JSON.stringify(DATA) === JSON.stringify(budgetData)) return;
@@ -7726,7 +7762,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.87';
+const APP_VERSION = '11.88';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -9597,6 +9633,14 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.88': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '📌', text: 'La page reste exactement là où vous étiez après chaque modification : les catégories ouvertes, les détails de mois affichés et la position de défilement sont tous préservés.' },
+      { icon: '⚡', text: 'Fix race condition sync Firebase : l\'écho de votre propre sauvegarde ne déclenche plus de rechargement de page, même sur connexion très rapide.' },
+      { icon: '🏧', text: 'Retrait/dépôt bancaire via ajout rapide : mise à jour ciblée de la cellule sans reconstruire toute l\'année.' }
+    ]
+  },
   '11.87': {
     date: 'Mai 2026',
     items: [
