@@ -1510,16 +1510,41 @@ body.auth-locked #context-banner {
 
 <!-- Modal Recherche globale -->
 <div id="modal-search" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);overflow-y:auto" onclick="if(event.target===this)closeGlobalSearch()">
-  <div style="background:var(--surface);border-radius:16px;max-width:580px;margin:60px auto 40px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+  <div style="background:var(--surface);border-radius:16px;max-width:600px;margin:60px auto 40px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <!-- Barre de recherche -->
     <div style="padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
       <span style="font-size:20px">🔍</span>
-      <input id="search-input" type="search" data-i18n-placeholder="search.placeholder" placeholder="Search a row, an expense…"
+      <input id="search-input" type="search" data-i18n-placeholder="search.placeholder" placeholder="Rechercher une ligne, une dépense…"
         style="flex:1;background:transparent;border:none;outline:none;font-size:16px;color:var(--text);font-family:inherit"
         oninput="_doSearch(this.value)">
       <button onclick="closeGlobalSearch()" style="background:none;border:none;font-size:22px;color:var(--gray);cursor:pointer;line-height:1">✕</button>
     </div>
-    <div id="search-results" style="padding:16px;max-height:62vh;overflow-y:auto">
-      <p id="search-hint-p" style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Type a keyword to search…</p>
+    <!-- Filtres -->
+    <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <!-- Filtre Année -->
+      <select id="sf-year" onchange="_applySearchFilters()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
+        <option value="">📅 Toutes les années</option>
+      </select>
+      <!-- Filtre Mois -->
+      <select id="sf-month" onchange="_applySearchFilters()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
+        <option value="">📆 Tous les mois</option>
+        <option value="0">Janvier</option><option value="1">Février</option><option value="2">Mars</option>
+        <option value="3">Avril</option><option value="4">Mai</option><option value="5">Juin</option>
+        <option value="6">Juillet</option><option value="7">Août</option><option value="8">Septembre</option>
+        <option value="9">Octobre</option><option value="10">Novembre</option><option value="11">Décembre</option>
+      </select>
+      <!-- Filtre Type -->
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button id="sft-all"     onclick="_setSrchType('')"        class="sf-type-btn sf-type-active" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Tout</button>
+        <button id="sft-rev"     onclick="_setSrchType('rev')"     class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">💹 Revenus</button>
+        <button id="sft-chg"     onclick="_setSrchType('chg')"     class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🏠 Charges</button>
+        <button id="sft-var"     onclick="_setSrchType('var')"     class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🛍️ Dépenses</button>
+      </div>
+      <!-- Bouton reset filtres -->
+      <button onclick="_resetSearchFilters()" id="sf-reset" style="display:none;margin-left:auto;padding:4px 10px;border-radius:20px;border:1px solid rgba(239,68,68,.4);font-size:11px;font-weight:700;cursor:pointer;background:rgba(239,68,68,.08);color:#ef4444">✕ Effacer filtres</button>
+    </div>
+    <div id="search-results" style="padding:16px;max-height:55vh;overflow-y:auto">
+      <p id="search-hint-p" style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>
     </div>
   </div>
 </div>
@@ -6042,65 +6067,124 @@ function _goToTab(id) {
 // ─────────────────────────────────────────────
 // 🔍 RECHERCHE GLOBALE
 // ─────────────────────────────────────────────
+let _srchType = '';
 function openGlobalSearch() {
   const modal = document.getElementById('modal-search');
   modal.style.display = 'block';
-  document.getElementById('search-results').innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>';
+  // Peupler le select années
+  const sfYear = document.getElementById('sf-year');
+  const curVal = sfYear.value;
+  sfYear.innerHTML = '<option value="">📅 Toutes les années</option>';
+  [...getYears()].reverse().forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    sfYear.appendChild(opt);
+  });
+  sfYear.value = curVal;
+  // Reset résultats si besoin
   const inp = document.getElementById('search-input');
-  inp.value = '';
+  if (!inp.value.trim()) {
+    document.getElementById('search-results').innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>';
+  }
   setTimeout(() => inp.focus(), 80);
 }
 function closeGlobalSearch() {
   document.getElementById('modal-search').style.display = 'none';
 }
+function _setSrchType(type) {
+  _srchType = type;
+  document.querySelectorAll('.sf-type-btn').forEach(b => {
+    b.style.background = 'var(--bg)'; b.style.color = 'var(--text)';
+    b.classList.remove('sf-type-active');
+  });
+  const activeId = type === 'rev' ? 'sft-rev' : type === 'chg' ? 'sft-chg' : type === 'var' ? 'sft-var' : 'sft-all';
+  const activeBtn = document.getElementById(activeId);
+  if (activeBtn) { activeBtn.style.background = 'var(--blue)'; activeBtn.style.color = '#fff'; }
+  _applySearchFilters();
+}
+function _applySearchFilters() {
+  const hasFilter = document.getElementById('sf-year').value || document.getElementById('sf-month').value || _srchType;
+  const resetBtn = document.getElementById('sf-reset');
+  if (resetBtn) resetBtn.style.display = hasFilter ? 'block' : 'none';
+  _doSearch(document.getElementById('search-input').value);
+}
+function _resetSearchFilters() {
+  document.getElementById('sf-year').value  = '';
+  document.getElementById('sf-month').value = '';
+  _setSrchType('');
+  document.getElementById('sf-reset').style.display = 'none';
+  _doSearch(document.getElementById('search-input').value);
+}
 function _doSearch(q) {
   const res = document.getElementById('search-results');
-  if (!q || !q.trim()) {
+  const filterYear  = document.getElementById('sf-year')?.value  || '';
+  const filterMonth = document.getElementById('sf-month')?.value;
+  const filterMIdx  = filterMonth !== '' && filterMonth !== undefined ? parseInt(filterMonth) : -1;
+  const filterType  = _srchType || '';
+  const hasFilter   = filterYear || filterMIdx >= 0 || filterType;
+  if (!q?.trim() && !hasFilter) {
     res.innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>';
     return;
   }
-  const qlOrig = q.toLowerCase().trim();
+  const qlOrig = (q || '').toLowerCase().trim();
   const ql = qlOrig.replace(',', '.'); // normalise séparateur décimal
   // Vérifie si une valeur numérique correspond à la recherche
   function amtMatch(val) {
     const n = parseFloat(val) || 0;
     if (!n) return false;
-    const s = String(n);              // "50.5"
-    const sf = s.replace('.', ',');   // "50,5"
+    const s = String(n);
+    const sf = s.replace('.', ',');
     return s.includes(ql) || sf.includes(qlOrig);
   }
-  const years = [...getYears()].reverse();
+  // Filtre années : toutes ou seulement celle sélectionnée
+  let years = [...getYears()].reverse();
+  if (filterYear) years = years.filter(y => y === filterYear);
   let html = '', total = 0;
   years.forEach(yr => {
     const hits = [];
     // Revenus
-    (DATA[yr]?.revenus || []).forEach(r => {
-      const labelOk = (r.label||'').toLowerCase().includes(qlOrig);
-      const amtOk   = (r.v||[]).some(v => amtMatch(v));
-      if (labelOk || amtOk) {
-        const t12 = r.v.reduce((s,v) => s+(parseFloat(v)||0), 0);
-        hits.push({icon:'💹', type:'Revenu', label:r.label, detail:'Total '+yr+' : '+fmt(t12), action:"_scrollToSection('"+yr+"','revenus')"});
-      }
-    });
-    // Charges
-    (DATA[yr]?.charges || []).forEach(r => {
-      const labelOk = (r.label||'').toLowerCase().includes(qlOrig);
-      const amtOk   = (r.v||[]).some(v => amtMatch(v));
-      if (labelOk || amtOk) {
-        const t12 = r.v.reduce((s,v) => s+(parseFloat(v)||0), 0);
-        hits.push({icon:'🏠', type:'Charge', label:r.label, detail:'Total '+yr+' : '+fmt(t12), action:"_scrollToSection('"+yr+"','charges')"});
-      }
-    });
-    // Dépenses variables
-    getVarCats().forEach(cat => {
-      (DATA[yr]?.vars?.[cat.key] || []).forEach(tx => {
-        const txt = [(tx.label||''), (tx.comment||''), cat.label].join(' ').toLowerCase();
-        if (txt.includes(qlOrig) || amtMatch(tx.amount)) {
-          const mLbl = getMonths()[tx.month] || '';
-          hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount), action:"_scrollToSection('"+yr+"','variables')"});
+    if (!filterType || filterType === 'rev') {
+      (DATA[yr]?.revenus || []).forEach(r => {
+        const monthsToCheck = filterMIdx >= 0 ? [filterMIdx] : r.v.map((_,i)=>i);
+        const labelOk = !qlOrig || (r.label||'').toLowerCase().includes(qlOrig);
+        const amtOk   = !qlOrig || monthsToCheck.some(i => amtMatch(r.v?.[i]));
+        if (labelOk || amtOk) {
+          // Si filtre mois : montant du mois spécifique
+          const displayAmt = filterMIdx >= 0
+            ? fmt(parseFloat(r.v?.[filterMIdx]) || 0) + ' (' + getMonths()[filterMIdx] + ')'
+            : 'Total '+yr+' : '+fmt(r.v.reduce((s,v)=>s+(parseFloat(v)||0),0));
+          hits.push({icon:'💹', type:'Revenu', label:r.label, detail:displayAmt, action:"_scrollToSection('"+yr+"','revenus')"});
         }
       });
-    });
+    }
+    // Charges
+    if (!filterType || filterType === 'chg') {
+      (DATA[yr]?.charges || []).forEach(r => {
+        const monthsToCheck = filterMIdx >= 0 ? [filterMIdx] : r.v.map((_,i)=>i);
+        const labelOk = !qlOrig || (r.label||'').toLowerCase().includes(qlOrig);
+        const amtOk   = !qlOrig || monthsToCheck.some(i => amtMatch(r.v?.[i]));
+        if (labelOk || amtOk) {
+          const displayAmt = filterMIdx >= 0
+            ? fmt(parseFloat(r.v?.[filterMIdx]) || 0) + ' (' + getMonths()[filterMIdx] + ')'
+            : 'Total '+yr+' : '+fmt(r.v.reduce((s,v)=>s+(parseFloat(v)||0),0));
+          hits.push({icon:'🏠', type:'Charge', label:r.label, detail:displayAmt, action:"_scrollToSection('"+yr+"','charges')"});
+        }
+      });
+    }
+    // Dépenses variables
+    if (!filterType || filterType === 'var') {
+      getVarCats().forEach(cat => {
+        (DATA[yr]?.vars?.[cat.key] || []).forEach(tx => {
+          if (filterMIdx >= 0 && tx.month !== filterMIdx) return;
+          const txt = [(tx.label||''), (tx.comment||''), cat.label].join(' ').toLowerCase();
+          if (!qlOrig || txt.includes(qlOrig) || amtMatch(tx.amount)) {
+            const mLbl = getMonths()[tx.month] || '';
+            const dateLbl = tx.date ? ' · ' + tx.date : '';
+            hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount)+dateLbl, action:"_scrollToSection('"+yr+"','variables')"});
+          }
+        });
+      });
+    }
     if (hits.length) {
       total += hits.length;
       html += '<div style="margin-bottom:16px">'
@@ -6116,7 +6200,10 @@ function _doSearch(q) {
         + '</div>';
     }
   });
-  if (!total) html = `<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">${t('search.no_result').replace('{0}', _esc(q))}</p>`;
+  if (!total) {
+    const noResLabel = qlOrig ? t('search.no_result').replace('{0}', _esc(q)) : 'Aucun résultat pour les filtres sélectionnés.';
+    html = `<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">${noResLabel}</p>`;
+  }
   res.innerHTML = html;
 }
 
@@ -7639,7 +7726,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.86';
+const APP_VERSION = '11.87';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -9510,6 +9597,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.87': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔍', text: 'Filtres de recherche : filtrez vos résultats par année, mois et type (Revenus / Charges / Dépenses). Les filtres sont cumulables et un bouton "Effacer filtres" apparaît dès qu\'un filtre est actif.' },
+      { icon: '⚡', text: 'Recherche sans mot-clé : activez simplement un filtre pour voir toutes les entrées correspondantes (ex. "Toutes les dépenses de Mars 2025").' }
+    ]
+  },
   '11.86': {
     date: 'Mai 2026',
     items: [
