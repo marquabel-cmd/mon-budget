@@ -2899,6 +2899,20 @@ function loadData() {
     // Persister immédiatement en localStorage (sinon perdu au prochain rechargement sans modification)
     try { localStorage.setItem(dataKey(), JSON.stringify(DATA)); } catch(e) {}
   }
+  _syncIdCounter(); // S'assurer que _id est > tout ID existant pour éviter les collisions
+}
+
+// Initialise _id au-dessus du max ID existant parmi toutes les transactions
+function _syncIdCounter() {
+  let maxId = _id - 1;
+  Object.keys(DATA || {}).forEach(yr => {
+    if (!/^\d{4}$/.test(yr) || !DATA[yr]?.vars) return;
+    Object.values(DATA[yr].vars).forEach(txs => {
+      if (!Array.isArray(txs)) return;
+      txs.forEach(t => { if (typeof t.id === 'number' && t.id > maxId) maxId = t.id; });
+    });
+  });
+  if (maxId >= _id) _id = maxId + 1;
 }
 
 // ─────────────────────────────────────────────
@@ -4694,6 +4708,60 @@ function _scrollToSection(year, section) {
     el.scrollIntoView({behavior:'smooth', block:'start'});
   }, 150);
 }
+
+// Ouvre complètement une transaction variable depuis la recherche
+function _jumpToVarTx(year, catKey, txId, month) {
+  closeGlobalSearch();
+  // 1. Aller sur le bon onglet année
+  const panel = document.getElementById('tab-y' + year);
+  if (!panel || !panel.classList.contains('active')) _switchYearMobile(year);
+  setTimeout(() => {
+    // 2. Ouvrir la section "Variables"
+    const scope = document.getElementById('tab-y' + year) || document;
+    const varSection = scope.querySelector('[data-section="variables"]');
+    if (varSection && varSection.classList.contains('collapsed')) varSection.classList.remove('collapsed');
+    // 3. Ouvrir la catégorie
+    const catCard = scope.querySelector(`[data-cat="${catKey}"]`);
+    if (catCard && catCard.classList.contains('collapsed')) catCard.classList.remove('collapsed');
+    // 4. Ouvrir le détail du mois
+    const key = `${year}-${catKey}-${month}`;
+    const detRow = document.getElementById(`vdetrow-${year}-${catKey}-${month}`);
+    const tbody  = document.getElementById(`vbody-${year}-${catKey}-${month}`);
+    const btn    = document.getElementById(`vexp-btn-${year}-${catKey}-${month}`);
+    if (detRow && tbody && !_expandedMonths[key]) {
+      tbody.innerHTML = buildMonthTxRows(year, catKey, month);
+      detRow.style.display = '';
+      if (btn) btn.textContent = t('var.detail_close');
+      _expandedMonths[key] = true;
+    }
+    // 5. Scroller jusqu'à la transaction et la mettre en surbrillance
+    setTimeout(() => {
+      const txRow = document.getElementById(`vtr-${txId}`);
+      if (txRow) {
+        txRow.scrollIntoView({behavior:'smooth', block:'center'});
+        txRow.style.transition = 'background .2s';
+        txRow.style.background = 'rgba(91,106,240,.25)';
+        setTimeout(() => { txRow.style.background = ''; }, 1800);
+      } else if (catCard) {
+        catCard.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    }, 120);
+  }, 150);
+}
+
+// Ouvre complètement une ligne revenu ou charge depuis la recherche
+function _jumpToFixedRow(year, section) {
+  closeGlobalSearch();
+  const panel = document.getElementById('tab-y' + year);
+  if (!panel || !panel.classList.contains('active')) _switchYearMobile(year);
+  setTimeout(() => {
+    const scope = document.getElementById('tab-y' + year) || document;
+    const secEl = scope.querySelector(`[data-section="${section}"]`);
+    if (!secEl) return;
+    if (secEl.classList.contains('collapsed')) secEl.classList.remove('collapsed');
+    secEl.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 150);
+}
 function renderKpiCards(year) {
   const rv = revTotal(year), dep = depTotal(year), ch = chgTotal(year), bal = balance(year);
   const pastMonths = rv.filter(v => v > 0).length || 1;
@@ -5666,6 +5734,7 @@ function applyRealtimeData(d) {
   const _beforeMergeTx = _countAllTx(DATA);
   DATA = _mergeBudgetData(DATA, budgetData);
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+  _syncIdCounter(); // éviter collisions d'IDs après merge
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
   // Si la fusion a réinjecté des tx locales, repousser vers Firebase
   if (_countAllTx(DATA) > _countAllTx(budgetData)) dSave();
@@ -6189,7 +6258,7 @@ function _doSearch(q) {
           const displayAmt = filterMIdx >= 0
             ? fmt(parseFloat(r.v?.[filterMIdx]) || 0) + ' (' + getMonths()[filterMIdx] + ')'
             : 'Total '+yr+' : '+fmt(r.v.reduce((s,v)=>s+(parseFloat(v)||0),0));
-          hits.push({icon:'💹', type:'Revenu', label:r.label, detail:displayAmt, action:"_scrollToSection('"+yr+"','revenus')"});
+          hits.push({icon:'💹', type:'Revenu', label:r.label, detail:displayAmt, action:"_jumpToFixedRow('"+yr+"','revenus')"});
         }
       });
     }
@@ -6203,7 +6272,7 @@ function _doSearch(q) {
           const displayAmt = filterMIdx >= 0
             ? fmt(parseFloat(r.v?.[filterMIdx]) || 0) + ' (' + getMonths()[filterMIdx] + ')'
             : 'Total '+yr+' : '+fmt(r.v.reduce((s,v)=>s+(parseFloat(v)||0),0));
-          hits.push({icon:'🏠', type:'Charge', label:r.label, detail:displayAmt, action:"_scrollToSection('"+yr+"','charges')"});
+          hits.push({icon:'🏠', type:'Charge', label:r.label, detail:displayAmt, action:"_jumpToFixedRow('"+yr+"','charges')"});
         }
       });
     }
@@ -6216,7 +6285,9 @@ function _doSearch(q) {
           if (!qlOrig || txt.includes(qlOrig) || amtMatch(tx.amount)) {
             const mLbl = getMonths()[tx.month] || '';
             const dateLbl = tx.date ? ' · ' + tx.date : '';
-            hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount)+dateLbl, action:"_scrollToSection('"+yr+"','variables')"});
+            // Action : ouvrir cat + mois + surbrillance de la tx
+            const act = `_jumpToVarTx('${yr}','${cat.key}',${tx.id},${tx.month})`;
+            hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount)+dateLbl, action:act});
           }
         });
       });
@@ -6226,7 +6297,7 @@ function _doSearch(q) {
       html += '<div style="margin-bottom:16px">'
         + '<div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📅 '+yr+' — '+hits.length+' résultat'+(hits.length>1?'s':'')+'</div>'
         + hits.slice(0,20).map(h =>
-          '<div onclick="'+h.action+';closeGlobalSearch()" style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:6px;background:var(--bg)">'
+          '<div onclick="'+h.action+'" style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:6px;background:var(--bg)">'
           + '<span style="font-size:18px;flex-shrink:0">'+h.icon+'</span>'
           + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_esc(h.label)+'</div>'
           + '<div style="font-size:11px;color:var(--gray)">'+_esc(h.type)+' · '+h.detail+'</div></div>'
@@ -7762,7 +7833,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.88';
+const APP_VERSION = '11.89';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -9633,6 +9704,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.89': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔍', text: 'Recherche : cliquer sur un résultat ouvre directement la catégorie, le mois et met en surbrillance la transaction exacte.' },
+      { icon: '🛡️', text: 'Fix critique : les nouvelles transactions ne disparaissent plus après rechargement. Le compteur d\'IDs repart maintenant du maximum des IDs existants pour éviter les collisions lors du merge Firebase.' }
+    ]
+  },
   '11.88': {
     date: 'Mai 2026',
     items: [
