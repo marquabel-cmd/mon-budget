@@ -7833,7 +7833,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.90';
+const APP_VERSION = '11.91';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -12040,7 +12040,7 @@ function _buildBudgetContext() {
         ctx += `  ${row.label}: ${total.toFixed(0)}€/an\n`;
       });
     }
-    // Variables
+    // Variables — totaux par catégorie
     const varCats = getVarCats();
     const varsSection = varCats.map(cat => {
       const entries = d.vars?.[cat.key] || [];
@@ -12051,7 +12051,38 @@ function _buildBudgetContext() {
       const mStr = Object.entries(byMonth).map(([m,v])=>`${getMonths()[m]}:${v.toFixed(0)}${curSym()}`).join(', ');
       return `  ${cat.icon} ${cat.label}: ${total.toFixed(0)}€ total (${mStr})`;
     }).filter(Boolean).join('\n');
-    if (varsSection) ctx += `🛒 DÉPENSES VARIABLES :\n${varsSection}\n`;
+    if (varsSection) ctx += `🛒 DÉPENSES VARIABLES (résumé) :\n${varsSection}\n`;
+    // Variables — liste détaillée des transactions individuelles
+    const allTx = [];
+    varCats.forEach(cat => {
+      (d.vars?.[cat.key] || []).forEach(tx => {
+        allTx.push({
+          year,
+          cat: cat.label,
+          icon: cat.icon || '🛍️',
+          date: tx.date || '',
+          month: tx.month,
+          amount: parseFloat(tx.amount) || 0,
+          comment: tx.comment || '',
+          method: tx.method || ''
+        });
+      });
+    });
+    if (allTx.length) {
+      // Trier par date desc puis par mois desc
+      allTx.sort((a, b) => {
+        if (a.date && b.date) return b.date.localeCompare(a.date);
+        return (b.month ?? 0) - (a.month ?? 0);
+      });
+      ctx += `📋 TRANSACTIONS INDIVIDUELLES (${year}) :\n`;
+      allTx.forEach(tx => {
+        const dateLbl = tx.date || (getMonths()[tx.month] || '');
+        const methodLbl = tx.method ? ` [${tx.method}]` : '';
+        const commentLbl = tx.comment ? ` — ${tx.comment}` : '';
+        ctx += `  ${tx.icon} ${dateLbl} | ${tx.cat} | ${tx.amount.toFixed(2)}€${methodLbl}${commentLbl}\n`;
+      });
+      ctx += '\n';
+    }
     // Soldes initiaux
     const initC = parseFloat(d.solde_initial)||0;
     const initL = parseFloat(d.livret_initial)||0;
