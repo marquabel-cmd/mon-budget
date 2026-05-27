@@ -7870,7 +7870,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.97';
+const APP_VERSION = '11.98';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -12015,6 +12015,41 @@ function saveGeminiKey(key) {
   }
 }
 
+function _aiHistoryKey() { return 'budget_ai_history_' + (CURRENT_USER_ID || 'default'); }
+
+function _saveAiHistory() {
+  const msgs = document.getElementById('ai-chat-messages');
+  if (!msgs) return;
+  const history = [];
+  msgs.querySelectorAll('.ai-msg:not(.ai-msg-typing)').forEach(div => {
+    const role = div.classList.contains('ai-msg-user') ? 'user' : 'bot';
+    history.push({ role, html: div.innerHTML });
+  });
+  // Garder les 50 derniers messages
+  const trimmed = history.slice(-50);
+  try { localStorage.setItem(_aiHistoryKey(), JSON.stringify(trimmed)); } catch(e) {}
+}
+
+function _loadAiHistory() {
+  try {
+    const raw = localStorage.getItem(_aiHistoryKey());
+    if (!raw) return false;
+    const history = JSON.parse(raw);
+    if (!Array.isArray(history) || !history.length) return false;
+    const msgs = document.getElementById('ai-chat-messages');
+    if (!msgs) return false;
+    msgs.innerHTML = '';
+    history.forEach(m => {
+      const div = document.createElement('div');
+      div.className = `ai-msg ai-msg-${m.role}`;
+      div.innerHTML = m.html;
+      msgs.appendChild(div);
+    });
+    msgs.scrollTop = msgs.scrollHeight;
+    return true;
+  } catch(e) { return false; }
+}
+
 function toggleAiChat() {
   const panel = document.getElementById('ai-chat-panel');
   if (!panel) return;
@@ -12023,7 +12058,7 @@ function toggleAiChat() {
   if (_aiOpen) {
     const msgs = document.getElementById('ai-chat-messages');
     if (!msgs.children.length) {
-      _appendAiMsg('bot', t('ai.welcome'));
+      if (!_loadAiHistory()) _appendAiMsg('bot', t('ai.welcome'));
     }
     setTimeout(() => document.getElementById('ai-chat-input')?.focus(), 100);
   }
@@ -12032,6 +12067,7 @@ function toggleAiChat() {
 function clearAiChat() {
   const msgs = document.getElementById('ai-chat-messages');
   if (msgs) msgs.innerHTML = '';
+  try { localStorage.removeItem(_aiHistoryKey()); } catch(e) {}
   _appendAiMsg('bot', t('ai.cleared'));
 }
 
@@ -12043,6 +12079,8 @@ function _appendAiMsg(role, html) {
   div.innerHTML = html;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+  // Sauvegarder l'historique (sauf indicateur de frappe)
+  if (!div.classList.contains('ai-msg-typing')) _saveAiHistory();
   return div;
 }
 
