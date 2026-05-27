@@ -2724,8 +2724,18 @@ function _mergeBudgetData(local, cloud) {
       if (!Array.isArray(local[yr].vars[cat])) return;
       if (!Array.isArray(result[yr].vars[cat])) result[yr].vars[cat] = [];
       const cloudIds = new Set(result[yr].vars[cat].map(t => t.id));
+      const cloudTxs = result[yr].vars[cat];
       // Réinjecter seulement les tx locales absentes du cloud ET non supprimées intentionnellement
-      const missing = local[yr].vars[cat].filter(t => !cloudIds.has(t.id) && !deletedIds.has(t.id));
+      // ET dont aucune tx cloud n'a le même contenu (montant + mois + commentaire) — évite les doublons
+      // après renommage d'ID par _fixDuplicateIds
+      const missing = local[yr].vars[cat].filter(t => {
+        if (cloudIds.has(t.id) || deletedIds.has(t.id)) return false;
+        // Ne pas réinjecter si une tx sémantiquement identique existe déjà côté cloud
+        const hasTwin = cloudTxs.some(ct =>
+          ct.amount === t.amount && ct.month === t.month && (ct.comment || '') === (t.comment || '')
+        );
+        return !hasTwin;
+      });
       if (missing.length) { result[yr].vars[cat].push(...missing); rescued += missing.length; }
     });
   });
@@ -2903,6 +2913,7 @@ function loadData() {
 }
 
 // Initialise _id au-dessus du max ID existant parmi toutes les transactions
+// Retourne le nombre d'IDs dupliqués réparés
 function _syncIdCounter() {
   let maxId = _id - 1;
   Object.keys(DATA || {}).forEach(yr => {
@@ -2913,10 +2924,11 @@ function _syncIdCounter() {
     });
   });
   if (maxId >= _id) _id = maxId + 1;
-  _fixDuplicateIds(); // corriger les IDs dupliqués éventuels
+  return _fixDuplicateIds(); // corriger les IDs dupliqués éventuels, retourner le nombre corrigé
 }
 
 // Répare les IDs dupliqués dans les données existantes (bug historique de collision)
+// Retourne le nombre d'IDs réparés (pour déclencher un push Firebase si > 0)
 function _fixDuplicateIds() {
   const allIds = new Set();
   let fixed = 0;
@@ -2937,6 +2949,7 @@ function _fixDuplicateIds() {
     console.warn(`🔧 ${fixed} transaction(s) avec ID dupliqué réparée(s)`);
     try { localStorage.setItem(dataKey(), JSON.stringify(DATA)); } catch(e) {}
   }
+  return fixed;
 }
 
 // ─────────────────────────────────────────────
@@ -5758,10 +5771,10 @@ function applyRealtimeData(d) {
   const _beforeMergeTx = _countAllTx(DATA);
   DATA = _mergeBudgetData(DATA, budgetData);
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
-  _syncIdCounter(); // éviter collisions d'IDs après merge
+  const _idsFixed = _syncIdCounter(); // éviter collisions d'IDs après merge
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
-  // Si la fusion a réinjecté des tx locales, repousser vers Firebase
-  if (_countAllTx(DATA) > _countAllTx(budgetData)) dSave();
+  // Si la fusion a réinjecté des tx locales OU si des IDs ont été corrigés → repousser vers Firebase
+  if (_countAllTx(DATA) > _countAllTx(budgetData) || _idsFixed > 0) dSave();
   // Re-rendu complet
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
   const activeNavEl = document.querySelector('.nav-btn.active');
@@ -7857,7 +7870,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.93';
+const APP_VERSION = '11.97';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -12039,81 +12052,37 @@ function _buildBudgetContext() {
   const _aiLangInstr = _lang === 'en'
     ? 'You are an expert personal budget assistant. Reply in English, concisely and helpfully. Use the data below:\n\n'
     : 'Tu es un assistant budgétaire personnel expert. Réponds en français, de façon concise et bienveillante. Tutoie l\'utilisateur. Utilise les données ci-dessous :\n\n';
-  let ctx = _aiLangInstr;
+  const varCats = getVarCats();
+  const allTx = [];
   years.forEach(year => {
     const d = DATA[year];
     if (!d) return;
-    ctx += `═══ ANNÉE ${year} ═══\n`;
-    // Revenus (tableau [{label, v:[m0..m11]}])
-    const revRows = Array.isArray(d.revenus) ? d.revenus : [];
-    if (revRows.length) {
-      ctx += '💼 REVENUS :\n';
-      revRows.forEach(row => {
-        const arr = Array.isArray(row.v) ? row.v : [];
-        const total = arr.reduce((s,v) => s+(parseFloat(v)||0), 0);
-        ctx += `  ${row.label}: ${total.toFixed(0)}€/an\n`;
-      });
-    }
-    // Charges (tableau [{label, v:[m0..m11], paid:[...]}])
-    const chargeRows = Array.isArray(d.charges) ? d.charges : [];
-    if (chargeRows.length) {
-      ctx += '🏠 CHARGES FIXES :\n';
-      chargeRows.forEach(row => {
-        const arr = Array.isArray(row.v) ? row.v : [];
-        const total = arr.reduce((s,v) => s+(parseFloat(v)||0), 0);
-        ctx += `  ${row.label}: ${total.toFixed(0)}€/an\n`;
-      });
-    }
-    // Variables — totaux par catégorie
-    const varCats = getVarCats();
-    const varsSection = varCats.map(cat => {
-      const entries = d.vars?.[cat.key] || [];
-      if (!entries.length) return '';
-      const total = entries.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
-      const byMonth = {};
-      entries.forEach(e => { if (e.month!=null) byMonth[e.month]=(byMonth[e.month]||0)+(parseFloat(e.amount)||0); });
-      const mStr = Object.entries(byMonth).map(([m,v])=>`${getMonths()[m]}:${v.toFixed(0)}${curSym()}`).join(', ');
-      return `  ${cat.icon} ${cat.label}: ${total.toFixed(0)}€ total (${mStr})`;
-    }).filter(Boolean).join('\n');
-    if (varsSection) ctx += `🛒 DÉPENSES VARIABLES (résumé) :\n${varsSection}\n`;
-    // Variables — liste détaillée des transactions individuelles
-    const allTx = [];
     varCats.forEach(cat => {
       (d.vars?.[cat.key] || []).forEach(tx => {
         allTx.push({
-          year,
+          year: +year,
           cat: cat.label,
           icon: cat.icon || '🛍️',
-          date: tx.date || '',
-          month: tx.month,
+          date: String(tx.date || ''),
+          month: tx.month ?? 0,
           amount: parseFloat(tx.amount) || 0,
           comment: tx.comment || '',
           method: tx.method || ''
         });
       });
     });
-    if (allTx.length) {
-      // Trier par mois desc puis par date desc (date peut être string ou absent)
-      allTx.sort((a, b) => {
-        const mDiff = (b.month ?? 0) - (a.month ?? 0);
-        if (mDiff !== 0) return mDiff;
-        const da = String(a.date || ''), db = String(b.date || '');
-        return db.localeCompare(da);
-      });
-      ctx += `📋 TRANSACTIONS INDIVIDUELLES (${year}) :\n`;
-      allTx.forEach(tx => {
-        const dateLbl = tx.date || (getMonths()[tx.month] || '');
-        const methodLbl = tx.method ? ` [${tx.method}]` : '';
-        const commentLbl = tx.comment ? ` — ${tx.comment}` : '';
-        ctx += `  ${tx.icon} ${dateLbl} | ${tx.cat} | ${tx.amount.toFixed(2)}€${methodLbl}${commentLbl}\n`;
-      });
-      ctx += '\n';
-    }
-    // Soldes initiaux
-    const initC = parseFloat(d.solde_initial)||0;
-    const initL = parseFloat(d.livret_initial)||0;
-    if (initC||initL) ctx += `💰 SOLDES INITIAUX : compte=${initC.toFixed(0)}€, livret=${initL.toFixed(0)}€\n`;
-    ctx += '\n';
+  });
+  allTx.sort((a, b) => {
+    if (b.year !== a.year) return b.year - a.year;
+    if (b.month !== a.month) return b.month - a.month;
+    return b.date.localeCompare(a.date);
+  });
+  let ctx = _aiLangInstr + '10 DERNIÈRES TRANSACTIONS:\n';
+  allTx.slice(0, 10).forEach(tx => {
+    const d = tx.date || (getMonths()[tx.month] || '');
+    const m = tx.method ? ` [${tx.method}]` : '';
+    const c = tx.comment ? ` — ${tx.comment}` : '';
+    ctx += `${tx.year}/${d} | ${tx.icon} ${tx.cat} | ${tx.amount.toFixed(2)}€${m}${c}\n`;
   });
   return ctx;
 }

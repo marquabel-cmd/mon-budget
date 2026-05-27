@@ -1,4 +1,4 @@
-const CACHE = 'mon-budget-v214';
+const CACHE = 'mon-budget-v216';
 const STATIC = [
   './manifest.json',
   './icon-192.png',
@@ -30,9 +30,9 @@ self.addEventListener('fetch', e => {
     const isHtml = url.pathname.endsWith('.html') || url.pathname.endsWith('/') || url.pathname === '/' || url.pathname.endsWith('version.json');
 
     if (isHtml) {
-      // Network-first pour le HTML : toujours la derniÃ¨re version
+      // Network-first pour le HTML : bypass total du cache HTTP pour toujours avoir la dernière version
       e.respondWith(
-        fetch(e.request).then(res => {
+        fetch(new Request(e.request, { cache: 'no-store' })).then(res => {
           if (res && res.status === 200) {
             const resClone = res.clone();
             caches.open(CACHE).then(c => c.put(e.request, resClone));
