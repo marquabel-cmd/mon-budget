@@ -2910,10 +2910,11 @@ function loadData() {
     try { localStorage.setItem(dataKey(), JSON.stringify(DATA)); } catch(e) {}
   }
   _syncIdCounter(); // S'assurer que _id est > tout ID existant pour éviter les collisions
+  _fixDuplicateIds(); // Réparer les IDs dupliqués historiques (une seule fois au chargement)
+  _deduplicateTransactions(); // Nettoyer les transactions en double éventuelles
 }
 
 // Initialise _id au-dessus du max ID existant parmi toutes les transactions
-// Retourne le nombre d'IDs dupliqués réparés
 function _syncIdCounter() {
   let maxId = _id - 1;
   Object.keys(DATA || {}).forEach(yr => {
@@ -2924,7 +2925,31 @@ function _syncIdCounter() {
     });
   });
   if (maxId >= _id) _id = maxId + 1;
-  return _fixDuplicateIds(); // corriger les IDs dupliqués éventuels, retourner le nombre corrigé
+}
+
+// Supprime les transactions en double (même montant + mois + date + commentaire dans la même catégorie)
+// Retourne le nombre de doublons supprimés
+function _deduplicateTransactions() {
+  let removed = 0;
+  Object.keys(DATA || {}).forEach(yr => {
+    if (!/^\d{4}$/.test(yr) || !DATA[yr]?.vars) return;
+    Object.keys(DATA[yr].vars).forEach(cat => {
+      const txs = DATA[yr].vars[cat];
+      if (!Array.isArray(txs)) return;
+      const seen = new Set();
+      DATA[yr].vars[cat] = txs.filter(tx => {
+        const key = `${parseFloat(tx.amount)||0}|${tx.month}|${String(tx.date||'')}|${String(tx.comment||'')}`;
+        if (seen.has(key)) { removed++; return false; }
+        seen.add(key);
+        return true;
+      });
+    });
+  });
+  if (removed > 0) {
+    console.warn(`🧹 ${removed} transaction(s) en double supprimée(s)`);
+    try { localStorage.setItem(dataKey(), JSON.stringify(DATA)); } catch(e) {}
+  }
+  return removed;
 }
 
 // Répare les IDs dupliqués dans les données existantes (bug historique de collision)
@@ -5771,10 +5796,11 @@ function applyRealtimeData(d) {
   const _beforeMergeTx = _countAllTx(DATA);
   DATA = _mergeBudgetData(DATA, budgetData);
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
-  const _idsFixed = _syncIdCounter(); // éviter collisions d'IDs après merge
+  _syncIdCounter(); // s'assurer que _id est au-dessus du max
+  const _dupsRemoved = _deduplicateTransactions(); // supprimer les doublons de contenu issus du merge
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
-  // Si la fusion a réinjecté des tx locales OU si des IDs ont été corrigés → repousser vers Firebase
-  if (_countAllTx(DATA) > _countAllTx(budgetData) || _idsFixed > 0) dSave();
+  // Repousser vers Firebase si des tx locales ont été réinjectées OU si des doublons ont été nettoyés
+  if (_countAllTx(DATA) !== _countAllTx(budgetData) || _dupsRemoved > 0) dSave();
   // Re-rendu complet
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
   const activeNavEl = document.querySelector('.nav-btn.active');
@@ -7870,7 +7896,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.98';
+const APP_VERSION = '11.99';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
