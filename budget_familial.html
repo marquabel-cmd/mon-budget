@@ -4144,7 +4144,7 @@ function renderMethodTotals(year) {
       <td class="tot-col" style="font-weight:700">${fmt(tot)}</td><td></td></tr>`;
   }).join('');
   if (!rows) return '';
-  return `<div style="padding:0 16px 14px">
+  return `<div id="method-totals-${year}" style="padding:0 16px 14px">
     <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-top:8px;border-top:1px solid var(--border)">${t('summary.payment_split')}</div>
     <table class="charge-table"><thead><tr>
       <th class="lbl-col">${t('summary.payment_mode')}</th>
@@ -4551,10 +4551,18 @@ function addTxForMonth(year, catKey, m) {
   dSave();
 }
 
+function refreshMethodTotals(year) {
+  const el = document.getElementById('method-totals-' + year);
+  if (!el) return;
+  const newHtml = renderMethodTotals(year);
+  if (newHtml) el.outerHTML = newHtml;
+  else el.remove();
+}
 function syncMonthTotals(year, catKey, txId) {
   const tx = DATA[year].vars[catKey].find(t=>t.id===txId);
   if (tx) syncMonthSummary(year, catKey, tx.month);
   refreshMonthSummary(year);
+  refreshMethodTotals(year);
   dSave();
 }
 function syncMonthSummary(year, catKey, m) {
@@ -4577,6 +4585,7 @@ function syncMonthSummary(year, catKey, m) {
   const vb = document.getElementById(`var-badge-${year}`);
   if (vb) vb.textContent = fmt(allGrand);
   _checkBudgetAlert(year, catKey, true); // alerte si budget franchi
+  refreshMethodTotals(year); // mettre à jour la répartition par mode de paiement
 }
 
 function updateTxField(year, catKey, id, field, val) {
@@ -4586,6 +4595,7 @@ function updateTxField(year, catKey, id, field, val) {
 function updateTxMethod(year, catKey, id, sel) {
   const method = sel.value;
   updateTxField(year, catKey, id, 'method', method);
+  refreshMethodTotals(year); // mise à jour immédiate de la répartition
   const mo = getMethodObj(method);
   const _isDk = document.documentElement.dataset.theme === 'dark';
   sel.style.background = _isDk ? 'var(--surface)' : mo.bg;
@@ -5600,10 +5610,15 @@ function applyRealtimeData(d) {
   if (_countAllTx(DATA) > _countAllTx(budgetData)) dSave();
   // Re-rendu complet
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
+  const activeNavEl = document.querySelector('.nav-btn.active');
+  const activeNavId = activeNavEl?.dataset?.tabid || '';
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
   renderTabs();
   getYears().forEach(y => renderYear(y));
   renderSummary();
+  // Mettre à jour aussi Charts / Dashboard si l'onglet est actif
+  if (activeNavId === 'charts') renderCharts();
+  else if (activeNavId === 'accueil') renderDashboard();
   // Rester sur le même onglet si possible
   if (activeTabEl) {
     const yr = activeTabEl.textContent.match(/\d{4}/)?.[0];
@@ -7624,7 +7639,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.85';
+const APP_VERSION = '11.86';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -9495,6 +9510,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.86': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '⚡', text: 'Répartition par mode de paiement mise à jour en temps réel : s\'actualise instantanément à chaque ajout, modification ou suppression de transaction, et lors des changements de mode de paiement inline.' },
+      { icon: '📊', text: 'Graphiques et tableau de bord synchronisés en temps réel : les onglets Charts et Accueil se rechargent automatiquement lors d\'une synchronisation multi-appareils.' }
+    ]
+  },
   '11.85': {
     date: 'Mai 2026',
     items: [
