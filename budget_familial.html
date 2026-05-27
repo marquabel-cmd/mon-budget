@@ -7896,7 +7896,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.99';
+const APP_VERSION = '12.00';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10798,10 +10798,10 @@ function renderTrialBanner() {
       + '<button onclick="openStripeCheckout(\'yearly\')" style="' + btnStyleY + '">Annuel 24,99€ −40%</button>'
       + '</div>';
   } else {
-    el.innerHTML = '<div style="' + wrap + ';background:#e74c3c">'
-      + '⏰ Essai terminé — Vos données sont préservées ✅'
+    el.innerHTML = '<div style="' + wrap + ';background:#e74c3c;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px">'
+      + '<span>⏰ Essai terminé — En gratuit : <b>3 catégories max</b>, <b>1 an d\'historique</b>, <b>pas de sync cloud</b>. Vos données sont préservées ✅</span>'
       + '<button onclick="openStripeCheckout(\'monthly\')" style="' + btnStyle + '">Reprendre 2,99€/mois</button>'
-      + '<button onclick="openStripeCheckout(\'yearly\')" style="' + btnStyleY + '">Annuel 24,99€</button>'
+      + '<button onclick="openStripeCheckout(\'yearly\')" style="' + btnStyleY + '">Annuel 24,99€ −40%</button>'
       + '</div>';
   }
 }
