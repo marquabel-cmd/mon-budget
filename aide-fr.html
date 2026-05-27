@@ -595,7 +595,7 @@ a:hover{text-decoration:underline}
       <h3>Boutons flottants (bas à droite)</h3>
       <ul>
         <li><b>➕ Vert</b> — <a href="#ajout-rapide">Ajout rapide</a> d'une dépense variable</li>
-        <li><b>🤖 Violet</b> — <a href="#assistant-ia">Assistant IA</a> Gemini (chat)</li>
+        <li><b>🤖 Violet</b> — <a href="#assistant-ia">Assistant IA</a> Groq (chat)</li>
       </ul>
 
       <h3>Onglets d'années</h3>
@@ -683,11 +683,20 @@ a:hover{text-decoration:underline}
       <ul style="margin:8px 0 12px 20px;line-height:2">
         <li><b>Libellés des revenus</b> — ex : "Salaire", "Prime"</li>
         <li><b>Libellés des charges</b> — ex : "Loyer", "Assurance"</li>
-        <li><b>Dépenses variables</b> — libellé, catégorie et commentaire de chaque transaction</li>
+        <li><b>Dépenses variables</b> — libellé, catégorie, commentaire <b>et montant</b> de chaque transaction</li>
       </ul>
 
+      <h3>Filtres</h3>
+      <p>Des filtres s'affichent sous la barre de recherche pour affiner les résultats :</p>
+      <ul style="margin:8px 0 12px 20px;line-height:2">
+        <li><b>Année</b> — limitez la recherche à une année spécifique</li>
+        <li><b>Mois</b> — filtrez sur un mois précis</li>
+        <li><b>Type</b> — Tous / Revenus / Charges / Variables</li>
+      </ul>
+      <p>Un bouton <b>Réinitialiser</b> apparaît dès qu'un filtre est actif.</p>
+
       <h3>Résultats</h3>
-      <p>Les résultats sont groupés par année avec le type et le montant. Cliquer sur un résultat <b>navigue directement</b> vers la section correspondante et ferme la recherche.</p>
+      <p>Les résultats sont groupés par année avec le type et le montant. Cliquer sur un résultat <b>ouvre directement la transaction</b> dans sa catégorie et son mois (le détail se déroule automatiquement) et ferme la recherche.</p>
     </div>
 
     <!-- Objectif d'épargne -->
@@ -1196,7 +1205,7 @@ a:hover{text-decoration:underline}
     <!-- Assistant IA -->
     <div class="section" id="assistant-ia">
       <h2><span>🤖</span> Assistant IA (Groq)</h2>
-      <p class="lead">L'assistant IA analyse vos données budget en temps réel et répond à vos questions financières en langage naturel. Propulsé par <b>Groq</b> — gratuit, sans carte bancaire.</p>
+      <p class="lead">L'assistant IA répond à vos questions sur vos <b>10 dernières transactions</b> en langage naturel. Propulsé par <b>Groq</b> — gratuit, sans carte bancaire.</p>
 
       <h3>Activer l'assistant (2 minutes)</h3>
       <ol>
@@ -1223,26 +1232,33 @@ a:hover{text-decoration:underline}
       <h3>Exemples de questions</h3>
       <div class="feature-grid">
         <div class="feature-card">
-          <div class="fc-icon">💰</div>
-          <div class="fc-title">Soldes</div>
-          <div class="fc-desc">« Quel est mon solde actuel ? »<br>« Combien ai-je sur le livret ? »</div>
+          <div class="fc-icon">🧾</div>
+          <div class="fc-title">Derniers achats</div>
+          <div class="fc-desc">« Quels sont mes 10 derniers achats ? »<br>« Dernière transaction encodée ? »</div>
         </div>
         <div class="feature-card">
-          <div class="fc-icon">📊</div>
-          <div class="fc-title">Analyse</div>
-          <div class="fc-desc">« Quel mois j'ai le plus dépensé ? »<br>« Compare 2025 et 2026 »</div>
+          <div class="fc-icon">🔍</div>
+          <div class="fc-title">Recherche récente</div>
+          <div class="fc-desc">« J'ai acheté quoi chez Delhaize ? »<br>« Mes derniers achats en carburant ? »</div>
         </div>
         <div class="feature-card">
-          <div class="fc-icon">🛒</div>
-          <div class="fc-title">Dépenses</div>
-          <div class="fc-desc">« Combien en courses ce mois ? »<br>« Total carburant 2026 ? »</div>
+          <div class="fc-icon">💳</div>
+          <div class="fc-title">Mode de paiement</div>
+          <div class="fc-desc">« Mes derniers paiements en liquide ? »<br>« Derniers achats par carte ? »</div>
         </div>
         <div class="feature-card">
           <div class="fc-icon">💡</div>
-          <div class="fc-title">Conseils</div>
-          <div class="fc-desc">« Comment économiser ? »<br>« Où je dépense le plus ? »</div>
+          <div class="fc-title">Analyse rapide</div>
+          <div class="fc-desc">« Combien j'ai dépensé récemment ? »<br>« Résume mes dernières dépenses »</div>
         </div>
       </div>
+
+      <div class="tip">
+        <b>💡 Portée de l'IA</b> — L'assistant a accès à vos <b>10 dernières transactions</b> encodées. Pour des analyses plus larges (totaux annuels, soldes…), utilisez les tableaux de bord et graphiques de l'application.
+      </div>
+
+      <h3>Historique de conversation</h3>
+      <p>L'historique du chat est <b>sauvegardé automatiquement</b> sur votre appareil (localStorage). Vous retrouvez vos échanges à chaque ouverture du chat. Le bouton <b>🗑️ Effacer</b> vide l'historique.</p>
 
       <h3>Confidentialité</h3>
       <p>Vos données budget sont envoyées à l'API Groq <b>uniquement au moment où vous posez une question</b>. Groq utilise le modèle Llama 3.1 (open-source). La clé API est stockée uniquement dans votre navigateur, jamais sur nos serveurs.</p>
