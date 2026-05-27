@@ -2913,6 +2913,30 @@ function _syncIdCounter() {
     });
   });
   if (maxId >= _id) _id = maxId + 1;
+  _fixDuplicateIds(); // corriger les IDs dupliqués éventuels
+}
+
+// Répare les IDs dupliqués dans les données existantes (bug historique de collision)
+function _fixDuplicateIds() {
+  const allIds = new Set();
+  let fixed = 0;
+  Object.keys(DATA || {}).forEach(yr => {
+    if (!/^\d{4}$/.test(yr) || !DATA[yr]?.vars) return;
+    Object.values(DATA[yr].vars).forEach(txs => {
+      if (!Array.isArray(txs)) return;
+      txs.forEach(tx => {
+        if (typeof tx.id !== 'number' || allIds.has(tx.id)) {
+          tx.id = _id++;  // nouvel ID unique
+          fixed++;
+        }
+        allIds.add(tx.id);
+      });
+    });
+  });
+  if (fixed > 0) {
+    console.warn(`🔧 ${fixed} transaction(s) avec ID dupliqué réparée(s)`);
+    try { localStorage.setItem(dataKey(), JSON.stringify(DATA)); } catch(e) {}
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -7833,7 +7857,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.92';
+const APP_VERSION = '11.93';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
