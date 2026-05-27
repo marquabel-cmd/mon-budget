@@ -6044,21 +6044,34 @@ function _doSearch(q) {
     res.innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>';
     return;
   }
-  const ql = q.toLowerCase().trim();
+  const qlOrig = q.toLowerCase().trim();
+  const ql = qlOrig.replace(',', '.'); // normalise séparateur décimal
+  // Vérifie si une valeur numérique correspond à la recherche
+  function amtMatch(val) {
+    const n = parseFloat(val) || 0;
+    if (!n) return false;
+    const s = String(n);              // "50.5"
+    const sf = s.replace('.', ',');   // "50,5"
+    return s.includes(ql) || sf.includes(qlOrig);
+  }
   const years = [...getYears()].reverse();
   let html = '', total = 0;
   years.forEach(yr => {
     const hits = [];
     // Revenus
     (DATA[yr]?.revenus || []).forEach(r => {
-      if ((r.label||'').toLowerCase().includes(ql)) {
+      const labelOk = (r.label||'').toLowerCase().includes(qlOrig);
+      const amtOk   = (r.v||[]).some(v => amtMatch(v));
+      if (labelOk || amtOk) {
         const t12 = r.v.reduce((s,v) => s+(parseFloat(v)||0), 0);
         hits.push({icon:'💹', type:'Revenu', label:r.label, detail:'Total '+yr+' : '+fmt(t12), action:"_scrollToSection('"+yr+"','revenus')"});
       }
     });
     // Charges
     (DATA[yr]?.charges || []).forEach(r => {
-      if ((r.label||'').toLowerCase().includes(ql)) {
+      const labelOk = (r.label||'').toLowerCase().includes(qlOrig);
+      const amtOk   = (r.v||[]).some(v => amtMatch(v));
+      if (labelOk || amtOk) {
         const t12 = r.v.reduce((s,v) => s+(parseFloat(v)||0), 0);
         hits.push({icon:'🏠', type:'Charge', label:r.label, detail:'Total '+yr+' : '+fmt(t12), action:"_scrollToSection('"+yr+"','charges')"});
       }
@@ -6067,7 +6080,7 @@ function _doSearch(q) {
     getVarCats().forEach(cat => {
       (DATA[yr]?.vars?.[cat.key] || []).forEach(tx => {
         const txt = [(tx.label||''), (tx.comment||''), cat.label].join(' ').toLowerCase();
-        if (txt.includes(ql)) {
+        if (txt.includes(qlOrig) || amtMatch(tx.amount)) {
           const mLbl = getMonths()[tx.month] || '';
           hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount), action:"_scrollToSection('"+yr+"','variables')"});
         }
@@ -7611,7 +7624,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.84';
+const APP_VERSION = '11.85';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
@@ -9482,6 +9495,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '11.85': {
+    date: 'Mai 2026',
+    items: [
+      { icon: '🔍', text: 'Recherche par montant : tapez un montant (ex. "49,90" ou "49.90") pour retrouver instantanément toutes les dépenses, charges ou revenus correspondants.' }
+    ]
+  },
   '11.74': {
     date: 'Mai 2026',
     items: [
