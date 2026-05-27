@@ -5538,12 +5538,12 @@ async function cloudPush() {
     _lastPushTime = Date.now(); // Marquer AVANT le fetch pour éviter la race condition avec l'écho SSE
     const r = await _fbFetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}, token);
     if (r.ok) { _cloudDirty = false; setCloudStatus('ok'); _lastSyncError = ''; }
-    else { _lastPushTime = 0; } // reset si erreur pour permettre un vrai sync entrant
     else if (r.status === 401) {
+      _lastPushTime = 0; // reset pour permettre un vrai sync entrant
       setCloudStatus('error', _lang==='en' ? 'Session expired — retrying…' : 'Session expirée — nouvelle tentative…');
       _schedSyncRetry(90);
     }
-    else { setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); _schedSyncRetry(120); }
+    else { _lastPushTime = 0; setCloudStatus('error', `HTTP ${r.status} — vérifiez les règles Firebase`); _schedSyncRetry(120); }
   } catch(e) { setCloudStatus('error', e.message || 'Réseau inaccessible'); _schedSyncRetry(120); }
 }
 async function cloudPull() {
@@ -7833,7 +7833,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '11.89';
+const APP_VERSION = '11.90';
 const SW_VERSION = 'v205';
 
 // ── AUTO-UPDATE CHECK ──
