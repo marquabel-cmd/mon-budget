@@ -2333,8 +2333,16 @@ function _finishLogin(id) {
         const _cloudPushTime  = cloudData._lastPush || 0;
         const _localSaveStr   = localStorage.getItem('budget_lastsave_' + (CURRENT_USER_ID||''));
         const _localSaveTime  = _localSaveStr ? new Date(_localSaveStr).getTime() : 0;
+        // Mécanisme force-sync : si le cloud a été mis à jour via import JSON (DATA._forceSync),
+        // et que cet appareil n'a pas encore accepté ce forceSync → cloud gagne toujours
+        const _cloudForceSync = cloudData._forceSync || 0;
+        const _localForceSyncKey = 'budget_forcesync_' + (CURRENT_USER_ID||'');
+        const _localForceSync = parseInt(localStorage.getItem(_localForceSyncKey) || '0');
+        const _mustAcceptCloud = _cloudForceSync > _localForceSync;
+        if (_mustAcceptCloud) localStorage.setItem(_localForceSyncKey, String(_cloudForceSync));
         // Le local est "plus récent" si : sauvegardé localement APRÈS le dernier push cloud (+ marge 5s)
-        const _localIsNewer = _localSaveTime > _cloudPushTime + 5000;
+        // SAUF si force-sync actif (import JSON sur un autre appareil)
+        const _localIsNewer = !_mustAcceptCloud && (_localSaveTime > _cloudPushTime + 5000);
         if (_localIsNewer) {
           // Local modifié après le dernier push Firebase → garder local comme base, ajouter vars cloud manquantes
           DATA = _mergeBudgetData(cloudData, DATA); // args inversés : local devient base
@@ -12947,6 +12955,10 @@ function importDataJSON() {
         if (!years.length) throw new Error('Aucune année trouvée dans le fichier');
         if (!confirm(t('toast.confirm_import').replace('{0}', years.length))) return;
         DATA = backup.data;
+        // Marquer les données importées avec un timestamp de force-sync
+        // Tous les appareils qui reçoivent ce flag depuis Firebase devront accepter ces données
+        DATA._forceSync = Date.now();
+        localStorage.setItem('budget_forcesync_' + (CURRENT_USER_ID||''), String(DATA._forceSync));
         dSave();
         document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
         renderTabs(); getYears().forEach(y => renderYear(y)); renderSummary();
