@@ -2720,18 +2720,21 @@ function _mergeBudgetData(local, cloud) {
     if (!/^\d{4}$/.test(yr) || !local[yr]?.vars) return;
     if (!result[yr]) result[yr] = JSON.parse(JSON.stringify(local[yr]));
     if (!result[yr].vars) result[yr].vars = {};
+    // Construire un index de toutes les tx cloud (toutes catégories) pour détecter les déplacements
+    const allCloudTxs = Object.values(result[yr].vars).filter(v => Array.isArray(v)).flat();
     Object.keys(local[yr].vars).forEach(cat => {
       if (!Array.isArray(local[yr].vars[cat])) return;
       if (!Array.isArray(result[yr].vars[cat])) result[yr].vars[cat] = [];
-      const cloudIds = new Set(result[yr].vars[cat].map(t => t.id));
-      const cloudTxs = result[yr].vars[cat];
+      // IDs dans toutes les catégories cloud (couvre les tx déplacées d'une catégorie à l'autre)
+      const allCloudIds = new Set(allCloudTxs.map(t => t.id));
       // Réinjecter seulement les tx locales absentes du cloud ET non supprimées intentionnellement
       // ET dont aucune tx cloud n'a le même contenu (montant + mois + commentaire) — évite les doublons
-      // après renommage d'ID par _fixDuplicateIds
+      // après renommage d'ID par _fixDuplicateIds ou déplacement de catégorie
       const missing = local[yr].vars[cat].filter(t => {
-        if (cloudIds.has(t.id) || deletedIds.has(t.id)) return false;
-        // Ne pas réinjecter si une tx sémantiquement identique existe déjà côté cloud
-        const hasTwin = cloudTxs.some(ct =>
+        if (allCloudIds.has(t.id) || deletedIds.has(t.id)) return false;
+        // Ne pas réinjecter si une tx sémantiquement identique existe déjà dans N'IMPORTE QUELLE catégorie cloud
+        // (couvre le cas d'une tx déplacée d'une catégorie vers une autre)
+        const hasTwin = allCloudTxs.some(ct =>
           ct.amount === t.amount && ct.month === t.month && (ct.comment || '') === (t.comment || '')
         );
         return !hasTwin;
