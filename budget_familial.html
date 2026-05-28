@@ -2344,8 +2344,23 @@ function _finishLogin(id) {
         }
         if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
         // Repousser si : local plus récent, ou tx locales réinjectées
-        if (_localIsNewer || _countAllTx(DATA) > _cloudTxCount) dSave();
-        else _cloudDirty = false;
+        if (_localIsNewer || _countAllTx(DATA) > _cloudTxCount) {
+          // Si cloud gagne mais des tx locales ont été réinjectées, conserver le timestamp cloud
+          // pour éviter que budget_lastsave_ > _cloudPushTime au prochain chargement (boucle de reversion)
+          if (!_localIsNewer && _cloudPushTime) _cloudSyncTimestamp = _cloudPushTime;
+          dSave();
+        } else {
+          // Cloud gagne, rien à réinjecter : juste sauvegarder localement avec le timestamp cloud
+          // pour corriger un éventuel budget_lastsave_ trop récent sur cet appareil
+          _cloudDirty = false;
+          if (_cloudPushTime) {
+            const json = JSON.stringify(DATA);
+            localStorage.setItem(dataKey(), json);
+            localStorage.setItem('budget_lastsave_' + (CURRENT_USER_ID||''),
+              new Date(_cloudPushTime).toISOString());
+            opfsSave();
+          }
+        }
         document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
         renderTabs();
         getYears().forEach(y => renderYear(y));
@@ -5716,6 +5731,7 @@ let _realtimeSource = null;
 let _lastPushTime = 0;
 let _realtimeReconnectTimer = null;
 let _cloudDirty = false;      // true si des données locales n'ont pas encore été poussées
+let _cloudSyncTimestamp = 0;  // si > 0, saveData() utilisera ce timestamp pour budget_lastsave_ (évite la boucle cloud-wins)
 let _syncRetryTimer = null;   // timer de réessai automatique en cas d'échec
 let _sessionExpiredCount = 0; // nombre de tentatives échouées pour session expirée
 let _pullInProgress = false;  // true pendant un cloudPull — bloque tout push pour éviter la race condition
@@ -5849,7 +5865,12 @@ function saveData(silent = false) {
   const now = new Date();
   const dateKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   localStorage.setItem(bakPrefix() + dateKey, json);
-  const isoNow = now.toISOString();
+  // Si on sauvegarde suite à une synchro cloud (cloud gagne), utiliser le timestamp cloud
+  // pour éviter que budget_lastsave_ > _cloudPushTime au prochain chargement (boucle de reversion)
+  const isoNow = (_cloudSyncTimestamp > 0)
+    ? new Date(_cloudSyncTimestamp).toISOString()
+    : now.toISOString();
+  _cloudSyncTimestamp = 0; // Réinitialiser après usage
   localStorage.setItem('budget_lastsave_' + CURRENT_USER_ID, isoNow);
   // Backups quotidiens : garder les 30 derniers jours
   const pfx = bakPrefix();
