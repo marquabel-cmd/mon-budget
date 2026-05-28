@@ -2333,8 +2333,8 @@ function _finishLogin(id) {
         const _cloudPushTime  = cloudData._lastPush || 0;
         const _localSaveStr   = localStorage.getItem('budget_lastsave_' + (CURRENT_USER_ID||''));
         const _localSaveTime  = _localSaveStr ? new Date(_localSaveStr).getTime() : 0;
-        // Le local est "plus récent" uniquement si : données locales non poussées ET local modifié APRÈS le dernier push cloud
-        const _localIsNewer = _cloudDirty && _localSaveTime > _cloudPushTime;
+        // Le local est "plus récent" si : sauvegardé localement APRÈS le dernier push cloud (+ marge 5s)
+        const _localIsNewer = _localSaveTime > _cloudPushTime + 5000;
         if (_localIsNewer) {
           // Local modifié après le dernier push Firebase → garder local comme base, ajouter vars cloud manquantes
           DATA = _mergeBudgetData(cloudData, DATA); // args inversés : local devient base
