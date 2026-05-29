@@ -1535,10 +1535,12 @@ body.auth-locked #context-banner {
       </select>
       <!-- Filtre Type -->
       <div style="display:flex;gap:4px;flex-wrap:wrap">
-        <button id="sft-all"     onclick="_setSrchType('')"        class="sf-type-btn sf-type-active" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Tout</button>
-        <button id="sft-rev"     onclick="_setSrchType('rev')"     class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">💹 Revenus</button>
-        <button id="sft-chg"     onclick="_setSrchType('chg')"     class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🏠 Charges</button>
-        <button id="sft-var"     onclick="_setSrchType('var')"     class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🛍️ Dépenses</button>
+        <button id="sft-all"     onclick="_setSrchType('')"           class="sf-type-btn sf-type-active" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Tout</button>
+        <button id="sft-rev"     onclick="_setSrchType('rev')"        class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">💹 Revenus</button>
+        <button id="sft-chg"     onclick="_setSrchType('chg')"        class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🏠 Charges</button>
+        <button id="sft-chg-fix" onclick="_setSrchType('chg-fixed')"  class="sf-type-btn" style="display:none;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🔒 Fixes</button>
+        <button id="sft-chg-occ" onclick="_setSrchType('chg-occ')"   class="sf-type-btn" style="display:none;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">📌 Occasionnelles</button>
+        <button id="sft-var"     onclick="_setSrchType('var')"        class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🛍️ Dépenses</button>
       </div>
       <!-- Filtre Catégorie (dépenses variables) -->
       <select id="sf-cat" onchange="_applySearchFilters()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
@@ -6309,10 +6311,16 @@ function closeGlobalSearch() {
 function _updateCatFilterVisibility() {
   const sfCat = document.getElementById('sf-cat');
   if (!sfCat) return;
-  // Visible seulement si type = Tout ou Dépenses
-  const show = !_srchType || _srchType === 'var';
-  sfCat.style.display = show ? 'block' : 'none';
-  if (!show) sfCat.value = ''; // reset si on passe sur Revenus/Charges
+  // Filtre catégorie : visible seulement si type = Tout ou Dépenses
+  const showCat = !_srchType || _srchType === 'var';
+  sfCat.style.display = showCat ? 'block' : 'none';
+  if (!showCat) sfCat.value = '';
+  // Boutons Fixes / Occasionnelles : visibles quand Charges ou sous-type charge actif
+  const showChgSub = _srchType === 'chg' || _srchType === 'chg-fixed' || _srchType === 'chg-occ';
+  const fixBtn = document.getElementById('sft-chg-fix');
+  const occBtn = document.getElementById('sft-chg-occ');
+  if (fixBtn) fixBtn.style.display = showChgSub ? 'inline-block' : 'none';
+  if (occBtn) occBtn.style.display = showChgSub ? 'inline-block' : 'none';
 }
 function _setSrchType(type) {
   _srchType = type;
@@ -6320,7 +6328,11 @@ function _setSrchType(type) {
     b.style.background = 'var(--bg)'; b.style.color = 'var(--text)';
     b.classList.remove('sf-type-active');
   });
-  const activeId = type === 'rev' ? 'sft-rev' : type === 'chg' ? 'sft-chg' : type === 'var' ? 'sft-var' : 'sft-all';
+  const activeId = type === 'rev' ? 'sft-rev'
+    : type === 'chg' ? 'sft-chg'
+    : type === 'chg-fixed' ? 'sft-chg-fix'
+    : type === 'chg-occ'   ? 'sft-chg-occ'
+    : type === 'var' ? 'sft-var' : 'sft-all';
   const activeBtn = document.getElementById(activeId);
   if (activeBtn) { activeBtn.style.background = 'var(--blue)'; activeBtn.style.color = '#fff'; }
   _updateCatFilterVisibility();
@@ -6388,8 +6400,12 @@ function _doSearch(q) {
       });
     }
     // Charges
-    if (!filterType || filterType === 'chg') {
+    if (!filterType || filterType === 'chg' || filterType === 'chg-fixed' || filterType === 'chg-occ') {
       (DATA[yr]?.charges || []).forEach(r => {
+        // Filtre sous-type charge
+        if (filterType === 'chg-fixed' && r.cat !== 'fixed') return;
+        if (filterType === 'chg-occ'   && r.cat !== 'occasional') return;
+        if (r.cat === 'livret_in' || r.cat === 'livret_out') return; // toujours exclure livret de la recherche charges
         const monthsToCheck = filterMIdx >= 0 ? [filterMIdx] : r.v.map((_,i)=>i);
         const labelOk = !qlOrig || (r.label||'').toLowerCase().includes(qlOrig);
         const amtOk   = !qlOrig || monthsToCheck.some(i => amtMatch(r.v?.[i]));
@@ -6400,7 +6416,8 @@ function _doSearch(q) {
           const displayAmt = filterMIdx >= 0
             ? fmt(rawAmt) + ' (' + getMonths()[filterMIdx] + ')'
             : 'Total '+yr+' : '+fmt(rawAmt);
-          hits.push({icon:'🏠', type:'Charge', label:r.label, detail:displayAmt, amount:rawAmt, action:"_jumpToFixedRow('"+yr+"','charges')"});
+          const chgTypeLabel = r.cat === 'occasional' ? '📌 Occasionnelle' : '🔒 Fixe';
+          hits.push({icon:'🏠', type:chgTypeLabel, label:r.label, detail:displayAmt, amount:rawAmt, action:"_jumpToFixedRow('"+yr+"','charges')"});
         }
       });
     }
