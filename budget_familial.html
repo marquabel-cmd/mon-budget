@@ -7191,7 +7191,7 @@ function renderConfigTab() {
           <div style="margin-top:8px">
             <div style="font-size:11px;color:var(--gray);margin-bottom:5px">Clé personnelle — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys ↗</a></div>
             <div style="display:flex;gap:6px;align-items:center">
-              <input type="password" id="cfg-gemini-key" placeholder="gsk_… (laisse vide pour utiliser le proxy serveur)" value="${localStorage.getItem(AI_KEY_STORAGE)||''}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;background:var(--surface);color:var(--text);font-family:monospace">
+              <input type="password" id="cfg-gemini-key" placeholder="AIza… (Gemini) ou gsk_… (Groq)" value="${localStorage.getItem(AI_KEY_STORAGE)||''}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;background:var(--surface);color:var(--text);font-family:monospace">
               <button onclick="saveGeminiKey(document.getElementById('cfg-gemini-key').value);renderConfigTab()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">✅</button>
             </div>
           </div>
@@ -8361,7 +8361,7 @@ const TRANSLATIONS = {
     'cfg.ai_active': 'Assistant actif — disponible pour tous les utilisateurs',
     'cfg.ai_desc': 'Propulsé par <b>Groq</b> (Llama 3.1). Clique sur le bouton 🤖 en bas à droite pour l\'utiliser.',
     'cfg.ai_own_key': '⚙️ Utiliser ma propre clé API',
-    'cfg.ai_key_label': 'Clé personnelle — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys ↗</a>',
+    'cfg.ai_key_label': 'Clé IA — <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--blue)">Gemini (recommandé) ↗</a> ou <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">Groq ↗</a>',
     'cfg.save_now': '💾 Sauvegarder maintenant',
     'cfg.see_backups': '📦 Voir les backups',
     'cfg.delete_year': '🗑️ Supprimer une année',
@@ -9153,7 +9153,7 @@ const TRANSLATIONS = {
     'cfg.ai_active': 'Assistant active — available for all users',
     'cfg.ai_desc': 'Powered by <b>Groq</b> (Llama 3.1). Click the 🤖 button at the bottom right to use it.',
     'cfg.ai_own_key': '⚙️ Use my own API key',
-    'cfg.ai_key_label': 'Personal key — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys ↗</a>',
+    'cfg.ai_key_label': 'AI key — <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--blue)">Gemini (recommended) ↗</a> or <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">Groq ↗</a>',
     'cfg.save_now': '💾 Save now',
     'cfg.see_backups': '📦 View backups',
     'cfg.delete_year': '🗑️ Delete a year',
@@ -12546,42 +12546,60 @@ function _stopVoice(manual = false) {
 }
 
 async function _callGemini(apiKey, systemContext, userMessage) {
-  let endpoint, headers;
-  const body = JSON.stringify({
-    model: 'llama-3.1-8b-instant',
-    messages: [
-      { role: 'system', content: systemContext },
-      { role: 'user',   content: userMessage }
-    ],
-    temperature: 0.7,
-    max_tokens: 800
-  });
+  let res;
 
-  if (apiKey) {
-    // Clé personnelle → appel direct à Groq
-    endpoint = 'https://api.groq.com/openai/v1/chat/completions';
-    headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+  if (apiKey && apiKey.startsWith('AIza')) {
+    // ── Google Gemini (gemini-2.0-flash — gratuit, 1M tokens/min) ──
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const body = JSON.stringify({
+      systemInstruction: { parts: [{ text: systemContext }] },
+      contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 1200 }
+    });
+    res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err.error?.message || `Erreur HTTP ${res.status}`;
+      if (res.status === 400 && msg.includes('API_KEY')) throw new Error(t('ai.err_invalid_key'));
+      if (res.status === 429) throw new Error(t('ai.err_rate_limit'));
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error(t('ai.err_empty'));
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+      .replace(/\*(.*?)\*/g, '<i>$1</i>')
+      .replace(/\n/g, '<br>');
   } else {
-    // Pas de clé → proxy Cloudflare Worker (clé côté serveur)
-    endpoint = GROQ_PROXY_URL;
-    headers = { 'Content-Type': 'application/json' };
+    // ── Groq (llama) — clé personnelle ou proxy serveur ──
+    const endpoint = apiKey ? 'https://api.groq.com/openai/v1/chat/completions' : GROQ_PROXY_URL;
+    const headers = { 'Content-Type': 'application/json', ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}) };
+    const body = JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        { role: 'system', content: systemContext },
+        { role: 'user',   content: userMessage }
+      ],
+      temperature: 0.7,
+      max_tokens: 800
+    });
+    res = await fetch(endpoint, { method: 'POST', headers, body });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err.error?.message || `Erreur HTTP ${res.status}`;
+      if (res.status === 401) throw new Error(t('ai.err_invalid_key'));
+      if (res.status === 429) throw new Error(t('ai.err_rate_limit'));
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content;
+    if (!text) throw new Error(t('ai.err_empty'));
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+      .replace(/\*(.*?)\*/g, '<i>$1</i>')
+      .replace(/\n/g, '<br>');
   }
-
-  const res = await fetch(endpoint, { method: 'POST', headers, body });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const msg = err.error?.message || `Erreur HTTP ${res.status}`;
-    if (res.status === 401) throw new Error(t('ai.err_invalid_key'));
-    if (res.status === 429) throw new Error(t('ai.err_rate_limit'));
-    throw new Error(msg);
-  }
-  const data = await res.json();
-  const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error(t('ai.err_empty'));
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-    .replace(/\*(.*?)\*/g, '<i>$1</i>')
-    .replace(/\n/g, '<br>');
 }
 
 // ── TOUR GUIDÉ ──
