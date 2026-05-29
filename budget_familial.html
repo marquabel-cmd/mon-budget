@@ -12550,26 +12550,21 @@ async function _callGemini(apiKey, systemContext, userMessage) {
   let res;
 
   if (apiKey && apiKey.startsWith('AIza')) {
-    // ── Google Gemini (gemini-2.0-flash — gratuit, 1M tokens/min) ──
-    // Endpoint compatible OpenAI — supporte tous les modèles Gemini disponibles
-    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+    // ── Google Gemini — endpoint natif (1500 req/jour gratuit) ──
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${apiKey}`;
     const body = JSON.stringify({
-      model: 'gemini-2.0-flash-lite',
-      messages: [
-        { role: 'system', content: systemContext },
-        { role: 'user',   content: userMessage }
-      ],
-      temperature: 0.7,
-      max_tokens: 1200
+      systemInstruction: { parts: [{ text: systemContext }] },
+      contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
     });
-    res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body });
+    res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const msg = err.error?.message || `Erreur HTTP ${res.status}`;
+      const msg = err.error?.message || err.error?.status || JSON.stringify(err);
       throw new Error(`Gemini HTTP ${res.status}: ${msg}`);
     }
     const data = await res.json();
-    const text = data.choices?.[0]?.message?.content;
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error(t('ai.err_empty'));
     return text
       .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
