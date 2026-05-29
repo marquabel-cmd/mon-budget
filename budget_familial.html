@@ -8004,8 +8004,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.06';
-const SW_VERSION = 'v212';
+const APP_VERSION = '12.07';
+const SW_VERSION = 'v213';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12487,6 +12487,7 @@ function toggleVoiceInput() {
   };
 
   rec.onresult = (e) => {
+    if (!_voiceListening) return; // ignorer les événements tardifs après l'arrêt
     let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       if (e.results[i].isFinal) _voiceFinalText += e.results[i][0].transcript + ' ';
@@ -13626,7 +13627,7 @@ function closeCompareView() {
   <div class="ai-chat-messages" id="ai-chat-messages"></div>
   <div class="ai-chat-input-area">
     <button class="ai-mic-btn" id="ai-mic-btn" onclick="toggleVoiceInput()" title="Saisie vocale (cliquez pour parler)">🎤</button>
-    <input type="text" id="ai-chat-input" data-i18n-placeholder="ai.placeholder" placeholder="Ask a question…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendAiMessage();event.preventDefault()}">
+    <input type="text" id="ai-chat-input" data-i18n-placeholder="ai.placeholder" placeholder="Ask a question…" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendAiMessage();event.preventDefault()}">
     <button class="ai-chat-send" id="ai-chat-send" onclick="sendAiMessage()">Envoyer</button>
   </div>
 </div>
