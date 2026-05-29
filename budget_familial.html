@@ -8360,7 +8360,7 @@ const TRANSLATIONS = {
     'cfg.gist_free_desc': 'Sync automatique à chaque sauvegarde via GitHub',
     'cfg.ai_title': '🤖 Assistant IA',
     'cfg.ai_active': 'Assistant actif — disponible pour tous les utilisateurs',
-    'cfg.ai_desc': 'Propulsé par <b>Groq</b> (Llama 3.1). Clique sur le bouton 🤖 en bas à droite pour l\'utiliser.',
+    'cfg.ai_desc': 'Supporte <b>Gemini</b> (clé AIza…) et <b>Groq</b> (clé gsk_…). Clique sur le bouton 🤖 en bas à droite pour l\'utiliser.',
     'cfg.ai_own_key': '⚙️ Utiliser ma propre clé API',
     'cfg.ai_key_label': 'Clé IA — <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--blue)">Gemini (recommandé) ↗</a> ou <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">Groq ↗</a>',
     'cfg.save_now': '💾 Sauvegarder maintenant',
@@ -9152,7 +9152,7 @@ const TRANSLATIONS = {
     'cfg.gist_free_desc': 'Auto-sync on every save via GitHub',
     'cfg.ai_title': '🤖 AI Assistant',
     'cfg.ai_active': 'Assistant active — available for all users',
-    'cfg.ai_desc': 'Powered by <b>Groq</b> (Llama 3.1). Click the 🤖 button at the bottom right to use it.',
+    'cfg.ai_desc': 'Supports <b>Gemini</b> (AIza… key) and <b>Groq</b> (gsk_… key). Click the 🤖 button at the bottom right to use it.',
     'cfg.ai_own_key': '⚙️ Use my own API key',
     'cfg.ai_key_label': 'AI key — <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--blue)">Gemini (recommended) ↗</a> or <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">Groq ↗</a>',
     'cfg.save_now': '💾 Save now',
@@ -12551,7 +12551,7 @@ async function _callGemini(apiKey, systemContext, userMessage) {
 
   if (apiKey && apiKey.startsWith('AIza')) {
     // ── Google Gemini (gemini-2.0-flash — gratuit, 1M tokens/min) ──
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const body = JSON.stringify({
       systemInstruction: { parts: [{ text: systemContext }] },
       contents: [{ role: 'user', parts: [{ text: userMessage }] }],
@@ -12561,7 +12561,8 @@ async function _callGemini(apiKey, systemContext, userMessage) {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       const msg = err.error?.message || `Erreur HTTP ${res.status}`;
-      if (res.status === 400 && msg.includes('API_KEY')) throw new Error(t('ai.err_invalid_key'));
+      const msgLow = msg.toLowerCase();
+      if (msgLow.includes('api key') || msgLow.includes('api_key') || res.status === 403) throw new Error(t('ai.err_invalid_key'));
       if (res.status === 429) throw new Error(t('ai.err_rate_limit'));
       throw new Error(msg);
     }
