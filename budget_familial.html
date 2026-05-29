@@ -12224,37 +12224,81 @@ function _buildBudgetContext() {
     ? 'You are an expert personal budget assistant. Reply in English, concisely and helpfully. Use the data below:\n\n'
     : 'Tu es un assistant budgétaire personnel expert. Réponds en français, de façon concise et bienveillante. Tutoie l\'utilisateur. Utilise les données ci-dessous :\n\n';
   const varCats = getVarCats();
+  const MONTHS = getMonths();
+  let ctx = _aiLangInstr;
+
+  // ── 1. Résumé annuel ──────────────────────────────────────────────────────
+  ctx += '=== RÉSUMÉ ANNUEL ===\n';
+  years.forEach(yr => {
+    const d = DATA[yr];
+    if (!d) return;
+    const rev = (d.revenus || []).reduce((s, r) => s + r.v.reduce((a, v) => a + (parseFloat(v)||0), 0), 0);
+    const chg = (d.charges || []).filter(r => r.cat !== 'livret_in' && r.cat !== 'livret_out')
+                                  .reduce((s, r) => s + r.v.reduce((a, v) => a + (parseFloat(v)||0), 0), 0);
+    const dep = varCats.reduce((s, cat) => s + (d.vars?.[cat.key] || []).reduce((a, tx) => a + (parseFloat(tx.amount)||0), 0), 0);
+    ctx += `${yr} : Revenus ${rev.toFixed(2)}€ | Charges ${chg.toFixed(2)}€ | Dépenses variables ${dep.toFixed(2)}€ | Solde ${(rev-chg-dep).toFixed(2)}€\n`;
+  });
+
+  // ── 2. Résumé mensuel (2 dernières années) ────────────────────────────────
+  ctx += '\n=== RÉSUMÉ MENSUEL ===\n';
+  [...years].slice(-2).forEach(yr => {
+    const d = DATA[yr];
+    if (!d) return;
+    ctx += `--- ${yr} ---\n`;
+    for (let mi = 0; mi < 12; mi++) {
+      const rev = (d.revenus || []).reduce((s, r) => s + (parseFloat(r.v?.[mi])||0), 0);
+      const chg = (d.charges || []).filter(r => r.cat !== 'livret_in' && r.cat !== 'livret_out')
+                                    .reduce((s, r) => s + (parseFloat(r.v?.[mi])||0), 0);
+      const dep = varCats.reduce((s, cat) => s + (d.vars?.[cat.key] || []).filter(tx => tx.month === mi).reduce((a, tx) => a + (parseFloat(tx.amount)||0), 0), 0);
+      if (rev === 0 && chg === 0 && dep === 0) continue;
+      ctx += `${MONTHS[mi]} ${yr} : Revenus ${rev.toFixed(2)}€ | Charges ${chg.toFixed(2)}€ | Dépenses ${dep.toFixed(2)}€ | Solde ${(rev-chg-dep).toFixed(2)}€\n`;
+    }
+  });
+
+  // ── 3. Charges (ligne par ligne, dernière année) ──────────────────────────
+  const lastYr = years[years.length - 1];
+  if (lastYr && DATA[lastYr]) {
+    ctx += `\n=== CHARGES ${lastYr} ===\n`;
+    (DATA[lastYr].charges || []).filter(r => r.cat !== 'livret_in' && r.cat !== 'livret_out').forEach(r => {
+      const total = r.v.reduce((s, v) => s + (parseFloat(v)||0), 0);
+      if (total === 0) return;
+      const type = r.cat === 'occasional' ? '📌' : '🔒';
+      const monthly = r.v.map((v, i) => parseFloat(v) ? `${MONTHS[i]}:${parseFloat(v).toFixed(2)}€` : '').filter(Boolean).join(' ');
+      ctx += `${type} ${r.label} | Total:${total.toFixed(2)}€ | ${monthly}\n`;
+    });
+  }
+
+  // ── 4. Revenus (ligne par ligne, dernière année) ──────────────────────────
+  if (lastYr && DATA[lastYr]) {
+    ctx += `\n=== REVENUS ${lastYr} ===\n`;
+    (DATA[lastYr].revenus || []).forEach(r => {
+      const total = r.v.reduce((s, v) => s + (parseFloat(v)||0), 0);
+      if (total === 0) return;
+      const monthly = r.v.map((v, i) => parseFloat(v) ? `${MONTHS[i]}:${parseFloat(v).toFixed(2)}€` : '').filter(Boolean).join(' ');
+      ctx += `💰 ${r.label} | Total:${total.toFixed(2)}€ | ${monthly}\n`;
+    });
+  }
+
+  // ── 5. Toutes les dépenses variables (années récentes, max 600 tx) ────────
+  ctx += '\n=== DÉPENSES VARIABLES (toutes transactions) ===\n';
   const allTx = [];
-  years.forEach(year => {
-    const d = DATA[year];
+  [...years].slice(-2).forEach(yr => {
+    const d = DATA[yr];
     if (!d) return;
     varCats.forEach(cat => {
       (d.vars?.[cat.key] || []).forEach(tx => {
-        allTx.push({
-          year: +year,
-          cat: cat.label,
-          icon: cat.icon || '🛍️',
-          date: String(tx.date || ''),
-          month: tx.month ?? 0,
-          amount: parseFloat(tx.amount) || 0,
-          comment: tx.comment || '',
-          method: tx.method || ''
-        });
+        allTx.push({ yr, cat: cat.label, icon: cat.icon||'🛍️', date: String(tx.date||''), month: tx.month??0, amount: parseFloat(tx.amount)||0, comment: tx.comment||'', method: tx.method||'' });
       });
     });
   });
-  allTx.sort((a, b) => {
-    if (b.year !== a.year) return b.year - a.year;
-    if (b.month !== a.month) return b.month - a.month;
-    return b.date.localeCompare(a.date);
-  });
-  let ctx = _aiLangInstr + '10 DERNIÈRES TRANSACTIONS:\n';
-  allTx.slice(0, 10).forEach(tx => {
-    const d = tx.date || (getMonths()[tx.month] || '');
+  allTx.sort((a, b) => b.yr !== a.yr ? b.yr.localeCompare(a.yr) : b.month !== a.month ? b.month - a.month : b.date.localeCompare(a.date));
+  allTx.slice(0, 600).forEach(tx => {
+    const d = tx.date || MONTHS[tx.month] || '';
     const m = tx.method ? ` [${tx.method}]` : '';
     const c = tx.comment ? ` — ${tx.comment}` : '';
-    ctx += `${tx.year}/${d} | ${tx.icon} ${tx.cat} | ${tx.amount.toFixed(2)}€${m}${c}\n`;
+    ctx += `${tx.yr}/${d} | ${tx.icon} ${tx.cat} | ${tx.amount.toFixed(2)}€${m}${c}\n`;
   });
+
   return ctx;
 }
 
