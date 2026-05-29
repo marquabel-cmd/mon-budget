@@ -8004,8 +8004,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.02';
-const SW_VERSION = 'v208';
+const APP_VERSION = '12.03';
+const SW_VERSION = 'v209';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12555,7 +12555,7 @@ async function _callGemini(apiKey, systemContext, userMessage) {
     const body = JSON.stringify({
       systemInstruction: { parts: [{ text: systemContext }] },
       contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
+      generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
     });
     let lastErr;
     for (const model of GEMINI_MODELS) {
