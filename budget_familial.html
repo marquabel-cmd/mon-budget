@@ -8004,8 +8004,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.05';
-const SW_VERSION = 'v211';
+const APP_VERSION = '12.06';
+const SW_VERSION = 'v212';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12240,9 +12240,9 @@ function _buildBudgetContext() {
     ctx += `${yr} : Revenus ${rev.toFixed(2)}€ | Charges ${chg.toFixed(2)}€ | Dépenses variables ${dep.toFixed(2)}€ | Solde ${(rev-chg-dep).toFixed(2)}€\n`;
   });
 
-  // ── 2. Résumé mensuel (année courante uniquement) ─────────────────────────
+  // ── 2. Résumé mensuel (toutes les années) ────────────────────────────────
   ctx += '\n=== RÉSUMÉ MENSUEL ===\n';
-  [...years].slice(-1).forEach(yr => {
+  years.forEach(yr => {
     const d = DATA[yr];
     if (!d) return;
     ctx += `--- ${yr} ---\n`;
@@ -12256,45 +12256,47 @@ function _buildBudgetContext() {
     }
   });
 
-  // ── 3. Charges (ligne par ligne, dernière année) ──────────────────────────
-  const lastYr = years[years.length - 1];
-  if (lastYr && DATA[lastYr]) {
-    ctx += `\n=== CHARGES ${lastYr} ===\n`;
-    (DATA[lastYr].charges || []).filter(r => r.cat !== 'livret_in' && r.cat !== 'livret_out').forEach(r => {
+  // ── 3. Charges (toutes les années) ───────────────────────────────────────
+  years.forEach(yr => {
+    if (!DATA[yr]) return;
+    ctx += `\n=== CHARGES ${yr} ===\n`;
+    (DATA[yr].charges || []).filter(r => r.cat !== 'livret_in' && r.cat !== 'livret_out').forEach(r => {
       const total = r.v.reduce((s, v) => s + (parseFloat(v)||0), 0);
       if (total === 0) return;
       const type = r.cat === 'occasional' ? '📌' : '🔒';
       const monthly = r.v.map((v, i) => parseFloat(v) ? `${MONTHS[i]}:${parseFloat(v).toFixed(2)}€` : '').filter(Boolean).join(' ');
       ctx += `${type} ${r.label} | Total:${total.toFixed(2)}€ | ${monthly}\n`;
     });
-  }
+  });
 
-  // ── 4. Revenus (ligne par ligne, dernière année) ──────────────────────────
-  if (lastYr && DATA[lastYr]) {
-    ctx += `\n=== REVENUS ${lastYr} ===\n`;
-    (DATA[lastYr].revenus || []).forEach(r => {
+  // ── 4. Revenus (toutes les années) ───────────────────────────────────────
+  years.forEach(yr => {
+    if (!DATA[yr]) return;
+    ctx += `\n=== REVENUS ${yr} ===\n`;
+    (DATA[yr].revenus || []).forEach(r => {
       const total = r.v.reduce((s, v) => s + (parseFloat(v)||0), 0);
       if (total === 0) return;
       const monthly = r.v.map((v, i) => parseFloat(v) ? `${MONTHS[i]}:${parseFloat(v).toFixed(2)}€` : '').filter(Boolean).join(' ');
       ctx += `💰 ${r.label} | Total:${total.toFixed(2)}€ | ${monthly}\n`;
     });
-  }
+  });
 
-  // ── 5. Dépenses variables (année courante uniquement, max 150 tx) ─────────
-  ctx += `\n=== DÉPENSES VARIABLES ${lastYr} ===\n`;
-  const allTx = [];
-  if (lastYr && DATA[lastYr]) {
+  // ── 5. Dépenses variables (toutes les années, max 80 tx par an) ──────────
+  years.forEach(yr => {
+    if (!DATA[yr]) return;
+    ctx += `\n=== DÉPENSES VARIABLES ${yr} ===\n`;
+    const allTx = [];
     varCats.forEach(cat => {
-      (DATA[lastYr].vars?.[cat.key] || []).forEach(tx => {
+      (DATA[yr].vars?.[cat.key] || []).forEach(tx => {
         allTx.push({ cat: cat.label, date: String(tx.date||''), month: tx.month??0, amount: parseFloat(tx.amount)||0, comment: tx.comment||'', method: tx.method||'' });
       });
     });
-  }
-  allTx.sort((a, b) => b.month !== a.month ? b.month - a.month : b.date.localeCompare(a.date));
-  allTx.slice(0, 80).forEach(tx => {
-    const d = tx.date || MONTHS[tx.month] || '';
-    const c = tx.comment ? ` ${tx.comment}` : '';
-    ctx += `${d}|${tx.cat}|${tx.amount.toFixed(2)}€${c}\n`;
+    allTx.sort((a, b) => b.month !== a.month ? b.month - a.month : b.date.localeCompare(a.date));
+    allTx.slice(0, 80).forEach(tx => {
+      const d = tx.date || MONTHS[tx.month] || '';
+      const c = tx.comment ? ` ${tx.comment}` : '';
+      ctx += `${d}|${tx.cat}|${tx.amount.toFixed(2)}€${c}\n`;
+    });
   });
 
   return ctx;
