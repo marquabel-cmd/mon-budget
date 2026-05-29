@@ -12239,9 +12239,9 @@ function _buildBudgetContext() {
     ctx += `${yr} : Revenus ${rev.toFixed(2)}€ | Charges ${chg.toFixed(2)}€ | Dépenses variables ${dep.toFixed(2)}€ | Solde ${(rev-chg-dep).toFixed(2)}€\n`;
   });
 
-  // ── 2. Résumé mensuel (2 dernières années) ────────────────────────────────
+  // ── 2. Résumé mensuel (année courante uniquement) ─────────────────────────
   ctx += '\n=== RÉSUMÉ MENSUEL ===\n';
-  [...years].slice(-2).forEach(yr => {
+  [...years].slice(-1).forEach(yr => {
     const d = DATA[yr];
     if (!d) return;
     ctx += `--- ${yr} ---\n`;
@@ -12279,24 +12279,21 @@ function _buildBudgetContext() {
     });
   }
 
-  // ── 5. Toutes les dépenses variables (années récentes, max 600 tx) ────────
-  ctx += '\n=== DÉPENSES VARIABLES (toutes transactions) ===\n';
+  // ── 5. Dépenses variables (année courante uniquement, max 150 tx) ─────────
+  ctx += `\n=== DÉPENSES VARIABLES ${lastYr} ===\n`;
   const allTx = [];
-  [...years].slice(-2).forEach(yr => {
-    const d = DATA[yr];
-    if (!d) return;
+  if (lastYr && DATA[lastYr]) {
     varCats.forEach(cat => {
-      (d.vars?.[cat.key] || []).forEach(tx => {
-        allTx.push({ yr, cat: cat.label, icon: cat.icon||'🛍️', date: String(tx.date||''), month: tx.month??0, amount: parseFloat(tx.amount)||0, comment: tx.comment||'', method: tx.method||'' });
+      (DATA[lastYr].vars?.[cat.key] || []).forEach(tx => {
+        allTx.push({ cat: cat.label, date: String(tx.date||''), month: tx.month??0, amount: parseFloat(tx.amount)||0, comment: tx.comment||'', method: tx.method||'' });
       });
     });
-  });
-  allTx.sort((a, b) => b.yr !== a.yr ? b.yr.localeCompare(a.yr) : b.month !== a.month ? b.month - a.month : b.date.localeCompare(a.date));
-  allTx.slice(0, 600).forEach(tx => {
+  }
+  allTx.sort((a, b) => b.month !== a.month ? b.month - a.month : b.date.localeCompare(a.date));
+  allTx.slice(0, 150).forEach(tx => {
     const d = tx.date || MONTHS[tx.month] || '';
-    const m = tx.method ? ` [${tx.method}]` : '';
-    const c = tx.comment ? ` — ${tx.comment}` : '';
-    ctx += `${tx.yr}/${d} | ${tx.icon} ${tx.cat} | ${tx.amount.toFixed(2)}€${m}${c}\n`;
+    const c = tx.comment ? ` ${tx.comment}` : '';
+    ctx += `${d}|${tx.cat}|${tx.amount.toFixed(2)}€${c}\n`;
   });
 
   return ctx;
