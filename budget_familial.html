@@ -8010,8 +8010,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.08';
-const SW_VERSION = 'v214';
+const APP_VERSION = '12.09';
+const SW_VERSION = 'v215';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12228,8 +12228,8 @@ function _buildBudgetContext() {
   const years = getYears();
   if (!years.length) return t('ai.no_data');
   const _aiLangInstr = _lang === 'en'
-    ? 'You are an expert personal budget assistant. Reply in English, concisely and helpfully. Use the data below:\n\n'
-    : 'Tu es un assistant budgétaire personnel expert. Réponds en français, de façon concise et bienveillante. Tutoie l\'utilisateur. Utilise les données ci-dessous :\n\n';
+    ? 'You are an expert personal budget assistant. Reply in English, concisely and helpfully.\nIMPORTANT: Use the data below ONLY to answer questions. NEVER repeat or dump the raw data in your response. Give structured, formatted answers.\n\n'
+    : 'Tu es un assistant budgétaire personnel expert. Réponds en français, de façon concise et bienveillante. Tutoie l\'utilisateur.\nIMPORTANT : Utilise les données ci-dessous UNIQUEMENT pour répondre aux questions. Ne répète JAMAIS les données brutes dans ta réponse. Donne des réponses structurées et formatées.\n\n';
   const varCats = getVarCats();
   const MONTHS = getMonths();
   let ctx = _aiLangInstr;
@@ -12564,7 +12564,7 @@ async function _callGemini(apiKey, systemContext, userMessage) {
     const body = JSON.stringify({
       systemInstruction: { parts: [{ text: systemContext }] },
       contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+      generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
     });
     let lastErr;
     for (const model of GEMINI_MODELS) {
