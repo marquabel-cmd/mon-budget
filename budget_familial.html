@@ -8004,8 +8004,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.03';
-const SW_VERSION = 'v209';
+const APP_VERSION = '12.04';
+const SW_VERSION = 'v210';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12550,8 +12550,8 @@ async function _callGemini(apiKey, systemContext, userMessage) {
   let res;
 
   if (apiKey && apiKey.startsWith('AIza')) {
-    // ── Google Gemini — endpoint natif, fallback automatique si 503 ──
-    const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+    // ── Google Gemini — endpoint natif, fallback automatique si 503/429 ──
+    const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash'];
     const body = JSON.stringify({
       systemInstruction: { parts: [{ text: systemContext }] },
       contents: [{ role: 'user', parts: [{ text: userMessage }] }],
@@ -12561,8 +12561,10 @@ async function _callGemini(apiKey, systemContext, userMessage) {
     for (const model of GEMINI_MODELS) {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-      if (res.status === 503 || res.status === 529) {
-        lastErr = new Error(`Gemini HTTP ${res.status}: Modèle ${model} surchargé, essai du suivant…`);
+      if (res.status === 503 || res.status === 529 || res.status === 429) {
+        const errData = await res.json().catch(() => ({}));
+        const errMsg = errData.error?.message || '';
+        lastErr = new Error(`Modèle ${model} indisponible (${res.status}), essai du suivant…`);
         continue; // essayer le modèle suivant
       }
       if (!res.ok) {
@@ -12578,7 +12580,7 @@ async function _callGemini(apiKey, systemContext, userMessage) {
         .replace(/\*(.*?)\*/g, '<i>$1</i>')
         .replace(/\n/g, '<br>');
     }
-    throw lastErr || new Error('Tous les modèles Gemini sont indisponibles. Réessaie dans quelques instants.');
+    throw lastErr || new Error('Tous les modèles Gemini sont indisponibles (quota épuisé ou surcharge). Réessaie dans quelques instants.');
   } else {
     // ── Groq (llama) — clé personnelle ou proxy serveur ──
     const endpoint = apiKey ? 'https://api.groq.com/openai/v1/chat/completions' : GROQ_PROXY_URL;
