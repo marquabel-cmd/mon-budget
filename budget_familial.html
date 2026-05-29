@@ -12561,10 +12561,8 @@ async function _callGemini(apiKey, systemContext, userMessage) {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       const msg = err.error?.message || `Erreur HTTP ${res.status}`;
-      const msgLow = msg.toLowerCase();
-      if (msgLow.includes('api key') || msgLow.includes('api_key') || res.status === 403) throw new Error(t('ai.err_invalid_key'));
       if (res.status === 429) throw new Error(t('ai.err_rate_limit'));
-      throw new Error(msg);
+      throw new Error(`Gemini HTTP ${res.status}: ${msg}`);
     }
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
