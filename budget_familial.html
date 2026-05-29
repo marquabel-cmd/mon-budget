@@ -1540,6 +1540,10 @@ body.auth-locked #context-banner {
         <button id="sft-chg"     onclick="_setSrchType('chg')"     class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🏠 Charges</button>
         <button id="sft-var"     onclick="_setSrchType('var')"     class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🛍️ Dépenses</button>
       </div>
+      <!-- Filtre Catégorie (dépenses variables) -->
+      <select id="sf-cat" onchange="_applySearchFilters()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
+        <option value="">🏷️ Toutes catégories</option>
+      </select>
       <!-- Bouton reset filtres -->
       <button onclick="_resetSearchFilters()" id="sf-reset" style="display:none;margin-left:auto;padding:4px 10px;border-radius:20px;border:1px solid rgba(239,68,68,.4);font-size:11px;font-weight:700;cursor:pointer;background:rgba(239,68,68,.08);color:#ef4444">✕ Effacer filtres</button>
     </div>
@@ -6281,6 +6285,17 @@ function openGlobalSearch() {
     sfYear.appendChild(opt);
   });
   sfYear.value = curVal;
+  // Peupler le select catégories
+  const sfCat = document.getElementById('sf-cat');
+  const curCat = sfCat.value;
+  sfCat.innerHTML = '<option value="">🏷️ Toutes catégories</option>';
+  getVarCats().forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.key; opt.textContent = (c.icon||'') + ' ' + c.label;
+    sfCat.appendChild(opt);
+  });
+  sfCat.value = curCat;
+  _updateCatFilterVisibility();
   // Reset résultats si besoin
   const inp = document.getElementById('search-input');
   if (!inp.value.trim()) {
@@ -6291,6 +6306,14 @@ function openGlobalSearch() {
 function closeGlobalSearch() {
   document.getElementById('modal-search').style.display = 'none';
 }
+function _updateCatFilterVisibility() {
+  const sfCat = document.getElementById('sf-cat');
+  if (!sfCat) return;
+  // Visible seulement si type = Tout ou Dépenses
+  const show = !_srchType || _srchType === 'var';
+  sfCat.style.display = show ? 'block' : 'none';
+  if (!show) sfCat.value = ''; // reset si on passe sur Revenus/Charges
+}
 function _setSrchType(type) {
   _srchType = type;
   document.querySelectorAll('.sf-type-btn').forEach(b => {
@@ -6300,10 +6323,11 @@ function _setSrchType(type) {
   const activeId = type === 'rev' ? 'sft-rev' : type === 'chg' ? 'sft-chg' : type === 'var' ? 'sft-var' : 'sft-all';
   const activeBtn = document.getElementById(activeId);
   if (activeBtn) { activeBtn.style.background = 'var(--blue)'; activeBtn.style.color = '#fff'; }
+  _updateCatFilterVisibility();
   _applySearchFilters();
 }
 function _applySearchFilters() {
-  const hasFilter = document.getElementById('sf-year').value || document.getElementById('sf-month').value || _srchType;
+  const hasFilter = document.getElementById('sf-year').value || document.getElementById('sf-month').value || _srchType || document.getElementById('sf-cat')?.value;
   const resetBtn = document.getElementById('sf-reset');
   if (resetBtn) resetBtn.style.display = hasFilter ? 'block' : 'none';
   _doSearch(document.getElementById('search-input').value);
@@ -6311,6 +6335,8 @@ function _applySearchFilters() {
 function _resetSearchFilters() {
   document.getElementById('sf-year').value  = '';
   document.getElementById('sf-month').value = '';
+  const sfCat = document.getElementById('sf-cat');
+  if (sfCat) sfCat.value = '';
   _setSrchType('');
   document.getElementById('sf-reset').style.display = 'none';
   _doSearch(document.getElementById('search-input').value);
@@ -6321,7 +6347,8 @@ function _doSearch(q) {
   const filterMonth = document.getElementById('sf-month')?.value;
   const filterMIdx  = filterMonth !== '' && filterMonth !== undefined ? parseInt(filterMonth) : -1;
   const filterType  = _srchType || '';
-  const hasFilter   = filterYear || filterMIdx >= 0 || filterType;
+  const filterCat   = document.getElementById('sf-cat')?.value || '';
+  const hasFilter   = filterYear || filterMIdx >= 0 || filterType || filterCat;
   if (!q?.trim() && !hasFilter) {
     res.innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>';
     return;
@@ -6374,6 +6401,7 @@ function _doSearch(q) {
     // Dépenses variables
     if (!filterType || filterType === 'var') {
       getVarCats().forEach(cat => {
+        if (filterCat && cat.key !== filterCat) return; // filtre catégorie
         (DATA[yr]?.vars?.[cat.key] || []).forEach(tx => {
           if (filterMIdx >= 0 && tx.month !== filterMIdx) return;
           const txt = [(tx.label||''), (tx.comment||''), cat.label].join(' ').toLowerCase();
