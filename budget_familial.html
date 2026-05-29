@@ -12291,7 +12291,7 @@ function _buildBudgetContext() {
     });
   }
   allTx.sort((a, b) => b.month !== a.month ? b.month - a.month : b.date.localeCompare(a.date));
-  allTx.slice(0, 150).forEach(tx => {
+  allTx.slice(0, 80).forEach(tx => {
     const d = tx.date || MONTHS[tx.month] || '';
     const c = tx.comment ? ` ${tx.comment}` : '';
     ctx += `${d}|${tx.cat}|${tx.amount.toFixed(2)}€${c}\n`;
@@ -12554,7 +12554,7 @@ async function _callGemini(apiKey, systemContext, userMessage) {
     // Endpoint compatible OpenAI — supporte tous les modèles Gemini disponibles
     const endpoint = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
     const body = JSON.stringify({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.0-flash-lite',
       messages: [
         { role: 'system', content: systemContext },
         { role: 'user',   content: userMessage }
