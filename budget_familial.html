@@ -1546,6 +1546,10 @@ body.auth-locked #context-banner {
       <select id="sf-cat" onchange="_applySearchFilters()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
         <option value="">🏷️ Toutes catégories</option>
       </select>
+      <!-- Filtre Méthode de paiement (dépenses variables) -->
+      <select id="sf-method" onchange="_applySearchFilters()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
+        <option value="">💳 Tous paiements</option>
+      </select>
       <!-- Bouton reset filtres -->
       <button onclick="_resetSearchFilters()" id="sf-reset" style="display:none;margin-left:auto;padding:4px 10px;border-radius:20px;border:1px solid rgba(239,68,68,.4);font-size:11px;font-weight:700;cursor:pointer;background:rgba(239,68,68,.08);color:#ef4444">✕ Effacer filtres</button>
     </div>
@@ -6297,6 +6301,16 @@ function openGlobalSearch() {
     sfCat.appendChild(opt);
   });
   sfCat.value = curCat;
+  // Peupler le select méthodes de paiement
+  const sfMethod = document.getElementById('sf-method');
+  const curMethod = sfMethod.value;
+  sfMethod.innerHTML = '<option value="">💳 Tous paiements</option>';
+  getMethods().forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.key; opt.textContent = m.label;
+    sfMethod.appendChild(opt);
+  });
+  sfMethod.value = curMethod;
   _updateCatFilterVisibility();
   // Reset résultats si besoin
   const inp = document.getElementById('search-input');
@@ -6311,10 +6325,12 @@ function closeGlobalSearch() {
 function _updateCatFilterVisibility() {
   const sfCat = document.getElementById('sf-cat');
   if (!sfCat) return;
-  // Filtre catégorie : visible seulement si type = Tout ou Dépenses
+  // Filtre catégorie + méthode : visible seulement si type = Tout ou Dépenses
   const showCat = !_srchType || _srchType === 'var';
   sfCat.style.display = showCat ? 'block' : 'none';
   if (!showCat) sfCat.value = '';
+  const sfMethod = document.getElementById('sf-method');
+  if (sfMethod) { sfMethod.style.display = showCat ? 'block' : 'none'; if (!showCat) sfMethod.value = ''; }
   // Boutons Fixes / Occasionnelles : visibles quand Charges ou sous-type charge actif
   const showChgSub = _srchType === 'chg' || _srchType === 'chg-fixed' || _srchType === 'chg-occ';
   const fixBtn = document.getElementById('sft-chg-fix');
@@ -6339,7 +6355,7 @@ function _setSrchType(type) {
   _applySearchFilters();
 }
 function _applySearchFilters() {
-  const hasFilter = document.getElementById('sf-year').value || document.getElementById('sf-month').value || _srchType || document.getElementById('sf-cat')?.value;
+  const hasFilter = document.getElementById('sf-year').value || document.getElementById('sf-month').value || _srchType || document.getElementById('sf-cat')?.value || document.getElementById('sf-method')?.value;
   const resetBtn = document.getElementById('sf-reset');
   if (resetBtn) resetBtn.style.display = hasFilter ? 'block' : 'none';
   _doSearch(document.getElementById('search-input').value);
@@ -6349,6 +6365,8 @@ function _resetSearchFilters() {
   document.getElementById('sf-month').value = '';
   const sfCat = document.getElementById('sf-cat');
   if (sfCat) sfCat.value = '';
+  const sfMethod = document.getElementById('sf-method');
+  if (sfMethod) sfMethod.value = '';
   _setSrchType('');
   document.getElementById('sf-reset').style.display = 'none';
   _doSearch(document.getElementById('search-input').value);
@@ -6359,8 +6377,9 @@ function _doSearch(q) {
   const filterMonth = document.getElementById('sf-month')?.value;
   const filterMIdx  = filterMonth !== '' && filterMonth !== undefined ? parseInt(filterMonth) : -1;
   const filterType  = _srchType || '';
-  const filterCat   = document.getElementById('sf-cat')?.value || '';
-  const hasFilter   = filterYear || filterMIdx >= 0 || filterType || filterCat;
+  const filterCat    = document.getElementById('sf-cat')?.value    || '';
+  const filterMethod = document.getElementById('sf-method')?.value || '';
+  const hasFilter    = filterYear || filterMIdx >= 0 || filterType || filterCat || filterMethod;
   if (!q?.trim() && !hasFilter) {
     res.innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>';
     return;
@@ -6427,13 +6446,15 @@ function _doSearch(q) {
         if (filterCat && cat.key !== filterCat) return; // filtre catégorie
         (DATA[yr]?.vars?.[cat.key] || []).forEach(tx => {
           if (filterMIdx >= 0 && tx.month !== filterMIdx) return;
+          if (filterMethod && tx.method !== filterMethod) return; // filtre méthode
           const txt = [(tx.label||''), (tx.comment||''), cat.label].join(' ').toLowerCase();
           if (!qlOrig || txt.includes(qlOrig) || amtMatch(tx.amount)) {
             const mLbl = getMonths()[tx.month] || '';
             const dateLbl = tx.date ? ' · ' + tx.date : '';
-            // Action : ouvrir cat + mois + surbrillance de la tx
+            const methodObj = getMethodObj(tx.method);
+            const methodLbl = methodObj ? ' · ' + methodObj.label : '';
             const act = `_jumpToVarTx('${yr}','${cat.key}',${tx.id},${tx.month})`;
-            hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount)+dateLbl, amount:parseFloat(tx.amount)||0, action:act});
+            hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount)+dateLbl+methodLbl, amount:parseFloat(tx.amount)||0, action:act});
           }
         });
       });
