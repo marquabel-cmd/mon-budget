@@ -8004,8 +8004,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.04';
-const SW_VERSION = 'v210';
+const APP_VERSION = '12.05';
+const SW_VERSION = 'v211';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12575,10 +12575,7 @@ async function _callGemini(apiKey, systemContext, userMessage) {
       const data = await res.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error(t('ai.err_empty'));
-      return text
-        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-        .replace(/\*(.*?)\*/g, '<i>$1</i>')
-        .replace(/\n/g, '<br>');
+      return _formatAiText(text);
     }
     throw lastErr || new Error('Tous les modèles Gemini sont indisponibles (quota épuisé ou surcharge). Réessaie dans quelques instants.');
   } else {
@@ -12605,11 +12602,17 @@ async function _callGemini(apiKey, systemContext, userMessage) {
     const data = await res.json();
     const text = data.choices?.[0]?.message?.content;
     if (!text) throw new Error(t('ai.err_empty'));
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-      .replace(/\*(.*?)\*/g, '<i>$1</i>')
-      .replace(/\n/g, '<br>');
+    return _formatAiText(text);
   }
+}
+
+function _formatAiText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')          // **gras**
+    .replace(/(^|\n)[*\-]\s+/g, '$1• ')              // puces * ou - → • (avant l'italique !)
+    .replace(/(?<![•\s])\*([^*\n]+?)\*(?!\*)/g, '<i>$1</i>') // *italique* (hors puces)
+    .replace(/^(#{1,3})\s+(.+)$/gm, '<b>$2</b>')    // # Titres → gras
+    .replace(/\n/g, '<br>');
 }
 
 // ── TOUR GUIDÉ ──
