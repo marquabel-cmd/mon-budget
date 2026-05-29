@@ -7189,7 +7189,8 @@ function renderConfigTab() {
         <details>
           <summary style="font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">⚙️ Utiliser ma propre clé API</summary>
           <div style="margin-top:8px">
-            <div style="font-size:11px;color:var(--gray);margin-bottom:5px">Clé personnelle — <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue)">console.groq.com/keys ↗</a></div>
+            <div style="font-size:11px;color:var(--gray);margin-bottom:5px">${t('cfg.ai_key_label')}</div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:5px;opacity:.8">${(()=>{ const k=localStorage.getItem('mbudget-ai-key')||''; return k.startsWith('AIza') ? '🟢 Gemini actif' : k ? '🟡 Groq actif' : '⚪ Proxy serveur (Groq)'; })()}</div>
             <div style="display:flex;gap:6px;align-items:center">
               <input type="password" id="cfg-gemini-key" placeholder="AIza… (Gemini) ou gsk_… (Groq)" value="${localStorage.getItem(AI_KEY_STORAGE)||''}" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;background:var(--surface);color:var(--text);font-family:monospace">
               <button onclick="saveGeminiKey(document.getElementById('cfg-gemini-key').value);renderConfigTab()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">✅</button>
@@ -8140,7 +8141,7 @@ const TRANSLATIONS = {
     'settings.accounts_livrets': '🏦 Comptes & Livrets',
     'settings.cloud_sync': '☁️ Synchronisation Cloud',
     'settings.data_protection': '🛡 Protection des données',
-    'settings.ai': '🤖 Assistant IA (Groq)',
+    'settings.ai': '🤖 Assistant IA',
     'settings.data': '🗄 Données',
     'settings.app': '⚙️ Application',
     'settings.sign_out': 'Se déconnecter',
@@ -8176,7 +8177,7 @@ const TRANSLATIONS = {
     'cfg.gist_help_link': 'guide illustré dans l\'Aide',
     // AI Assistant
     'ai.title': 'Assistant Budget IA',
-    'ai.powered_by': 'Propulsé par Groq (Llama 3.1)',
+    'ai.powered_by': 'Gemini ou Groq selon la clé configurée',
     'ai.clear_title': 'Effacer la conversation',
     'ai.welcome': '👋 Bonjour ! Je suis ton assistant budget.<br>Quelques exemples de questions :<br>• <i>Quel est mon solde actuel ?</i><br>• <i>Combien j\'ai dépensé en courses ce mois-ci ?</i><br>• <i>Compare mes dépenses 2025 et 2026</i><br>• <i>Donne-moi des conseils pour économiser</i>',
     'ai.cleared': 'Conversation effacée. Pose-moi une nouvelle question ! 😊',
@@ -8184,7 +8185,7 @@ const TRANSLATIONS = {
     'ai.typing': 'Analyse de tes données…',
     'ai.error': 'Erreur',
     'ai.voice_input': 'Saisie vocale',
-    'ai.err_invalid_key': 'Clé API Groq invalide. Vérifie-la dans ⚙️ Paramètres → Assistant IA.',
+    'ai.err_invalid_key': 'Clé API invalide. Vérifie-la dans ⚙️ Paramètres → Assistant IA.',
     'ai.err_rate_limit': 'Limite de requêtes atteinte. Réessaie dans quelques secondes.',
     'ai.err_empty': 'Réponse vide de Groq',
     'ai.placeholder': 'Posez votre question…',
@@ -8357,7 +8358,7 @@ const TRANSLATIONS = {
     'cfg.gist_disconnect': '🔌 Déconnecter',
     'cfg.gist_free': '100% GRATUIT — aucune carte bancaire',
     'cfg.gist_free_desc': 'Sync automatique à chaque sauvegarde via GitHub',
-    'cfg.ai_title': '🤖 Assistant IA (Groq)',
+    'cfg.ai_title': '🤖 Assistant IA',
     'cfg.ai_active': 'Assistant actif — disponible pour tous les utilisateurs',
     'cfg.ai_desc': 'Propulsé par <b>Groq</b> (Llama 3.1). Clique sur le bouton 🤖 en bas à droite pour l\'utiliser.',
     'cfg.ai_own_key': '⚙️ Utiliser ma propre clé API',
@@ -8968,7 +8969,7 @@ const TRANSLATIONS = {
     'cfg.gist_help_link': 'illustrated guide in Help',
     // AI Assistant
     'ai.title': 'AI Budget Assistant',
-    'ai.powered_by': 'Powered by Groq (Llama 3.1)',
+    'ai.powered_by': 'Gemini or Groq depending on configured key',
     'ai.clear_title': 'Clear conversation',
     'ai.welcome': '👋 Hello! I\'m your budget assistant.<br>Some example questions:<br>• <i>What is my current balance?</i><br>• <i>How much did I spend on groceries this month?</i><br>• <i>Compare my expenses for 2025 and 2026</i><br>• <i>Give me tips to save money</i>',
     'ai.cleared': 'Conversation cleared. Ask me a new question! 😊',
@@ -8976,7 +8977,7 @@ const TRANSLATIONS = {
     'ai.typing': 'Analysing your data…',
     'ai.error': 'Error',
     'ai.voice_input': 'Voice input',
-    'ai.err_invalid_key': 'Invalid Groq API key. Check it in ⚙️ Settings → AI Assistant.',
+    'ai.err_invalid_key': 'Invalid API key. Check it in ⚙️ Settings → AI Assistant.',
     'ai.err_rate_limit': 'Rate limit reached. Please try again in a few seconds.',
     'ai.err_empty': 'Empty response from Groq',
     'ai.placeholder': 'Ask a question…',
@@ -9149,7 +9150,7 @@ const TRANSLATIONS = {
     'cfg.gist_disconnect': '🔌 Disconnect',
     'cfg.gist_free': '100% FREE — no credit card',
     'cfg.gist_free_desc': 'Auto-sync on every save via GitHub',
-    'cfg.ai_title': '🤖 AI Assistant (Groq)',
+    'cfg.ai_title': '🤖 AI Assistant',
     'cfg.ai_active': 'Assistant active — available for all users',
     'cfg.ai_desc': 'Powered by <b>Groq</b> (Llama 3.1). Click the 🤖 button at the bottom right to use it.',
     'cfg.ai_own_key': '⚙️ Use my own API key',
