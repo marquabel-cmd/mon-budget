@@ -2951,6 +2951,11 @@ function loadData() {
     // Persister immédiatement en localStorage (sinon perdu au prochain rechargement sans modification)
     try { localStorage.setItem(dataKey(), JSON.stringify(DATA)); } catch(e) {}
   }
+  // Migration: réparer les dates invalides (ex: "202" au lieu de "20" pour le 20/02)
+  if (!localStorage.getItem('fix_dates_v1')) {
+    _fixBrokenDates(false);
+    localStorage.setItem('fix_dates_v1', '1');
+  }
   _syncIdCounter(); // S'assurer que _id est > tout ID existant pour éviter les collisions
   _fixDuplicateIds(); // Réparer les IDs dupliqués historiques (une seule fois au chargement)
   _deduplicateTransactions(); // Nettoyer les transactions en double éventuelles
@@ -6913,6 +6918,71 @@ function saveSavingsGoal() {
   renderConfigTab();
 }
 
+// ── RÉPARATION DATES INVALIDES ────────────────────────────────────────────
+function _tryReconstructDate(dateStr, month, year) {
+  if (!dateStr && dateStr !== 0) return '';
+  const raw = String(dateStr);
+  const day = parseInt(raw);
+  // Déjà valide (1-31)
+  if (day >= 1 && day <= 31) {
+    return String(day).padStart(2,'0') + '/' + String(month+1).padStart(2,'0') + '/' + year;
+  }
+  // Ancien format : String(jour) + String(mois+1) sans séparateur
+  // Ex: jour=20, mois=1 (fév) → "202"
+  const monthSuffix = String(month + 1);
+  if (raw.endsWith(monthSuffix)) {
+    const dayPart = parseInt(raw.slice(0, raw.length - monthSuffix.length));
+    if (dayPart >= 1 && dayPart <= 31) {
+      return String(dayPart).padStart(2,'0') + '/' + String(month+1).padStart(2,'0') + '/' + year;
+    }
+  }
+  return ''; // impossible à récupérer → effacer
+}
+
+function _countBrokenDates() {
+  let count = 0;
+  const years = getYears();
+  const varCats = getVarCats();
+  years.forEach(yr => {
+    if (!DATA[yr]) return;
+    varCats.forEach(cat => {
+      (DATA[yr].vars?.[cat.key] || []).forEach(tx => {
+        const day = parseInt(tx.date);
+        if (!isNaN(day) && day > 31) count++;
+      });
+    });
+  });
+  return count;
+}
+
+function _fixBrokenDates(manual = false) {
+  let fixed = 0, cleared = 0;
+  const years = getYears();
+  const varCats = getVarCats();
+  years.forEach(yr => {
+    if (!DATA[yr]) return;
+    varCats.forEach(cat => {
+      (DATA[yr].vars?.[cat.key] || []).forEach(tx => {
+        const day = parseInt(tx.date);
+        if (!isNaN(day) && day > 31) {
+          const repaired = _tryReconstructDate(tx.date, tx.month ?? 0, yr);
+          tx.date = repaired;
+          if (repaired) fixed++; else cleared++;
+        }
+      });
+    });
+  });
+  const total = fixed + cleared;
+  if (total > 0) {
+    dSave();
+    getYears().forEach(yr => { if (DATA[yr]) renderYear(yr); });
+    if (manual) showToast(`🔧 ${fixed} date(s) réparées, ${cleared} effacée(s)`);
+    renderConfigTab();
+  } else if (manual) {
+    showToast('✅ Aucune date invalide trouvée');
+  }
+}
+
 function renderConfigTab() {
   const wrap = document.getElementById('tab-config');
   const cfg = loadUserConfig();
@@ -7211,6 +7281,7 @@ function renderConfigTab() {
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">${t('cfg.save_now')}</button>
           <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">${t('cfg.see_backups')}</button>
+          ${_countBrokenDates() > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_fixBrokenDates(true)">🔧 Réparer ${_countBrokenDates()} date(s) invalide(s)</button>` : ''}
           ${years.length > 1 ? `
           <div style="border:2px solid #F04F5B;border-radius:10px;padding:12px;background:#FEF0F1">
             <div style="font-size:12px;font-weight:700;color:#c0392b;margin-bottom:8px">${t('cfg.delete_year')}</div>
@@ -8010,8 +8081,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.09';
-const SW_VERSION = 'v215';
+const APP_VERSION = '12.10';
+const SW_VERSION = 'v216';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
