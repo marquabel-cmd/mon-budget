@@ -6377,10 +6377,13 @@ function _doSearch(q) {
         const amtOk   = !qlOrig || monthsToCheck.some(i => amtMatch(r.v?.[i]));
         if (labelOk || amtOk) {
           // Si filtre mois : montant du mois spécifique
+          const rawAmt = filterMIdx >= 0
+            ? parseFloat(r.v?.[filterMIdx]) || 0
+            : r.v.reduce((s,v)=>s+(parseFloat(v)||0),0);
           const displayAmt = filterMIdx >= 0
-            ? fmt(parseFloat(r.v?.[filterMIdx]) || 0) + ' (' + getMonths()[filterMIdx] + ')'
-            : 'Total '+yr+' : '+fmt(r.v.reduce((s,v)=>s+(parseFloat(v)||0),0));
-          hits.push({icon:'💹', type:'Revenu', label:r.label, detail:displayAmt, action:"_jumpToFixedRow('"+yr+"','revenus')"});
+            ? fmt(rawAmt) + ' (' + getMonths()[filterMIdx] + ')'
+            : 'Total '+yr+' : '+fmt(rawAmt);
+          hits.push({icon:'💹', type:'Revenu', label:r.label, detail:displayAmt, amount:rawAmt, action:"_jumpToFixedRow('"+yr+"','revenus')"});
         }
       });
     }
@@ -6391,10 +6394,13 @@ function _doSearch(q) {
         const labelOk = !qlOrig || (r.label||'').toLowerCase().includes(qlOrig);
         const amtOk   = !qlOrig || monthsToCheck.some(i => amtMatch(r.v?.[i]));
         if (labelOk || amtOk) {
+          const rawAmt = filterMIdx >= 0
+            ? parseFloat(r.v?.[filterMIdx]) || 0
+            : r.v.reduce((s,v)=>s+(parseFloat(v)||0),0);
           const displayAmt = filterMIdx >= 0
-            ? fmt(parseFloat(r.v?.[filterMIdx]) || 0) + ' (' + getMonths()[filterMIdx] + ')'
-            : 'Total '+yr+' : '+fmt(r.v.reduce((s,v)=>s+(parseFloat(v)||0),0));
-          hits.push({icon:'🏠', type:'Charge', label:r.label, detail:displayAmt, action:"_jumpToFixedRow('"+yr+"','charges')"});
+            ? fmt(rawAmt) + ' (' + getMonths()[filterMIdx] + ')'
+            : 'Total '+yr+' : '+fmt(rawAmt);
+          hits.push({icon:'🏠', type:'Charge', label:r.label, detail:displayAmt, amount:rawAmt, action:"_jumpToFixedRow('"+yr+"','charges')"});
         }
       });
     }
@@ -6410,15 +6416,16 @@ function _doSearch(q) {
             const dateLbl = tx.date ? ' · ' + tx.date : '';
             // Action : ouvrir cat + mois + surbrillance de la tx
             const act = `_jumpToVarTx('${yr}','${cat.key}',${tx.id},${tx.month})`;
-            hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount)+dateLbl, action:act});
+            hits.push({icon:cat.icon||'🛍️', type:cat.label, label:tx.comment||cat.label, detail:mLbl+' '+yr+' — '+fmt(tx.amount)+dateLbl, amount:parseFloat(tx.amount)||0, action:act});
           }
         });
       });
     }
     if (hits.length) {
       total += hits.length;
+      const hitsTotal = hits.reduce((s,h) => s + (h.amount||0), 0);
       html += '<div style="margin-bottom:16px">'
-        + '<div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📅 '+yr+' — '+hits.length+' résultat'+(hits.length>1?'s':'')+'</div>'
+        + '<div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📅 '+yr+' — '+hits.length+' résultat'+(hits.length>1?'s':'')+' <span style="color:var(--green);font-weight:800">· '+fmt(hitsTotal)+'</span></div>'
         + hits.map(h =>
           '<div onclick="'+h.action+'" style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:6px;background:var(--bg)">'
           + '<span style="font-size:18px;flex-shrink:0">'+h.icon+'</span>'
