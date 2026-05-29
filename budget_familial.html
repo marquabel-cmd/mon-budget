@@ -8004,8 +8004,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.01';
-const SW_VERSION = 'v207';
+const APP_VERSION = '12.02';
+const SW_VERSION = 'v208';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12550,26 +12550,35 @@ async function _callGemini(apiKey, systemContext, userMessage) {
   let res;
 
   if (apiKey && apiKey.startsWith('AIza')) {
-    // ── Google Gemini — endpoint natif (1500 req/jour gratuit) ──
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    // ── Google Gemini — endpoint natif, fallback automatique si 503 ──
+    const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
     const body = JSON.stringify({
       systemInstruction: { parts: [{ text: systemContext }] },
       contents: [{ role: 'user', parts: [{ text: userMessage }] }],
       generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
     });
-    res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const msg = err.error?.message || err.error?.status || JSON.stringify(err);
-      throw new Error(`Gemini HTTP ${res.status}: ${msg}`);
+    let lastErr;
+    for (const model of GEMINI_MODELS) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+      if (res.status === 503 || res.status === 529) {
+        lastErr = new Error(`Gemini HTTP ${res.status}: Modèle ${model} surchargé, essai du suivant…`);
+        continue; // essayer le modèle suivant
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const msg = err.error?.message || err.error?.status || JSON.stringify(err);
+        throw new Error(`Gemini HTTP ${res.status}: ${msg}`);
+      }
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error(t('ai.err_empty'));
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+        .replace(/\*(.*?)\*/g, '<i>$1</i>')
+        .replace(/\n/g, '<br>');
     }
-    const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error(t('ai.err_empty'));
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-      .replace(/\*(.*?)\*/g, '<i>$1</i>')
-      .replace(/\n/g, '<br>');
+    throw lastErr || new Error('Tous les modèles Gemini sont indisponibles. Réessaie dans quelques instants.');
   } else {
     // ── Groq (llama) — clé personnelle ou proxy serveur ──
     const endpoint = apiKey ? 'https://api.groq.com/openai/v1/chat/completions' : GROQ_PROXY_URL;
