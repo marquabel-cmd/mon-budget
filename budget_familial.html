@@ -6321,6 +6321,9 @@ function openGlobalSearch() {
 }
 function closeGlobalSearch() {
   document.getElementById('modal-search').style.display = 'none';
+  // Réinitialiser tous les filtres et le champ de recherche
+  document.getElementById('search-input').value = '';
+  _resetSearchFilters();
 }
 function _updateCatFilterVisibility() {
   const sfCat = document.getElementById('sf-cat');
