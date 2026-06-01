@@ -3851,7 +3851,9 @@ function renderSoldes(year) {
         : `<input type="number" step="0.01" value="${s.livretInitial}"
             oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()">`
       }</div>
-    <div class="solde-card computed"><label>${livName} actuel (calculé)</label>
+    <div class="solde-card computed"><label>${livName} actuel (calculé)
+        <button onclick="openLivretConfig('liv_main','${year}')" title="Configurer ce livret" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+      </label>
       <span class="computed-val" id="livret-calc-${year}">${fmt(lv)}</span></div>`;
 
   // Additional accounts (Premium)
@@ -3881,7 +3883,9 @@ function renderSoldes(year) {
         : `<input type="number" step="0.01" value="${s.livrets_bal[livId]||0}"
             oninput="DATA['${year}'].soldes.livrets_bal['${livId}']=+this.value;updateMultiDisplay('${year}','${livId}','livret');dSave()">`
       }</div>
-    <div class="solde-card computed" style="border-color:#27ae6022"><label style="color:#27ae60">📈 ${liv.name} actuel (calculé)</label>
+    <div class="solde-card computed" style="border-color:#27ae6022"><label style="color:#27ae60">📈 ${liv.name} actuel (calculé)
+        <button onclick="openLivretConfig('${livId}','${year}')" title="Configurer ce livret" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+      </label>
       <span class="computed-val" id="livret-calc-${year}-${livId}">${fmt(calcBal)}</span></div>`;
     });
   }
@@ -8328,8 +8332,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.21';
-const SW_VERSION = 'v238';
+const APP_VERSION = '12.22';
+const SW_VERSION = 'v239';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13487,6 +13491,63 @@ function _saveAccountConfig(accId, useYear) {
   getYears().forEach(y => renderYear(y));
   renderConfigTab();
   showToast('✅ Compte configuré');
+}
+
+function openLivretConfig(livId, ctxYear) {
+  const isMain = !livId || livId === 'liv_main';
+  const liv = getLivrets().find(l => l.id === livId);
+  const livName = liv ? liv.name : getLivretName();
+  const years = getYears().sort((a,b) => parseInt(b)-parseInt(a));
+  const useYear = ctxYear || years[0];
+  const yData = useYear ? DATA[useYear] : null;
+  if (!yData) return;
+  // Lignes de charges liées à ce livret
+  const livRows = yData.charges.filter(r => {
+    if (!['livret_in','livret_out'].includes(r.cat)) return false;
+    if (isMain) return !r.livretId || r.livretId === 'liv_main';
+    return r.livretId === livId;
+  });
+  const rowsHtml = livRows.length ? livRows.map(r => {
+    const ri = yData.charges.indexOf(r);
+    const checked = r.inCalc !== false;
+    const icon = r.cat === 'livret_in' ? '📈' : '📉';
+    let row = '<label style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer">';
+    row += '<input type="checkbox" name="_lcfg_chg" value="' + ri + '" ' + (checked?'checked':'') + ' style="width:14px;height:14px;accent-color:#27ae60">';
+    row += '<span style="font-size:14px">' + icon + '</span>';
+    row += '<span style="flex:1;font-size:12px">' + _esc(r.label) + '</span>';
+    row += '</label>';
+    return row;
+  }).join('') : '<div style="font-size:12px;color:var(--gray);padding:8px 0">Aucune ligne trouvée pour ce livret.</div>';
+  const overlay = document.createElement('div');
+  overlay.id = '_liv-cfg-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center';
+  let html = '<div style="background:var(--surface);border-radius:14px;padding:20px 22px;width:360px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.45)">';
+  html += '<div style="font-weight:700;font-size:15px;margin-bottom:3px">⚙️ ' + _esc(livName) + '</div>';
+  html += '<div style="font-size:12px;color:var(--gray);margin-bottom:12px">Lignes incluses dans le calcul du livret</div>';
+  html += '<div style="overflow-y:auto;flex:1">';
+  html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📈 Mouvements (coché = inclus)</div>';
+  html += rowsHtml;
+  html += '</div>';
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">';
+  html += '<button onclick="document.getElementById(\'_liv-cfg-overlay\').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>';
+  html += '<button onclick="_saveLivretConfig(\'' + livId + '\',\'' + useYear + '\')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>';
+  html += '</div></div>';
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+}
+function _saveLivretConfig(livId, useYear) {
+  const overlay = document.getElementById('_liv-cfg-overlay');
+  if (!overlay) return;
+  const checkedIdx = new Set([...overlay.querySelectorAll('input[name="_lcfg_chg"]:checked')].map(cb => parseInt(cb.value)));
+  const allIdx = new Set([...overlay.querySelectorAll('input[name="_lcfg_chg"]')].map(cb => parseInt(cb.value)));
+  if (useYear && DATA[useYear]) {
+    const yd = DATA[useYear];
+    allIdx.forEach(i => { if (yd.charges[i]) yd.charges[i].inCalc = checkedIdx.has(i); });
+  }
+  overlay.remove();
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  showToast('✅ Livret configuré');
 }
 
 function bulkAssignMethodToAccount(accId) {
