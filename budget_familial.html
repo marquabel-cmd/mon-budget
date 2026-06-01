@@ -3851,9 +3851,7 @@ function renderSoldes(year) {
         : `<input type="number" step="0.01" value="${s.livretInitial}"
             oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()">`
       }</div>
-    <div class="solde-card computed"><label>${livName} actuel (calculé)
-        <button class="calc-config-btn" data-type="livret" onclick="openCalcConfig('${year}','livret')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
-      </label>
+    <div class="solde-card computed"><label>${livName} actuel (calculé)</label>
       <span class="computed-val" id="livret-calc-${year}">${fmt(lv)}</span></div>`;
 
   // Additional accounts (Premium)
@@ -8330,8 +8328,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.20';
-const SW_VERSION = 'v237';
+const APP_VERSION = '12.21';
+const SW_VERSION = 'v238';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
