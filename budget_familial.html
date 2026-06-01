@@ -6398,15 +6398,17 @@ function _doSearch(q) {
     res.innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px;font-size:14px">Tapez un mot-clé pour rechercher…</p>';
     return;
   }
-  const qlOrig = (q || '').toLowerCase().trim();
+  const qlOrig = (q || '').toLowerCase().trim().replace(/\s*€\s*/g, '').trim(); // strip € et espaces
   const ql = qlOrig.replace(',', '.'); // normalise séparateur décimal
   // Vérifie si une valeur numérique correspond à la recherche
   function amtMatch(val) {
     const n = parseFloat(val) || 0;
     if (!n) return false;
-    const s = String(n);
-    const sf = s.replace('.', ',');
-    return s.includes(ql) || sf.includes(qlOrig);
+    const s   = String(n);               // ex: "8.6"
+    const sf  = s.replace('.', ',');     // ex: "8,6"
+    const s2  = n.toFixed(2);            // ex: "8.60"
+    const sf2 = s2.replace('.', ',');    // ex: "8,60"
+    return s.includes(ql) || sf.includes(qlOrig) || s2.includes(ql) || sf2.includes(qlOrig);
   }
   // Filtre années : toutes ou seulement celle sélectionnée
   let years = [...getYears()].reverse();
@@ -8081,8 +8083,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.10';
-const SW_VERSION = 'v216';
+const APP_VERSION = '12.11';
+const SW_VERSION = 'v217';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
