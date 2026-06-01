@@ -2952,8 +2952,13 @@ function loadData() {
     (DATA[y].revenus||[]).forEach(r => {
       if (!r.paid) r.paid = r.v.map(v => (parseFloat(v)||0) === 0);
       if (r.inCalc === undefined) r.inCalc = true;
+      // Correction : une ligne attribuée à un autre compte ne doit pas avoir inCalc=false
+      if (r.inCalc === false && r.accountId && r.accountId !== 'acc_main') r.inCalc = true;
     });
-    (DATA[y].charges||[]).forEach(r => { if (r.inCalc === undefined) r.inCalc = true; });
+    (DATA[y].charges||[]).forEach(r => {
+      if (r.inCalc === undefined) r.inCalc = true;
+      if (r.inCalc === false && r.accountId && r.accountId !== 'acc_main') r.inCalc = true;
+    });
   });
   // Migration: ajouter lignes boite_in et boite_dep à toutes les années existantes
   if (!localStorage.getItem('boite_lines_v1')) {
@@ -3106,15 +3111,19 @@ function computeCompte(year, accId) {
   } else {
     bal = parseFloat(d.soldes.compteIng) || 0;
   }
-  // Revenus & charges : inCalc/accountId comme avant
+  // Revenus & charges : inCalc/accountId
   d.revenus.forEach(r => {
-    if (isMain) { if (r.inCalc === false) return; }
-    else { if (!r.accountId || r.accountId !== accId) return; }
+    if (isMain) {
+      if (r.inCalc === false) return;
+      if (r.accountId && r.accountId !== 'acc_main') return; // appartient à un autre compte
+    } else { if (!r.accountId || r.accountId !== accId) return; }
     r.v.forEach((v,i) => { if (!r.paid || r.paid[i]) bal += parseFloat(v)||0; });
   });
   d.charges.forEach(r => {
-    if (isMain) { if (r.inCalc === false) return; }
-    else { if (!r.accountId || r.accountId !== accId) return; }
+    if (isMain) {
+      if (r.inCalc === false) return;
+      if (r.accountId && r.accountId !== 'acc_main') return;
+    } else { if (!r.accountId || r.accountId !== accId) return; }
     r.v.forEach((v,i) => {
       if (!r.paid[i]) return;
       const amt = Math.abs(parseFloat(v) || 0);
@@ -3163,8 +3172,13 @@ function showCompteDetail(year, accId) {
 
   // Revenus
   const revLines = [];
+  const _allAccs = getAccounts();
   d.revenus.forEach(r => {
     if (r.inCalc === false) { revLines.push({label: r.label, total: 0, skipped: true, reason: 'exclu du calcul ⚙️'}); return; }
+    if (isMain && r.accountId && r.accountId !== 'acc_main') {
+      const ownerAcc = _allAccs.find(a => a.id === r.accountId);
+      revLines.push({label: r.label, total: 0, skipped: true, reason: 'attribué à ' + (ownerAcc ? ownerAcc.name : r.accountId) + ' 🏦'}); return;
+    }
     if (!isMain && r.accountId && r.accountId !== accId) return;
     if (!isMain && !r.accountId) return;
     const total = r.v.reduce((s, v, i) => (!r.paid || r.paid[i]) ? s + (parseFloat(v)||0) : s, 0);
@@ -3179,6 +3193,7 @@ function showCompteDetail(year, accId) {
   const balAfterRev = bal;
   d.charges.forEach(r => {
     if (r.inCalc === false) { chgLines.push({label: r.label, total: 0, skipped: true, reason: 'exclu du calcul ⚙️', cat: r.cat}); return; }
+    if (isMain && r.accountId && r.accountId !== 'acc_main') return; // appartient à un autre compte
     if (!isMain && r.accountId && r.accountId !== accId) return;
     if (!isMain && !r.accountId) return;
     let total = 0;
@@ -8332,8 +8347,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.22';
-const SW_VERSION = 'v239';
+const APP_VERSION = '12.23';
+const SW_VERSION = 'v240';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13403,19 +13418,27 @@ function openAccountConfig(accId, ctxYear) {
   let revRowsHtml = '', chgRowsHtml = '';
   if (yData) {
     revRowsHtml = yData.revenus.map((r,i) => {
-      const checked = isMain ? (r.inCalc !== false) : (r.accountId === accId);
-      let row = '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer">';
-      row += '<input type="checkbox" name="_acfg_rev" value="' + i + '" ' + (checked?'checked':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
+      const ownerAcc = isMain && r.accountId && r.accountId !== 'acc_main'
+        ? accs.find(a => a.id === r.accountId) : null;
+      const disabled = !!ownerAcc;
+      const checked = isMain ? (!disabled && r.inCalc !== false) : (r.accountId === accId);
+      let row = '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:' + (disabled?'default':'pointer') + ';opacity:' + (disabled?'0.5':'1') + '">';
+      row += '<input type="checkbox" name="_acfg_rev" value="' + i + '" ' + (checked?'checked':'') + ' ' + (disabled?'disabled':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
       row += '<span style="flex:1;font-size:12px">' + _esc(r.label) + '</span>';
+      if (ownerAcc) row += '<span style="font-size:10px;color:' + (ownerAcc.color||'#5B6AF0') + ';background:' + (ownerAcc.color||'#5B6AF0') + '22;padding:1px 6px;border-radius:8px">🏦 ' + _esc(ownerAcc.name) + '</span>';
       row += '</label>';
       return row;
     }).join('');
     chgRowsHtml = yData.charges.filter(r => !['livret_in','livret_out'].includes(r.cat)).map(r => {
       const ri = yData.charges.indexOf(r);
-      const checked = isMain ? (r.inCalc !== false) : (r.accountId === accId);
-      let row = '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer">';
-      row += '<input type="checkbox" name="_acfg_chg" value="' + ri + '" ' + (checked?'checked':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
+      const ownerAcc = isMain && r.accountId && r.accountId !== 'acc_main'
+        ? accs.find(a => a.id === r.accountId) : null;
+      const disabled = !!ownerAcc;
+      const checked = isMain ? (!disabled && r.inCalc !== false) : (r.accountId === accId);
+      let row = '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:' + (disabled?'default':'pointer') + ';opacity:' + (disabled?'0.5':'1') + '">';
+      row += '<input type="checkbox" name="_acfg_chg" value="' + ri + '" ' + (checked?'checked':'') + ' ' + (disabled?'disabled':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
       row += '<span style="flex:1;font-size:12px">' + _esc(r.label) + '</span>';
+      if (ownerAcc) row += '<span style="font-size:10px;color:' + (ownerAcc.color||'#5B6AF0') + ';background:' + (ownerAcc.color||'#5B6AF0') + '22;padding:1px 6px;border-radius:8px">🏦 ' + _esc(ownerAcc.name) + '</span>';
       row += '</label>';
       return row;
     }).join('');
@@ -13462,8 +13485,9 @@ function _saveAccountConfig(accId, useYear) {
     if (useYear && DATA[useYear]) {
       DATA[useYear].excludeCalcMethods = uncheckedMeths;
       const yd = DATA[useYear];
-      yd.revenus.forEach((r,i) => { r.inCalc = checkedRevIdx.has(i); });
-      yd.charges.forEach((r,i) => { if (!['livret_in','livret_out'].includes(r.cat)) r.inCalc = checkedChgIdx.has(i); });
+      // Ne pas toucher les lignes appartenant à un autre compte
+      yd.revenus.forEach((r,i) => { if (!r.accountId || r.accountId === 'acc_main') r.inCalc = checkedRevIdx.has(i); });
+      yd.charges.forEach((r,i) => { if (!['livret_in','livret_out'].includes(r.cat) && (!r.accountId || r.accountId === 'acc_main')) r.inCalc = checkedChgIdx.has(i); });
     }
   } else {
     // Compte secondaire : linkedMethods + accountId sur les lignes
