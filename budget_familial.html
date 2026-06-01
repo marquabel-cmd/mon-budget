@@ -3127,12 +3127,15 @@ function computeCompte(year, accId) {
   if (_hasLinkedMethodsSystem()) {
     const accObj = getAccounts().find(a => a.id === (accId || 'acc_main'));
     const myLinked = accObj?.linkedMethods || [];
-    const othersLinked = _claimedByOthers(accId || 'acc_main');
     Object.values(d.vars).forEach(txs => txs.forEach(tx => {
       if (isMain) {
+        // Tx explicitement assignée au compte principal
+        if (tx.accountId === 'acc_main') { bal -= parseFloat(tx.amount)||0; return; }
+        // Tx appartenant à un autre compte → skip
         if (tx.accountId && tx.accountId !== 'acc_main') return;
-        if (othersLinked.includes(tx.method)) return; // appartient à un autre compte
-        bal -= parseFloat(tx.amount)||0;
+        // Tx sans accountId : inclure seulement si méthode liée au compte principal
+        if (!tx.accountId && myLinked.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
+        // Méthode non liée → informationnelle, non comptée
       } else {
         if (tx.accountId === accId) { bal -= parseFloat(tx.amount)||0; return; }
         if (!tx.accountId && myLinked.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
@@ -3209,9 +3212,10 @@ function showCompteDetail(year, accId) {
       const amt = parseFloat(tx.amount) || 0;
       if (_useNewSys) {
         if (isMain) {
-          if (tx.accountId && tx.accountId !== 'acc_main') { excluded += amt; return; }
-          if (_othersLinked.includes(tx.method)) { excluded += amt; return; }
-          included += amt; bal -= amt;
+          if (tx.accountId === 'acc_main') { included += amt; bal -= amt; return; }
+          if (tx.accountId && tx.accountId !== 'acc_main') return; // autre compte
+          if (!tx.accountId && _myLinked.includes(tx.method)) { included += amt; bal -= amt; return; }
+          if (!tx.accountId && !_myLinked.includes(tx.method)) excluded += amt; // informationnel
         } else {
           if (tx.accountId === accId) { included += amt; bal -= amt; return; }
           if (!tx.accountId && _myLinked.includes(tx.method)) { included += amt; bal -= amt; return; }
@@ -8288,8 +8292,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.16';
-const SW_VERSION = 'v233';
+const APP_VERSION = '12.17';
+const SW_VERSION = 'v234';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13328,52 +13332,108 @@ function openAccountConfig(accId) {
   const accName = acc ? acc.name : getAccountName();
   const linkedMethods = acc?.linkedMethods || [];
   const meths = getMethods();
-  // Méthodes déjà revendiquées par d'autres comptes
-  const otherClaimed = accs.filter(a => a.id !== accId).flatMap(a => a.linkedMethods || []);
+  // Méthodes et lignes revenus/charges
   const methodRows = meths.map(m => {
     const checked = linkedMethods.includes(m.key);
     const claimedBy = accs.find(a => a.id !== accId && (a.linkedMethods||[]).includes(m.key));
-    return `<label style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);cursor:${claimedBy?'default':'pointer'}">
-      <input type="checkbox" value="${m.key}" ${checked?'checked':''} ${claimedBy?'disabled':''}
-        style="width:15px;height:15px;accent-color:${m.color};cursor:${claimedBy?'default':'pointer'}">
-      <span style="width:10px;height:10px;border-radius:50%;background:${m.color};flex-shrink:0;display:inline-block"></span>
-      <span style="flex:1;font-size:13px">${_esc(m.label)}</span>
-      ${claimedBy ? `<span style="font-size:10px;color:${claimedBy.color};background:${claimedBy.color}22;padding:2px 7px;border-radius:10px">🏦 ${_esc(claimedBy.name)}</span>` : ''}
-    </label>`;
+    let row = '<label style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:' + (claimedBy?'default':'pointer') + '">';
+    row += '<input type="checkbox" name="_acfg_meth" value="' + _esc(m.key) + '" ' + (checked?'checked':'') + ' ' + (claimedBy?'disabled':'');
+    row += ' style="width:14px;height:14px;accent-color:' + m.color + ';cursor:' + (claimedBy?'default':'pointer') + '">';
+    row += '<span style="width:9px;height:9px;border-radius:50%;background:' + m.color + ';flex-shrink:0;display:inline-block"></span>';
+    row += '<span style="flex:1;font-size:13px">' + _esc(m.label) + '</span>';
+    if (claimedBy) row += '<span style="font-size:10px;color:' + claimedBy.color + ';background:' + claimedBy.color + '22;padding:2px 6px;border-radius:10px">🏦 ' + _esc(claimedBy.name) + '</span>';
+    row += '</label>';
+    return row;
   }).join('');
+  // Lignes revenus et charges (depuis l'année la plus récente)
+  const years = getYears().sort((a,b) => parseInt(b)-parseInt(a));
+  const latestYear = years[0];
+  const yData = latestYear ? DATA[latestYear] : null;
+  let revRowsHtml = '', chgRowsHtml = '';
+  if (yData) {
+    revRowsHtml = yData.revenus.map((r,i) => {
+      const linked = r.accountId === accId;
+      let row = '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer">';
+      row += '<input type="checkbox" name="_acfg_rev" value="' + i + '" ' + (linked?'checked':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
+      row += '<span style="flex:1;font-size:12px">' + _esc(r.label) + '</span>';
+      row += '</label>';
+      return row;
+    }).join('');
+    chgRowsHtml = yData.charges.filter(r => !['livret_in','livret_out'].includes(r.cat)).map((r,i) => {
+      const realIdx = yData.charges.indexOf(r);
+      const linked = r.accountId === accId;
+      let row = '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer">';
+      row += '<input type="checkbox" name="_acfg_chg" value="' + realIdx + '" ' + (linked?'checked':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
+      row += '<span style="flex:1;font-size:12px">' + _esc(r.label) + '</span>';
+      row += '</label>';
+      return row;
+    }).join('');
+  }
   const overlay = document.createElement('div');
   overlay.id = '_acc-cfg-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center';
-  overlay.innerHTML = `<div style="background:var(--surface);border-radius:14px;padding:20px 22px;width:340px;max-width:93vw;box-shadow:0 8px 40px rgba(0,0,0,.45)">
-    <div style="font-weight:700;font-size:15px;margin-bottom:3px">⚙️ ${_esc(accName)}</div>
-    <div style="font-size:12px;color:var(--gray);margin-bottom:14px;line-height:1.5">Méthodes de paiement liées à ce compte.<br>Les transactions de ces méthodes alimenteront le solde calculé.</div>
-    <div id="_acc-cfg-meths" style="max-height:280px;overflow-y:auto">${methodRows}</div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-      <button onclick="document.getElementById('_acc-cfg-overlay').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>
-      <button onclick="_saveAccountConfig('${accId}')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>
-    </div>
-  </div>`;
+  let html = '<div style="background:var(--surface);border-radius:14px;padding:20px 22px;width:360px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.45)">';
+  html += '<div style="font-weight:700;font-size:15px;margin-bottom:3px">⚙️ ' + _esc(accName) + '</div>';
+  html += '<div style="font-size:12px;color:var(--gray);margin-bottom:12px">Configurez ce qui alimente ce compte</div>';
+  html += '<div style="overflow-y:auto;flex:1">';
+  // Section méthodes
+  html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;padding-top:2px">💳 Méthodes de paiement</div>';
+  html += methodRows;
+  // Section revenus
+  if (revRowsHtml) {
+    html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:12px;margin-bottom:4px">💹 Lignes de revenus</div>';
+    html += revRowsHtml;
+  }
+  // Section charges
+  if (chgRowsHtml) {
+    html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:12px;margin-bottom:4px">🏠 Lignes de charges</div>';
+    html += chgRowsHtml;
+  }
+  html += '</div>';
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">';
+  html += '<button onclick="document.getElementById(\'_acc-cfg-overlay\').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>';
+  html += '<button onclick="_saveAccountConfig(\'' + accId + '\')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>';
+  html += '</div></div>';
+  overlay.innerHTML = html;
   document.body.appendChild(overlay);
 }
 function _saveAccountConfig(accId) {
   const overlay = document.getElementById('_acc-cfg-overlay');
   if (!overlay) return;
-  const checked = [...overlay.querySelectorAll('#_acc-cfg-meths input[type=checkbox]:checked:not(:disabled)')].map(cb => cb.value);
-  // S'assurer que DATA.accounts existe avec le compte principal
-  if (!DATA.accounts || !DATA.accounts.length) {
-    DATA.accounts = [{id:'acc_main', name: getAccountName(), color:'#1a6fc4'}];
-  }
+  // Méthodes cochées
+  const checkedMeths = [...overlay.querySelectorAll('input[name="_acfg_meth"]:checked:not(:disabled)')].map(cb => cb.value);
+  // Revenus et charges cochés (index dans l'année la plus récente)
+  const checkedRevIdx = new Set([...overlay.querySelectorAll('input[name="_acfg_rev"]:checked')].map(cb => parseInt(cb.value)));
+  const checkedChgIdx = new Set([...overlay.querySelectorAll('input[name="_acfg_chg"]:checked')].map(cb => parseInt(cb.value)));
+  // S'assurer que DATA.accounts existe
+  if (!DATA.accounts || !DATA.accounts.length) DATA.accounts = [{id:'acc_main', name: getAccountName(), color:'#1a6fc4'}];
   let acc = DATA.accounts.find(a => a.id === accId);
-  if (!acc) {
-    acc = {id: accId, name: getAccountName(), color:'#1a6fc4'};
-    DATA.accounts.unshift(acc);
+  if (!acc) { acc = {id: accId, name: getAccountName(), color:'#1a6fc4'}; DATA.accounts.unshift(acc); }
+  acc.linkedMethods = checkedMeths;
+  // Appliquer accountId sur les lignes revenus/charges dans TOUTES les années
+  const years = getYears().sort((a,b) => parseInt(b)-parseInt(a));
+  const latestYear = years[0];
+  if (latestYear && DATA[latestYear]) {
+    const latestRevLabels = DATA[latestYear].revenus.map((r,i) => checkedRevIdx.has(i) ? r.label : null).filter(Boolean);
+    const latestChgLabels = DATA[latestYear].charges.map((r,i) => checkedChgIdx.has(i) ? r.label : null).filter(Boolean);
+    years.forEach(y => {
+      const yd = DATA[y];
+      if (!yd) return;
+      yd.revenus.forEach(r => {
+        if (latestRevLabels.includes(r.label)) r.accountId = accId;
+        else if (r.accountId === accId) delete r.accountId;
+      });
+      yd.charges.forEach(r => {
+        if (latestChgLabels.includes(r.label)) r.accountId = accId;
+        else if (r.accountId === accId) delete r.accountId;
+      });
+    });
   }
-  acc.linkedMethods = checked;
   overlay.remove();
   dSave();
   getYears().forEach(y => renderYear(y));
   renderConfigTab();
-  showToast('✅ Méthodes associées au compte');
+  showToast('✅ Compte configuré');
 }
 
 function bulkAssignMethodToAccount(accId) {
