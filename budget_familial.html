@@ -3123,31 +3123,22 @@ function computeCompte(year, accId) {
       else bal -= parseFloat(v) || 0;
     });
   });
-  // Variables : nouveau système linkedMethods ou ancien excludeCalcMethods
-  if (_hasLinkedMethodsSystem()) {
-    const accObj = getAccounts().find(a => a.id === (accId || 'acc_main'));
-    const myLinked = accObj?.linkedMethods || [];
+  // Variables
+  if (isMain) {
+    // Compte principal : exclure les méthodes de excludeCalcMethods + celles réclamées par les comptes secondaires
+    const secClaimed = getAccounts().slice(1).flatMap(a => a.linkedMethods || []);
+    const excMeth = [...new Set([...(d.excludeCalcMethods || []), ...secClaimed])];
     Object.values(d.vars).forEach(txs => txs.forEach(tx => {
-      if (isMain) {
-        // Tx explicitement assignée au compte principal
-        if (tx.accountId === 'acc_main') { bal -= parseFloat(tx.amount)||0; return; }
-        // Tx appartenant à un autre compte → skip
-        if (tx.accountId && tx.accountId !== 'acc_main') return;
-        // Tx sans accountId : inclure seulement si méthode liée au compte principal
-        if (!tx.accountId && myLinked.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
-        // Méthode non liée → informationnelle, non comptée
-      } else {
-        if (tx.accountId === accId) { bal -= parseFloat(tx.amount)||0; return; }
-        if (!tx.accountId && myLinked.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
-      }
+      if (tx.accountId && tx.accountId !== 'acc_main') return; // appartient à un autre compte
+      if (!excMeth.includes(tx.method)) bal -= parseFloat(tx.amount) || 0;
     }));
   } else {
-    // Ancien système : excludeCalcMethods par année
-    const excMeth = isMain ? (d.excludeCalcMethods || []) : [];
+    // Compte secondaire : accountId explicite OU méthode liée
+    const accObj = getAccounts().find(a => a.id === accId);
+    const myLinked = accObj?.linkedMethods || [];
     Object.values(d.vars).forEach(txs => txs.forEach(tx => {
-      if (isMain) { if (tx.accountId && tx.accountId !== 'acc_main') return; }
-      else { if (!tx.accountId || tx.accountId !== accId) return; }
-      if (!excMeth.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
+      if (tx.accountId === accId) { bal -= parseFloat(tx.amount) || 0; return; }
+      if (!tx.accountId && myLinked.includes(tx.method)) bal -= parseFloat(tx.amount) || 0;
     }));
   }
   return bal;
@@ -3157,11 +3148,12 @@ function showCompteDetail(year, accId) {
   const d = DATA[year];
   const isMain = !accId || accId === 'acc_main';
   // Nouveau système linkedMethods ou ancien excludeCalcMethods
-  const _useNewSys = _hasLinkedMethodsSystem();
   const _accObj = getAccounts().find(a => a.id === (accId || 'acc_main'));
   const _myLinked = _accObj?.linkedMethods || [];
-  const _othersLinked = _claimedByOthers(accId || 'acc_main');
-  const excMeth = _useNewSys ? [] : (d.excludeCalcMethods || []);
+  const _secClaimed = getAccounts().slice(1).flatMap(a => a.linkedMethods || []);
+  const excMeth = isMain
+    ? [...new Set([...(d.excludeCalcMethods || []), ..._secClaimed])]
+    : [];
 
   // ── Reconstruit le calcul étape par étape ──
   let bal = isMain
@@ -3210,22 +3202,14 @@ function showCompteDetail(year, accId) {
     let included = 0, excluded = 0;
     txs.forEach(tx => {
       const amt = parseFloat(tx.amount) || 0;
-      if (_useNewSys) {
-        if (isMain) {
-          if (tx.accountId === 'acc_main') { included += amt; bal -= amt; return; }
-          if (tx.accountId && tx.accountId !== 'acc_main') return; // autre compte
-          if (!tx.accountId && _myLinked.includes(tx.method)) { included += amt; bal -= amt; return; }
-          if (!tx.accountId && !_myLinked.includes(tx.method)) excluded += amt; // informationnel
-        } else {
-          if (tx.accountId === accId) { included += amt; bal -= amt; return; }
-          if (!tx.accountId && _myLinked.includes(tx.method)) { included += amt; bal -= amt; return; }
-          // pas pour ce compte
-        }
-      } else {
-        if (!isMain && tx.accountId && tx.accountId !== accId) return;
-        if (!isMain && !tx.accountId) return;
+      if (isMain) {
+        if (tx.accountId && tx.accountId !== 'acc_main') return; // autre compte
         if (excMeth.includes(tx.method)) { excluded += amt; }
         else { included += amt; bal -= amt; }
+      } else {
+        if (tx.accountId === accId) { included += amt; bal -= amt; return; }
+        if (!tx.accountId && _myLinked.includes(tx.method)) { included += amt; bal -= amt; return; }
+        // pas pour ce compte
       }
     });
     if (included > 0 || excluded > 0)
@@ -3831,7 +3815,10 @@ function renderSoldes(year) {
     <div class="solde-card" style="border-color:${acc.color||'#5B6AF0'}22"><label style="color:${acc.color||'#5B6AF0'}">💳 ${acc.name} (01/01)</label>
       <input type="number" step="0.01" value="${initBal}"
         oninput="DATA['${year}'].soldes.comptes['${accId}']=+this.value;updateMultiDisplay('${year}','${accId}','compte');dSave()"></div>
-    <div class="solde-card computed" style="border-color:${acc.color||'#5B6AF0'}22"><label style="color:${acc.color||'#5B6AF0'}">💳 ${acc.name} actuel (calculé)</label>
+    <div class="solde-card computed" style="border-color:${acc.color||'#5B6AF0'}22"><label style="color:${acc.color||'#5B6AF0'}">💳 ${acc.name} actuel (calculé)
+        <button onclick="openAccountConfig('${accId}')" title="Configurer ce compte" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+        <button onclick="showCompteDetail('${year}','${accId}')" title="Voir le détail du calcul" style="margin-left:4px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">🔍</button>
+      </label>
       <span class="computed-val" id="compte-calc-${year}-${accId}">${fmt(calcBal)}</span></div>`;
     });
     livs.slice(1).forEach(liv => {
@@ -8292,8 +8279,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.17';
-const SW_VERSION = 'v234';
+const APP_VERSION = '12.18';
+const SW_VERSION = 'v235';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
