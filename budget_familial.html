@@ -3972,6 +3972,22 @@ function renderYear(year) {
   }
 }
 
+// ── SOLDES helpers (standalone — utilisés par renderSoldes ET les fonctions d'update) ──
+function _deltaHtml(initNum, calcNum) {
+  const d = calcNum - initNum;
+  const abs = Math.abs(d);
+  if (abs < 0.005) return `<span style="color:var(--gray);opacity:.5">= stable</span>`;
+  const col = d >= 0 ? 'var(--green)' : 'var(--red)';
+  return `<span style="color:${col}">${d>=0?'▲ +':'▼ '}${fmt(abs)}</span>`;
+}
+function _updateSoldeRowMeta(metaId, initNum, calcNum) {
+  const el = document.getElementById(metaId);
+  if (!el) return;
+  const now = new Date();
+  const lbl = String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0');
+  el.innerHTML = `${lbl} · ${_deltaHtml(initNum, calcNum)}`;
+}
+
 // ── SOLDES ──
 function renderSoldes(year) {
   const s = DATA[year].soldes;
@@ -3990,14 +4006,7 @@ function renderSoldes(year) {
   // Construit une ligne compacte : [icône+nom | solde init → solde calculé + delta ⚙️🔍]
   const _now = new Date();
   const _todayLbl = String(_now.getDate()).padStart(2,'0') + '/' + String(_now.getMonth()+1).padStart(2,'0');
-  function _deltaHtml(initNum, calcNum) {
-    const d = calcNum - initNum;
-    const abs = Math.abs(d);
-    if (abs < 0.005) return `<span style="color:var(--gray);opacity:.5">= stable</span>`;
-    const col = d >= 0 ? 'var(--green)' : 'var(--red)';
-    return `<span style="color:${col}">${d>=0?'▲ +':'▼ '}${fmt(abs)}</span>`;
-  }
-  function makeRow({ icon, name, color, prevNote, initHtml, initNum, calcId, calcNum, gearFn, loupeFn }) {
+  function makeRow({ icon, name, color, prevNote, initHtml, initNum, calcId, metaId, calcNum, gearFn, loupeFn }) {
     const bc = color || '#1a6fc4';
     const prevNoteHtml = prevNote ? `<span class="sr-prevnote">${_esc(prevNote)}</span>` : '';
     const calcVal = fmt(calcNum);
@@ -4014,7 +4023,7 @@ function renderSoldes(year) {
       <span class="sr-arrow">→</span>
       <span class="sr-calc-wrap">
         <span class="sr-calc" id="${calcId}">${calcVal}</span>
-        <span class="sr-calc-meta">${_todayLbl} · ${_deltaHtml(initNum, calcNum)}</span>
+        <span class="sr-calc-meta" ${metaId?`id="${metaId}"`:''}>${_todayLbl} · ${_deltaHtml(initNum, calcNum)}</span>
       </span>
       <span class="sr-actions">
         ${gearFn ? `<button onclick="${gearFn}" title="Configurer">⚙️</button>` : ''}
@@ -4031,6 +4040,7 @@ function renderSoldes(year) {
     initHtml: `<input type="number" step="0.01" value="${s.compteIng}" oninput="DATA['${year}'].soldes.compteIng=+this.value;updateCompteDisplay('${year}');dSave()">`,
     initNum: _ingInit,
     calcId: `compte-calc-${year}`,
+    metaId: `compte-meta-${year}`,
     calcNum: _ingCalc,
     gearFn: `openAccountConfig('acc_main','${year}')`,
     loupeFn: `showCompteDetail('${year}')`
@@ -4048,6 +4058,7 @@ function renderSoldes(year) {
     initHtml: lvInit,
     initNum: _lvInitNum,
     calcId: `livret-calc-${year}`,
+    metaId: `livret-meta-${year}`,
     calcNum: lv,
     gearFn: `openLivretConfig('liv_main','${year}')`,
     loupeFn: null
@@ -4064,6 +4075,7 @@ function renderSoldes(year) {
         initHtml: `<input type="number" step="0.01" value="${_accInit}" oninput="DATA['${year}'].soldes.comptes['${accId}']=+this.value;updateMultiDisplay('${year}','${accId}','compte');dSave()">`,
         initNum: _accInit,
         calcId: `compte-calc-${year}-${accId}`,
+        metaId: `compte-meta-${year}-${accId}`,
         calcNum: _accCalc,
         gearFn: `openAccountConfig('${accId}','${year}')`,
         loupeFn: `showCompteDetail('${year}','${accId}')`
@@ -4082,6 +4094,7 @@ function renderSoldes(year) {
         initHtml: lvAddInit,
         initNum: _livInitNum,
         calcId: `livret-calc-${year}-${livId}`,
+        metaId: `livret-meta-${year}-${livId}`,
         calcNum: _livCalc,
         gearFn: `openLivretConfig('${livId}','${year}')`,
         loupeFn: null
@@ -4126,30 +4139,58 @@ function renderMethodPaymentSummary(year) {
   </div>`;
 }
 function updateLivretDisplay(year) {
+  const s = DATA[year]?.soldes;
+  const _years = getYears().sort();
+  const _prevIdx = _years.indexOf(String(year)) - 1;
+  const _hasPrev = _prevIdx >= 0;
+  const _prevYear = _hasPrev ? _years[_prevIdx] : null;
+  // Livret principal
+  const lv = computeLivret(year, 'liv_main');
   const el = document.getElementById('livret-calc-'+year);
-  if (el) el.textContent = fmt(computeLivret(year,'liv_main'));
-  // Also update additional livrets
+  if (el) el.textContent = fmt(lv);
+  const lvInit = _hasPrev ? computeLivret(_prevYear,'liv_main') : (parseFloat(s?.livretInitial)||0);
+  _updateSoldeRowMeta('livret-meta-'+year, lvInit, lv);
+  // Livrets supplémentaires
   getLivrets().slice(1).forEach(l => {
+    const lc = computeLivret(year, l.id);
     const el2 = document.getElementById(`livret-calc-${year}-${l.id}`);
-    if (el2) el2.textContent = fmt(computeLivret(year, l.id));
+    if (el2) el2.textContent = fmt(lc);
+    const li = _hasPrev ? computeLivret(_prevYear, l.id) : (s?.livrets_bal?.[l.id] || 0);
+    _updateSoldeRowMeta(`livret-meta-${year}-${l.id}`, li, lc);
   });
 }
 function updateCompteDisplay(year) {
+  const s = DATA[year]?.soldes;
+  // Compte principal
+  const ingCalc = computeCompte(year);
   const el = document.getElementById('compte-calc-'+year);
-  if (el) el.textContent = fmt(computeCompte(year));
-  // Also update additional accounts
+  if (el) el.textContent = fmt(ingCalc);
+  _updateSoldeRowMeta('compte-meta-'+year, parseFloat(s?.compteIng)||0, ingCalc);
+  // Comptes supplémentaires
   getAccounts().slice(1).forEach(a => {
+    const c = computeCompte(year, a.id);
     const el2 = document.getElementById(`compte-calc-${year}-${a.id}`);
-    if (el2) el2.textContent = fmt(computeCompte(year, a.id));
+    if (el2) el2.textContent = fmt(c);
+    _updateSoldeRowMeta(`compte-meta-${year}-${a.id}`, s?.comptes?.[a.id]||0, c);
   });
 }
 function updateMultiDisplay(year, id, type) {
+  const s = DATA[year]?.soldes;
+  const _years = getYears().sort();
+  const _prevIdx = _years.indexOf(String(year)) - 1;
+  const _hasPrev = _prevIdx >= 0;
+  const _prevYear = _hasPrev ? _years[_prevIdx] : null;
   if (type === 'livret') {
+    const c = computeLivret(year, id);
     const el = document.getElementById(`livret-calc-${year}-${id}`);
-    if (el) el.textContent = fmt(computeLivret(year, id));
+    if (el) el.textContent = fmt(c);
+    const init = _hasPrev ? computeLivret(_prevYear, id) : (s?.livrets_bal?.[id] || 0);
+    _updateSoldeRowMeta(`livret-meta-${year}-${id}`, init, c);
   } else {
+    const c = computeCompte(year, id);
     const el = document.getElementById(`compte-calc-${year}-${id}`);
-    if (el) el.textContent = fmt(computeCompte(year, id));
+    if (el) el.textContent = fmt(c);
+    _updateSoldeRowMeta(`compte-meta-${year}-${id}`, s?.comptes?.[id]||0, c);
   }
 }
 let _calcCfg = {year:null, type:null};
@@ -8563,7 +8604,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.28';
+const APP_VERSION = '12.29';
 const SW_VERSION = 'v245';
 
 // ── AUTO-UPDATE CHECK ──
