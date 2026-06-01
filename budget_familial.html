@@ -2897,7 +2897,11 @@ function confirmDeleteUser(userId) {
   confirmDelete(t('confirm.delete_user').replace('{0}', name), () => {
     Object.keys(localStorage).filter(k => k.includes(userId)).forEach(k => localStorage.removeItem(k));
     delete USERS[userId];
+    // Mémoriser la suppression pour que le sync cloud ne le restaure pas
+    const del = JSON.parse(localStorage.getItem('budget_deleted_users') || '[]');
+    if (!del.includes(userId)) { del.push(userId); localStorage.setItem('budget_deleted_users', JSON.stringify(del)); }
     saveUsers();
+    if (isLicensed()) { _cloudDirty = true; cloudPush(); } // Pousser immédiatement pour propager sur autres appareils
     renderConfigTab();
     showToast(t('toast.user_deleted'));
   });
@@ -5655,9 +5659,11 @@ async function cloudPush() {
         }
       } catch {}
     }
+    const _deletedUsersList = JSON.parse(localStorage.getItem('budget_deleted_users') || '[]');
     const payload = {
       ...DATA,
       _syncedUsers: usersToSync,
+      _deletedUsers: _deletedUsersList,
       _lastPush: Date.now(),
       ...(gistToken ? { _gistToken: gistToken } : {}),
       ...(gistId    ? { _gistId:    gistId    } : {})
@@ -5687,14 +5693,24 @@ async function cloudPull() {
     if (typeof d !== 'object') { _lastSyncError = 'Format de données invalide'; return null; }
     // Restaurer les profils utilisateurs depuis le cloud
     if (d._syncedUsers && typeof d._syncedUsers === 'object') {
+      const _localDeleted = JSON.parse(localStorage.getItem('budget_deleted_users') || '[]');
+      // Propager les suppressions reçues du cloud
+      if (Array.isArray(d._deletedUsers)) {
+        d._deletedUsers.forEach(id => {
+          if (!_localDeleted.includes(id)) _localDeleted.push(id);
+          if (USERS[id]) delete USERS[id];
+        });
+        localStorage.setItem('budget_deleted_users', JSON.stringify(_localDeleted));
+      }
       Object.entries(d._syncedUsers).forEach(([id, u]) => {
+        if (_localDeleted.includes(id)) return; // utilisateur supprimé localement — ne pas restaurer
         if (!USERS[id]) USERS[id] = u; // ajouter les profils absents localement
         else if (!USERS[id].pin) Object.assign(USERS[id], { name: u.name, color: u.color }); // mettre à jour nom/couleur si pas de PIN local
       });
       saveUsers();
       renderWelcomeScreen();
     }
-    const { _syncedUsers, _gistToken, _gistId, ...budgetData } = d;
+    const { _syncedUsers, _deletedUsers: _cloudDeletedUsers, _gistToken, _gistId, ...budgetData } = d;
     // Refuser des données cloud vides si on a des données locales valides (retour silencieux — pas une erreur)
     if (!_hasYearData(budgetData)) { return null; }
     // Restaurer le token Gist s'il est absent localement
@@ -5838,7 +5854,7 @@ function applyRealtimeData(d) {
     }, { once: true });
     return;
   }
-  const { _syncedUsers, _gistToken, _gistId, ...budgetData } = d;
+  const { _syncedUsers, _deletedUsers: _cloudDeletedUsers2, _gistToken, _gistId, ...budgetData } = d;
   // Restaurer token Gist si absent
   if (_gistToken && !getGistToken()) {
     localStorage.setItem(gistTokenKey(), _gistToken);
@@ -5847,7 +5863,17 @@ function applyRealtimeData(d) {
   }
   // Fusionner profils utilisateurs
   if (_syncedUsers) {
+    const _localDel2 = JSON.parse(localStorage.getItem('budget_deleted_users') || '[]');
+    // Propager les suppressions reçues du cloud
+    if (Array.isArray(_cloudDeletedUsers2)) {
+      _cloudDeletedUsers2.forEach(id => {
+        if (!_localDel2.includes(id)) _localDel2.push(id);
+        if (USERS[id]) delete USERS[id];
+      });
+      localStorage.setItem('budget_deleted_users', JSON.stringify(_localDel2));
+    }
     Object.entries(_syncedUsers).forEach(([id, u]) => {
+      if (_localDel2.includes(id)) return; // utilisateur supprimé — ne pas restaurer
       if (!USERS[id]) USERS[id] = u;
       else if (!USERS[id].pin) Object.assign(USERS[id], { name: u.name, color: u.color });
     });
@@ -8150,7 +8176,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.12';
+const APP_VERSION = '12.13';
 const SW_VERSION = 'v217';
 
 // ── AUTO-UPDATE CHECK ──
