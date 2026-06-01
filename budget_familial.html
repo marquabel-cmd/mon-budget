@@ -3091,31 +3091,30 @@ function computeLivret(year, livId) {
 // ─────────────────────────────────────────────
 // COMPTE FORMULA
 // ─────────────────────────────────────────────
+function _hasLinkedMethodsSystem() {
+  return getAccounts().some(a => a.linkedMethods !== undefined);
+}
+function _claimedByOthers(skipAccId) {
+  return getAccounts().filter(a => a.id !== skipAccId).flatMap(a => a.linkedMethods || []);
+}
 function computeCompte(year, accId) {
   const d = DATA[year];
   let bal;
-  if (accId && accId !== 'acc_main' && d.soldes.comptes) {
+  const isMain = !accId || accId === 'acc_main';
+  if (!isMain && d.soldes.comptes) {
     bal = parseFloat(d.soldes.comptes[accId]) || 0;
   } else {
     bal = parseFloat(d.soldes.compteIng) || 0;
   }
-  const isMain = !accId || accId === 'acc_main';
-  // Pour un compte secondaire : seules les lignes EXPLICITEMENT liées à ce compte comptent
-  // inCalc et excludeCalcMethods ne s'appliquent qu'au compte principal
+  // Revenus & charges : inCalc/accountId comme avant
   d.revenus.forEach(r => {
-    if (isMain) {
-      if (r.inCalc === false) return;
-    } else {
-      if (!r.accountId || r.accountId !== accId) return;
-    }
+    if (isMain) { if (r.inCalc === false) return; }
+    else { if (!r.accountId || r.accountId !== accId) return; }
     r.v.forEach((v,i) => { if (!r.paid || r.paid[i]) bal += parseFloat(v)||0; });
   });
   d.charges.forEach(r => {
-    if (isMain) {
-      if (r.inCalc === false) return;
-    } else {
-      if (!r.accountId || r.accountId !== accId) return;
-    }
+    if (isMain) { if (r.inCalc === false) return; }
+    else { if (!r.accountId || r.accountId !== accId) return; }
     r.v.forEach((v,i) => {
       if (!r.paid[i]) return;
       const amt = Math.abs(parseFloat(v) || 0);
@@ -3124,22 +3123,42 @@ function computeCompte(year, accId) {
       else bal -= parseFloat(v) || 0;
     });
   });
-  const excMeth = isMain ? (d.excludeCalcMethods || []) : [];
-  Object.values(d.vars).forEach(txs => txs.forEach(tx => {
-    if (isMain) {
-      if (tx.accountId && tx.accountId !== 'acc_main') return; // tx d'un autre compte
-    } else {
-      if (!tx.accountId || tx.accountId !== accId) return; // seules les tx liées à ce compte
-    }
-    if (!excMeth.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
-  }));
+  // Variables : nouveau système linkedMethods ou ancien excludeCalcMethods
+  if (_hasLinkedMethodsSystem()) {
+    const accObj = getAccounts().find(a => a.id === (accId || 'acc_main'));
+    const myLinked = accObj?.linkedMethods || [];
+    const othersLinked = _claimedByOthers(accId || 'acc_main');
+    Object.values(d.vars).forEach(txs => txs.forEach(tx => {
+      if (isMain) {
+        if (tx.accountId && tx.accountId !== 'acc_main') return;
+        if (othersLinked.includes(tx.method)) return; // appartient à un autre compte
+        bal -= parseFloat(tx.amount)||0;
+      } else {
+        if (tx.accountId === accId) { bal -= parseFloat(tx.amount)||0; return; }
+        if (!tx.accountId && myLinked.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
+      }
+    }));
+  } else {
+    // Ancien système : excludeCalcMethods par année
+    const excMeth = isMain ? (d.excludeCalcMethods || []) : [];
+    Object.values(d.vars).forEach(txs => txs.forEach(tx => {
+      if (isMain) { if (tx.accountId && tx.accountId !== 'acc_main') return; }
+      else { if (!tx.accountId || tx.accountId !== accId) return; }
+      if (!excMeth.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
+    }));
+  }
   return bal;
 }
 
 function showCompteDetail(year, accId) {
   const d = DATA[year];
   const isMain = !accId || accId === 'acc_main';
-  const excMeth = d.excludeCalcMethods || [];
+  // Nouveau système linkedMethods ou ancien excludeCalcMethods
+  const _useNewSys = _hasLinkedMethodsSystem();
+  const _accObj = getAccounts().find(a => a.id === (accId || 'acc_main'));
+  const _myLinked = _accObj?.linkedMethods || [];
+  const _othersLinked = _claimedByOthers(accId || 'acc_main');
+  const excMeth = _useNewSys ? [] : (d.excludeCalcMethods || []);
 
   // ── Reconstruit le calcul étape par étape ──
   let bal = isMain
@@ -3187,11 +3206,23 @@ function showCompteDetail(year, accId) {
     const txs = d.vars[cat.key] || [];
     let included = 0, excluded = 0;
     txs.forEach(tx => {
-      if (!isMain && tx.accountId && tx.accountId !== accId) return;
-      if (!isMain && !tx.accountId) return;
       const amt = parseFloat(tx.amount) || 0;
-      if (excMeth.includes(tx.method)) { excluded += amt; }
-      else { included += amt; bal -= amt; }
+      if (_useNewSys) {
+        if (isMain) {
+          if (tx.accountId && tx.accountId !== 'acc_main') { excluded += amt; return; }
+          if (_othersLinked.includes(tx.method)) { excluded += amt; return; }
+          included += amt; bal -= amt;
+        } else {
+          if (tx.accountId === accId) { included += amt; bal -= amt; return; }
+          if (!tx.accountId && _myLinked.includes(tx.method)) { included += amt; bal -= amt; return; }
+          // pas pour ce compte
+        }
+      } else {
+        if (!isMain && tx.accountId && tx.accountId !== accId) return;
+        if (!isMain && !tx.accountId) return;
+        if (excMeth.includes(tx.method)) { excluded += amt; }
+        else { included += amt; bal -= amt; }
+      }
     });
     if (included > 0 || excluded > 0)
       varLines.push({label: cat.icon + ' ' + cat.label, included, excluded});
@@ -3826,24 +3857,28 @@ function renderSoldes(year) {
   return html;
 }
 function renderMethodPaymentSummary(year) {
-  const excluded = DATA[year].excludeCalcMethods || [];
   const _isDark = document.documentElement.dataset.theme === 'dark';
+  const accs = getAccounts();
+  const useNewSys = _hasLinkedMethodsSystem();
+  const excluded = useNewSys ? [] : (DATA[year].excludeCalcMethods || []);
   const pills = getMethods().map(mo => {
     const tot = sum(varTotalByMethod(year, mo.key));
-    const incl = !excluded.includes(mo.key);
     const pillBg = _isDark ? 'var(--surface-alt)' : mo.bg;
-    return `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;background:${pillBg};border:2px solid ${mo.color};margin:3px;font-size:12px;font-weight:600;color:var(--text)">
-      <input type="checkbox" ${incl?'checked':''}
-        onchange="toggleMethodCalc('${year}','${mo.key}',this.checked)" onclick="event.stopPropagation()"
-        style="width:13px;height:13px;accent-color:${mo.color};cursor:pointer;flex-shrink:0">
+    // Quel compte est lié à cette méthode ?
+    const linkedAcc = useNewSys ? accs.find(a => (a.linkedMethods||[]).includes(mo.key)) : null;
+    const isExcluded = !useNewSys && excluded.includes(mo.key);
+    const accTag = linkedAcc
+      ? `<span style="font-size:10px;background:${linkedAcc.color}33;color:${linkedAcc.color};border-radius:10px;padding:1px 6px;font-weight:700">🏦 ${_esc(linkedAcc.name)}</span>`
+      : (isExcluded ? `<span style="font-size:10px;color:var(--gray);opacity:.7">exclu</span>` : '');
+    return `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;background:${pillBg};border:2px solid ${mo.color};margin:3px;font-size:12px;font-weight:600;color:var(--text);opacity:${isExcluded?'0.55':'1'}">
       <span style="font-weight:700">${mo.label || '(sans nom)'}</span>
       <span style="opacity:.8">${tot>0?fmt(tot):'—'}</span>
+      ${accTag}
     </span>`;
   }).join('');
   return `<div style="padding:8px 14px 12px;border-top:1px solid var(--border);margin-top:4px">
     <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">
       ${t('budget.var_by_method')}
-      <span style="font-size:10px;color:var(--gray);margin-left:8px;font-weight:400;text-transform:none">${t('budget.var_include')}</span>
     </div>
     <div id="method-summary-${year}">${pills}</div>
   </div>`;
@@ -7219,13 +7254,20 @@ function renderConfigTab() {
       ${(() => {
         const accs = getAccounts();
         const livs = getLivrets();
-        const accRows = accs.map((a,i) => `
-          <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
-            <span style="width:14px;height:14px;border-radius:50%;background:${a.color||'#1a6fc4'};flex-shrink:0;display:inline-block"></span>
-            <input type="text" value="${a.name}" style="flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;background:var(--surface);color:var(--text)"
-              onchange="renameAccount('${a.id}',this.value)" placeholder="Nom du compte">
-            ${i === 0 ? '' : isLicensed() ? `<button onclick="bulkAssignMethodToAccount('${a.id}')" title="Associer des transactions existantes à ce compte" style="background:none;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:12px;cursor:pointer;color:var(--text)">🔁</button><button class="del-btn" onclick="removeAccount('${a.id}')" title="Supprimer">✕</button>` : ''}
-          </div>`).join('');
+        const accRows = accs.map((a,i) => {
+          const lm = a.linkedMethods || [];
+          const methTags = lm.length ? lm.map(k => { const m = getMethods().find(x=>x.key===k); return m ? `<span style="font-size:10px;background:${m.color}22;color:${m.color};border-radius:8px;padding:1px 6px">${_esc(m.label)}</span>` : ''; }).join('') : `<span style="font-size:10px;color:var(--gray);font-style:italic">aucune méthode liée</span>`;
+          return `<div style="padding:6px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="width:14px;height:14px;border-radius:50%;background:${a.color||'#1a6fc4'};flex-shrink:0;display:inline-block"></span>
+              <input type="text" value="${a.name}" style="flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;background:var(--surface);color:var(--text)"
+                onchange="renameAccount('${a.id}',this.value)" placeholder="Nom du compte">
+              <button onclick="openAccountConfig('${a.id}')" title="Configurer les méthodes liées à ce compte" style="background:none;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:13px;cursor:pointer;color:var(--text)">⚙️</button>
+              ${i === 0 ? '' : isLicensed() ? `<button class="del-btn" onclick="removeAccount('${a.id}')" title="Supprimer">✕</button>` : ''}
+            </div>
+            <div style="margin-top:4px;margin-left:20px;display:flex;gap:4px;flex-wrap:wrap">${methTags}</div>
+          </div>`;
+        }).join('');
         const livRows = livs.map((l,i) => `
           <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
             <span style="font-size:13px">📈</span>
@@ -8246,8 +8288,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.15';
-const SW_VERSION = 'v232';
+const APP_VERSION = '12.16';
+const SW_VERSION = 'v233';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13244,13 +13286,7 @@ function addAccount(name, color) {
   ensureAccounts();
   const id = 'acc_' + Date.now();
   const col = color || '#5B6AF0';
-  DATA.accounts.push({id, name: name.trim(), color: col});
-  // Auto-add payment method for this account
-  DATA.methods = getMethods().slice();
-  const methodKey = 'carte_' + id.slice(-6);
-  if (!DATA.methods.find(m => m.key === methodKey)) {
-    DATA.methods.push({key: methodKey, label: 'Carte ' + name.trim(), color: col, bg: _hexToRgba(col, 0.12)});
-  }
+  DATA.accounts.push({id, name: name.trim(), color: col, linkedMethods: []});
   // Init balance in all years
   getYears().forEach(y => {
     if (!DATA[y].soldes.comptes) DATA[y].soldes.comptes = {};
@@ -13268,8 +13304,6 @@ function removeAccount(id) {
   confirmDelete(t('confirm.delete_account').replace('{0}', acc.name), () => {
     DATA.accounts = DATA.accounts.filter(a => a.id !== id);
     if (!DATA.accounts.length) delete DATA.accounts;
-    // Remove associated payment method
-    if (DATA.methods) DATA.methods = DATA.methods.filter(m => m.key !== 'carte_' + id.slice(-6));
     getYears().forEach(y => { if (DATA[y].soldes.comptes) delete DATA[y].soldes.comptes[id]; });
     dSave(); renderConfigTab();
     getYears().forEach(y => renderYear(y));
@@ -13286,6 +13320,60 @@ function renameAccount(id, name) {
   if (id === 'acc_main') DATA._accountName = name.trim();
   dSave(); getYears().forEach(y => renderYear(y)); renderConfigTab();
   showToast(t('toast.account_renamed').replace('{0}', name));
+}
+
+function openAccountConfig(accId) {
+  const accs = getAccounts();
+  const acc = accs.find(a => a.id === accId);
+  const accName = acc ? acc.name : getAccountName();
+  const linkedMethods = acc?.linkedMethods || [];
+  const meths = getMethods();
+  // Méthodes déjà revendiquées par d'autres comptes
+  const otherClaimed = accs.filter(a => a.id !== accId).flatMap(a => a.linkedMethods || []);
+  const methodRows = meths.map(m => {
+    const checked = linkedMethods.includes(m.key);
+    const claimedBy = accs.find(a => a.id !== accId && (a.linkedMethods||[]).includes(m.key));
+    return `<label style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);cursor:${claimedBy?'default':'pointer'}">
+      <input type="checkbox" value="${m.key}" ${checked?'checked':''} ${claimedBy?'disabled':''}
+        style="width:15px;height:15px;accent-color:${m.color};cursor:${claimedBy?'default':'pointer'}">
+      <span style="width:10px;height:10px;border-radius:50%;background:${m.color};flex-shrink:0;display:inline-block"></span>
+      <span style="flex:1;font-size:13px">${_esc(m.label)}</span>
+      ${claimedBy ? `<span style="font-size:10px;color:${claimedBy.color};background:${claimedBy.color}22;padding:2px 7px;border-radius:10px">🏦 ${_esc(claimedBy.name)}</span>` : ''}
+    </label>`;
+  }).join('');
+  const overlay = document.createElement('div');
+  overlay.id = '_acc-cfg-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = `<div style="background:var(--surface);border-radius:14px;padding:20px 22px;width:340px;max-width:93vw;box-shadow:0 8px 40px rgba(0,0,0,.45)">
+    <div style="font-weight:700;font-size:15px;margin-bottom:3px">⚙️ ${_esc(accName)}</div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:14px;line-height:1.5">Méthodes de paiement liées à ce compte.<br>Les transactions de ces méthodes alimenteront le solde calculé.</div>
+    <div id="_acc-cfg-meths" style="max-height:280px;overflow-y:auto">${methodRows}</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button onclick="document.getElementById('_acc-cfg-overlay').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>
+      <button onclick="_saveAccountConfig('${accId}')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+function _saveAccountConfig(accId) {
+  const overlay = document.getElementById('_acc-cfg-overlay');
+  if (!overlay) return;
+  const checked = [...overlay.querySelectorAll('#_acc-cfg-meths input[type=checkbox]:checked:not(:disabled)')].map(cb => cb.value);
+  // S'assurer que DATA.accounts existe avec le compte principal
+  if (!DATA.accounts || !DATA.accounts.length) {
+    DATA.accounts = [{id:'acc_main', name: getAccountName(), color:'#1a6fc4'}];
+  }
+  let acc = DATA.accounts.find(a => a.id === accId);
+  if (!acc) {
+    acc = {id: accId, name: getAccountName(), color:'#1a6fc4'};
+    DATA.accounts.unshift(acc);
+  }
+  acc.linkedMethods = checked;
+  overlay.remove();
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  renderConfigTab();
+  showToast('✅ Méthodes associées au compte');
 }
 
 function bulkAssignMethodToAccount(accId) {
