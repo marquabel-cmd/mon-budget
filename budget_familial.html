@@ -314,6 +314,23 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .solde-card input:focus{border-bottom:2px solid var(--blue)}
 .solde-card .computed-val{font-size:20px;font-weight:800;color:var(--text)}
 
+/* ── SOLDES COMPACT (v12.24) ── */
+.soldes-compact{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;padding:8px 14px 6px}
+.solde-row{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:7px 12px;border:1px solid var(--border);border-left:3px solid var(--blue)}
+.solde-row .sr-icon-name{display:flex;align-items:center;gap:5px;min-width:95px;max-width:135px;overflow:hidden;flex-shrink:0}
+.solde-row .sr-name{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.solde-row .sr-prevnote{display:block;font-size:9px;color:var(--gray);opacity:.7;font-style:italic;white-space:nowrap}
+.solde-row .sr-sep{color:var(--border);font-size:18px;flex-shrink:0;line-height:1}
+.solde-row .sr-init{min-width:85px;text-align:right;flex-shrink:0}
+.solde-row .sr-init input{width:88px;border:none;border-bottom:1px dashed var(--border);font-size:13px;font-weight:600;color:var(--gray);background:transparent;outline:none;font-family:inherit;text-align:right;padding:1px 0}
+.solde-row .sr-init input:focus{border-bottom-color:var(--blue);color:var(--text)}
+.solde-row .sr-init-static{font-size:13px;font-weight:600;color:var(--gray)}
+.solde-row .sr-arrow{color:var(--gray);font-size:13px;flex-shrink:0;opacity:.5}
+.solde-row .sr-calc{font-size:17px;font-weight:800;color:var(--text);flex:1;text-align:right}
+.solde-row .sr-actions{display:flex;gap:2px;flex-shrink:0;margin-left:2px}
+.solde-row .sr-actions button{background:none;border:none;cursor:pointer;font-size:13px;padding:2px 3px;line-height:1;opacity:.6;border-radius:4px;transition:opacity .15s,background .15s}
+.solde-row .sr-actions button:hover{opacity:1;background:var(--surface-alt)}
+
 /* ── SECTION CARDS ── */
 .section-card{
   background:var(--surface);
@@ -694,6 +711,11 @@ body.auth-locked #context-banner {
   .solde-card{min-width:calc(50% - 3px);padding:10px 12px}
   .solde-card input{font-size:15px}
   .solde-card .computed-val{font-size:15px}
+  .solde-row .sr-icon-name{min-width:70px;max-width:100px}
+  .solde-row .sr-init input{width:70px;font-size:12px}
+  .solde-row .sr-init-static{font-size:12px}
+  .solde-row .sr-calc{font-size:14px}
+  .solde-row .sr-sep{display:none}
   .section-header{padding:10px 12px}
   .section-title{font-size:12px}
   .badge{font-size:10px;padding:2px 6px}
@@ -3842,70 +3864,89 @@ function renderSoldes(year) {
   const prevYear = hasPrevYear ? years[prevIdx] : null;
   const accs = getAccounts();
   const livs = getLivrets();
-  const accName = accs[0].name;
-  const livName = livs[0].name;
-  const lv = computeLivret(year, 'liv_main');
   // Ensure multi-account solde containers exist
   if (!s.comptes) s.comptes = {};
   if (!s.livrets_bal) s.livrets_bal = {};
   accs.slice(1).forEach(a => { if (!(a.id in s.comptes)) s.comptes[a.id] = 0; });
   livs.slice(1).forEach(l => { if (!(l.id in s.livrets_bal)) s.livrets_bal[l.id] = 0; });
 
-  let html = `<div class="soldes-grid">
-    <div class="solde-card"><label>${accName} (01/01)</label>
-      <input type="number" step="0.01" value="${s.compteIng}"
-        oninput="DATA['${year}'].soldes.compteIng=+this.value;updateCompteDisplay('${year}');dSave()"></div>
-    <div class="solde-card computed"><label>${accName} actuel (calculé)
-        <button onclick="openAccountConfig('acc_main','${year}')" title="Configurer ce compte" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
-        <button onclick="showCompteDetail('${year}')" title="Voir le détail du calcul" style="margin-left:4px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">🔍</button>
-      </label>
-      <span class="computed-val" id="compte-calc-${year}">${fmt(computeCompte(year))}</span></div>
-    <div class="solde-card ${hasPrevYear?'computed':''}"><label>${livName} (01/01)${hasPrevYear?` <span style="font-size:10px;color:var(--gray)">(= fin ${prevYear})</span>`:''}</label>
-      ${hasPrevYear
-        ? `<span class="computed-val">${fmt(computeLivret(prevYear,'liv_main'))}</span>`
-        : `<input type="number" step="0.01" value="${s.livretInitial}"
-            oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()">`
-      }</div>
-    <div class="solde-card computed"><label>${livName} actuel (calculé)
-        <button onclick="openLivretConfig('liv_main','${year}')" title="Configurer ce livret" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
-      </label>
-      <span class="computed-val" id="livret-calc-${year}">${fmt(lv)}</span></div>`;
+  // Construit une ligne compacte : [icône+nom | solde init → solde calculé ⚙️🔍]
+  function makeRow({ icon, name, color, prevNote, initHtml, calcId, calcVal, gearFn, loupeFn }) {
+    const bc = color || '#1a6fc4';
+    const prevNoteHtml = prevNote ? `<span class="sr-prevnote">${_esc(prevNote)}</span>` : '';
+    return `<div class="solde-row" style="border-left-color:${bc}">
+      <span class="sr-icon-name">
+        <span style="font-size:15px;line-height:1;flex-shrink:0">${icon}</span>
+        <span class="sr-name" title="${_esc(name)}">${_esc(name)}${prevNoteHtml}</span>
+      </span>
+      <span class="sr-sep">|</span>
+      <span class="sr-init">${initHtml}</span>
+      <span class="sr-arrow">→</span>
+      <span class="sr-calc" id="${calcId}">${calcVal}</span>
+      <span class="sr-actions">
+        ${gearFn ? `<button onclick="${gearFn}" title="Configurer">⚙️</button>` : ''}
+        ${loupeFn ? `<button onclick="${loupeFn}" title="Détail du calcul">🔍</button>` : ''}
+      </span>
+    </div>`;
+  }
 
-  // Additional accounts (Premium)
+  // ── Compte principal (ING) ──
+  let rows = makeRow({
+    icon: '🏦', name: accs[0].name, color: '#1a6fc4',
+    initHtml: `<input type="number" step="0.01" value="${s.compteIng}" oninput="DATA['${year}'].soldes.compteIng=+this.value;updateCompteDisplay('${year}');dSave()">`,
+    calcId: `compte-calc-${year}`,
+    calcVal: fmt(computeCompte(year)),
+    gearFn: `openAccountConfig('acc_main','${year}')`,
+    loupeFn: `showCompteDetail('${year}')`
+  });
+
+  // ── Livret principal ──
+  const lv = computeLivret(year, 'liv_main');
+  const lvInit = hasPrevYear
+    ? `<span class="sr-init-static">${fmt(computeLivret(prevYear,'liv_main'))}</span>`
+    : `<input type="number" step="0.01" value="${s.livretInitial}" oninput="DATA['${year}'].soldes.livretInitial=+this.value;updateLivretDisplay('${year}');dSave()">`;
+  rows += makeRow({
+    icon: '📒', name: livs[0].name, color: '#0ab16d',
+    prevNote: hasPrevYear ? `= fin ${prevYear}` : null,
+    initHtml: lvInit,
+    calcId: `livret-calc-${year}`,
+    calcVal: fmt(lv),
+    gearFn: `openLivretConfig('liv_main','${year}')`,
+    loupeFn: null
+  });
+
+  // ── Comptes & livrets supplémentaires (Premium) ──
   if (isLicensed()) {
     accs.slice(1).forEach(acc => {
       const accId = acc.id;
-      const initBal = s.comptes[accId] || 0;
-      const calcBal = computeCompte(year, accId);
-      html += `
-    <div class="solde-card" style="border-color:${acc.color||'#5B6AF0'}22"><label style="color:${acc.color||'#5B6AF0'}">💳 ${acc.name} (01/01)</label>
-      <input type="number" step="0.01" value="${initBal}"
-        oninput="DATA['${year}'].soldes.comptes['${accId}']=+this.value;updateMultiDisplay('${year}','${accId}','compte');dSave()"></div>
-    <div class="solde-card computed" style="border-color:${acc.color||'#5B6AF0'}22"><label style="color:${acc.color||'#5B6AF0'}">💳 ${acc.name} actuel (calculé)
-        <button onclick="openAccountConfig('${accId}','${year}')" title="Configurer ce compte" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
-        <button onclick="showCompteDetail('${year}','${accId}')" title="Voir le détail du calcul" style="margin-left:4px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">🔍</button>
-      </label>
-      <span class="computed-val" id="compte-calc-${year}-${accId}">${fmt(calcBal)}</span></div>`;
+      rows += makeRow({
+        icon: '💳', name: acc.name, color: acc.color || '#5B6AF0',
+        initHtml: `<input type="number" step="0.01" value="${s.comptes[accId]||0}" oninput="DATA['${year}'].soldes.comptes['${accId}']=+this.value;updateMultiDisplay('${year}','${accId}','compte');dSave()">`,
+        calcId: `compte-calc-${year}-${accId}`,
+        calcVal: fmt(computeCompte(year, accId)),
+        gearFn: `openAccountConfig('${accId}','${year}')`,
+        loupeFn: `showCompteDetail('${year}','${accId}')`
+      });
     });
     livs.slice(1).forEach(liv => {
       const livId = liv.id;
       const prevLivBal = hasPrevYear ? computeLivret(prevYear, livId) : (s.livrets_bal[livId] || 0);
-      const calcBal = computeLivret(year, livId);
-      html += `
-    <div class="solde-card ${hasPrevYear?'computed':''}" style="border-color:#27ae6022"><label style="color:#27ae60">📈 ${liv.name} (01/01)${hasPrevYear?` <span style="font-size:10px;color:var(--gray)">(= fin ${prevYear})</span>`:''}</label>
-      ${hasPrevYear
-        ? `<span class="computed-val">${fmt(prevLivBal)}</span>`
-        : `<input type="number" step="0.01" value="${s.livrets_bal[livId]||0}"
-            oninput="DATA['${year}'].soldes.livrets_bal['${livId}']=+this.value;updateMultiDisplay('${year}','${livId}','livret');dSave()">`
-      }</div>
-    <div class="solde-card computed" style="border-color:#27ae6022"><label style="color:#27ae60">📈 ${liv.name} actuel (calculé)
-        <button onclick="openLivretConfig('${livId}','${year}')" title="Configurer ce livret" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
-      </label>
-      <span class="computed-val" id="livret-calc-${year}-${livId}">${fmt(calcBal)}</span></div>`;
+      const lvAddInit = hasPrevYear
+        ? `<span class="sr-init-static">${fmt(prevLivBal)}</span>`
+        : `<input type="number" step="0.01" value="${s.livrets_bal[livId]||0}" oninput="DATA['${year}'].soldes.livrets_bal['${livId}']=+this.value;updateMultiDisplay('${year}','${livId}','livret');dSave()">`;
+      rows += makeRow({
+        icon: '📈', name: liv.name, color: '#27ae60',
+        prevNote: hasPrevYear ? `= fin ${prevYear}` : null,
+        initHtml: lvAddInit,
+        calcId: `livret-calc-${year}-${livId}`,
+        calcVal: fmt(computeLivret(year, livId)),
+        gearFn: `openLivretConfig('${livId}','${year}')`,
+        loupeFn: null
+      });
     });
   }
 
-  html += `</div>
+  return `<div class="soldes-compact">${rows}</div>
   <div style="padding:10px 14px 4px;border-top:1px solid var(--border)">
     <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${t('budget.available')} <span style="font-weight:400;text-transform:none">${t('budget.available_sub')}</span></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -3913,7 +3954,6 @@ function renderSoldes(year) {
     </div>
   </div>
   ${renderMethodPaymentSummary(year)}`;
-  return html;
 }
 function renderMethodPaymentSummary(year) {
   const _isDark = document.documentElement.dataset.theme === 'dark';
@@ -8347,8 +8387,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.23';
-const SW_VERSION = 'v240';
+const APP_VERSION = '12.24';
+const SW_VERSION = 'v241';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
