@@ -3687,6 +3687,57 @@ function confirmRevDialog() {
   });
   dSave(); renderSummary();
   showToast(t('toast.year_created').replace('{0}', newYear));
+  // Demander les soldes d'ouverture au 01/01
+  setTimeout(() => _askOpeningBalances(newYear), 200);
+}
+
+function _askOpeningBalances(year) {
+  const accs = getAccounts();
+  const s = DATA[year]?.soldes;
+  if (!s) return;
+  let inputsHtml = '';
+  // Compte principal
+  inputsHtml += '<div style="margin-bottom:12px">';
+  inputsHtml += '<label style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">🏦 ' + _esc(getAccountName()) + '</label>';
+  inputsHtml += '<input id="_ob_main" type="number" step="0.01" value="' + (s.compteIng || 0) + '" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:700;background:var(--surface-alt);color:var(--text)">';
+  inputsHtml += '</div>';
+  // Comptes secondaires
+  accs.slice(1).forEach(a => {
+    const v = s.comptes?.[a.id] || 0;
+    inputsHtml += '<div style="margin-bottom:12px">';
+    inputsHtml += '<label style="font-size:11px;font-weight:700;color:' + (a.color||'#5B6AF0') + ';text-transform:uppercase;display:block;margin-bottom:4px">🏦 ' + _esc(a.name) + '</label>';
+    inputsHtml += '<input id="_ob_' + a.id + '" type="number" step="0.01" value="' + v + '" style="width:100%;border:1px solid ' + (a.color||'#5B6AF0') + '55;border-radius:8px;padding:9px 12px;font-size:15px;font-weight:700;background:var(--surface-alt);color:var(--text)">';
+    inputsHtml += '</div>';
+  });
+  const overlay = document.createElement('div');
+  overlay.id = '_ob-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:9999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = '<div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:340px;max-width:94vw;box-shadow:0 10px 50px rgba(0,0,0,.5)">' +
+    '<div style="font-size:16px;font-weight:800;margin-bottom:4px">🏁 Soldes au 01/01/' + year + '</div>' +
+    '<div style="font-size:12px;color:var(--gray);margin-bottom:18px;line-height:1.5">Saisissez le solde réel de chaque compte au 1er janvier pour que les calculs soient corrects.</div>' +
+    inputsHtml +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">' +
+    '<button onclick="document.getElementById(\'_ob-overlay\').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;color:var(--text)">Plus tard</button>' +
+    '<button onclick="_saveOpeningBalances(\'' + year + '\')" style="background:var(--blue);color:#fff;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>' +
+    '</div></div>';
+  document.body.appendChild(overlay);
+  // Focus sur le premier input
+  setTimeout(() => document.getElementById('_ob_main')?.select(), 100);
+}
+function _saveOpeningBalances(year) {
+  const s = DATA[year]?.soldes;
+  if (!s) return;
+  const mainVal = parseFloat(document.getElementById('_ob_main')?.value);
+  if (!isNaN(mainVal)) s.compteIng = mainVal;
+  getAccounts().slice(1).forEach(a => {
+    const v = parseFloat(document.getElementById('_ob_' + a.id)?.value);
+    if (!isNaN(v)) { if (!s.comptes) s.comptes = {}; s.comptes[a.id] = v; }
+  });
+  document.getElementById('_ob-overlay')?.remove();
+  dSave();
+  renderYear(year);
+  renderSummary();
+  showToast('✅ Soldes d\'ouverture enregistrés');
 }
 
 function txDay(d) {
@@ -8279,8 +8330,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.19';
-const SW_VERSION = 'v236';
+const APP_VERSION = '12.20';
+const SW_VERSION = 'v237';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
