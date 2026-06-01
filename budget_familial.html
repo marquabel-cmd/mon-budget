@@ -3790,7 +3790,7 @@ function renderSoldes(year) {
       <input type="number" step="0.01" value="${s.compteIng}"
         oninput="DATA['${year}'].soldes.compteIng=+this.value;updateCompteDisplay('${year}');dSave()"></div>
     <div class="solde-card computed"><label>${accName} actuel (calculé)
-        <button class="calc-config-btn" data-type="compte" onclick="openCalcConfig('${year}','compte')" title="Choisir les lignes" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+        <button onclick="openAccountConfig('acc_main','${year}')" title="Configurer ce compte" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
         <button onclick="showCompteDetail('${year}')" title="Voir le détail du calcul" style="margin-left:4px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">🔍</button>
       </label>
       <span class="computed-val" id="compte-calc-${year}">${fmt(computeCompte(year))}</span></div>
@@ -3816,7 +3816,7 @@ function renderSoldes(year) {
       <input type="number" step="0.01" value="${initBal}"
         oninput="DATA['${year}'].soldes.comptes['${accId}']=+this.value;updateMultiDisplay('${year}','${accId}','compte');dSave()"></div>
     <div class="solde-card computed" style="border-color:${acc.color||'#5B6AF0'}22"><label style="color:${acc.color||'#5B6AF0'}">💳 ${acc.name} actuel (calculé)
-        <button onclick="openAccountConfig('${accId}')" title="Configurer ce compte" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
+        <button onclick="openAccountConfig('${accId}','${year}')" title="Configurer ce compte" style="margin-left:6px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">⚙️</button>
         <button onclick="showCompteDetail('${year}','${accId}')" title="Voir le détail du calcul" style="margin-left:4px;background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1">🔍</button>
       </label>
       <span class="computed-val" id="compte-calc-${year}-${accId}">${fmt(calcBal)}</span></div>`;
@@ -8279,8 +8279,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.18';
-const SW_VERSION = 'v235';
+const APP_VERSION = '12.19';
+const SW_VERSION = 'v236';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13313,44 +13313,55 @@ function renameAccount(id, name) {
   showToast(t('toast.account_renamed').replace('{0}', name));
 }
 
-function openAccountConfig(accId) {
+function openAccountConfig(accId, ctxYear) {
+  const isMain = !accId || accId === 'acc_main';
   const accs = getAccounts();
   const acc = accs.find(a => a.id === accId);
   const accName = acc ? acc.name : getAccountName();
   const linkedMethods = acc?.linkedMethods || [];
   const meths = getMethods();
-  // Méthodes et lignes revenus/charges
+  // Année à utiliser pour les lignes
+  const years = getYears().sort((a,b) => parseInt(b)-parseInt(a));
+  const useYear = ctxYear || years[0];
+  const yData = useYear ? DATA[useYear] : null;
+  // --- Section méthodes ---
   const methodRows = meths.map(m => {
-    const checked = linkedMethods.includes(m.key);
     const claimedBy = accs.find(a => a.id !== accId && (a.linkedMethods||[]).includes(m.key));
-    let row = '<label style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:' + (claimedBy?'default':'pointer') + '">';
-    row += '<input type="checkbox" name="_acfg_meth" value="' + _esc(m.key) + '" ' + (checked?'checked':'') + ' ' + (claimedBy?'disabled':'');
-    row += ' style="width:14px;height:14px;accent-color:' + m.color + ';cursor:' + (claimedBy?'default':'pointer') + '">';
+    let checked, disabled = false;
+    if (isMain) {
+      // Pour ING : coché si la méthode n'est PAS dans excludeCalcMethods (= incluse dans le calcul)
+      const excM = yData ? (yData.excludeCalcMethods || []) : [];
+      checked = !excM.includes(m.key) && !claimedBy;
+      disabled = !!claimedBy;
+    } else {
+      checked = linkedMethods.includes(m.key);
+      disabled = !!claimedBy;
+    }
+    let row = '<label style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:' + (disabled?'default':'pointer') + '">';
+    row += '<input type="checkbox" name="_acfg_meth" value="' + _esc(m.key) + '" ' + (checked?'checked':'') + ' ' + (disabled?'disabled':'');
+    row += ' style="width:14px;height:14px;accent-color:' + m.color + '">';
     row += '<span style="width:9px;height:9px;border-radius:50%;background:' + m.color + ';flex-shrink:0;display:inline-block"></span>';
     row += '<span style="flex:1;font-size:13px">' + _esc(m.label) + '</span>';
     if (claimedBy) row += '<span style="font-size:10px;color:' + claimedBy.color + ';background:' + claimedBy.color + '22;padding:2px 6px;border-radius:10px">🏦 ' + _esc(claimedBy.name) + '</span>';
     row += '</label>';
     return row;
   }).join('');
-  // Lignes revenus et charges (depuis l'année la plus récente)
-  const years = getYears().sort((a,b) => parseInt(b)-parseInt(a));
-  const latestYear = years[0];
-  const yData = latestYear ? DATA[latestYear] : null;
+  // --- Section revenus ---
   let revRowsHtml = '', chgRowsHtml = '';
   if (yData) {
     revRowsHtml = yData.revenus.map((r,i) => {
-      const linked = r.accountId === accId;
+      const checked = isMain ? (r.inCalc !== false) : (r.accountId === accId);
       let row = '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer">';
-      row += '<input type="checkbox" name="_acfg_rev" value="' + i + '" ' + (linked?'checked':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
+      row += '<input type="checkbox" name="_acfg_rev" value="' + i + '" ' + (checked?'checked':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
       row += '<span style="flex:1;font-size:12px">' + _esc(r.label) + '</span>';
       row += '</label>';
       return row;
     }).join('');
-    chgRowsHtml = yData.charges.filter(r => !['livret_in','livret_out'].includes(r.cat)).map((r,i) => {
-      const realIdx = yData.charges.indexOf(r);
-      const linked = r.accountId === accId;
+    chgRowsHtml = yData.charges.filter(r => !['livret_in','livret_out'].includes(r.cat)).map(r => {
+      const ri = yData.charges.indexOf(r);
+      const checked = isMain ? (r.inCalc !== false) : (r.accountId === accId);
       let row = '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer">';
-      row += '<input type="checkbox" name="_acfg_chg" value="' + realIdx + '" ' + (linked?'checked':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
+      row += '<input type="checkbox" name="_acfg_chg" value="' + ri + '" ' + (checked?'checked':'') + ' style="width:14px;height:14px;accent-color:var(--blue)">';
       row += '<span style="flex:1;font-size:12px">' + _esc(r.label) + '</span>';
       row += '</label>';
       return row;
@@ -13361,60 +13372,66 @@ function openAccountConfig(accId) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center';
   let html = '<div style="background:var(--surface);border-radius:14px;padding:20px 22px;width:360px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.45)">';
   html += '<div style="font-weight:700;font-size:15px;margin-bottom:3px">⚙️ ' + _esc(accName) + '</div>';
-  html += '<div style="font-size:12px;color:var(--gray);margin-bottom:12px">Configurez ce qui alimente ce compte</div>';
+  html += '<div style="font-size:12px;color:var(--gray);margin-bottom:12px">Lignes et méthodes incluses dans le calcul</div>';
   html += '<div style="overflow-y:auto;flex:1">';
-  // Section méthodes
-  html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;padding-top:2px">💳 Méthodes de paiement</div>';
+  html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">💳 Méthodes de paiement (coché = inclus)</div>';
   html += methodRows;
-  // Section revenus
   if (revRowsHtml) {
-    html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:12px;margin-bottom:4px">💹 Lignes de revenus</div>';
+    html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:12px;margin-bottom:4px">💹 Revenus (coché = inclus)</div>';
     html += revRowsHtml;
   }
-  // Section charges
   if (chgRowsHtml) {
-    html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:12px;margin-bottom:4px">🏠 Lignes de charges</div>';
+    html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:12px;margin-bottom:4px">🏠 Charges (coché = inclus)</div>';
     html += chgRowsHtml;
   }
   html += '</div>';
   html += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">';
   html += '<button onclick="document.getElementById(\'_acc-cfg-overlay\').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>';
-  html += '<button onclick="_saveAccountConfig(\'' + accId + '\')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>';
+  html += '<button onclick="_saveAccountConfig(\'' + accId + '\',\'' + useYear + '\')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>';
   html += '</div></div>';
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
 }
-function _saveAccountConfig(accId) {
+function _saveAccountConfig(accId, useYear) {
+  const isMain = !accId || accId === 'acc_main';
   const overlay = document.getElementById('_acc-cfg-overlay');
   if (!overlay) return;
-  // Méthodes cochées
   const checkedMeths = [...overlay.querySelectorAll('input[name="_acfg_meth"]:checked:not(:disabled)')].map(cb => cb.value);
-  // Revenus et charges cochés (index dans l'année la plus récente)
+  const uncheckedMeths = [...overlay.querySelectorAll('input[name="_acfg_meth"]:not(:checked):not(:disabled)')].map(cb => cb.value);
   const checkedRevIdx = new Set([...overlay.querySelectorAll('input[name="_acfg_rev"]:checked')].map(cb => parseInt(cb.value)));
   const checkedChgIdx = new Set([...overlay.querySelectorAll('input[name="_acfg_chg"]:checked')].map(cb => parseInt(cb.value)));
   // S'assurer que DATA.accounts existe
   if (!DATA.accounts || !DATA.accounts.length) DATA.accounts = [{id:'acc_main', name: getAccountName(), color:'#1a6fc4'}];
   let acc = DATA.accounts.find(a => a.id === accId);
   if (!acc) { acc = {id: accId, name: getAccountName(), color:'#1a6fc4'}; DATA.accounts.unshift(acc); }
-  acc.linkedMethods = checkedMeths;
-  // Appliquer accountId sur les lignes revenus/charges dans TOUTES les années
-  const years = getYears().sort((a,b) => parseInt(b)-parseInt(a));
-  const latestYear = years[0];
-  if (latestYear && DATA[latestYear]) {
-    const latestRevLabels = DATA[latestYear].revenus.map((r,i) => checkedRevIdx.has(i) ? r.label : null).filter(Boolean);
-    const latestChgLabels = DATA[latestYear].charges.map((r,i) => checkedChgIdx.has(i) ? r.label : null).filter(Boolean);
-    years.forEach(y => {
-      const yd = DATA[y];
-      if (!yd) return;
-      yd.revenus.forEach(r => {
-        if (latestRevLabels.includes(r.label)) r.accountId = accId;
-        else if (r.accountId === accId) delete r.accountId;
+  if (isMain) {
+    // Compte principal : mettre à jour excludeCalcMethods pour l'année ET inCalc sur les lignes
+    if (useYear && DATA[useYear]) {
+      DATA[useYear].excludeCalcMethods = uncheckedMeths;
+      const yd = DATA[useYear];
+      yd.revenus.forEach((r,i) => { r.inCalc = checkedRevIdx.has(i); });
+      yd.charges.forEach((r,i) => { if (!['livret_in','livret_out'].includes(r.cat)) r.inCalc = checkedChgIdx.has(i); });
+    }
+  } else {
+    // Compte secondaire : linkedMethods + accountId sur les lignes
+    acc.linkedMethods = checkedMeths;
+    const years = getYears().sort((a,b) => parseInt(b)-parseInt(a));
+    const latestYear = useYear || years[0];
+    if (latestYear && DATA[latestYear]) {
+      const latestRevLabels = DATA[latestYear].revenus.map((r,i) => checkedRevIdx.has(i) ? r.label : null).filter(Boolean);
+      const latestChgLabels = DATA[latestYear].charges.map((r,i) => checkedChgIdx.has(i) ? r.label : null).filter(Boolean);
+      years.forEach(y => {
+        const yd = DATA[y]; if (!yd) return;
+        yd.revenus.forEach(r => {
+          if (latestRevLabels.includes(r.label)) r.accountId = accId;
+          else if (r.accountId === accId) delete r.accountId;
+        });
+        yd.charges.forEach(r => {
+          if (latestChgLabels.includes(r.label)) r.accountId = accId;
+          else if (r.accountId === accId) delete r.accountId;
+        });
       });
-      yd.charges.forEach(r => {
-        if (latestChgLabels.includes(r.label)) r.accountId = accId;
-        else if (r.accountId === accId) delete r.accountId;
-      });
-    });
+    }
   }
   overlay.remove();
   dSave();
