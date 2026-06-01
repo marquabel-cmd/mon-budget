@@ -1033,6 +1033,10 @@ body.auth-locked #context-banner {
       <div style="text-align:center;margin:-2px 0">
         <button type="button" onclick="addSplitRow()" style="background:none;border:1px dashed var(--border);border-radius:6px;padding:3px 14px;font-size:11px;color:var(--gray);cursor:pointer">➕ Ajouter un mode de paiement</button>
       </div>
+      <div id="qa-account-wrap" style="display:none">
+        <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">🏦 Compte associé</label>
+        <select id="qa-account" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px"></select>
+      </div>
       <div>
         <label data-i18n="th.comment" style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Commentaire (optionnel)</label>
         <input id="qa-comment" type="text" placeholder="ex: Supermarché, Total..." style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitQuickAdd()">
@@ -1160,6 +1164,10 @@ body.auth-locked #context-banner {
       <div>
         <label data-i18n="th.label" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Libellé</label>
         <input id="ar-label" type="text" data-i18n-placeholder="modal.example" placeholder="E.g. Salary, Rent, Insurance…" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+      </div>
+      <div id="ar-account-wrap" style="display:none">
+        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">🏦 Compte associé</label>
+        <select id="ar-account" style="width:100%;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px"></select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
@@ -3092,16 +3100,22 @@ function computeCompte(year, accId) {
     bal = parseFloat(d.soldes.compteIng) || 0;
   }
   const isMain = !accId || accId === 'acc_main';
+  // Pour un compte secondaire : seules les lignes EXPLICITEMENT liées à ce compte comptent
+  // inCalc et excludeCalcMethods ne s'appliquent qu'au compte principal
   d.revenus.forEach(r => {
-    if (r.inCalc === false) return;
-    if (!isMain && r.accountId && r.accountId !== accId) return;
-    if (!isMain && !r.accountId) return; // untagged revs go to main
+    if (isMain) {
+      if (r.inCalc === false) return;
+    } else {
+      if (!r.accountId || r.accountId !== accId) return;
+    }
     r.v.forEach((v,i) => { if (!r.paid || r.paid[i]) bal += parseFloat(v)||0; });
   });
   d.charges.forEach(r => {
-    if (r.inCalc === false) return;
-    if (!isMain && r.accountId && r.accountId !== accId) return;
-    if (!isMain && !r.accountId) return; // untagged charges go to main
+    if (isMain) {
+      if (r.inCalc === false) return;
+    } else {
+      if (!r.accountId || r.accountId !== accId) return;
+    }
     r.v.forEach((v,i) => {
       if (!r.paid[i]) return;
       const amt = Math.abs(parseFloat(v) || 0);
@@ -3110,10 +3124,13 @@ function computeCompte(year, accId) {
       else bal -= parseFloat(v) || 0;
     });
   });
-  const excMeth = d.excludeCalcMethods || [];
+  const excMeth = isMain ? (d.excludeCalcMethods || []) : [];
   Object.values(d.vars).forEach(txs => txs.forEach(tx => {
-    if (!isMain && tx.accountId && tx.accountId !== accId) return;
-    if (!isMain && !tx.accountId) return;
+    if (isMain) {
+      if (tx.accountId && tx.accountId !== 'acc_main') return; // tx d'un autre compte
+    } else {
+      if (!tx.accountId || tx.accountId !== accId) return; // seules les tx liées à ce compte
+    }
     if (!excMeth.includes(tx.method)) bal -= parseFloat(tx.amount)||0;
   }));
   return bal;
@@ -4163,6 +4180,12 @@ function openAddRowModal(year, type) {
   document.getElementById('ar-amount').value = '';
   document.getElementById('ar-error').textContent = '';
   document.getElementById('ar-preview').style.display = 'none';
+  // Compte associé
+  const _arAccSel = document.getElementById('ar-account');
+  const _arAccWrap = document.getElementById('ar-account-wrap');
+  const _arAccs = getAccounts();
+  if (_arAccSel) { _arAccSel.innerHTML = _arAccs.map(a=>`<option value="${a.id}">${_esc(a.name)}</option>`).join(''); _arAccSel.value = 'acc_main'; }
+  if (_arAccWrap) _arAccWrap.style.display = _arAccs.length > 1 ? 'block' : 'none';
   const repsEl = document.getElementById('ar-reps');
   if (repsEl) { repsEl.value = ''; document.getElementById('ar-reps-hint').textContent = ''; }
   updateAddRowModal();
@@ -4204,6 +4227,12 @@ function openEditRowModal(year, dataType, ri) {
     if (hint) hint.textContent = (row.reps && row.endMonth !== undefined && row.endYear !== undefined)
       ? `→ fin ${getMonths()[row.endMonth]} ${row.endYear}` : '';
   }
+  // Pré-remplir le compte associé de la ligne existante
+  const _arAccSelE = document.getElementById('ar-account');
+  const _arAccWrapE = document.getElementById('ar-account-wrap');
+  const _arAccsE = getAccounts();
+  if (_arAccSelE) { _arAccSelE.innerHTML = _arAccsE.map(a=>`<option value="${a.id}">${_esc(a.name)}</option>`).join(''); _arAccSelE.value = row.accountId || 'acc_main'; }
+  if (_arAccWrapE) _arAccWrapE.style.display = _arAccsE.length > 1 ? 'block' : 'none';
   updateAddRowModal();
   document.getElementById('add-row-modal').style.display = 'flex';
   setTimeout(() => { const l = document.getElementById('ar-label'); l.focus(); l.select(); }, 80);
@@ -4294,12 +4323,14 @@ function submitAddRow() {
   }
   // Métadonnées à sauvegarder pour restauration en édition
   const rowMeta = { noEnd, reps: reps || undefined, endMonth: noEnd ? undefined : savedEndMonth, endYear: noEnd ? undefined : savedEndYear };
+  const accountId = document.getElementById('ar-account')?.value || 'acc_main';
   if (_arEditMode && _arEditIdx !== null) {
     const row = DATA[year][_arEditDataType][_arEditIdx];
     row.label = label;
     if (_arEditDataType === 'charges') row.cat = type;
     for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
     Object.assign(row, rowMeta);
+    if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
     renderYear(year);
     dSave();
     document.getElementById('add-row-modal').style.display = 'none';
@@ -4308,9 +4339,13 @@ function submitAddRow() {
     return;
   }
   if (type === 'revenu') {
-    DATA[year].revenus.push({label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: true, ...rowMeta});
+    const newRev = {label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: true, ...rowMeta};
+    if (accountId && accountId !== 'acc_main') newRev.accountId = accountId;
+    DATA[year].revenus.push(newRev);
   } else {
-    DATA[year].charges.push({label, cat: type, v, paid: v.map(x => (parseFloat(x)||0) === 0), ...rowMeta});
+    const newChg = {label, cat: type, v, paid: v.map(x => (parseFloat(x)||0) === 0), ...rowMeta};
+    if (accountId && accountId !== 'acc_main') newChg.accountId = accountId;
+    DATA[year].charges.push(newChg);
   }
   renderYear(year);
   dSave();
@@ -4585,6 +4620,12 @@ function openQuickAdd(year, catKey) {
   // Populate payment methods
   const methSel = document.getElementById('qa-method');
   methSel.innerHTML = getMethods().map(mo=>`<option value="${mo.key}">${_esc(mo.label)}</option>`).join('');
+  // Populate account selector (visible seulement si plusieurs comptes)
+  const qaAccSel  = document.getElementById('qa-account');
+  const qaAccWrap = document.getElementById('qa-account-wrap');
+  const _accs = getAccounts();
+  if (qaAccSel) qaAccSel.innerHTML = _accs.map(a=>`<option value="${a.id}">${_esc(a.name)}</option>`).join('');
+  if (qaAccWrap) qaAccWrap.style.display = _accs.length > 1 ? 'block' : 'none';
   // Reset fields
   document.getElementById('qa-amount').value = '';
   document.getElementById('qa-day').value = '';
@@ -4640,6 +4681,8 @@ function openEditTx(year, catKey, txId) {
   document.getElementById('qa-comment').value= tx.comment || '';
   document.getElementById('qa-method').value = tx.method  || 'carte';
   document.getElementById('qa-cat').value    = catKey; // pré-sélectionner la bonne catégorie
+  const qaAccEdit = document.getElementById('qa-account');
+  if (qaAccEdit) qaAccEdit.value = tx.accountId || 'acc_main';
   const rawDay = tx.date ? parseInt(tx.date.split('/')[0], 10) : '';
   document.getElementById('qa-day').value = rawDay || '';
   // Mettre à jour titre + bouton
@@ -4655,6 +4698,7 @@ function submitQuickAdd() {
   const catKey = document.getElementById('qa-cat').value;
   const month  = +document.getElementById('qa-month').value;
   const method = document.getElementById('qa-method').value;
+  const accountId = document.getElementById('qa-account')?.value || 'acc_main';
   const dayVal = document.getElementById('qa-day').value.trim();
   const comment= document.getElementById('qa-comment').value.trim();
   const dateStr = dayVal ? `${String(+dayVal).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${year}` : '';
@@ -4697,6 +4741,7 @@ function submitQuickAdd() {
         DATA[year].vars[origCat] = DATA[year].vars[origCat].filter(t => t.id !== _qaEditTxId);
         if (!DATA[year].vars[catKey]) DATA[year].vars[catKey] = [];
         tx.amount = amount; tx.date = dateStr; tx.comment = comment; tx.method = method; tx.month = month;
+        if (accountId && accountId !== 'acc_main') tx.accountId = accountId; else delete tx.accountId;
         DATA[year].vars[catKey].push(tx);
         syncMonthSummary(year, origCat, oldMonth);
         syncMonthSummary(year, catKey, month);
@@ -4714,6 +4759,7 @@ function submitQuickAdd() {
         showToast(t('toast.tx_moved').replace('{0}', getVarCats().find(c=>c.key===catKey)?.label||catKey));
       } else {
         tx.amount  = amount; tx.date = dateStr; tx.comment = comment; tx.method = method; tx.month = month;
+        if (accountId && accountId !== 'acc_main') tx.accountId = accountId; else delete tx.accountId;
         syncMonthSummary(year, catKey, oldMonth);
         if (month !== oldMonth) syncMonthSummary(year, catKey, month);
         refreshMonthSummary(year);
@@ -4733,7 +4779,9 @@ function submitQuickAdd() {
   }
 
   // Mode ajout
-  DATA[year].vars[catKey].push({id:_id++, month, amount, date:dateStr, comment, method});
+  const _newTx = {id:_id++, month, amount, date:dateStr, comment, method};
+  if (accountId && accountId !== 'acc_main') _newTx.accountId = accountId;
+  DATA[year].vars[catKey].push(_newTx);
   // Paiement partagé : ajouter une transaction pour chaque ligne de split
   const _splitContainer2 = document.getElementById('qa-split-container');
   if (_splitContainer2) {
@@ -7176,7 +7224,7 @@ function renderConfigTab() {
             <span style="width:14px;height:14px;border-radius:50%;background:${a.color||'#1a6fc4'};flex-shrink:0;display:inline-block"></span>
             <input type="text" value="${a.name}" style="flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;background:var(--surface);color:var(--text)"
               onchange="renameAccount('${a.id}',this.value)" placeholder="Nom du compte">
-            ${i === 0 ? '' : isLicensed() ? `<button class="del-btn" onclick="removeAccount('${a.id}')" title="Supprimer">✕</button>` : ''}
+            ${i === 0 ? '' : isLicensed() ? `<button onclick="bulkAssignMethodToAccount('${a.id}')" title="Associer des transactions existantes à ce compte" style="background:none;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:12px;cursor:pointer;color:var(--text)">🔁</button><button class="del-btn" onclick="removeAccount('${a.id}')" title="Supprimer">✕</button>` : ''}
           </div>`).join('');
         const livRows = livs.map((l,i) => `
           <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
@@ -8198,8 +8246,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.14';
-const SW_VERSION = 'v217';
+const APP_VERSION = '12.15';
+const SW_VERSION = 'v232';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13238,6 +13286,43 @@ function renameAccount(id, name) {
   if (id === 'acc_main') DATA._accountName = name.trim();
   dSave(); getYears().forEach(y => renderYear(y)); renderConfigTab();
   showToast(t('toast.account_renamed').replace('{0}', name));
+}
+
+function bulkAssignMethodToAccount(accId) {
+  const acc = getAccounts().find(a => a.id === accId);
+  if (!acc) return;
+  const meths = getMethods();
+  const opts = meths.map(m => `<option value="${m.key}">${_esc(m.label)}</option>`).join('');
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = `<div style="background:var(--surface);border-radius:14px;padding:20px 22px;width:320px;max-width:92vw;box-shadow:0 8px 40px rgba(0,0,0,.4)">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">🔁 Associer transactions au compte</div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:14px">Assigner toutes les dépenses variables d'une méthode de paiement au compte <b>${_esc(acc.name)}</b>.</div>
+    <label style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Méthode de paiement</label>
+    <select id="_bam-meth" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;background:var(--surface-alt);color:var(--text);margin-bottom:14px">${opts}</select>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>
+      <button onclick="_doBulkAssign('${accId}')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">Assigner</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+function _doBulkAssign(accId) {
+  const sel = document.getElementById('_bam-meth');
+  if (!sel) return;
+  const method = sel.value;
+  let count = 0;
+  getYears().forEach(y => {
+    const yData = DATA[y];
+    if (!yData || !yData.vars) return;
+    Object.values(yData.vars).forEach(txs => txs.forEach(tx => {
+      if (tx.method === method) { tx.accountId = accId; count++; }
+    }));
+  });
+  document.querySelector('div[style*="fixed"][style*="9999"]')?.remove();
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  showToast(`✅ ${count} transaction${count>1?'s':''} assignée${count>1?'s':''} au compte`);
 }
 
 // ── LIVRET MANAGEMENT ──
