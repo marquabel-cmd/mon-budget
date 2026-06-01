@@ -1044,15 +1044,14 @@ body.auth-locked #context-banner {
           </div>
         </div>
       </div>
+      <label id="qa-rembours-lbl" onclick="_qaToggleRembours()" style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;padding:9px 12px;transition:background .15s,border-color .15s">
+        <input type="checkbox" id="qa-rembours" onchange="_qaToggleRembours()" onclick="event.stopPropagation()" style="accent-color:#2ECC71;cursor:pointer;width:16px;height:16px;flex-shrink:0">
+        <span style="font-size:13px;font-weight:700">🔄 Remboursement</span>
+        <span style="font-size:11px;color:var(--gray);font-weight:400;margin-left:auto">Le montant sera négatif</span>
+      </label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-            <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">Montant (€)</label>
-            <label id="qa-rembours-lbl" style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;font-weight:700;color:var(--gray);user-select:none;transition:color .15s">
-              <input type="checkbox" id="qa-rembours" onchange="_qaToggleRembours()" style="accent-color:#2ECC71;cursor:pointer;width:13px;height:13px">
-              🔄 Remboursement
-            </label>
-          </div>
+          <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">Montant (€)</label>
           <input id="qa-amount" type="number" step="0.01" placeholder="0,00"
             style="width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:15px;font-weight:700;box-sizing:border-box;transition:border-color .2s,background .2s,color .2s"
             onkeydown="if(event.key==='Enter')submitQuickAdd()"
@@ -4985,14 +4984,14 @@ function _qaToggleRembours() {
     inp.style.color = '#2ECC71';
     inp.style.borderColor = 'rgba(46,204,113,.55)';
     inp.style.background = 'rgba(46,204,113,.06)';
-    if (lbl) lbl.style.color = '#2ECC71';
+    if (lbl) { lbl.style.background = 'rgba(46,204,113,.1)'; lbl.style.borderColor = 'rgba(46,204,113,.5)'; }
   } else {
     if (!isNaN(v) && v !== 0) inp.value = Math.abs(v);
     inp.placeholder = '0,00';
     inp.style.color = '';
     inp.style.borderColor = '';
     inp.style.background = '';
-    if (lbl) lbl.style.color = '';
+    if (lbl) { lbl.style.background = ''; lbl.style.borderColor = ''; }
   }
 }
 function _qaAmountInput() {
@@ -8564,8 +8563,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.27';
-const SW_VERSION = 'v244';
+const APP_VERSION = '12.28';
+const SW_VERSION = 'v245';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
