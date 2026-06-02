@@ -1566,56 +1566,57 @@ body.auth-locked #context-banner {
         oninput="_doSearch(this.value)">
       <button onclick="closeGlobalSearch()" style="background:none;border:none;font-size:22px;color:var(--gray);cursor:pointer;line-height:1">✕</button>
     </div>
-    <!-- Filtres -->
-    <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-      <!-- Filtre Année -->
-      <select id="sf-year" onchange="_applySearchFilters()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
-        <option value="">📅 Toutes les années</option>
+    <!-- Filtres — ligne unique compacte -->
+    <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+      <!-- Année -->
+      <select id="sf-year" onchange="_applySearchFilters()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:4px 7px;cursor:pointer;outline:none">
+        <option value="">📅 Toutes années</option>
       </select>
-      <!-- Filtre Mois -->
-      <select id="sf-month" onchange="_applySearchFilters()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
-        <option value="">📆 Tous les mois</option>
+      <!-- Mois -->
+      <select id="sf-month" onchange="_applySearchFilters()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:4px 7px;cursor:pointer;outline:none">
+        <option value="">📆 Tous mois</option>
         <option value="0">Janvier</option><option value="1">Février</option><option value="2">Mars</option>
         <option value="3">Avril</option><option value="4">Mai</option><option value="5">Juin</option>
         <option value="6">Juillet</option><option value="7">Août</option><option value="8">Septembre</option>
         <option value="9">Octobre</option><option value="10">Novembre</option><option value="11">Décembre</option>
       </select>
-      <!-- Filtre Type -->
-      <div style="display:flex;gap:4px;flex-wrap:wrap">
-        <button id="sft-all"     onclick="_setSrchType('')"           class="sf-type-btn sf-type-active" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Tout</button>
-        <button id="sft-rev"     onclick="_setSrchType('rev')"        class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">💹 Revenus</button>
-        <button id="sft-chg"     onclick="_setSrchType('chg')"        class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🏠 Charges</button>
-        <button id="sft-chg-fix" onclick="_setSrchType('chg-fixed')"  class="sf-type-btn" style="display:none;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🔒 Fixes</button>
-        <button id="sft-chg-occ" onclick="_setSrchType('chg-occ')"   class="sf-type-btn" style="display:none;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">📌 Occasionnelles</button>
-        <button id="sft-var"     onclick="_setSrchType('var')"        class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🛍️ Dépenses</button>
-      </div>
-      <!-- Filtre Catégorie (dépenses variables) -->
-      <select id="sf-cat" onchange="_applySearchFilters()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
+      <span style="width:1px;height:18px;background:var(--border);display:inline-block;margin:0 2px"></span>
+      <!-- Type pills -->
+      <button id="sft-all"     onclick="_setSrchType('')"          class="sf-type-btn sf-type-active" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Tout</button>
+      <button id="sft-rev"     onclick="_setSrchType('rev')"       class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">💹 Revenus</button>
+      <button id="sft-chg"     onclick="_setSrchType('chg')"       class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🏠 Charges</button>
+      <button id="sft-chg-fix" onclick="_setSrchType('chg-fixed')" class="sf-type-btn" style="display:none;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🔒 Fixes</button>
+      <button id="sft-chg-occ" onclick="_setSrchType('chg-occ')"  class="sf-type-btn" style="display:none;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">📌 Ponctuelles</button>
+      <button id="sft-var"     onclick="_setSrchType('var')"       class="sf-type-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">🛍️ Dépenses</button>
+      <!-- Catégorie (visible si Tout ou Dépenses) -->
+      <select id="sf-cat" onchange="_applySearchFilters()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:4px 7px;cursor:pointer;outline:none">
         <option value="">🏷️ Toutes catégories</option>
       </select>
-      <!-- Filtre Méthode de paiement (dépenses variables) -->
-      <select id="sf-method" onchange="_applySearchFilters()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none">
+      <!-- Méthode (visible si Tout ou Dépenses) -->
+      <select id="sf-method" onchange="_applySearchFilters()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:4px 7px;cursor:pointer;outline:none">
         <option value="">💳 Tous paiements</option>
       </select>
-      <!-- Bouton reset filtres -->
-      <button onclick="_resetSearchFilters()" id="sf-reset" style="display:none;margin-left:auto;padding:4px 10px;border-radius:20px;border:1px solid rgba(239,68,68,.4);font-size:11px;font-weight:700;cursor:pointer;background:rgba(239,68,68,.08);color:#ef4444">✕ Effacer filtres</button>
-      <!-- Filtre Montant -->
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;width:100%;padding-top:4px;border-top:1px solid var(--border);margin-top:2px">
-        <span style="font-size:11px;font-weight:700;color:var(--gray);margin-right:2px">💰</span>
-        <button id="sf-amt-none" onclick="_setAmtMode('')"   class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Tout</button>
-        <button id="sf-amt-eq"   onclick="_setAmtMode('eq')" class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">=&nbsp;Exact</button>
-        <button id="sf-amt-gt"   onclick="_setAmtMode('gt')" class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">&gt;&nbsp;Sup.</button>
-        <button id="sf-amt-lt"   onclick="_setAmtMode('lt')" class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">&lt;&nbsp;Inf.</button>
-        <button id="sf-amt-bt"   onclick="_setAmtMode('bt')" class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">↔&nbsp;Entre</button>
-        <div id="sf-amt-inputs" style="display:none;align-items:center;gap:5px">
-          <input id="sf-amt-val1" type="number" min="0" step="0.01" placeholder="Montant €"
-            oninput="_applySearchFilters()"
-            style="width:95px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">
-          <span id="sf-amt-sep" style="display:none;font-size:11px;color:var(--gray);font-weight:700">et</span>
-          <input id="sf-amt-val2" type="number" min="0" step="0.01" placeholder="Max €"
-            oninput="_applySearchFilters()"
-            style="display:none;width:80px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">
-        </div>
+      <!-- Toggle montant -->
+      <button id="sf-amt-toggle" onclick="_toggleAmtPanel()" title="Filtre par montant"
+        style="margin-left:auto;padding:4px 9px;border-radius:8px;border:1px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--gray)">💰</button>
+      <!-- Reset -->
+      <button onclick="_resetSearchFilters()" id="sf-reset" style="display:none;padding:4px 10px;border-radius:20px;border:1px solid rgba(239,68,68,.4);font-size:11px;font-weight:700;cursor:pointer;background:rgba(239,68,68,.08);color:#ef4444">✕ Effacer</button>
+    </div>
+    <!-- Panneau montant (caché par défaut) -->
+    <div id="sf-amt-panel" style="display:none;padding:6px 14px 8px;border-bottom:1px solid var(--border);display:none;flex-wrap:wrap;gap:5px;align-items:center">
+      <button id="sf-amt-none" onclick="_setAmtMode('')"   class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Tout</button>
+      <button id="sf-amt-eq"   onclick="_setAmtMode('eq')" class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">=&nbsp;Exact</button>
+      <button id="sf-amt-gt"   onclick="_setAmtMode('gt')" class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">&gt;&nbsp;Sup.</button>
+      <button id="sf-amt-lt"   onclick="_setAmtMode('lt')" class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">&lt;&nbsp;Inf.</button>
+      <button id="sf-amt-bt"   onclick="_setAmtMode('bt')" class="sf-amt-btn" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--text)">↔&nbsp;Entre</button>
+      <div id="sf-amt-inputs" style="display:none;align-items:center;gap:5px">
+        <input id="sf-amt-val1" type="number" min="0" step="0.01" placeholder="Montant €"
+          oninput="_applySearchFilters()"
+          style="width:95px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">
+        <span id="sf-amt-sep" style="display:none;font-size:11px;color:var(--gray);font-weight:700">et</span>
+        <input id="sf-amt-val2" type="number" min="0" step="0.01" placeholder="Max €"
+          oninput="_applySearchFilters()"
+          style="display:none;width:80px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">
       </div>
     </div>
     <div id="search-results" style="padding:16px;max-height:70vh;overflow-y:auto">
@@ -6841,6 +6842,15 @@ function _setSrchType(type) {
   _updateCatFilterVisibility();
   _applySearchFilters();
 }
+function _toggleAmtPanel() {
+  const panel = document.getElementById('sf-amt-panel');
+  const btn   = document.getElementById('sf-amt-toggle');
+  if (!panel) return;
+  const open = panel.style.display === 'flex';
+  panel.style.display = open ? 'none' : 'flex';
+  if (btn) { btn.style.background = open ? 'var(--bg)' : 'var(--blue)'; btn.style.color = open ? 'var(--gray)' : '#fff'; }
+  if (open) { _setAmtMode(''); }
+}
 function _setAmtMode(mode) {
   _srchAmtMode = mode;
   document.querySelectorAll('.sf-amt-btn').forEach(b => {
@@ -6884,6 +6894,8 @@ function _resetSearchFilters() {
   const inp = document.getElementById('sf-amt-inputs'); if (inp) inp.style.display = 'none';
   document.querySelectorAll('.sf-amt-btn').forEach(b => { b.style.background = 'var(--bg)'; b.style.color = 'var(--text)'; });
   const noneBtn = document.getElementById('sf-amt-none'); if (noneBtn) { noneBtn.style.background = 'var(--blue)'; noneBtn.style.color = '#fff'; }
+  const amtPanel = document.getElementById('sf-amt-panel'); if (amtPanel) amtPanel.style.display = 'none';
+  const amtToggle = document.getElementById('sf-amt-toggle'); if (amtToggle) { amtToggle.style.background = 'var(--bg)'; amtToggle.style.color = 'var(--gray)'; }
   document.getElementById('sf-reset').style.display = 'none';
   _doSearch(document.getElementById('search-input').value);
 }
@@ -8612,7 +8624,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.33';
+const APP_VERSION = '12.34';
 const SW_VERSION = 'v245';
 
 // ── AUTO-UPDATE CHECK ──
