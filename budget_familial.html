@@ -5098,6 +5098,7 @@ function submitQuickAdd() {
         syncMonthSummary(year, origCat, oldMonth);
         syncMonthSummary(year, catKey, month);
         refreshMonthSummary(year);
+        updateCompteDisplay(year);
         dSave();
         // Mise à jour ciblée : retirer la tx du mois source, l'ajouter dans le mois destination
         if (_expandedMonths[`${year}-${origCat}-${oldMonth}`]) {
@@ -5115,6 +5116,7 @@ function submitQuickAdd() {
         syncMonthSummary(year, catKey, oldMonth);
         if (month !== oldMonth) syncMonthSummary(year, catKey, month);
         refreshMonthSummary(year);
+        updateCompteDisplay(year);
         dSave();
         [oldMonth, month].filter((m, i, a) => a.indexOf(m) === i).forEach(m => {
           if (_expandedMonths[`${year}-${catKey}-${m}`]) {
@@ -5153,6 +5155,7 @@ function submitQuickAdd() {
     if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, month);
   }
   refreshMonthSummary(year);
+  updateCompteDisplay(year);
   dSave();
   document.getElementById('quick-add-overlay').style.display = 'none';
   showToast(t('toast.tx_added').replace('{0}', fmtN(amount)).replace('{1}', getMonths()[month]).replace('{2}', year));
@@ -5187,6 +5190,7 @@ function syncMonthTotals(year, catKey, txId) {
   const tx = DATA[year].vars[catKey].find(t=>t.id===txId);
   if (tx) syncMonthSummary(year, catKey, tx.month);
   refreshMonthSummary(year);
+  updateCompteDisplay(year);
   refreshMethodTotals(year);
   dSave();
 }
@@ -5238,6 +5242,7 @@ function delTx(year, catKey, id, m) {
     if (tr) tr.remove();
     syncMonthSummary(year, catKey, m); // _checkBudgetAlert appelé dans syncMonthSummary
     refreshMonthSummary(year);
+    updateCompteDisplay(year);
     dSave();
   });
 }
@@ -8605,7 +8610,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.30';
+const APP_VERSION = '12.31';
 const SW_VERSION = 'v245';
 
 // ── AUTO-UPDATE CHECK ──
