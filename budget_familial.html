@@ -4891,7 +4891,7 @@ function toggleMonthDetail(year, catKey, m, btn) {
 }
 
 // ── QUICK ADD ──
-let _qaYear = null, _qaCat = null, _qaEditTxId = null, _qaOrigCatKey = null;
+let _qaYear = null, _qaCat = null, _qaEditTxId = null, _qaOrigCatKey = null, _qaOrigYear = null;
 let _dashYear = null, _dashMonth = new Date().getMonth(), _dashView = 'month';
 function openQuickAdd(year, catKey) {
   // Auto-detect year from active tab if not provided
@@ -4997,6 +4997,7 @@ function openEditTx(year, catKey, txId) {
   // Passer en mode édition
   _qaEditTxId = txId;
   _qaOrigCatKey = catKey; // mémoriser la catégorie d'origine
+  _qaOrigYear = String(year); // mémoriser l'année d'origine (utile pour les déplacements inter-années)
   // Pré-remplir les champs
   document.getElementById('qa-month').value  = tx.month;
   document.getElementById('qa-amount').value = tx.amount;
@@ -5085,27 +5086,34 @@ function submitQuickAdd() {
 
   if (_qaEditTxId !== null) {
     const origCat = _qaOrigCatKey || catKey;
-    const tx = DATA[year].vars[origCat]?.find(t => t.id === _qaEditTxId);
+    const origYear = _qaOrigYear || year; // année d'origine (peut différer si déplacement inter-années)
+    const tx = DATA[origYear]?.vars[origCat]?.find(t => t.id === _qaEditTxId);
     if (tx) {
       const oldMonth = tx.month;
-      if (catKey !== origCat) {
-        // Déplacer la transaction vers la nouvelle catégorie
-        DATA[year].vars[origCat] = DATA[year].vars[origCat].filter(t => t.id !== _qaEditTxId);
+      const yearChanged = origYear !== year;
+      if (yearChanged || catKey !== origCat) {
+        // Déplacer la transaction vers une autre année et/ou catégorie
+        DATA[origYear].vars[origCat] = DATA[origYear].vars[origCat].filter(t => t.id !== _qaEditTxId);
+        if (!DATA[year]) DATA[year] = { vars: {}, charges: [], revenus: [] };
         if (!DATA[year].vars[catKey]) DATA[year].vars[catKey] = [];
         tx.amount = amount; tx.date = dateStr; tx.comment = comment; tx.method = method; tx.month = month;
         if (accountId && accountId !== 'acc_main') tx.accountId = accountId; else delete tx.accountId;
         DATA[year].vars[catKey].push(tx);
-        syncMonthSummary(year, origCat, oldMonth);
+        syncMonthSummary(origYear, origCat, oldMonth);
         syncMonthSummary(year, catKey, month);
-        refreshMonthSummary(year);
-        updateCompteDisplay(year);
+        refreshMonthSummary(origYear);
+        if (yearChanged) refreshMonthSummary(year);
+        updateCompteDisplay(origYear);
+        if (yearChanged) updateCompteDisplay(year);
         dSave();
         // Mise à jour ciblée : retirer la tx du mois source, l'ajouter dans le mois destination
-        const _tbodySrc = document.getElementById(`vbody-${year}-${origCat}-${oldMonth}`);
-        if (_tbodySrc) { _tbodySrc.innerHTML = buildMonthTxRows(year, origCat, oldMonth); _expandedMonths[`${year}-${origCat}-${oldMonth}`] = true; }
+        const _tbodySrc = document.getElementById(`vbody-${origYear}-${origCat}-${oldMonth}`);
+        if (_tbodySrc) { _tbodySrc.innerHTML = buildMonthTxRows(origYear, origCat, oldMonth); _expandedMonths[`${origYear}-${origCat}-${oldMonth}`] = true; }
         const _tbodyDst = document.getElementById(`vbody-${year}-${catKey}-${month}`);
         if (_tbodyDst) { _tbodyDst.innerHTML = buildMonthTxRows(year, catKey, month); _expandedMonths[`${year}-${catKey}-${month}`] = true; }
-        showToast(t('toast.tx_moved').replace('{0}', getVarCats().find(c=>c.key===catKey)?.label||catKey));
+        showToast(yearChanged
+          ? `↩️ Tx déplacée vers ${year} – ${getVarCats().find(c=>c.key===catKey)?.label||catKey}`
+          : t('toast.tx_moved').replace('{0}', getVarCats().find(c=>c.key===catKey)?.label||catKey));
       } else {
         tx.amount  = amount; tx.date = dateStr; tx.comment = comment; tx.method = method; tx.month = month;
         if (accountId && accountId !== 'acc_main') tx.accountId = accountId; else delete tx.accountId;
@@ -5121,7 +5129,7 @@ function submitQuickAdd() {
         showToast(t('toast.tx_edited').replace('{0}', fmtN(amount)));
       }
     }
-    _qaOrigCatKey = null;
+    _qaOrigCatKey = null; _qaOrigYear = null;
     document.getElementById('quick-add-overlay').style.display = 'none';
     return;
   }
@@ -8604,7 +8612,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.32';
+const APP_VERSION = '12.33';
 const SW_VERSION = 'v245';
 
 // ── AUTO-UPDATE CHECK ──
