@@ -4910,8 +4910,9 @@ function openQuickAdd(year, catKey) {
   // Populate year selector
   const yrSel = document.getElementById('qa-year');
   const yrs = getYears();
-  if (!yrs.includes(+year)) yrs.push(+year);
-  yrSel.innerHTML = yrs.map(y=>`<option value="${y}"${y==year?' selected':''}>${y}</option>`).join('');
+  year = String(year);
+  if (!yrs.includes(year)) yrs.push(year);
+  yrSel.innerHTML = yrs.map(y=>`<option value="${y}"${y===year?' selected':''}>${y}</option>`).join('');
   // Populate category
   const catSel = document.getElementById('qa-cat');
   catSel.innerHTML =
@@ -8604,7 +8605,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.29';
+const APP_VERSION = '12.30';
 const SW_VERSION = 'v245';
 
 // ── AUTO-UPDATE CHECK ──
