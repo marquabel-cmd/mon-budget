@@ -5101,14 +5101,10 @@ function submitQuickAdd() {
         updateCompteDisplay(year);
         dSave();
         // Mise à jour ciblée : retirer la tx du mois source, l'ajouter dans le mois destination
-        if (_expandedMonths[`${year}-${origCat}-${oldMonth}`]) {
-          const tbody = document.getElementById(`vbody-${year}-${origCat}-${oldMonth}`);
-          if (tbody) tbody.innerHTML = buildMonthTxRows(year, origCat, oldMonth);
-        }
-        if (_expandedMonths[`${year}-${catKey}-${month}`]) {
-          const tbody = document.getElementById(`vbody-${year}-${catKey}-${month}`);
-          if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, month);
-        }
+        const _tbodySrc = document.getElementById(`vbody-${year}-${origCat}-${oldMonth}`);
+        if (_tbodySrc) { _tbodySrc.innerHTML = buildMonthTxRows(year, origCat, oldMonth); _expandedMonths[`${year}-${origCat}-${oldMonth}`] = true; }
+        const _tbodyDst = document.getElementById(`vbody-${year}-${catKey}-${month}`);
+        if (_tbodyDst) { _tbodyDst.innerHTML = buildMonthTxRows(year, catKey, month); _expandedMonths[`${year}-${catKey}-${month}`] = true; }
         showToast(t('toast.tx_moved').replace('{0}', getVarCats().find(c=>c.key===catKey)?.label||catKey));
       } else {
         tx.amount  = amount; tx.date = dateStr; tx.comment = comment; tx.method = method; tx.month = month;
@@ -5119,10 +5115,8 @@ function submitQuickAdd() {
         updateCompteDisplay(year);
         dSave();
         [oldMonth, month].filter((m, i, a) => a.indexOf(m) === i).forEach(m => {
-          if (_expandedMonths[`${year}-${catKey}-${m}`]) {
-            const tbody = document.getElementById(`vbody-${year}-${catKey}-${m}`);
-            if (tbody) tbody.innerHTML = buildMonthTxRows(year, catKey, m);
-          }
+          const tbody = document.getElementById(`vbody-${year}-${catKey}-${m}`);
+          if (tbody) { tbody.innerHTML = buildMonthTxRows(year, catKey, m); _expandedMonths[`${year}-${catKey}-${m}`] = true; }
         });
         showToast(t('toast.tx_edited').replace('{0}', fmtN(amount)));
       }
@@ -8610,7 +8604,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.31';
+const APP_VERSION = '12.32';
 const SW_VERSION = 'v245';
 
 // ── AUTO-UPDATE CHECK ──
