@@ -6585,13 +6585,22 @@ function goToWelcome() {
   renderWelcomeScreen();
 }
 function disconnectSession() {
-  const choice = confirm('Se déconnecter ?\n\n✅ Vos données cloud restent intactes.\nAu prochain chargement, votre session sera restaurée automatiquement.\n\nCliquez OK pour vous déconnecter, Annuler pour rester.');
+  const choice = confirm('Se déconnecter ?\n\n✅ Vos données restent sur cet appareil.\nIl vous suffira de cliquer sur votre nom pour retrouver tout.\n\nCliquez OK pour vous déconnecter.');
   if (!choice) return;
   stopRealtimeSync();
-  // Effacer données locales MAIS garder les credentials Firebase (localStorage + sessionStorage) pour l'auto-restore
-  Object.keys(localStorage).filter(k => k.startsWith('budget_')).forEach(k => localStorage.removeItem(k));
-  // NE PAS effacer sessionStorage : mbudget-fb-token y est stocké et nécessaire pour _autoRestoreFromFirebase()
-  setTimeout(() => location.reload(), 400);
+  _fbUser = null;
+  CURRENT_USER_ID = '';
+  localStorage.removeItem('budget_current_user');
+  // Afficher l'écran de sélection utilisateur directement, sans rechargement
+  const ws = document.getElementById('welcome-screen');
+  if (ws) ws.style.display = 'flex';
+  const ob = document.getElementById('onboarding-screen');
+  if (ob) ob.style.display = 'none';
+  const fab = document.getElementById('main-fab');
+  if (fab) fab.style.display = 'none';
+  const aiFab = document.getElementById('ai-chat-fab');
+  if (aiFab) aiFab.style.display = 'none';
+  renderWelcomeScreen();
 }
 function disconnectFull() {
   if (!confirm('Libérer cet appareil pour un autre utilisateur ?\n\nToutes vos données locales ET vos credentials seront effacés.\nVos données cloud Firebase restent intactes.')) return;
@@ -7621,7 +7630,6 @@ function renderConfigTab() {
         <div class="add-user-form">
           <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="openUserWizardFromConfig()">＋ ${t('cfg.add_user')}</button>
           <button class="btn" style="padding:5px 12px;font-size:12px;background:#fff8f0;color:#c0392b;border:1px solid #e67e22" onclick="disconnectSession()">🚪 Se déconnecter</button>
-          <button class="btn" style="padding:5px 12px;font-size:12px;background:#f0f0f0;color:#555;border:1px solid #bbb" onclick="disconnectFull()">💻 Libérer l'appareil</button>
         </div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>${t('cfg.pin_title')} — ${USERS[CURRENT_USER_ID]?.name||''}</h3>
@@ -8697,7 +8705,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.52';
+const APP_VERSION = '12.53';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10568,6 +10576,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.53': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🚪', text: 'Déconnexion fiable : cliquer sur "Se déconnecter" affiche l\'écran de sélection sans effacer les données. Il suffit de cliquer sur votre nom pour retrouver tout instantanément.' }
+    ]
+  },
   '12.52': {
     date: 'Juin 2026',
     items: [
