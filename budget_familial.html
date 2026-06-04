@@ -6585,7 +6585,16 @@ function goToWelcome() {
   renderWelcomeScreen();
 }
 function disconnectSession() {
-  if (!confirm('Se déconnecter de cet appareil ?\n\nVos données sont sauvegardées dans le cloud — reconnectez-vous avec Google pour les retrouver.')) return;
+  const choice = confirm('Se déconnecter ?\n\n✅ Vos données cloud restent intactes.\nAu prochain chargement, votre session sera restaurée automatiquement.\n\nCliquez OK pour vous déconnecter, Annuler pour rester.');
+  if (!choice) return;
+  stopRealtimeSync();
+  // Effacer données locales MAIS garder les credentials Firebase pour l'auto-restore
+  Object.keys(localStorage).filter(k => k.startsWith('budget_')).forEach(k => localStorage.removeItem(k));
+  sessionStorage.clear();
+  setTimeout(() => location.reload(), 400);
+}
+function disconnectFull() {
+  if (!confirm('Libérer cet appareil pour un autre utilisateur ?\n\nToutes vos données locales ET vos credentials seront effacés.\nVos données cloud Firebase restent intactes.')) return;
   stopRealtimeSync();
   Object.keys(localStorage).filter(k => k.startsWith('budget_') || k.startsWith('mbudget-')).forEach(k => localStorage.removeItem(k));
   sessionStorage.clear();
@@ -7612,6 +7621,7 @@ function renderConfigTab() {
         <div class="add-user-form">
           <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="openUserWizardFromConfig()">＋ ${t('cfg.add_user')}</button>
           <button class="btn" style="padding:5px 12px;font-size:12px;background:#fff8f0;color:#c0392b;border:1px solid #e67e22" onclick="disconnectSession()">🚪 Se déconnecter</button>
+          <button class="btn" style="padding:5px 12px;font-size:12px;background:#f0f0f0;color:#555;border:1px solid #bbb" onclick="disconnectFull()">💻 Libérer l'appareil</button>
         </div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>${t('cfg.pin_title')} — ${USERS[CURRENT_USER_ID]?.name||''}</h3>
@@ -8687,8 +8697,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.50';
-const SW_VERSION = 'v261';
+const APP_VERSION = '12.51';
+const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -10558,6 +10568,14 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.51': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🚪', text: 'Déconnexion intelligente : "Se déconnecter" efface les données locales mais conserve vos identifiants — la session est restaurée automatiquement à la prochaine ouverture.' },
+      { icon: '💻', text: 'Nouveau : "Libérer l\'appareil" pour passer à un autre utilisateur — efface tout localement, vos données cloud restent intactes.' },
+      { icon: '🔓', text: 'Verrouillage auto désactivable : option dans les paramètres pour désactiver le verrouillage après inactivité.' }
+    ]
+  },
   '11.89': {
     date: 'Mai 2026',
     items: [
