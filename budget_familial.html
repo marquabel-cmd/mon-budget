@@ -6585,23 +6585,11 @@ function goToWelcome() {
   renderWelcomeScreen();
 }
 function disconnectSession() {
-  _showDangerConfirm({
-    title: '🚪 Se déconnecter',
-    subtitle: 'Libérer cet appareil pour un autre utilisateur',
-    items: [
-      'Vos données locales seront effacées sur cet appareil',
-      '<b>Vos données cloud Firebase restent intactes</b> — reconnectez-vous pour les récupérer',
-      'Le prochain utilisateur pourra créer son propre compte',
-    ],
-    confirmWord: 'DÉCONNECTER',
-    buttonLabel: '🚪 Se déconnecter',
-    onConfirm: () => {
-      stopRealtimeSync();
-      Object.keys(localStorage).filter(k => k.startsWith('budget_') || k.startsWith('mbudget-')).forEach(k => localStorage.removeItem(k));
-      sessionStorage.clear();
-      setTimeout(() => location.reload(), 400);
-    }
-  });
+  if (!confirm('Se déconnecter de cet appareil ?\n\nVos données sont sauvegardées dans le cloud — reconnectez-vous avec Google pour les retrouver.')) return;
+  stopRealtimeSync();
+  Object.keys(localStorage).filter(k => k.startsWith('budget_') || k.startsWith('mbudget-')).forEach(k => localStorage.removeItem(k));
+  sessionStorage.clear();
+  setTimeout(() => location.reload(), 400);
 }
 
 function resetData() {
@@ -8699,8 +8687,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.49';
-const SW_VERSION = 'v260';
+const APP_VERSION = '12.50';
+const SW_VERSION = 'v261';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
