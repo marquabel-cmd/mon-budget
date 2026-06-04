@@ -2166,9 +2166,20 @@ function initUsers() {
   if (localStorage.getItem('budget_demo_active') === '1' && USERS['_demo']) {
     document.getElementById('demo-banner').style.display = 'flex';
   }
+  // Filtrer les utilisateurs supprimés (propagation multi-appareils)
+  const _knownDeleted = JSON.parse(localStorage.getItem('budget_deleted_users') || '[]');
+  const _knownIds = JSON.parse(localStorage.getItem('budget_known_userids') || '[]');
+  _knownDeleted.forEach(id => { delete USERS[id]; });
+  if (_knownIds.length > 0) {
+    Object.keys(USERS).filter(id => id !== '_demo' && !_knownIds.includes(id)).forEach(id => { delete USERS[id]; });
+  }
+  if (!Object.keys(USERS).filter(id => id !== '_demo').length && !localStorage.getItem('budget_demo_active')) {
+    showOnboardingScreen(); return;
+  }
   // Ensure at least one admin
-  if (!Object.values(USERS).some(u => u.admin)) {
-    USERS[Object.keys(USERS)[0]].admin = true;
+  const nonDemo = Object.keys(USERS).filter(id => id !== '_demo');
+  if (nonDemo.length && !Object.values(USERS).some(u => u.admin)) {
+    USERS[nonDemo[0]].admin = true;
     saveUsers();
   }
   renderWelcomeScreen();
@@ -6154,6 +6165,8 @@ async function cloudPull() {
         else if (!USERS[id].pin) Object.assign(USERS[id], { name: u.name, color: u.color }); // mettre à jour nom/couleur si pas de PIN local
       });
       saveUsers();
+      // Mémoriser les IDs valides pour filtrer au démarrage sur tous les appareils
+      localStorage.setItem('budget_known_userids', JSON.stringify(Object.keys(USERS).filter(id => id !== '_demo')));
       renderWelcomeScreen();
     }
     const { _syncedUsers, _deletedUsers: _cloudDeletedUsers, _gistToken, _gistId, ...budgetData } = d;
@@ -8643,8 +8656,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.36';
-const SW_VERSION = 'v247';
+const APP_VERSION = '12.37';
+const SW_VERSION = 'v248';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
