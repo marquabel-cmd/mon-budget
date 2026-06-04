@@ -829,6 +829,20 @@ body.auth-locked #context-banner {
   </div>
 </div>
 
+<!-- ── DEV PREVIEW MODAL ── -->
+<div id="dev-preview-modal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(8,10,22,.97);backdrop-filter:blur(8px);overflow:auto">
+  <div style="min-height:100%;display:flex;flex-direction:column;align-items:center;padding:12px 16px 32px;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;background:#1e2235;border:1px solid rgba(91,106,240,.4);border-radius:12px;padding:8px 16px;position:sticky;top:0;z-index:1;flex-wrap:wrap;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.6)">
+      <span style="font-size:11px;font-weight:800;color:#5B6AF0;letter-spacing:.08em;font-family:monospace">DEV PREVIEW</span>
+      <span style="color:rgba(255,255,255,.2)">│</span>
+      <span style="font-size:11px;color:rgba(255,255,255,.4)">Lecture seule — aucune modification sauvegardée</span>
+      <span style="flex:1;min-width:16px"></span>
+      <button onclick="document.getElementById('dev-preview-modal').style.display='none'" style="background:rgba(192,57,43,.8);color:#fff;border:none;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">✕ Fermer</button>
+    </div>
+    <div id="dev-preview-frames" style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;justify-content:center"></div>
+  </div>
+</div>
+
 <!-- ── UPGRADE OVERLAY ── -->
 <div id="upgrade-overlay" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center" onclick="if(event.target===this)closeUpgrade()">
   <div style="background:#fff;border-radius:20px;width:min(420px,94%);padding:28px 28px 24px;box-shadow:0 24px 64px rgba(0,0,0,.3);text-align:center">
@@ -1478,6 +1492,7 @@ body.auth-locked #context-banner {
       <span id="user-name-display">–</span>
     </div>
     <button onclick="disconnectSession()" title="Se déconnecter" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:16px;cursor:pointer;padding:4px 6px;line-height:1;border-radius:6px;transition:color .15s;font-family:sans-serif" onmouseover="this.style.color='rgba(255,255,255,.9)'" onmouseout="this.style.color='rgba(255,255,255,.45)'">⏻</button>
+    <button id="dev-preview-btn" onclick="_devPreviewOpen()" title="Dev Preview — Aperçu mobile/tablette" style="display:none;background:rgba(91,106,240,.18);border:1px solid rgba(91,106,240,.4);color:#8b9cf7;font-size:10px;font-weight:800;cursor:pointer;padding:3px 8px;line-height:1.6;border-radius:6px;font-family:monospace;letter-spacing:.06em" onmouseover="this.style.background='rgba(91,106,240,.38)'" onmouseout="this.style.background='rgba(91,106,240,.18)'">DEV</button>
     <div class="header-btns">
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
       <span id="last-sync-time" style="font-size:10px;color:rgba(255,255,255,0.4);white-space:nowrap;align-self:center;display:none"></span>
@@ -2100,6 +2115,31 @@ let USERS = {};
 let CURRENT_USER_ID = '';
 
 function initUsers() {
+  // ── Mode dev preview (iframe) : chargement direct sans Firebase ──
+  if (new URLSearchParams(window.location.search).get('devpreview') === '1') {
+    const pvRaw = localStorage.getItem('budget_users');
+    const pvId  = localStorage.getItem('budget_current_user');
+    if (pvRaw && pvId) {
+      try { USERS = JSON.parse(pvRaw); } catch(e) { USERS = {}; }
+      if (USERS[pvId]) {
+        CURRENT_USER_ID = pvId;
+        sessionStorage.setItem('budget_session_active', pvId);
+        loadData();
+        document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+        updateUserDisplay(); renderTabs();
+        getYears().forEach(y => renderYear(y));
+        renderSummary();
+        const ws = document.getElementById('welcome-screen');
+        if (ws) ws.style.display = 'none';
+        ['main-fab','ai-chat-fab','feedback-fab'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'flex'; });
+        const curY = String(new Date().getFullYear()), ys = getYears();
+        const ty = ys.includes(curY) ? curY : (ys[ys.length-1] || '');
+        if (ty) setTimeout(() => { const tabs = document.querySelectorAll('#year-tabs .tab'); const tab = [...tabs].find(t=>t.dataset.year===ty)||tabs[tabs.length-1]; if(tab) switchTab('y'+ty, tab); }, 100);
+        return;
+      }
+    }
+    showOnboardingScreen(); return;
+  }
   // ── Mode comparaison (iframe) : démarrage direct sans écran d'accueil ──
   if (_compareMode) {
     const isPro = _compareMode === 'pro';
@@ -2956,6 +2996,8 @@ function updateUserDisplay() {
     }
   }
   if (nm) nm.textContent = _isAdminMode ? _adminLabel : u.name;
+  const devBtn = document.getElementById('dev-preview-btn');
+  if (devBtn) devBtn.style.display = (_isFbAdmin() && window.innerWidth > 900) ? 'inline-block' : 'none';
 }
 
 function switchUser(userId) {
@@ -8742,7 +8784,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.61';
+const APP_VERSION = '12.62';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10613,6 +10655,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.62': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🖥️', text: 'Dev Preview (admin only) : bouton DEV dans le header pour voir le rendu mobile (375px) et tablette (768px) en temps réel — uniquement visible sur PC avec le compte admin.' }
+    ]
+  },
   '12.61': {
     date: 'Juin 2026',
     items: [
@@ -12459,6 +12507,35 @@ let _adminClickCount = 0, _adminClickTimer = null;
 let _adminSavedData = null, _isAdminMode = false, _adminLabel = '';
 
 function _isFbAdmin() { return _fbUser?.uid === ADMIN_UID; }
+
+// ── DEV PREVIEW ──
+function _devPreviewOpen() {
+  if (!_isFbAdmin()) return;
+  const modal  = document.getElementById('dev-preview-modal');
+  const frames = document.getElementById('dev-preview-frames');
+  modal.style.display = 'block';
+  if (frames.innerHTML) return; // déjà rendu
+  const url  = window.location.origin + window.location.pathname + '?devpreview=1';
+  const avH  = Math.max(480, window.innerHeight - 150);
+  function makeFrame(w, h, label, emoji) {
+    const scale  = Math.min(1, avH / h);
+    const fw     = Math.round(w * scale);
+    const fh     = Math.round(h * scale);
+    const radius = w < 500 ? 36 : 20;
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8)">${emoji} ${label} <span style="color:rgba(255,255,255,.35);font-size:11px;font-weight:400">${w} × ${h} px</span></div>
+      <div style="width:${fw}px;height:${fh}px;border-radius:${radius}px;overflow:hidden;
+        box-shadow:0 0 0 8px #1e2235,0 0 0 10px rgba(91,106,240,.6),0 28px 72px rgba(0,0,0,.9);flex-shrink:0">
+        <iframe src="${url}" width="${w}" height="${h}"
+          style="display:block;border:none;transform:scale(${scale.toFixed(4)});transform-origin:top left"
+          scrolling="yes"></iframe>
+      </div>
+    </div>`;
+  }
+  frames.innerHTML =
+    makeFrame(375,  812, 'Mobile — iPhone',  '📱') +
+    makeFrame(768, 1024, 'Tablette — iPad',  '📟');
+}
 
 function adminTitleClick() {
   // Hidden admin trigger removed — use the admin button in Settings
