@@ -6584,6 +6584,26 @@ function goToWelcome() {
   if (ws) { ws.style.display='flex'; ws.style.opacity='0'; setTimeout(()=>ws.style.opacity='1',10); }
   renderWelcomeScreen();
 }
+function disconnectSession() {
+  _showDangerConfirm({
+    title: '🚪 Se déconnecter',
+    subtitle: 'Libérer cet appareil pour un autre utilisateur',
+    items: [
+      'Vos données locales seront effacées sur cet appareil',
+      '<b>Vos données cloud Firebase restent intactes</b> — reconnectez-vous pour les récupérer',
+      'Le prochain utilisateur pourra créer son propre compte',
+    ],
+    confirmWord: 'DÉCONNECTER',
+    buttonLabel: '🚪 Se déconnecter',
+    onConfirm: () => {
+      stopRealtimeSync();
+      Object.keys(localStorage).filter(k => k.startsWith('budget_') || k.startsWith('mbudget-')).forEach(k => localStorage.removeItem(k));
+      sessionStorage.clear();
+      setTimeout(() => location.reload(), 400);
+    }
+  });
+}
+
 function resetData() {
   const bk = bakPrefix() + 'pre-reset_' + new Date().toISOString().slice(0,10);
   localStorage.setItem(bk, JSON.stringify(DATA));
@@ -7603,6 +7623,7 @@ function renderConfigTab() {
       <div class="config-card"><h3>${t('cfg.users')}</h3>${userList}
         <div class="add-user-form">
           <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="openUserWizardFromConfig()">＋ ${t('cfg.add_user')}</button>
+          <button class="btn" style="padding:5px 12px;font-size:12px;background:#fff8f0;color:#c0392b;border:1px solid #e67e22" onclick="disconnectSession()">🚪 Se déconnecter</button>
         </div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>${t('cfg.pin_title')} — ${USERS[CURRENT_USER_ID]?.name||''}</h3>
@@ -8678,8 +8699,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.48';
-const SW_VERSION = 'v259';
+const APP_VERSION = '12.49';
+const SW_VERSION = 'v260';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
