@@ -6175,7 +6175,7 @@ async function cloudPull() {
     // Refuser des données cloud vides si on a des données locales valides (retour silencieux — pas une erreur)
     if (!_hasYearData(budgetData)) { return null; }
     // Restaurer le token Gist s'il est absent localement
-    if (_gistToken && !getGistToken()) {
+    if (_gistToken && _gistToken !== getGistToken()) {
       localStorage.setItem(gistTokenKey(), _gistToken);
       if (_gistId) localStorage.setItem(gistIdKey(), _gistId);
       showToast(t('toast.gist_token_restored'));
@@ -6317,7 +6317,7 @@ function applyRealtimeData(d) {
   }
   const { _syncedUsers, _deletedUsers: _cloudDeletedUsers2, _gistToken, _gistId, ...budgetData } = d;
   // Restaurer token Gist si absent
-  if (_gistToken && !getGistToken()) {
+  if (_gistToken && _gistToken !== getGistToken()) {
     localStorage.setItem(gistTokenKey(), _gistToken);
     if (_gistId) localStorage.setItem(gistIdKey(), _gistId);
     if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
@@ -8659,8 +8659,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.40';
-const SW_VERSION = 'v251';
+const APP_VERSION = '12.41';
+const SW_VERSION = 'v252';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
