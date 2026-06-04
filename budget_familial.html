@@ -8659,8 +8659,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.42';
-const SW_VERSION = 'v253';
+const APP_VERSION = '12.43';
+const SW_VERSION = 'v254';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13553,21 +13553,21 @@ function setGistStatus(s, msg) {
 
 async function _refreshGistTokenFromCloud() {
   const url = cloudApiUrl();
-  if (!url) return false;
+  if (!url) return null;
   try {
     const fbToken = await fbGetToken();
-    if (!fbToken) return false;
+    if (!fbToken) return null;
     const r = await _fbFetch(url, {}, fbToken);
-    if (!r.ok) return false;
+    if (!r.ok) return null;
     const d = await r.json();
-    if (d?._gistToken && d._gistToken !== getGistToken()) {
+    if (d?._gistToken) {
       localStorage.setItem(gistTokenKey(), d._gistToken);
       if (d._gistId) localStorage.setItem(gistIdKey(), d._gistId);
       if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
-      return true;
+      return d._gistToken;
     }
-    return false;
-  } catch { return false; }
+    return null;
+  } catch { return null; }
 }
 
 async function gistPush() {
@@ -13604,9 +13604,9 @@ async function gistPush() {
       localStorage.setItem(gistSyncKey(), new Date().toISOString());
       setGistStatus('ok');
     } else if (res?.status === 401) {
-      const refreshed = await _refreshGistTokenFromCloud();
-      if (refreshed) { _gistSyncing = false; gistPush(); return; }
-      setGistStatus('error', 'Token Gist invalide — reconnectez dans Config');
+      const newToken = await _refreshGistTokenFromCloud();
+      if (newToken && newToken !== token) { _gistSyncing = false; gistPush(); return; }
+      setGistStatus('error', _lang==='en' ? 'GitHub token expired — generate a new one on github.com' : 'Token GitHub expiré — générez-en un nouveau sur github.com');
     } else {
       const err = await res?.json();
       setGistStatus('error', 'Erreur ' + (res?.status||'?') + (err?.message ? ' — ' + err.message : ''));
@@ -13627,9 +13627,9 @@ async function gistPull() {
     });
     if (!res.ok) {
       if (res.status === 401) {
-        const refreshed = await _refreshGistTokenFromCloud();
-        if (refreshed) { gistPull(); return; }
-        setGistStatus('error', 'Token Gist invalide — reconnectez dans Config');
+        const newToken = await _refreshGistTokenFromCloud();
+        if (newToken && newToken !== token) { gistPull(); return; }
+        setGistStatus('error', _lang==='en' ? 'GitHub token expired — generate a new one on github.com' : 'Token GitHub expiré — générez-en un nouveau sur github.com');
       } else { setGistStatus('error', 'HTTP ' + res.status); }
       return;
     }
