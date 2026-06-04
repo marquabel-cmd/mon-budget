@@ -2333,11 +2333,28 @@ function pinKey(e, idx) {
     document.getElementById('pin'+(idx-1)).focus();
   if (e.key === 'Enter') submitPin();
 }
-function submitPin() {
+async function hashPin(pin, userId) {
+  const data = new TextEncoder().encode(pin + '|' + userId);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function submitPin() {
   const entered = [0,1,2,3].map(i => document.getElementById('pin'+i).value).join('');
   if (entered.length < 4) return;
   if (_pinMode === 'login') {
-    if (entered === USERS[_pinTarget].pin) {
+    const stored = USERS[_pinTarget].pin;
+    let match = false;
+    if (stored.length === 4) {
+      // Migration : ancien PIN en clair → compare puis convertit en hash
+      if (entered === stored) {
+        match = true;
+        USERS[_pinTarget].pin = await hashPin(entered, _pinTarget);
+        saveUsers();
+      }
+    } else {
+      match = (await hashPin(entered, _pinTarget)) === stored;
+    }
+    if (match) {
       document.getElementById('pin-overlay').style.display = 'none';
       doLogin(_pinTarget);
     } else {
@@ -2354,7 +2371,7 @@ function submitPin() {
       document.getElementById('pin0').focus();
     } else {
       if (entered === _pinFirst) {
-        USERS[_pinTarget].pin = entered;
+        USERS[_pinTarget].pin = await hashPin(entered, _pinTarget);
         saveUsers();
         document.getElementById('pin-overlay').style.display = 'none';
         renderConfigTab();
@@ -8624,8 +8641,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.34';
-const SW_VERSION = 'v245';
+const APP_VERSION = '12.35';
+const SW_VERSION = 'v246';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
