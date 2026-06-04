@@ -2477,8 +2477,8 @@ function _finishLogin(id) {
         renderTabs();
         getYears().forEach(y => renderYear(y));
         renderSummary();
-        const ly = getYears().slice(-1)[0];
-        if (!_restoreLastTab()) { if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); } }
+        const ly = (() => { const curY = String(new Date().getFullYear()); const ys = getYears(); return ys.includes(curY) ? curY : ys[ys.length-1]; })();
+        if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = [...tabs].find(t=>t.dataset.year===ly)||tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
         setCloudStatus('ok');
         if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
         startRealtimeSync();
@@ -2515,12 +2515,13 @@ function _finishLogin(id) {
   const years = getYears();
   const lastYear = years[years.length - 1];
   setTimeout(() => {
-    if (!_restoreLastTab()) {
-      if (lastYear) {
-        const tabs = document.querySelectorAll('#year-tabs .tab');
-        const tab = tabs[tabs.length - 1];
-        if (tab) switchTab('y'+lastYear, tab);
-      }
+    const curY = String(new Date().getFullYear());
+    const years = getYears();
+    const targetY = years.includes(curY) ? curY : (years[years.length - 1] || '');
+    if (targetY) {
+      const tabs = document.querySelectorAll('#year-tabs .tab');
+      const tab = [...tabs].find(t => t.dataset.year === targetY) || tabs[tabs.length - 1];
+      if (tab) switchTab('y' + targetY, tab);
     }
   }, 50);
   // Tour guidé au premier login
@@ -8659,8 +8660,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.46';
-const SW_VERSION = 'v257';
+const APP_VERSION = '12.47';
+const SW_VERSION = 'v258';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
