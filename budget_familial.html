@@ -6333,9 +6333,11 @@ const AUTO_LOCK_WARN_MS = 19 * 60 * 1000;
 let _autoLockTimer = null, _autoLockWarnTimer = null;
 
 function _autoDisconnectNow() {
-  // Déconnexion automatique sans confirmation (appelée après inactivité)
+  // Déconnexion automatique après inactivité :
+  // efface les données locales (budget_*) mais conserve les credentials Firebase (mbudget-*)
+  // → au prochain chargement, _autoRestoreFromFirebase() restaure la session automatiquement
   stopRealtimeSync();
-  Object.keys(localStorage).filter(k => k.startsWith('budget_') || k.startsWith('mbudget-')).forEach(k => localStorage.removeItem(k));
+  Object.keys(localStorage).filter(k => k.startsWith('budget_')).forEach(k => localStorage.removeItem(k));
   sessionStorage.clear();
   setTimeout(() => location.reload(), 300);
 }
@@ -8828,7 +8830,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.71';
+const APP_VERSION = '12.72';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10699,6 +10701,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.72': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🔑', text: 'Fix déconnexion auto : les boutons (ajout rapide, IA…) réapparaissent correctement — la déconnexion automatique conserve maintenant les identifiants Firebase pour une restauration transparente au retour.' }
+    ]
+  },
   '12.71': {
     date: 'Juin 2026',
     items: [
