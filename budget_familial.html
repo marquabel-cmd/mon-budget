@@ -8712,7 +8712,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.55';
+const APP_VERSION = '12.56';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10583,6 +10583,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.56': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🔄', text: 'Fix critique : reconnexion Google après déconnexion totale restaure maintenant toutes les données depuis Firebase — cloudPull() appelé dans le callback OAuth.' }
+    ]
+  },
   '12.55': {
     date: 'Juin 2026',
     items: [
@@ -12326,7 +12332,12 @@ window.addEventListener('message', async (e) => {
     await fbCheckPremium(u.uid, u.idToken);
     closeAuthModal();
     document.getElementById('onboarding-screen').style.display = 'none';
-    renderConfigTab();
+    // Si aucun utilisateur actif (ex: après déconnexion totale), restaurer tout depuis Firebase
+    if (!CURRENT_USER_ID || !Object.keys(USERS).filter(k => k !== '_demo').length) {
+      await _autoRestoreFromFirebase();
+    } else {
+      renderConfigTab();
+    }
   } catch(er) { showToast('❌ ' + er.message); }
 });
 
