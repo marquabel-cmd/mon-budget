@@ -6374,30 +6374,6 @@ let _alThrottle = 0;
   document.addEventListener(ev, () => { const n = Date.now(); if (n - _alThrottle > 10000) { _alThrottle = n; resetAutoLock(); } }, { passive: true })
 );
 
-// ── Pause du timer quand l'écran s'éteint / l'app passe en arrière-plan ──
-let _hiddenAt = 0;
-document.addEventListener('visibilitychange', () => {
-  if (!CURRENT_USER_ID || CURRENT_USER_ID === '_demo') return;
-  if (localStorage.getItem('budget_autolock_off_' + CURRENT_USER_ID) === '1') return;
-  if (document.hidden) {
-    // App cachée : on coupe les timers et on note l'heure
-    _hiddenAt = Date.now();
-    clearTimeout(_autoLockTimer);
-    clearTimeout(_autoLockWarnTimer);
-    _autoLockTimer = _autoLockWarnTimer = null;
-  } else {
-    // App visible à nouveau : si > 20 min se sont écoulées → déconnecter
-    if (_hiddenAt && Date.now() - _hiddenAt >= AUTO_LOCK_MS) {
-      _autoDisconnectNow();
-    } else {
-      // Sinon repartir avec un timer frais
-      resetAutoLock();
-    }
-    _hiddenAt = 0;
-  }
-});
-);
-
 // ── SYNC TEMPS RÉEL (Firebase EventSource) ──
 let _realtimeSource = null;
 let _lastPushTime = 0;
@@ -8836,7 +8812,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.69';
+const APP_VERSION = '12.68';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10707,12 +10683,6 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
-  '12.69': {
-    date: 'Juin 2026',
-    items: [
-      { icon: '📱', text: 'Fix mobile : le timer de déconnexion automatique se met en pause quand l\'écran s\'éteint ou que l\'app passe en arrière-plan — plus de retour inopiné à l\'accueil.' }
-    ]
-  },
   '12.68': {
     date: 'Juin 2026',
     items: [
