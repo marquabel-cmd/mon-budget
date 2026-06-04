@@ -2134,6 +2134,34 @@ function initUsers() {
         if (_ob) _ob.style.display = 'none';
         if (_ws) { _ws.style.transition = 'none'; _ws.style.opacity = '1'; _ws.style.display = 'none'; }
         doLogin(pvId);
+        // Inject devpreview helpers after render
+        setTimeout(() => {
+          // Rendre les scrollbars visibles (override scrollbar-width:none du CSS mobile)
+          const s = document.createElement('style');
+          s.textContent = `
+            .section-body,.vdetrow-wrap,.summary-wrap {
+              scrollbar-width: thin !important;
+            }
+            .section-body::-webkit-scrollbar,
+            .vdetrow-wrap::-webkit-scrollbar,
+            .summary-wrap::-webkit-scrollbar { height:6px !important; display:block !important; }
+            .section-body::-webkit-scrollbar-track,
+            .vdetrow-wrap::-webkit-scrollbar-track,
+            .summary-wrap::-webkit-scrollbar-track { background:rgba(255,255,255,.06); border-radius:3px; }
+            .section-body::-webkit-scrollbar-thumb,
+            .vdetrow-wrap::-webkit-scrollbar-thumb,
+            .summary-wrap::-webkit-scrollbar-thumb { background:rgba(255,255,255,.35); border-radius:3px; }
+          `;
+          document.head.appendChild(s);
+          // Molette verticale → scroll horizontal sur les tableaux mensuels
+          document.addEventListener('wheel', (e) => {
+            const el = e.target.closest('.section-body,.vdetrow-wrap,.summary-wrap');
+            if (el && el.scrollWidth > el.clientWidth + 4) {
+              e.preventDefault();
+              el.scrollLeft += e.deltaY * 1.5;
+            }
+          }, { passive: false });
+        }, 300);
         return;
       }
     }
@@ -8784,7 +8812,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.67';
+const APP_VERSION = '12.68';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10655,6 +10683,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.68': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🖱️', text: 'Dev Preview : scroll horizontal activé à la molette dans les tableaux mensuels + scrollbars visibles pour naviguer entre les mois.' }
+    ]
+  },
   '12.67': {
     date: 'Juin 2026',
     items: [
