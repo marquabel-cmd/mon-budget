@@ -6337,6 +6337,7 @@ function applyRealtimeData(d) {
       else if (!USERS[id].pin) Object.assign(USERS[id], { name: u.name, color: u.color });
     });
     saveUsers();
+    localStorage.setItem('budget_known_userids', JSON.stringify(Object.keys(USERS).filter(id => id !== '_demo')));
   }
   // Refuser des données vides si on a des données locales valides
   if (!_hasYearData(budgetData)) { showToast(t('toast.sync_ignored')); return; }
@@ -8656,8 +8657,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.37';
-const SW_VERSION = 'v248';
+const APP_VERSION = '12.38';
+const SW_VERSION = 'v249';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
