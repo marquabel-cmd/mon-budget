@@ -6065,6 +6065,7 @@ function setCloudStatus(s, errMsg) {
       syncEl.textContent = '· ' + fmt;
       syncEl.style.display = '';
     }
+    if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
   }
 }
 function _schedSyncRetry(delaySec) {
@@ -8658,8 +8659,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.39';
-const SW_VERSION = 'v250';
+const APP_VERSION = '12.40';
+const SW_VERSION = 'v251';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
