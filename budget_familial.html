@@ -8659,8 +8659,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.43';
-const SW_VERSION = 'v254';
+const APP_VERSION = '12.44';
+const SW_VERSION = 'v255';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13661,6 +13661,8 @@ async function gistTest() {
     if (res.ok) {
       const user = await res.json();
       localStorage.setItem(gistTokenKey(), token);
+      // Restaurer le Gist ID depuis Firebase si absent localement
+      if (!getGistId()) await _refreshGistTokenFromCloud();
       setGistStatus('ok', `Connecté en tant que @${user.login} ✅`);
       renderConfigTab();
       showToast(`✅ Token valide — @${user.login}`);
