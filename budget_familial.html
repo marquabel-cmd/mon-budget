@@ -1153,7 +1153,7 @@ body.auth-locked #context-banner {
     <div class="welcome-add-panel" id="welcome-add-panel">
       <div id="wizard-content"></div>
     </div>
-    <button id="welcome-disconnect-btn" onclick="disconnectSession()" style="margin-top:18px;background:none;border:none;color:rgba(255,255,255,.35);font-size:12px;cursor:pointer;display:none">⏻ Se déconnecter</button>
+    <button id="welcome-disconnect-btn" onclick="disconnectSession()" style="margin-top:18px;background:none;border:none;color:rgba(255,255,255,.35);font-size:12px;cursor:pointer;display:none;align-items:center;gap:5px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> Se déconnecter</button>
   </div>
 </div>
 
@@ -1492,7 +1492,7 @@ body.auth-locked #context-banner {
       <span class="user-dot" id="user-dot" style="width:10px;height:10px;border-radius:50%;background:#1a6fc4;display:inline-block;flex-shrink:0"></span>
       <span id="user-name-display">–</span>
     </div>
-    <button onclick="disconnectSession()" title="Se déconnecter" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:16px;cursor:pointer;padding:4px 6px;line-height:1;border-radius:6px;transition:color .15s;font-family:sans-serif" onmouseover="this.style.color='rgba(255,255,255,.9)'" onmouseout="this.style.color='rgba(255,255,255,.45)'">⏻</button>
+    <button onclick="disconnectSession()" title="Se déconnecter" style="background:none;border:none;color:rgba(255,255,255,.45);cursor:pointer;padding:4px 6px;line-height:1;border-radius:6px;transition:color .15s;display:inline-flex;align-items:center" onmouseover="this.style.color='rgba(255,255,255,.9)'" onmouseout="this.style.color='rgba(255,255,255,.45)'"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></button>
     <button id="dev-preview-btn" onclick="_devPreviewOpen()" title="Dev Preview — Aperçu mobile/tablette" style="display:none;background:rgba(91,106,240,.18);border:1px solid rgba(91,106,240,.4);color:#8b9cf7;font-size:10px;font-weight:800;cursor:pointer;padding:3px 8px;line-height:1.6;border-radius:6px;font-family:monospace;letter-spacing:.06em" onmouseover="this.style.background='rgba(91,106,240,.38)'" onmouseout="this.style.background='rgba(91,106,240,.18)'">DEV</button>
     <div class="header-btns">
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
@@ -2254,7 +2254,7 @@ function initUsers() {
   renderWelcomeScreen();
   // Session guard : navigateur rouvert après fermeture/arrêt/coupure → PIN direct
   const _sgUser = localStorage.getItem('budget_current_user');
-  if (_sgUser && !sessionStorage.getItem('budget_session_active') && USERS[_sgUser]?.pin && _sgUser !== '_demo') {
+  if (_sgUser && !_hasValidSession() && USERS[_sgUser]?.pin && _sgUser !== '_demo') {
     setTimeout(() => showPinOverlay(_sgUser, 'login'), 300);
   }
 }
@@ -2407,12 +2407,18 @@ function renderWelcomeScreen() {
   }
 }
 let _pinTarget = null, _pinMode = 'login', _pinFirst = null;
+// Session valide si : sessionStorage actif OU timestamp localStorage < 1h (reload page, photo, etc.)
+function _hasValidSession() {
+  if (sessionStorage.getItem('budget_session_active')) return true;
+  const ts = parseInt(localStorage.getItem('budget_session_ts') || '0');
+  return ts > 0 && (Date.now() - ts) < 3600000;
+}
 function selectUserFromWelcome(id) {
   if (!USERS[id]) return;
   if (USERS[id].pin) {
     showPinOverlay(id, 'login');
-  } else if (!sessionStorage.getItem('budget_session_active') && _fbLoad()) {
-    showToast('⏻ Session expirée — reconnectez-vous avec Google');
+  } else if (!_hasValidSession() && _fbLoad()) {
+    showToast('Session expirée — reconnectez-vous avec Google');
     openAuthModal('login');
   } else {
     doLogin(id);
@@ -2501,6 +2507,7 @@ function doLogin(id) {
   CURRENT_USER_ID = id;
   localStorage.setItem('budget_current_user', id);
   sessionStorage.setItem('budget_session_active', id);
+  localStorage.setItem('budget_session_ts', String(Date.now()));
   // Si localStorage vide → essayer OPFS d'abord (async), puis charger
   const hasLocal = !!localStorage.getItem(dataKey());
   if (!hasLocal && _opfsSupported) {
@@ -6329,7 +6336,7 @@ function resetAutoLock() {
   if (localStorage.getItem('budget_autolock_off_' + CURRENT_USER_ID) === '1') return;
   clearTimeout(_autoLockTimer);
   clearTimeout(_autoLockWarnTimer);
-  _autoLockWarnTimer = setTimeout(() => showToast('⏻ Déconnexion automatique dans 1 minute…'), AUTO_LOCK_WARN_MS);
+  _autoLockWarnTimer = setTimeout(() => showToast('Déconnexion automatique dans 1 minute…'), AUTO_LOCK_WARN_MS);
   _autoLockTimer     = setTimeout(_autoDisconnectNow, AUTO_LOCK_MS);
 }
 function stopAutoLock() {
@@ -6345,7 +6352,7 @@ function toggleAutoLock(enabled) {
     localStorage.setItem('budget_autolock_off_' + CURRENT_USER_ID, '1');
     stopAutoLock();
   }
-  showToast(enabled ? '⏻ Déconnexion automatique activée (20 min)' : '⏻ Déconnexion automatique désactivée');
+  showToast(enabled ? 'Déconnexion automatique activée (20 min)' : 'Déconnexion automatique désactivée');
 }
 function lockScreen() {
   stopAutoLock();
@@ -7732,7 +7739,7 @@ function renderConfigTab() {
       <div class="config-card"><h3>${t('cfg.users')}</h3>${userList}
         <div class="add-user-form">
           <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="openUserWizardFromConfig()">＋ ${t('cfg.add_user')}</button>
-          <button class="btn" style="padding:5px 12px;font-size:12px;background:#fff8f0;color:#c0392b;border:1px solid #e67e22" onclick="disconnectSession()">⏻ Se déconnecter</button>
+          <button class="btn" style="padding:5px 12px;font-size:12px;background:#fff8f0;color:#c0392b;border:1px solid #e67e22;display:inline-flex;align-items:center;gap:5px" onclick="disconnectSession()"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> Se déconnecter</button>
         </div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>${t('cfg.pin_title')} — ${USERS[CURRENT_USER_ID]?.name||''}</h3>
@@ -7745,7 +7752,7 @@ function renderConfigTab() {
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
             <input type="checkbox" id="autolock-toggle" ${localStorage.getItem('budget_autolock_off_'+CURRENT_USER_ID)==='1'?'':'checked'}
               onchange="toggleAutoLock(this.checked)" style="width:16px;height:16px;cursor:pointer">
-            ⏻ Déconnexion automatique après 20 min d'inactivité
+            ↪ Déconnexion automatique après 20 min d'inactivité
           </label>
         </div>
       </div>
@@ -8548,6 +8555,7 @@ async function _autoRestoreFromFirebase() {
   localStorage.setItem('budget_current_user', id);
   localStorage.setItem('mbudget-fb-localid', id);
   sessionStorage.setItem('budget_session_active', id);
+  localStorage.setItem('budget_session_ts', String(Date.now()));
   // Utilisateur existant — ne pas relancer le tour guidé
   localStorage.setItem('budget_tour_done_' + id, '1');
   if (isPremium) {
@@ -8812,7 +8820,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.68';
+const APP_VERSION = '12.69';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10683,6 +10691,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.69': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '📱', text: 'Fix mobile : bouton déconnexion affiché correctement sur Android (SVG universel, plus de rectangle blanc).' },
+      { icon: '🔑', text: 'Fix reconnexion : la session reste valide 1h après un rechargement de page (ouverture appareil photo, interruption, etc.) — plus besoin de se reconnecter 5 fois.' }
+    ]
+  },
   '12.68': {
     date: 'Juin 2026',
     items: [
