@@ -2116,25 +2116,14 @@ let CURRENT_USER_ID = '';
 
 function initUsers() {
   // ── Mode dev preview (iframe) : chargement direct sans Firebase ──
-  if (new URLSearchParams(window.location.search).get('devpreview') === '1') {
+  if (_DEV_PREVIEW) {
     const pvRaw = localStorage.getItem('budget_users');
     const pvId  = localStorage.getItem('budget_current_user');
     if (pvRaw && pvId) {
       try { USERS = JSON.parse(pvRaw); } catch(e) { USERS = {}; }
       if (USERS[pvId]) {
-        CURRENT_USER_ID = pvId;
         sessionStorage.setItem('budget_session_active', pvId);
-        loadData();
-        document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
-        updateUserDisplay(); renderTabs();
-        getYears().forEach(y => renderYear(y));
-        renderSummary();
-        const ws = document.getElementById('welcome-screen');
-        if (ws) ws.style.display = 'none';
-        ['main-fab','ai-chat-fab','feedback-fab'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'flex'; });
-        const curY = String(new Date().getFullYear()), ys = getYears();
-        const ty = ys.includes(curY) ? curY : (ys[ys.length-1] || '');
-        if (ty) setTimeout(() => { const tabs = document.querySelectorAll('#year-tabs .tab'); const tab = [...tabs].find(t=>t.dataset.year===ty)||tabs[tabs.length-1]; if(tab) switchTab('y'+ty, tab); }, 100);
+        doLogin(pvId);
         return;
       }
     }
@@ -2485,7 +2474,7 @@ function doLogin(id) {
 
 function _finishLogin(id) {
   fbInitAuth().then(() => {
-    if (!_fbUser) { setTimeout(() => openAuthModal('login'), 700); return; }
+    if (!_fbUser) { if (!_DEV_PREVIEW) setTimeout(() => openAuthModal('login'), 700); return; }
     // Cloud sync uniquement si l'utilisateur actif est le compte Firebase (pas un autre profil local)
     let fbLocalId = localStorage.getItem('mbudget-fb-localid');
     // Premier appareil ou migration : lier automatiquement le compte courant
@@ -6359,7 +6348,7 @@ let _pullInProgress = false;  // true pendant un cloudPull — bloque tout push 
 let _pendingRealtimeData = null;
 
 async function startRealtimeSync() {
-  if (!isLicensed() || !_fbUser) return;
+  if (!isLicensed() || !_fbUser || _DEV_PREVIEW) return;
   stopRealtimeSync();
   try {
     const token = await fbGetToken();
@@ -8558,6 +8547,7 @@ async function _autoRestoreFromFirebase() {
 }
 
 async function fbInitAuth() {
+  if (_DEV_PREVIEW) return;
   const stored = _fbLoad();
   if (!stored) return;
   _fbUser = stored;
@@ -8784,7 +8774,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.62';
+const APP_VERSION = '12.63';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10655,6 +10645,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.63': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🖥️', text: 'Fix Dev Preview : les données s\'affichent correctement dans les aperçus mobile et tablette (chargement via doLogin sans Firebase).' }
+    ]
+  },
   '12.62': {
     date: 'Juin 2026',
     items: [
@@ -12230,6 +12226,7 @@ if (sessionStorage.getItem('app-updated')) {
   sessionStorage.removeItem('app-updated');
   setTimeout(() => showToast(t('toast.app_updated')), 800);
 }
+const _DEV_PREVIEW = new URLSearchParams(window.location.search).get('devpreview') === '1';
 initUsers(); // shows welcome screen; rest runs in selectUserFromWelcome
 
 // ── TRACKING VISITEURS ──
