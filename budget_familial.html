@@ -8659,8 +8659,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.45';
-const SW_VERSION = 'v256';
+const APP_VERSION = '12.46';
+const SW_VERSION = 'v257';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13661,16 +13661,27 @@ async function gistTest() {
     if (res.ok) {
       const user = await res.json();
       localStorage.setItem(gistTokenKey(), token);
-      // Restaurer le Gist ID : chercher d'abord dans Firebase, sinon parcourir les Gists GitHub
+      // Restaurer le Gist ID sans écraser le token qu'on vient de valider
       if (!getGistId()) {
-        const restoredFromCloud = await _refreshGistTokenFromCloud();
+        // 1. Essayer Firebase (Gist ID seulement)
+        try {
+          const fbToken = await fbGetToken();
+          if (fbToken) {
+            const url = cloudApiUrl();
+            if (url) {
+              const r = await _fbFetch(url, {}, fbToken);
+              if (r.ok) { const d = await r.json(); if (d?._gistId) localStorage.setItem(gistIdKey(), d._gistId); }
+            }
+          }
+        } catch {}
+        // 2. Fallback : scanner les Gists GitHub
         if (!getGistId()) {
           try {
             const gr = await fetch('https://api.github.com/gists?per_page=100', { headers: { 'Authorization': `token ${token}` } });
             if (gr.ok) {
               const gists = await gr.json();
               const found = gists.find(g => g.files?.['mon-budget.json']);
-              if (found) { localStorage.setItem(gistIdKey(), found.id); }
+              if (found) localStorage.setItem(gistIdKey(), found.id);
             }
           } catch {}
         }
