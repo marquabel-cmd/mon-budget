@@ -1138,7 +1138,7 @@ body.auth-locked #context-banner {
     <div class="welcome-add-panel" id="welcome-add-panel">
       <div id="wizard-content"></div>
     </div>
-    <button id="welcome-disconnect-btn" onclick="disconnectSession()" style="margin-top:18px;background:none;border:none;color:rgba(255,255,255,.35);font-size:12px;cursor:pointer;display:none">🚪 Se déconnecter</button>
+    <button id="welcome-disconnect-btn" onclick="disconnectSession()" style="margin-top:18px;background:none;border:none;color:rgba(255,255,255,.35);font-size:12px;cursor:pointer;display:none">⏻ Se déconnecter</button>
   </div>
 </div>
 
@@ -1477,7 +1477,7 @@ body.auth-locked #context-banner {
       <span class="user-dot" id="user-dot" style="width:10px;height:10px;border-radius:50%;background:#1a6fc4;display:inline-block;flex-shrink:0"></span>
       <span id="user-name-display">–</span>
     </div>
-    <button onclick="disconnectSession()" title="Se déconnecter" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:15px;cursor:pointer;padding:4px 5px;line-height:1;border-radius:6px;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.9)'" onmouseout="this.style.color='rgba(255,255,255,.45)'">🚪</button>
+    <button onclick="disconnectSession()" title="Se déconnecter" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:16px;cursor:pointer;padding:4px 6px;line-height:1;border-radius:6px;transition:color .15s;font-family:sans-serif" onmouseover="this.style.color='rgba(255,255,255,.9)'" onmouseout="this.style.color='rgba(255,255,255,.45)'">⏻</button>
     <div class="header-btns">
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
       <span id="last-sync-time" style="font-size:10px;color:rgba(255,255,255,0.4);white-space:nowrap;align-self:center;display:none"></span>
@@ -7643,7 +7643,7 @@ function renderConfigTab() {
       <div class="config-card"><h3>${t('cfg.users')}</h3>${userList}
         <div class="add-user-form">
           <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="openUserWizardFromConfig()">＋ ${t('cfg.add_user')}</button>
-          <button class="btn" style="padding:5px 12px;font-size:12px;background:#fff8f0;color:#c0392b;border:1px solid #e67e22" onclick="disconnectSession()">🚪 Se déconnecter</button>
+          <button class="btn" style="padding:5px 12px;font-size:12px;background:#fff8f0;color:#c0392b;border:1px solid #e67e22" onclick="disconnectSession()">⏻ Se déconnecter</button>
         </div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>${t('cfg.pin_title')} — ${USERS[CURRENT_USER_ID]?.name||''}</h3>
@@ -8721,7 +8721,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.58';
+const APP_VERSION = '12.59';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
