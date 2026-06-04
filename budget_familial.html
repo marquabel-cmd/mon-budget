@@ -1138,6 +1138,7 @@ body.auth-locked #context-banner {
     <div class="welcome-add-panel" id="welcome-add-panel">
       <div id="wizard-content"></div>
     </div>
+    <button id="welcome-disconnect-btn" onclick="disconnectSession()" style="margin-top:18px;background:none;border:none;color:rgba(255,255,255,.35);font-size:12px;cursor:pointer;display:none">🚪 Se déconnecter</button>
   </div>
 </div>
 
@@ -1476,6 +1477,7 @@ body.auth-locked #context-banner {
       <span class="user-dot" id="user-dot" style="width:10px;height:10px;border-radius:50%;background:#1a6fc4;display:inline-block;flex-shrink:0"></span>
       <span id="user-name-display">–</span>
     </div>
+    <button onclick="disconnectSession()" title="Se déconnecter" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:15px;cursor:pointer;padding:4px 5px;line-height:1;border-radius:6px;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.9)'" onmouseout="this.style.color='rgba(255,255,255,.45)'">🚪</button>
     <div class="header-btns">
       <span id="cloud-status" style="font-size:11px;font-weight:600;padding:0 4px;white-space:nowrap;align-self:center"></span>
       <span id="last-sync-time" style="font-size:10px;color:rgba(255,255,255,0.4);white-space:nowrap;align-self:center;display:none"></span>
@@ -2313,9 +2315,12 @@ function renderWelcomeScreen() {
       <div class="welcome-user-name">${_esc(u.name)}</div>
     </div>`;
   }).join('');
+  const discBtn = document.getElementById('welcome-disconnect-btn');
   if (tiles.trim()) {
     grid.innerHTML = tiles;
+    if (discBtn) discBtn.style.display = 'inline-block';
   } else {
+    if (discBtn) discBtn.style.display = 'none';
     // Aucun utilisateur local : proposer récupération
     const hasCreds = !!_fbLoad();
     grid.innerHTML = hasCreds
@@ -8712,7 +8717,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.56';
+const APP_VERSION = '12.57';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10583,6 +10588,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.57': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🚪', text: 'Bouton "Se déconnecter" accessible depuis le header (icône 🚪 à côté du nom) et depuis l\'écran de sélection utilisateur.' }
+    ]
+  },
   '12.56': {
     date: 'Juin 2026',
     items: [
