@@ -6214,6 +6214,7 @@ let _autoLockTimer = null, _autoLockWarnTimer = null;
 
 function resetAutoLock() {
   if (!CURRENT_USER_ID || CURRENT_USER_ID === '_demo') return;
+  if (localStorage.getItem('budget_autolock_off_' + CURRENT_USER_ID) === '1') return;
   clearTimeout(_autoLockTimer);
   clearTimeout(_autoLockWarnTimer);
   _autoLockWarnTimer = setTimeout(() => showToast(t('toast.auto_lock_warn')), AUTO_LOCK_WARN_MS);
@@ -6223,6 +6224,16 @@ function stopAutoLock() {
   clearTimeout(_autoLockTimer);
   clearTimeout(_autoLockWarnTimer);
   _autoLockTimer = _autoLockWarnTimer = null;
+}
+function toggleAutoLock(enabled) {
+  if (enabled) {
+    localStorage.removeItem('budget_autolock_off_' + CURRENT_USER_ID);
+    resetAutoLock();
+  } else {
+    localStorage.setItem('budget_autolock_off_' + CURRENT_USER_ID, '1');
+    stopAutoLock();
+  }
+  showToast(enabled ? '⏱ Verrouillage automatique activé' : '🔓 Verrouillage automatique désactivé');
 }
 function lockScreen() {
   stopAutoLock();
@@ -7600,6 +7611,13 @@ function renderConfigTab() {
           <button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="showPinOverlay('${CURRENT_USER_ID}','set')">${curPin?'✏️ '+t('cfg.pin_edit'):'🔒 '+t('cfg.pin_set')}</button>
           ${curPin?`<button class="btn" style="background:var(--red-light);color:var(--red);border:1px solid var(--red);padding:5px 12px;font-size:12px" onclick="removePIN()">🔓 ${t('cfg.pin_del')}</button>`:''}
         </div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="autolock-toggle" ${localStorage.getItem('budget_autolock_off_'+CURRENT_USER_ID)==='1'?'':'checked'}
+              onchange="toggleAutoLock(this.checked)" style="width:16px;height:16px;cursor:pointer">
+            ⏱ Verrouillage automatique après 10 min d'inactivité
+          </label>
+        </div>
       </div>
       <div class="config-card" style="margin-top:14px"><h3>${t('cfg.methods')}</h3>
         <div style="margin-bottom:8px">${methodList}</div>
@@ -8660,8 +8678,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.47';
-const SW_VERSION = 'v258';
+const APP_VERSION = '12.48';
+const SW_VERSION = 'v259';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
