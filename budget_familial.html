@@ -6588,9 +6588,9 @@ function disconnectSession() {
   const choice = confirm('Se déconnecter ?\n\n✅ Vos données cloud restent intactes.\nAu prochain chargement, votre session sera restaurée automatiquement.\n\nCliquez OK pour vous déconnecter, Annuler pour rester.');
   if (!choice) return;
   stopRealtimeSync();
-  // Effacer données locales MAIS garder les credentials Firebase pour l'auto-restore
+  // Effacer données locales MAIS garder les credentials Firebase (localStorage + sessionStorage) pour l'auto-restore
   Object.keys(localStorage).filter(k => k.startsWith('budget_')).forEach(k => localStorage.removeItem(k));
-  sessionStorage.clear();
+  // NE PAS effacer sessionStorage : mbudget-fb-token y est stocké et nécessaire pour _autoRestoreFromFirebase()
   setTimeout(() => location.reload(), 400);
 }
 function disconnectFull() {
@@ -8697,7 +8697,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.51';
+const APP_VERSION = '12.52';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10568,6 +10568,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.52': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🔄', text: 'Fix déconnexion : la session Firebase est maintenant correctement préservée au rechargement — vos données sont restaurées automatiquement sans aucune action.' }
+    ]
+  },
   '12.51': {
     date: 'Juin 2026',
     items: [
