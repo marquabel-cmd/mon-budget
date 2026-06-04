@@ -837,6 +837,7 @@ body.auth-locked #context-banner {
       <span style="color:rgba(255,255,255,.2)">│</span>
       <span style="font-size:11px;color:rgba(255,255,255,.4)">Lecture seule — aucune modification sauvegardée</span>
       <span style="flex:1;min-width:16px"></span>
+      <button id="dev-orient-btn" onclick="_devPreviewToggleLandscape()" style="background:rgba(91,106,240,.25);border:1px solid rgba(91,106,240,.5);color:#8b9cf7;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">⬛ Paysage</button>
       <button onclick="document.getElementById('dev-preview-modal').style.display='none'" style="background:rgba(192,57,43,.8);color:#fff;border:none;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">✕ Fermer</button>
     </div>
     <div id="dev-preview-frames" style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;justify-content:center"></div>
@@ -2123,6 +2124,11 @@ function initUsers() {
       try { USERS = JSON.parse(pvRaw); } catch(e) { USERS = {}; }
       if (USERS[pvId]) {
         sessionStorage.setItem('budget_session_active', pvId);
+        // Masquer les écrans overlay AVANT doLogin pour éviter qu'ils recouvrent les données
+        const _ob = document.getElementById('onboarding-screen');
+        const _ws = document.getElementById('welcome-screen');
+        if (_ob) _ob.style.display = 'none';
+        if (_ws) { _ws.style.transition = 'none'; _ws.style.opacity = '1'; _ws.style.display = 'none'; }
         doLogin(pvId);
         return;
       }
@@ -8774,7 +8780,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.63';
+const APP_VERSION = '12.64';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10645,6 +10651,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.64': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🖥️', text: 'Dev Preview : données affichées correctement (écran d\'accueil masqué immédiatement) + bouton Paysage pour tester l\'orientation horizontale mobile/tablette.' }
+    ]
+  },
   '12.63': {
     date: 'Juin 2026',
     items: [
@@ -12506,21 +12518,39 @@ let _adminSavedData = null, _isAdminMode = false, _adminLabel = '';
 function _isFbAdmin() { return _fbUser?.uid === ADMIN_UID; }
 
 // ── DEV PREVIEW ──
+let _devPreviewLandscape = false;
 function _devPreviewOpen() {
   if (!_isFbAdmin()) return;
-  const modal  = document.getElementById('dev-preview-modal');
-  const frames = document.getElementById('dev-preview-frames');
+  const modal = document.getElementById('dev-preview-modal');
   modal.style.display = 'block';
-  if (frames.innerHTML) return; // déjà rendu
-  const url  = window.location.origin + window.location.pathname + '?devpreview=1';
-  const avH  = Math.max(480, window.innerHeight - 150);
-  function makeFrame(w, h, label, emoji) {
-    const scale  = Math.min(1, avH / h);
-    const fw     = Math.round(w * scale);
-    const fh     = Math.round(h * scale);
-    const radius = w < 500 ? 36 : 20;
+  _devPreviewRender();
+}
+function _devPreviewToggleLandscape() {
+  _devPreviewLandscape = !_devPreviewLandscape;
+  const btn = document.getElementById('dev-orient-btn');
+  if (btn) btn.textContent = _devPreviewLandscape ? '⬜ Portrait' : '⬛ Paysage';
+  _devPreviewRender();
+}
+function _devPreviewRender() {
+  const frames = document.getElementById('dev-preview-frames');
+  if (!frames) return;
+  frames.innerHTML = ''; // toujours recharger
+  const url = window.location.origin + window.location.pathname + '?devpreview=1&t=' + Date.now();
+  const avH = Math.max(480, window.innerHeight - 160);
+  const avW = Math.max(320, (window.innerWidth - 100) / 2);
+  function makeFrame(pw, ph, label, emoji) {
+    const w = _devPreviewLandscape ? ph : pw;
+    const h = _devPreviewLandscape ? pw : ph;
+    const scaleH = avH / h;
+    const scaleW = avW / w;
+    const scale  = Math.min(1, scaleH, scaleW);
+    const fw = Math.round(w * scale);
+    const fh = Math.round(h * scale);
+    const radius = Math.min(pw, ph) < 500 ? 28 : 16;
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:10px">
-      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8)">${emoji} ${label} <span style="color:rgba(255,255,255,.35);font-size:11px;font-weight:400">${w} × ${h} px</span></div>
+      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8)">${emoji} ${label}
+        <span style="color:rgba(255,255,255,.35);font-size:11px;font-weight:400">${w}&thinsp;×&thinsp;${h} px</span>
+      </div>
       <div style="width:${fw}px;height:${fh}px;border-radius:${radius}px;overflow:hidden;
         box-shadow:0 0 0 8px #1e2235,0 0 0 10px rgba(91,106,240,.6),0 28px 72px rgba(0,0,0,.9);flex-shrink:0">
         <iframe src="${url}" width="${w}" height="${h}"
@@ -12530,8 +12560,8 @@ function _devPreviewOpen() {
     </div>`;
   }
   frames.innerHTML =
-    makeFrame(375,  812, 'Mobile — iPhone',  '📱') +
-    makeFrame(768, 1024, 'Tablette — iPad',  '📟');
+    makeFrame(375,  812, 'Mobile — iPhone', '📱') +
+    makeFrame(768, 1024, 'Tablette — iPad', '📟');
 }
 
 function adminTitleClick() {
