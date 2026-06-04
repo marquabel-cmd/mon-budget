@@ -8784,7 +8784,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.65';
+const APP_VERSION = '12.66';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10655,6 +10655,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.66': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '📱', text: 'Dev Preview : aperçu mobile mis à jour en 390×844 px (iPhone 14 / format standard 7×15 cm).' }
+    ]
+  },
   '12.65': {
     date: 'Juin 2026',
     items: [
@@ -12568,8 +12574,8 @@ function _devPreviewRender() {
     </div>`;
   }
   frames.innerHTML =
-    makeFrame(375,  812, 'Mobile — iPhone', '📱') +
-    makeFrame(768, 1024, 'Tablette — iPad', '📟');
+    makeFrame(390,  844, 'Mobile — iPhone 14', '📱') +
+    makeFrame(768, 1024, 'Tablette — iPad',   '📟');
 }
 
 function adminTitleClick() {
