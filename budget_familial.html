@@ -2251,8 +2251,15 @@ function initUsers() {
     USERS[nonDemo[0]].admin = true;
     saveUsers();
   }
+  // ── Auto-reconnexion : session < 1h et pas de PIN → login direct sans écran d'accueil ──
+  // Couvre : retour après appareil photo, rechargement PWA, coupure réseau…
+  const _autoId = localStorage.getItem('budget_current_user');
+  if (_autoId && USERS[_autoId] && !USERS[_autoId].pin && _hasValidSession() && _autoId !== '_demo') {
+    doLogin(_autoId);
+    return;
+  }
   renderWelcomeScreen();
-  // Session guard : navigateur rouvert après fermeture/arrêt/coupure → PIN direct
+  // Session guard : utilisateurs avec PIN → afficher PIN si session expirée
   const _sgUser = localStorage.getItem('budget_current_user');
   if (_sgUser && !_hasValidSession() && USERS[_sgUser]?.pin && _sgUser !== '_demo') {
     setTimeout(() => showPinOverlay(_sgUser, 'login'), 300);
@@ -8821,7 +8828,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.70';
+const APP_VERSION = '12.71';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10692,6 +10699,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.71': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '📱', text: 'Fix mobile : reconnexion automatique si la session est < 1h — plus de retour à l\'écran d\'accueil après l\'appareil photo ou tout rechargement de la PWA.' }
+    ]
+  },
   '12.70': {
     date: 'Juin 2026',
     items: [
