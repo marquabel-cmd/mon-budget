@@ -8784,7 +8784,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.66';
+const APP_VERSION = '12.67';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10655,6 +10655,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.67': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '📱', text: 'Dev Preview : aperçu mobile affiché à taille physique réelle (7×15 cm) — mesure automatique de la densité d\'écran pour un rendu 1:1 avec ton téléphone.' }
+    ]
+  },
   '12.66': {
     date: 'Juin 2026',
     items: [
@@ -12548,22 +12554,44 @@ function _devPreviewToggleLandscape() {
 function _devPreviewRender() {
   const frames = document.getElementById('dev-preview-frames');
   if (!frames) return;
-  frames.innerHTML = ''; // toujours recharger
+  frames.innerHTML = '';
   const url = window.location.origin + window.location.pathname + '?devpreview=1&t=' + Date.now();
+
+  // Mesurer les px CSS réels par centimètre sur cet écran
+  const _ruler = document.createElement('div');
+  _ruler.style.cssText = 'width:1cm;height:1cm;position:fixed;visibility:hidden;pointer-events:none';
+  document.body.appendChild(_ruler);
+  const pxPerCm = _ruler.getBoundingClientRect().width;
+  document.body.removeChild(_ruler);
+
   const avH = Math.max(480, window.innerHeight - 160);
   const avW = Math.max(320, (window.innerWidth - 100) / 2);
-  function makeFrame(pw, ph, label, emoji) {
+
+  function makeFrame(pw, ph, label, emoji, physW_cm, physH_cm) {
     const w = _devPreviewLandscape ? ph : pw;
     const h = _devPreviewLandscape ? pw : ph;
-    const scaleH = avH / h;
-    const scaleW = avW / w;
-    const scale  = Math.min(1, scaleH, scaleW);
-    const fw = Math.round(w * scale);
-    const fh = Math.round(h * scale);
+    const pcW = _devPreviewLandscape ? physH_cm : physW_cm;
+    const pcH = _devPreviewLandscape ? physW_cm : physH_cm;
+    // Si dimensions physiques fournies → taille réelle à l'écran, sinon fit disponible
+    let fw, fh, scale;
+    if (physW_cm && physH_cm) {
+      fw = Math.round(pcW * pxPerCm);
+      fh = Math.round(pcH * pxPerCm);
+      // Si ne rentre pas → réduire proportionnellement
+      const fitScale = Math.min(1, avH / fh, avW / fw);
+      fw = Math.round(fw * fitScale);
+      fh = Math.round(fh * fitScale);
+      scale = (fw / w);
+    } else {
+      scale = Math.min(1, avH / h, avW / w);
+      fw = Math.round(w * scale);
+      fh = Math.round(h * scale);
+    }
     const radius = Math.min(pw, ph) < 500 ? 28 : 16;
+    const sizeLabel = physW_cm ? `${pcW}×${pcH} cm` : `${w}×${h} px`;
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:10px">
       <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8)">${emoji} ${label}
-        <span style="color:rgba(255,255,255,.35);font-size:11px;font-weight:400">${w}&thinsp;×&thinsp;${h} px</span>
+        <span style="color:rgba(255,255,255,.35);font-size:11px;font-weight:400">${sizeLabel}</span>
       </div>
       <div style="width:${fw}px;height:${fh}px;border-radius:${radius}px;overflow:hidden;
         box-shadow:0 0 0 8px #1e2235,0 0 0 10px rgba(91,106,240,.6),0 28px 72px rgba(0,0,0,.9);flex-shrink:0">
@@ -12574,8 +12602,8 @@ function _devPreviewRender() {
     </div>`;
   }
   frames.innerHTML =
-    makeFrame(390,  844, 'Mobile — iPhone 14', '📱') +
-    makeFrame(768, 1024, 'Tablette — iPad',   '📟');
+    makeFrame(390, 844, 'Mobile — Taille réelle', '📱', 7, 15) +
+    makeFrame(768, 1024, 'Tablette — iPad',       '📟', null, null);
 }
 
 function adminTitleClick() {
