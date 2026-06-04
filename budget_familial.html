@@ -2501,6 +2501,8 @@ function _finishLogin(id) {
         const ly = (() => { const curY = String(new Date().getFullYear()); const ys = getYears(); return ys.includes(curY) ? curY : ys[ys.length-1]; })();
         if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = [...tabs].find(t=>t.dataset.year===ly)||tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
         setCloudStatus('ok');
+        // Utilisateur existant avec données cloud — ne pas relancer le tour guidé
+        localStorage.setItem('budget_tour_done_' + CURRENT_USER_ID, '1');
         if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
         startRealtimeSync();
       }).catch(() => { _pullInProgress = false; });
@@ -8456,6 +8458,8 @@ async function _autoRestoreFromFirebase() {
   CURRENT_USER_ID = id;
   localStorage.setItem('budget_current_user', id);
   localStorage.setItem('mbudget-fb-localid', id);
+  // Utilisateur existant — ne pas relancer le tour guidé
+  localStorage.setItem('budget_tour_done_' + id, '1');
   if (isPremium) {
     setCloudStatus('syncing');
     const cloudData = await cloudPull();
@@ -8717,7 +8721,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.57';
+const APP_VERSION = '12.58';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10588,6 +10592,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.58': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🗺️', text: 'Fix : le tour guidé ne s\'affiche plus pour les utilisateurs existants reconnectés via Google après déconnexion.' }
+    ]
+  },
   '12.57': {
     date: 'Juin 2026',
     items: [
