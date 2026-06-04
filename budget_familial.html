@@ -6231,17 +6231,24 @@ async function cloudPullNow() {
 }
 
 // ── AUTO-LOCK (10 min d'inactivité) ──
-const AUTO_LOCK_MS      = 10 * 60 * 1000;
-const AUTO_LOCK_WARN_MS =  9 * 60 * 1000;
+const AUTO_LOCK_MS      = 20 * 60 * 1000;
+const AUTO_LOCK_WARN_MS = 19 * 60 * 1000;
 let _autoLockTimer = null, _autoLockWarnTimer = null;
 
+function _autoDisconnectNow() {
+  // Déconnexion automatique sans confirmation (appelée après inactivité)
+  stopRealtimeSync();
+  Object.keys(localStorage).filter(k => k.startsWith('budget_') || k.startsWith('mbudget-')).forEach(k => localStorage.removeItem(k));
+  sessionStorage.clear();
+  setTimeout(() => location.reload(), 300);
+}
 function resetAutoLock() {
   if (!CURRENT_USER_ID || CURRENT_USER_ID === '_demo') return;
   if (localStorage.getItem('budget_autolock_off_' + CURRENT_USER_ID) === '1') return;
   clearTimeout(_autoLockTimer);
   clearTimeout(_autoLockWarnTimer);
-  _autoLockWarnTimer = setTimeout(() => showToast(t('toast.auto_lock_warn')), AUTO_LOCK_WARN_MS);
-  _autoLockTimer     = setTimeout(lockScreen, AUTO_LOCK_MS);
+  _autoLockWarnTimer = setTimeout(() => showToast('⏻ Déconnexion automatique dans 1 minute…'), AUTO_LOCK_WARN_MS);
+  _autoLockTimer     = setTimeout(_autoDisconnectNow, AUTO_LOCK_MS);
 }
 function stopAutoLock() {
   clearTimeout(_autoLockTimer);
@@ -6256,7 +6263,7 @@ function toggleAutoLock(enabled) {
     localStorage.setItem('budget_autolock_off_' + CURRENT_USER_ID, '1');
     stopAutoLock();
   }
-  showToast(enabled ? '⏱ Verrouillage automatique activé' : '🔓 Verrouillage automatique désactivé');
+  showToast(enabled ? '⏻ Déconnexion automatique activée (20 min)' : '⏻ Déconnexion automatique désactivée');
 }
 function lockScreen() {
   stopAutoLock();
@@ -7656,7 +7663,7 @@ function renderConfigTab() {
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
             <input type="checkbox" id="autolock-toggle" ${localStorage.getItem('budget_autolock_off_'+CURRENT_USER_ID)==='1'?'':'checked'}
               onchange="toggleAutoLock(this.checked)" style="width:16px;height:16px;cursor:pointer">
-            ⏱ Verrouillage automatique après 10 min d'inactivité
+            ⏻ Déconnexion automatique après 20 min d'inactivité
           </label>
         </div>
       </div>
@@ -8721,7 +8728,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.59';
+const APP_VERSION = '12.60';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10592,6 +10599,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.60': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '⏻', text: 'Déconnexion automatique après 20 min d\'inactivité (au lieu de verrouillage après 10 min) — efface les données locales comme le bouton "Se déconnecter".' }
+    ]
+  },
   '12.58': {
     date: 'Juin 2026',
     items: [
