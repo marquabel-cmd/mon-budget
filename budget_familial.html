@@ -8659,8 +8659,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.41';
-const SW_VERSION = 'v252';
+const APP_VERSION = '12.42';
+const SW_VERSION = 'v253';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13551,6 +13551,25 @@ function setGistStatus(s, msg) {
   txt.textContent = (msg || labels[s] || s);
 }
 
+async function _refreshGistTokenFromCloud() {
+  const url = cloudApiUrl();
+  if (!url) return false;
+  try {
+    const fbToken = await fbGetToken();
+    if (!fbToken) return false;
+    const r = await _fbFetch(url, {}, fbToken);
+    if (!r.ok) return false;
+    const d = await r.json();
+    if (d?._gistToken && d._gistToken !== getGistToken()) {
+      localStorage.setItem(gistTokenKey(), d._gistToken);
+      if (d._gistId) localStorage.setItem(gistIdKey(), d._gistId);
+      if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
+      return true;
+    }
+    return false;
+  } catch { return false; }
+}
+
 async function gistPush() {
   const token = getGistToken();
   if (!token || _compareMode || _isAdminMode) return;
@@ -13584,6 +13603,10 @@ async function gistPush() {
     if (res && res.ok) {
       localStorage.setItem(gistSyncKey(), new Date().toISOString());
       setGistStatus('ok');
+    } else if (res?.status === 401) {
+      const refreshed = await _refreshGistTokenFromCloud();
+      if (refreshed) { _gistSyncing = false; gistPush(); return; }
+      setGistStatus('error', 'Token Gist invalide — reconnectez dans Config');
     } else {
       const err = await res?.json();
       setGistStatus('error', 'Erreur ' + (res?.status||'?') + (err?.message ? ' — ' + err.message : ''));
@@ -13602,7 +13625,14 @@ async function gistPull() {
     const res = await fetch(`https://api.github.com/gists/${gistId}`, {
       headers: { 'Authorization': `token ${token}` }
     });
-    if (!res.ok) { setGistStatus('error', 'HTTP ' + res.status); return; }
+    if (!res.ok) {
+      if (res.status === 401) {
+        const refreshed = await _refreshGistTokenFromCloud();
+        if (refreshed) { gistPull(); return; }
+        setGistStatus('error', 'Token Gist invalide — reconnectez dans Config');
+      } else { setGistStatus('error', 'HTTP ' + res.status); }
+      return;
+    }
     const gist = await res.json();
     const content = gist.files?.['mon-budget.json']?.content;
     if (!content) { setGistStatus('error', 'Fichier vide dans le Gist'); return; }
