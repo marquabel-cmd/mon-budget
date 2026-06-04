@@ -2480,6 +2480,7 @@ function _finishLogin(id) {
         const ly = getYears().slice(-1)[0];
         if (!_restoreLastTab()) { if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); } }
         setCloudStatus('ok');
+        if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
         startRealtimeSync();
       }).catch(() => { _pullInProgress = false; });
     } else {
@@ -8657,8 +8658,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.38';
-const SW_VERSION = 'v249';
+const APP_VERSION = '12.39';
+const SW_VERSION = 'v250';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
