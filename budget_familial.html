@@ -8659,8 +8659,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.44';
-const SW_VERSION = 'v255';
+const APP_VERSION = '12.45';
+const SW_VERSION = 'v256';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13661,8 +13661,20 @@ async function gistTest() {
     if (res.ok) {
       const user = await res.json();
       localStorage.setItem(gistTokenKey(), token);
-      // Restaurer le Gist ID depuis Firebase si absent localement
-      if (!getGistId()) await _refreshGistTokenFromCloud();
+      // Restaurer le Gist ID : chercher d'abord dans Firebase, sinon parcourir les Gists GitHub
+      if (!getGistId()) {
+        const restoredFromCloud = await _refreshGistTokenFromCloud();
+        if (!getGistId()) {
+          try {
+            const gr = await fetch('https://api.github.com/gists?per_page=100', { headers: { 'Authorization': `token ${token}` } });
+            if (gr.ok) {
+              const gists = await gr.json();
+              const found = gists.find(g => g.files?.['mon-budget.json']);
+              if (found) { localStorage.setItem(gistIdKey(), found.id); }
+            }
+          } catch {}
+        }
+      }
       setGistStatus('ok', `Connecté en tant que @${user.login} ✅`);
       renderConfigTab();
       showToast(`✅ Token valide — @${user.login}`);
