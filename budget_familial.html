@@ -6601,22 +6601,13 @@ function goToWelcome() {
   renderWelcomeScreen();
 }
 function disconnectSession() {
-  const choice = confirm('Se déconnecter ?\n\n✅ Vos données restent sur cet appareil.\nIl vous suffira de cliquer sur votre nom pour retrouver tout.\n\nCliquez OK pour vous déconnecter.');
+  const choice = confirm('Déconnecter cet appareil ?\n\n✅ Vos données cloud restent intactes sur Firebase.\n\nPour retrouver votre compte plus tard :\ncliquez "J\'ai déjà un compte" → connexion Google.\n\nUne autre personne pourra créer son propre compte.');
   if (!choice) return;
   stopRealtimeSync();
-  _fbUser = null;
-  CURRENT_USER_ID = '';
-  localStorage.removeItem('budget_current_user');
-  // Afficher l'écran de sélection utilisateur directement, sans rechargement
-  const ws = document.getElementById('welcome-screen');
-  if (ws) ws.style.display = 'flex';
-  const ob = document.getElementById('onboarding-screen');
-  if (ob) ob.style.display = 'none';
-  const fab = document.getElementById('main-fab');
-  if (fab) fab.style.display = 'none';
-  const aiFab = document.getElementById('ai-chat-fab');
-  if (aiFab) aiFab.style.display = 'none';
-  renderWelcomeScreen();
+  // Tout effacer — autre personne peut créer son compte depuis zéro
+  Object.keys(localStorage).filter(k => k.startsWith('budget_') || k.startsWith('mbudget-')).forEach(k => localStorage.removeItem(k));
+  sessionStorage.clear();
+  setTimeout(() => location.reload(), 300);
 }
 function disconnectFull() {
   if (!confirm('Libérer cet appareil pour un autre utilisateur ?\n\nToutes vos données locales ET vos credentials seront effacés.\nVos données cloud Firebase restent intactes.')) return;
@@ -8721,7 +8712,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.54';
+const APP_VERSION = '12.55';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10592,6 +10583,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.55': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🚪', text: 'Déconnexion totale : efface toutes les données locales pour libérer l\'appareil. Pour retrouver son compte : "J\'ai déjà un compte" → connexion Google → données Firebase restaurées.' }
+    ]
+  },
   '12.54': {
     date: 'Juin 2026',
     items: [
