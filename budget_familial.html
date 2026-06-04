@@ -2185,6 +2185,11 @@ function initUsers() {
     saveUsers();
   }
   renderWelcomeScreen();
+  // Session guard : navigateur rouvert après fermeture/arrêt/coupure → PIN direct
+  const _sgUser = localStorage.getItem('budget_current_user');
+  if (_sgUser && !sessionStorage.getItem('budget_session_active') && USERS[_sgUser]?.pin && _sgUser !== '_demo') {
+    setTimeout(() => showPinOverlay(_sgUser, 'login'), 300);
+  }
 }
 
 function showOnboardingScreen() {
@@ -2337,7 +2342,14 @@ function renderWelcomeScreen() {
 let _pinTarget = null, _pinMode = 'login', _pinFirst = null;
 function selectUserFromWelcome(id) {
   if (!USERS[id]) return;
-  if (USERS[id].pin) { showPinOverlay(id, 'login'); } else { doLogin(id); }
+  if (USERS[id].pin) {
+    showPinOverlay(id, 'login');
+  } else if (!sessionStorage.getItem('budget_session_active') && _fbLoad()) {
+    showToast('⏻ Session expirée — reconnectez-vous avec Google');
+    openAuthModal('login');
+  } else {
+    doLogin(id);
+  }
 }
 function showPinOverlay(id, mode) {
   _pinTarget = id; _pinMode = mode; _pinFirst = null;
@@ -2421,6 +2433,7 @@ async function submitPin() {
 function doLogin(id) {
   CURRENT_USER_ID = id;
   localStorage.setItem('budget_current_user', id);
+  sessionStorage.setItem('budget_session_active', id);
   // Si localStorage vide → essayer OPFS d'abord (async), puis charger
   const hasLocal = !!localStorage.getItem(dataKey());
   if (!hasLocal && _opfsSupported) {
@@ -8465,6 +8478,7 @@ async function _autoRestoreFromFirebase() {
   CURRENT_USER_ID = id;
   localStorage.setItem('budget_current_user', id);
   localStorage.setItem('mbudget-fb-localid', id);
+  sessionStorage.setItem('budget_session_active', id);
   // Utilisateur existant — ne pas relancer le tour guidé
   localStorage.setItem('budget_tour_done_' + id, '1');
   if (isPremium) {
@@ -8728,7 +8742,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.60';
+const APP_VERSION = '12.61';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10599,6 +10613,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.61': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🔒', text: 'Session guard : après fermeture du navigateur, arrêt du PC ou coupure de courant, l\'accès aux données est bloqué — PIN requis (ou reconnexion Google si pas de PIN).' }
+    ]
+  },
   '12.60': {
     date: 'Juin 2026',
     items: [
