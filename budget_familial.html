@@ -2302,16 +2302,32 @@ function _applyCompareHighlights() {
 function renderWelcomeScreen() {
   const grid = document.getElementById('welcome-users-grid');
   if (!grid) return;
-  grid.innerHTML = Object.entries(USERS).map(([id,u]) => {
+  const tiles = Object.entries(USERS).map(([id,u]) => {
+    if (!u || !u.name) return '';
     const initials = u.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const avatarHtml = u.photo
       ? `<div class="welcome-avatar" style="background:none;padding:0;overflow:hidden"><img src="${u.photo}" style="width:58px;height:58px;border-radius:50%;object-fit:cover;display:block"></div>`
-      : `<div class="welcome-avatar" style="background:${u.color}">${initials}</div>`;
+      : `<div class="welcome-avatar" style="background:${u.color||'#5B6AF0'}">${initials}</div>`;
     return `<div class="welcome-user-card" onclick="selectUserFromWelcome('${id}')">
       ${avatarHtml}
       <div class="welcome-user-name">${_esc(u.name)}</div>
     </div>`;
   }).join('');
+  if (tiles.trim()) {
+    grid.innerHTML = tiles;
+  } else {
+    // Aucun utilisateur local : proposer récupération
+    const hasCreds = !!_fbLoad();
+    grid.innerHTML = hasCreds
+      ? `<div style="text-align:center;margin:8px 0 16px">
+           <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:14px">Une session précédente a été détectée.</div>
+           <button onclick="_autoRestoreFromFirebase()" style="background:#5B6AF0;color:#fff;border:none;border-radius:12px;padding:13px 0;font-size:14px;font-weight:700;cursor:pointer;width:100%;max-width:280px">🔄 Restaurer ma session</button>
+         </div>`
+      : `<div style="text-align:center;margin:8px 0 16px">
+           <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:14px">Connectez-vous pour accéder à votre budget.</div>
+           <button onclick="openAuthModal('login')" style="background:#5B6AF0;color:#fff;border:none;border-radius:12px;padding:13px 0;font-size:14px;font-weight:700;cursor:pointer;width:100%;max-width:280px">🔑 Se connecter avec Google</button>
+         </div>`;
+  }
 }
 let _pinTarget = null, _pinMode = 'login', _pinFirst = null;
 function selectUserFromWelcome(id) {
@@ -8705,7 +8721,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.53';
+const APP_VERSION = '12.54';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10576,6 +10592,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.54': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🔄', text: 'Récupération automatique : si aucun utilisateur n\'est trouvé localement, l\'écran d\'accueil propose "Restaurer ma session" (session Firebase détectée) ou "Se connecter avec Google".' }
+    ]
+  },
   '12.53': {
     date: 'Juin 2026',
     items: [
