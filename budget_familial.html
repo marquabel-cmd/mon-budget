@@ -5750,7 +5750,9 @@ async function processScannedTicket(input) {
     status.innerHTML = `✅ Ticket lu — vérifie et ajuste si besoin.${catMsg}${methodMsg}`;
     document.getElementById('qa-amount').focus();
   } catch(e) {
-    status.textContent = '❌ Échec de l\'analyse — remplis manuellement.';
+    const errMsg = e?.message || String(e) || 'erreur inconnue';
+    status.textContent = `❌ Erreur: ${errMsg}`;
+    status.style.color = '#ffb3b3';
     console.error('Scan ticket:', e);
   }
 }
@@ -8772,7 +8774,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.74';
+const APP_VERSION = '12.75';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10643,6 +10645,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.75': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '📷', text: 'Fix scan ticket : message d\'erreur affiché à l\'écran au lieu d\'un retour à l\'accueil — tu verras maintenant exactement pourquoi l\'analyse a échoué.' }
+    ]
+  },
   '12.74': {
     date: 'Juin 2026',
     items: [
