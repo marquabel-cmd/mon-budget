@@ -5659,6 +5659,7 @@ function findMethod(methods, key) {
 async function processScannedTicket(input) {
   const file = input.files[0];
   if (!file) return;
+  showToast('📷 Photo reçue — analyse en cours…');
   const status = document.getElementById('qa-scan-status');
   status.style.display = 'block';
   status.textContent = '🔍 Analyse du ticket en cours…';
@@ -5753,6 +5754,7 @@ async function processScannedTicket(input) {
     const errMsg = e?.message || String(e) || 'erreur inconnue';
     status.textContent = `❌ Erreur: ${errMsg}`;
     status.style.color = '#ffb3b3';
+    showToast(`❌ Scan échoué: ${errMsg}`);
     console.error('Scan ticket:', e);
   }
 }
