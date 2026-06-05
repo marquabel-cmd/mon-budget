@@ -2251,13 +2251,6 @@ function initUsers() {
     USERS[nonDemo[0]].admin = true;
     saveUsers();
   }
-  // ── Auto-reconnexion : session < 1h et pas de PIN → login direct sans écran d'accueil ──
-  // Couvre : retour après appareil photo, rechargement PWA, coupure réseau…
-  const _autoId = localStorage.getItem('budget_current_user');
-  if (_autoId && USERS[_autoId] && !USERS[_autoId].pin && _hasValidSession() && _autoId !== '_demo') {
-    doLogin(_autoId);
-    return;
-  }
   renderWelcomeScreen();
   // Session guard : utilisateurs avec PIN → afficher PIN si session expirée
   const _sgUser = localStorage.getItem('budget_current_user');
@@ -8779,7 +8772,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.73';
+const APP_VERSION = '12.74';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10650,6 +10643,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.74': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '➕', text: 'Fix : les 3 boutons FAB (ajout rapide, IA, suggestion) réapparaissent correctement en se reconnectant — suppression de la logique de reconnexion auto qui causait le bug.' }
+    ]
+  },
   '12.73': {
     date: 'Juin 2026',
     items: [
