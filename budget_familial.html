@@ -8850,15 +8850,26 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.78';
+const APP_VERSION = '12.79';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
+  let _updateBannerShown = false;
   function checkVersion() {
     fetch('./version.json?t=' + Date.now(), { cache: 'no-store' })
       .then(r => r.json())
-      .then(data => { if (data.v && data.v !== APP_VERSION) location.reload(true); })
+      .then(data => {
+        if (data.v && data.v !== APP_VERSION && !_updateBannerShown) {
+          _updateBannerShown = true;
+          // Ne pas recharger automatiquement — afficher une bannière non-intrusive
+          const banner = document.createElement('div');
+          banner.id = 'update-banner';
+          banner.style.cssText = 'position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;border:1px solid #8B5CF6;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4);white-space:nowrap';
+          banner.innerHTML = `✨ Mise à jour disponible <button onclick="location.reload(true)" style="background:#8B5CF6;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">Mettre à jour</button> <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:0 4px">✕</button>`;
+          document.body.appendChild(banner);
+        }
+      })
       .catch(() => {});
   }
   setInterval(checkVersion, 5 * 60 * 1000); // toutes les 5 min
@@ -10721,6 +10732,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.79': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '🔄', text: 'Mise à jour : plus de rechargement automatique en cours d\'utilisation — une bannière "Mettre à jour" s\'affiche discrètement en bas, tu choisis quand recharger.' }
+    ]
+  },
   '12.78': {
     date: 'Juin 2026',
     items: [
