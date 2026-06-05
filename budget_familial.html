@@ -2528,6 +2528,10 @@ function doLogin(id) {
 }
 
 function _finishLogin(id) {
+  // Fix Android PWA : relancer le traitement scan s'il y a un fichier en attente
+  if (location.pathname.includes('quick')) {
+    setTimeout(_processScanFromIndexedDB, 500);
+  }
   fbInitAuth().then(() => {
     if (!_fbUser) { if (!_DEV_PREVIEW) setTimeout(() => openAuthModal('login'), 700); return; }
     // Cloud sync uniquement si l'utilisateur actif est le compte Firebase (pas un autre profil local)
@@ -5669,19 +5673,106 @@ function findMethod(methods, key) {
 async function processScannedTicket(input) {
   const file = input.files[0];
   if (!file) return;
-  showToast('📷 Photo reçue — analyse en cours…');
+  // Persister le fichier en IndexedDB pour survivre aux reloads Android
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const db = await new Promise((resolve, reject) => {
+        const req = indexedDB.open('mbudget-scan', 1);
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => {
+          const d = req.result;
+          if (!d.objectStoreNames.contains('temp')) {
+            d.close();
+            const upgReq = indexedDB.open('mbudget-scan', 2);
+            upgReq.onupgradeneeded = (ev) => {
+              const db2 = ev.target.result;
+              if (!db2.objectStoreNames.contains('temp')) {
+                db2.createObjectStore('temp');
+              }
+            };
+            upgReq.onsuccess = () => resolve(upgReq.result);
+            upgReq.onerror = () => reject(upgReq.error);
+          } else {
+            resolve(d);
+          }
+        };
+      });
+      const tx = db.transaction('temp', 'readwrite');
+      const store = tx.objectStore('temp');
+      await new Promise((resolve, reject) => {
+        const req = store.put(e.target.result, 'scan-data');
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => resolve();
+      });
+      db.close();
+      showToast('📷 Photo sauvegardée — en attente d\'analyse…');
+      input.value = '';
+      // Relancer le traitement
+      _processScanFromIndexedDB();
+    } catch(err) {
+      console.error('IndexedDB save:', err);
+      _doProcessScannedTicket(e.target.result);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function _processScanFromIndexedDB() {
+  try {
+    const db = await new Promise((resolve, reject) => {
+      const req = indexedDB.open('mbudget-scan', 1);
+      req.onerror = () => reject(req.error);
+      req.onsuccess = () => resolve(req.result);
+    });
+    const tx = db.transaction('temp', 'readonly');
+    const store = tx.objectStore('temp');
+    const data = await new Promise((resolve, reject) => {
+      const req = store.get('scan-data');
+      req.onerror = () => reject(req.error);
+      req.onsuccess = () => {
+        db.close();
+        resolve(req.result);
+      };
+    });
+    if (data) {
+      const blob = new Blob([data], {type: 'image/jpeg'});
+      _doProcessScannedTicketBlob(blob);
+      // Nettoyer
+      const tx2 = (await new Promise((resolve, reject) => {
+        const req = indexedDB.open('mbudget-scan', 1);
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => resolve(req.result);
+      })).transaction('temp', 'readwrite');
+      tx2.objectStore('temp').delete('scan-data');
+    }
+  } catch(err) {
+    console.error('IndexedDB load:', err);
+  }
+}
+
+async function _doProcessScannedTicketBlob(blob) {
   const status = document.getElementById('qa-scan-status');
+  if (!status) return;
   status.style.display = 'block';
   status.textContent = '🔍 Analyse du ticket en cours…';
-  input.value = '';
   try {
-    // Convertir en base64
     const base64 = await new Promise((res, rej) => {
       const reader = new FileReader();
       reader.onload = e => res(e.target.result);
       reader.onerror = rej;
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(blob);
     });
+    _doAnalyzeTicket(base64, status);
+  } catch(e) {
+    status.textContent = `❌ Erreur: ${e?.message || 'erreur inconnue'}`;
+    status.style.color = '#ffb3b3';
+    showToast(`❌ Scan échoué: ${e?.message || 'erreur inconnue'}`);
+  }
+}
+
+async function _doAnalyzeTicket(base64, status) {
+  try {
     // Construire la liste des catégories existantes pour le prompt
     const cats = getVarCats();
     const catList = cats.map(c => `${c.icon || ''} ${c.label}`).join(', ');
