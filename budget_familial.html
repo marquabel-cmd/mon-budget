@@ -1095,6 +1095,16 @@ body.auth-locked #context-banner {
       </div>
       <input type="file" id="qa-scan-input" accept="image/*" capture="environment" style="display:none" onchange="processScannedTicket(this)">
       <button type="button" onclick="document.getElementById('qa-scan-input').click()" style="width:100%;padding:9px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">📷 Scanner un ticket</button>
+      <script>
+        // Fix Android PWA : quand on revient de la caméra, onchange ne se déclenche pas
+        // Vérifier si le file input a un fichier et l'analyser automatiquement
+        window.addEventListener('focus', () => {
+          const inp = document.getElementById('qa-scan-input');
+          if (inp && inp.files && inp.files.length > 0 && inp.files[0]) {
+            setTimeout(() => processScannedTicket(inp), 100);
+          }
+        });
+      </script>
       <div id="qa-scan-status" style="display:none;font-size:12px;text-align:center;padding:4px 0;color:var(--gray)"></div>
       <div id="qa-error" style="color:var(--red);font-size:12px;font-weight:600;min-height:16px"></div>
       <button id="qa-submit-btn" data-i18n="btn.add" onclick="submitQuickAdd()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--blue),#2980b9);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:2px">✅ Ajouter</button>
@@ -8776,7 +8786,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.75';
+const APP_VERSION = '12.76';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10647,6 +10657,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.76': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '📷', text: 'Fix Android PWA : scan de ticket fonctionne maintenant — la caméra peut relancer l\'app, on la récupère avec un listener focus.' }
+    ]
+  },
   '12.75': {
     date: 'Juin 2026',
     items: [
