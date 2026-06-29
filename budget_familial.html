@@ -2589,6 +2589,8 @@ function _finishLogin(id) {
           DATA = _mergeBudgetData(DATA, cloudData);
         }
         if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+        _syncIdCounter();
+        _fixDuplicateIds(); // réparer les collisions d'IDs après fusion cloud/local
         // Repousser si : local plus récent, ou tx locales réinjectées
         if (_localIsNewer || _countAllTx(DATA) > _cloudTxCount) {
           // Si cloud gagne mais des tx locales ont été réinjectées, conserver le timestamp cloud
@@ -6518,7 +6520,8 @@ function applyRealtimeData(d) {
   const _beforeMergeTx = _countAllTx(DATA);
   DATA = _mergeBudgetData(DATA, budgetData);
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
-  _syncIdCounter(); // s'assurer que _id est au-dessus du max
+  _syncIdCounter();
+  _fixDuplicateIds(); // réparer les collisions d'IDs après fusion temps réel
   const _dupsRemoved = _deduplicateTransactions(); // supprimer les doublons de contenu issus du merge
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
   // Repousser vers Firebase si des tx locales ont été réinjectées OU si des doublons ont été nettoyés
@@ -8850,7 +8853,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.79';
+const APP_VERSION = '12.80';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10732,6 +10735,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.80': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '✏️', text: 'Fix bouton modifier : _fixDuplicateIds() appelé après chaque fusion cloud — plus de collisions d\'IDs qui ouvraient la mauvaise dépense.' }
+    ]
+  },
   '12.79': {
     date: 'Juin 2026',
     items: [
