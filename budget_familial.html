@@ -374,7 +374,12 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .occ-row td.lbl-col::before{content:'📌 ';font-size:10px}
 
 /* Cell with paid toggle */
-.cell-wrap{display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 0}
+.cell-wrap{display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 0;position:relative}
+.cell-note-dot{position:absolute;top:2px;right:2px;width:7px;height:7px;background:#8B5CF6;border-radius:50%;cursor:pointer;flex-shrink:0;z-index:1}
+.cell-note-dot:hover{background:#7C3AED;transform:scale(1.3)}
+.cell-note-add{position:absolute;top:1px;right:1px;width:10px;height:10px;opacity:0;cursor:pointer;font-size:9px;line-height:10px;text-align:center;color:var(--gray);transition:opacity .15s}
+.cell-note-add::before{content:'✎'}
+td:hover .cell-note-add{opacity:0.45}
 .cell-amt{width:100%;border:none;background:transparent;text-align:right;font-size:12px;font-family:Arial,sans-serif;color:var(--text);outline:none;padding:1px 4px;border-radius:3px}
 .cell-amt:focus{background:var(--blue-light);box-shadow:0 0 0 2px var(--blue)}
 .cell-amt.neg{color:var(--red)}
@@ -4428,12 +4433,18 @@ function renderRevSection(year) {
     const tot = sum(r.v);
     const cells = r.v.map((v,mi) => {
       const paid = r.paid[mi];
+      const noteVal = r.notes?.[mi] || '';
+      const noteBadge = noteVal
+        ? `<span class="cell-note-dot" title="${_esc(noteVal)}" onclick="event.stopPropagation();openCellNote('revenus','${year}',${ri},${mi})"></span>`
+        : `<span class="cell-note-add" onclick="event.stopPropagation();openCellNote('revenus','${year}',${ri},${mi})"></span>`;
       return `<td id="rc-${year}-${ri}-${mi}" class="${paid?'is-paid':''}" onclick="toggleRevPaid('${year}',${ri},${mi})">
-        <span class="paid-dot">${paid?'✓':'○'}</span>
-        <input class="cell-amt${v<0?' neg':''}" type="number" step="0.01" value="${v}"
-          onfocus="this.select();this.dataset.prev=this.value" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
-          oninput="DATA['${year}'].revenus[${ri}].v[${mi}]=+this.value;refreshRevTotals('${year}');dSave()"
-          onblur="proposePropagate(this,'${year}','revenus',${ri},${mi})" onclick="event.stopPropagation()"></td>`;
+        <div class="cell-wrap">
+          <span class="paid-dot">${paid?'✓':'○'}</span>
+          <input class="cell-amt${v<0?' neg':''}" type="number" step="0.01" value="${v}"
+            onfocus="this.select();this.dataset.prev=this.value" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
+            oninput="DATA['${year}'].revenus[${ri}].v[${mi}]=+this.value;refreshRevTotals('${year}');dSave()"
+            onblur="proposePropagate(this,'${year}','revenus',${ri},${mi})" onclick="event.stopPropagation()">${noteBadge}
+        </div></td>`;
     }).join('');
     const isProtectedRev = r.cat === 'boite_dep' || r.cat === 'depot_banc';
     return `<tr><td class="lbl-col"><div class="lbl-inner">
@@ -4528,13 +4539,17 @@ function renderChargeSection(year) {
     const rowTot = sum(r.v);
     const cells = r.v.map((v,mi) => {
       const paid = r.paid[mi];
+      const noteVal = r.notes?.[mi] || '';
+      const noteBadge = noteVal
+        ? `<span class="cell-note-dot" title="${_esc(noteVal)}" onclick="event.stopPropagation();openCellNote('charges','${year}',${ri},${mi})"></span>`
+        : `<span class="cell-note-add" onclick="event.stopPropagation();openCellNote('charges','${year}',${ri},${mi})"></span>`;
       return `<td id="cc-${year}-${ri}-${mi}" class="${paid?'is-paid':''}" onclick="togglePaid('${year}',${ri},${mi})">
         <div class="cell-wrap">
           <input class="cell-amt${v<0?' neg':''}" type="number" step="0.01" value="${v}"
             onfocus="this.select();this.dataset.prev=this.value" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();this.blur()}"
             oninput="updateCharge('${year}',${ri},${mi},this)"
             onblur="proposePropagate(this,'${year}','charges',${ri},${mi})" onclick="event.stopPropagation()">
-          <span class="paid-dot">✓</span>
+          <span class="paid-dot">✓</span>${noteBadge}
         </div></td>`;
     }).join('');
     const isLivretRow = r.cat==='livret_in'||r.cat==='livret_out';
@@ -4839,6 +4854,77 @@ function submitAddRow() {
   dSave();
   document.getElementById('add-row-modal').style.display = 'none';
   showToast(t('toast.row_added').replace('{0}', label));
+}
+
+// ── NOTES SUR CELLULES MENSUELLES ──
+let _cellNoteTarget = null;
+function openCellNote(section, year, ri, mi) {
+  closeCellNote();
+  const rows = section === 'charges' ? DATA[year]?.charges : DATA[year]?.revenus;
+  const row = rows?.[ri];
+  if (!row) return;
+  const existing = row.notes?.[mi] || '';
+  const tdId = section === 'charges' ? `cc-${year}-${ri}-${mi}` : `rc-${year}-${ri}-${mi}`;
+  const td = document.getElementById(tdId);
+  if (!td) return;
+  const rect = td.getBoundingClientRect();
+  const popup = document.createElement('div');
+  popup.id = 'cell-note-popup';
+  const left = Math.max(4, Math.min(rect.left, window.innerWidth - 230));
+  const top  = rect.bottom + window.scrollY + 4;
+  popup.style.cssText = `position:fixed;z-index:10000;background:var(--surface);border:1px solid #8B5CF6;border-radius:10px;padding:10px;box-shadow:0 4px 20px rgba(0,0,0,.4);width:220px;top:${rect.bottom+4}px;left:${left}px`;
+  const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  popup.innerHTML = `
+    <div style="font-size:11px;color:var(--gray);margin-bottom:6px;font-weight:600">📝 Note — ${months[mi]}</div>
+    <textarea id="cell-note-input" rows="3" style="width:100%;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;padding:6px;box-sizing:border-box;resize:none;outline:none" placeholder="Ex: inclut abonnement, achat exceptionnel…">${_esc(existing)}</textarea>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button onclick="saveCellNote('${section}','${year}',${ri},${mi})" style="flex:1;padding:6px;background:#8B5CF6;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">✓ Sauver</button>
+      ${existing ? `<button onclick="saveCellNote('${section}','${year}',${ri},${mi},true)" style="padding:6px 10px;background:rgba(220,50,50,.12);color:#e55;border:1px solid #e55;border-radius:6px;font-size:12px;cursor:pointer" title="Supprimer la note">🗑️</button>` : ''}
+      <button onclick="closeCellNote()" style="padding:6px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--gray);cursor:pointer">✕</button>
+    </div>`;
+  document.body.appendChild(popup);
+  _cellNoteTarget = {section, year, ri, mi};
+  const inp = document.getElementById('cell-note-input');
+  inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveCellNote(section, year, ri, mi); } if (e.key === 'Escape') closeCellNote(); });
+  setTimeout(() => document.addEventListener('mousedown', _cellNoteOutside), 0);
+}
+function _cellNoteOutside(e) {
+  const p = document.getElementById('cell-note-popup');
+  if (p && !p.contains(e.target)) { closeCellNote(); }
+  else if (p) document.addEventListener('mousedown', _cellNoteOutside, { once: true });
+}
+function saveCellNote(section, year, ri, mi, clear = false) {
+  const rows = section === 'charges' ? DATA[year]?.charges : DATA[year]?.revenus;
+  const row = rows?.[ri];
+  if (!row) return;
+  if (!row.notes) row.notes = Array(12).fill('');
+  const text = clear ? '' : (document.getElementById('cell-note-input')?.value?.trim() || '');
+  row.notes[mi] = text;
+  dSave();
+  // Mettre à jour le badge sans re-render
+  const tdId = section === 'charges' ? `cc-${year}-${ri}-${mi}` : `rc-${year}-${ri}-${mi}`;
+  const td = document.getElementById(tdId);
+  if (td) {
+    td.querySelectorAll('.cell-note-dot,.cell-note-add').forEach(el => el.remove());
+    const span = document.createElement('span');
+    if (text) {
+      span.className = 'cell-note-dot';
+      span.title = text;
+      span.onclick = e => { e.stopPropagation(); openCellNote(section, year, ri, mi); };
+    } else {
+      span.className = 'cell-note-add';
+      span.onclick = e => { e.stopPropagation(); openCellNote(section, year, ri, mi); };
+    }
+    td.querySelector('.cell-wrap')?.appendChild(span);
+  }
+  closeCellNote();
+  showToast(clear ? '🗑️ Note supprimée' : '📝 Note sauvegardée');
+}
+function closeCellNote() {
+  document.getElementById('cell-note-popup')?.remove();
+  document.removeEventListener('mousedown', _cellNoteOutside);
+  _cellNoteTarget = null;
 }
 
 // ── PROPAGATION ──
@@ -8853,7 +8939,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.80';
+const APP_VERSION = '12.81';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10735,6 +10821,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.81': {
+    date: 'Juin 2026',
+    items: [
+      { icon: '📝', text: 'Notes sur montants mensuels : badge violet discret sur les cellules avec note (charges et revenus). Survol = tooltip, clic = mini popup pour lire/écrire/supprimer.' }
+    ]
+  },
   '12.80': {
     date: 'Juin 2026',
     items: [
