@@ -3009,15 +3009,37 @@ function _mergeBudgetData(local, cloud) {
         if (allCloudIds.has(t.id) || deletedIds.has(t.id)) return false;
         // Ne pas réinjecter si une tx sémantiquement identique existe déjà dans N'IMPORTE QUELLE catégorie cloud
         // (couvre le cas d'une tx déplacée d'une catégorie vers une autre)
+        // Vérifier aussi la date pour éviter les faux positifs (dépenses identiques à des jours différents)
         const hasTwin = allCloudTxs.some(ct =>
-          ct.amount === t.amount && ct.month === t.month && (ct.comment || '') === (t.comment || '')
+          ct.amount === t.amount && ct.month === t.month &&
+          (ct.comment || '') === (t.comment || '') &&
+          (ct.date || '') === (t.date || '')
         );
         return !hasTwin;
       });
       if (missing.length) { result[yr].vars[cat].push(...missing); rescued += missing.length; }
     });
   });
+  // Préserver les modifications locales sur des tx déjà présentes dans le cloud
+  // Cas : l'utilisateur vient d'éditer une tx et le sync temps réel arrive juste après
+  let edited = 0;
+  Object.keys(local).forEach(yr => {
+    if (!/^\d{4}$/.test(yr) || !local[yr]?.vars || !result[yr]?.vars) return;
+    Object.keys(local[yr].vars).forEach(cat => {
+      if (!Array.isArray(local[yr].vars[cat]) || !Array.isArray(result[yr].vars[cat])) return;
+      local[yr].vars[cat].forEach(localTx => {
+        if (deletedIds.has(localTx.id)) return;
+        const idx = result[yr].vars[cat].findIndex(ct => ct.id === localTx.id);
+        if (idx < 0) return;
+        if (JSON.stringify(result[yr].vars[cat][idx]) !== JSON.stringify(localTx)) {
+          result[yr].vars[cat][idx] = { ...localTx };
+          edited++;
+        }
+      });
+    });
+  });
   if (rescued > 0) { console.warn(`🛡️ Fusion : ${rescued} tx locale(s) réinjectée(s) (absentes du cloud, non supprimées)`); showToast(t('toast.local_tx_preserved').replace('{0}', rescued)); }
+  if (edited > 0) console.info(`🛡️ Fusion : ${edited} tx locale(s) préservée(s) (éditées localement, non encore synchronisées)`);
   return result;
 }
 // Crée un backup avant remplacement cloud — max 1 par heure, 5 au total
@@ -8947,7 +8969,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.82';
+const APP_VERSION = '12.83';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
