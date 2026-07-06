@@ -6636,10 +6636,18 @@ function applyRealtimeData(d) {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && isLicensed() && _fbUser) {
     if (!_realtimeSource) startRealtimeSync();
-    // Pousser les données locales non synchronisées si l'onglet reprend le focus
-    // (jamais pendant un pull en cours — évite la race condition push-avant-pull)
     if (_cloudDirty && !_pullInProgress && cloudApiUrl() && _hasYearData(DATA)) setTimeout(() => cloudPush(), 1000);
   }
+  // Sur mobile Android, beforeunload ne se déclenche pas quand l'app est tuée.
+  // visibilitychange:hidden est le seul événement fiable → forcer save + push immédiat.
+  if (document.visibilityState === 'hidden' && _hasYearData(DATA)) {
+    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; saveData(true); }
+    if (_cloudDirty && !_pullInProgress && cloudApiUrl()) cloudPush();
+  }
+});
+window.addEventListener('pagehide', () => {
+  // Filet de sécurité supplémentaire (iOS Safari + Android Chrome PWA)
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; saveData(true); }
 });
 window.addEventListener('online',  () => { if (isLicensed() && _fbUser && !_realtimeSource) startRealtimeSync(); });
 window.addEventListener('offline', () => stopRealtimeSync());
@@ -6648,7 +6656,7 @@ window.addEventListener('beforeunload', () => { if (_saveTimer) { clearTimeout(_
 
 // ── SAVE / RESET / EXPORT ──
 let _saveTimer;
-function dSave() { clearTimeout(_saveTimer); _saveTimer = setTimeout(() => saveData(true), 1500); }
+function dSave() { clearTimeout(_saveTimer); _saveTimer = setTimeout(() => saveData(true), 500); }
 function saveData(silent = false) {
   if (_compareMode || _isAdminMode) return;
   if (!_hasYearData(DATA)) return; // Ne jamais sauvegarder des données vides
@@ -8939,7 +8947,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.81';
+const APP_VERSION = '12.82';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -10821,6 +10829,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '12.82': {
+    date: 'Juillet 2026',
+    items: [
+      { icon: '💾', text: 'Fix perte de données sur mobile : sauvegarde immédiate + push cloud déclenchés dès que l\'app passe en arrière-plan (visibilitychange:hidden + pagehide). Plus de perte si l\'app est tuée rapidement.' },
+      { icon: '⚡', text: 'Debounce sauvegarde réduit de 1.5s à 0.5s — les données sont écrites en localStorage plus rapidement après chaque saisie.' }
+    ]
+  },
   '12.81': {
     date: 'Juin 2026',
     items: [
