@@ -8584,7 +8584,8 @@ async function _fbRefreshToken() {
 async function fbGetToken() {
   let u = _fbUser || _fbLoad();
   if (!u) return null;
-  if (Date.now() > u.expiresAt - 120000) u = await _fbRefreshToken();
+  // Refresh si token expiré OU si idToken absent (sessionStorage vidé au redémarrage PWA)
+  if (!u.idToken || Date.now() > u.expiresAt - 120000) u = await _fbRefreshToken();
   return u?.idToken || null;
 }
 function _fbErrMsg(code='') {
@@ -8688,7 +8689,7 @@ async function _autoRestoreFromFirebase() {
     const stored = _fbLoad();
     if (!stored) { showOnboardingScreen(); return; }
     _fbUser = stored;
-    if (Date.now() > stored.expiresAt - 120000) _fbUser = await _fbRefreshToken();
+    if (!stored.idToken || Date.now() > stored.expiresAt - 120000) _fbUser = await _fbRefreshToken();
     if (!_fbUser) { _fbSave(null); showOnboardingScreen(); return; }
   }
   const isPremium = await fbCheckPremium(_fbUser.uid, _fbUser.idToken);
@@ -8746,7 +8747,7 @@ async function fbInitAuth() {
   const stored = _fbLoad();
   if (!stored) return;
   _fbUser = stored;
-  if (Date.now() > stored.expiresAt - 120000) _fbUser = await _fbRefreshToken();
+  if (!stored.idToken || Date.now() > stored.expiresAt - 120000) _fbUser = await _fbRefreshToken();
   if (_fbUser) {
     fbCheckPremium(_fbUser.uid, _fbUser.idToken).then(() => { renderConfigTab(); if (isLicensed() && !_realtimeSource) startRealtimeSync(); });
   }
@@ -8969,7 +8970,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.84';
+const APP_VERSION = '12.85';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
