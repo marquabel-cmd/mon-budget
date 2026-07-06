@@ -8969,7 +8969,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.83';
+const APP_VERSION = '12.84';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
@@ -8991,6 +8991,7 @@ const SW_VERSION = 'v268';
       })
       .catch(() => {});
   }
+  checkVersion(); // vérifier au démarrage
   setInterval(checkVersion, 5 * 60 * 1000); // toutes les 5 min
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
 })();
