@@ -6673,6 +6673,10 @@ window.addEventListener('pagehide', () => {
 });
 window.addEventListener('online',  () => { if (isLicensed() && _fbUser && !_realtimeSource) startRealtimeSync(); });
 window.addEventListener('offline', () => stopRealtimeSync());
+// Watchdog : relancer la connexion SSE si elle s'est coupée sans se reconnecter
+setInterval(() => {
+  if (isLicensed() && _fbUser && !_realtimeSource && !_realtimeReconnectTimer) startRealtimeSync();
+}, 60 * 1000);
 // Sauvegarde forcée si l'onglet se ferme avec des modifications en attente
 window.addEventListener('beforeunload', () => { if (_saveTimer) { clearTimeout(_saveTimer); saveData(true); } });
 
@@ -8970,7 +8974,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.85';
+const APP_VERSION = '12.86';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
