@@ -6539,6 +6539,7 @@ let _sessionExpiredCount = 0; // nombre de tentatives échouées pour session ex
 let _pullInProgress = false;  // true pendant un cloudPull — bloque tout push pour éviter la race condition
 let _pendingRealtimeData = null;
 
+let _lastSseEventTime = 0; // timestamp du dernier événement SSE reçu (heartbeat)
 async function startRealtimeSync() {
   if (!isLicensed() || !_fbUser || _DEV_PREVIEW) return;
   stopRealtimeSync();
@@ -6549,15 +6550,17 @@ async function startRealtimeSync() {
     if (!url) return;
     const streamUrl = url + (url.includes('?') ? '&' : '?') + 'auth=' + token;
     _realtimeSource = new EventSource(streamUrl);
+    _lastSseEventTime = Date.now();
     let firstEvent = true;
     _realtimeSource.addEventListener('put', e => {
+      _lastSseEventTime = Date.now();
       try {
         const payload = JSON.parse(e.data);
         if (!payload || payload.data === null || payload.data === undefined) { firstEvent = false; return; }
         const incoming = payload.data;
         if (typeof incoming !== 'object' || Array.isArray(incoming)) { firstEvent = false; return; }
         const wasFirst = firstEvent; firstEvent = false;
-        // Ignorer notre propre push (5s window)
+        // Ignorer notre propre push (10s window)
         if (Date.now() - _lastPushTime < 10000) return;
         // Premier event = état initial Firebase : appliquer seulement si données différentes
         const { _syncedUsers: su, _gistToken: gt, _gistId: gi, ...budgetData } = incoming;
@@ -6673,9 +6676,12 @@ window.addEventListener('pagehide', () => {
 });
 window.addEventListener('online',  () => { if (isLicensed() && _fbUser && !_realtimeSource) startRealtimeSync(); });
 window.addEventListener('offline', () => stopRealtimeSync());
-// Watchdog : relancer la connexion SSE si elle s'est coupée sans se reconnecter
+// Watchdog : relancer la connexion SSE si coupée OU silencieuse depuis 4 min (connexion zombie)
 setInterval(() => {
-  if (isLicensed() && _fbUser && !_realtimeSource && !_realtimeReconnectTimer) startRealtimeSync();
+  if (!isLicensed() || !_fbUser) return;
+  const sseStale = _realtimeSource && _lastSseEventTime > 0 && (Date.now() - _lastSseEventTime > 4 * 60 * 1000);
+  const sseGone  = !_realtimeSource && !_realtimeReconnectTimer;
+  if (sseStale || sseGone) { stopRealtimeSync(); startRealtimeSync(); }
 }, 60 * 1000);
 // Sauvegarde forcée si l'onglet se ferme avec des modifications en attente
 window.addEventListener('beforeunload', () => { if (_saveTimer) { clearTimeout(_saveTimer); saveData(true); } });
@@ -8974,7 +8980,7 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.86';
+const APP_VERSION = '12.87';
 const SW_VERSION = 'v268';
 
 // ── AUTO-UPDATE CHECK ──
