@@ -6575,9 +6575,15 @@ async function startRealtimeSync() {
     };
     // Rafraîchir la connexion avant expiration du token (50min)
     _realtimeReconnectTimer = setTimeout(() => { stopRealtimeSync(); startRealtimeSync(); }, 50 * 60 * 1000);
-    // Indicateur "Live"
+    // Indicateur "Live" — ne pas écraser une erreur encore visible
     const el = document.getElementById('cloud-status');
-    if (el) { el.textContent = t('sync.live_label'); el.style.color = '#7effa0'; el.title = t('sync.live_title'); }
+    if (el) {
+      if (el.style.color !== '#ffb3b3') { // préserver état erreur
+        el.textContent = t('sync.live_label'); el.style.color = '#7effa0'; el.title = t('sync.live_title');
+      }
+      el.style.cursor = 'pointer';
+      el.onclick = () => { _cloudDirty = true; showToast('🔄 ' + (_lang==='en' ? 'Manual sync…' : 'Sync manuelle…')); cloudPush(); };
+    }
   } catch(e) {}
 }
 
@@ -8980,8 +8986,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.88';
-const SW_VERSION = 'v268';
+const APP_VERSION = '12.89';
+const SW_VERSION = 'v269';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
