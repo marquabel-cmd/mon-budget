@@ -6639,10 +6639,11 @@ function applyRealtimeData(d) {
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
   _syncIdCounter();
   _fixDuplicateIds(); // réparer les collisions d'IDs après fusion temps réel
-  const _dupsRemoved = _deduplicateTransactions(); // supprimer les doublons de contenu issus du merge
+  const _afterMergeTx = _countAllTx(DATA); // compter AVANT dedup pour ne pas confondre dedup avec ajout local
+  _deduplicateTransactions(); // supprimer les doublons de contenu issus du merge
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
-  // Repousser vers Firebase si des tx locales ont été réinjectées OU si des doublons ont été nettoyés
-  if (_countAllTx(DATA) !== _countAllTx(budgetData) || _dupsRemoved > 0) dSave();
+  // Repousser vers Firebase UNIQUEMENT si le merge a ajouté des tx locales (pas si c'est juste la dedup qui a retiré)
+  if (_afterMergeTx > _countAllTx(budgetData)) dSave();
   // Re-rendu complet
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
   const activeNavEl = document.querySelector('.nav-btn.active');
@@ -8986,8 +8987,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.89';
-const SW_VERSION = 'v269';
+const APP_VERSION = '12.90';
+const SW_VERSION = 'v270';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
