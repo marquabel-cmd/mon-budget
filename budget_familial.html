@@ -6668,13 +6668,17 @@ function applyRealtimeData(d) {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && isLicensed() && _fbUser) {
     if (!_realtimeSource) startRealtimeSync();
+    // Rafraîchir le token proactivement en premier plan (fiable) pour qu'il soit prêt
+    // quand l'app part en arrière-plan — évite l'échec de refresh en background sur Android
+    _fbRefreshToken().then(u => { if (u) _fbUser = u; });
     if (_cloudDirty && !_pullInProgress && cloudApiUrl() && _hasYearData(DATA)) setTimeout(() => cloudPush(), 1000);
   }
   // Sur mobile Android, beforeunload ne se déclenche pas quand l'app est tuée.
   // visibilitychange:hidden est le seul événement fiable → forcer save + push immédiat.
   if (document.visibilityState === 'hidden' && _hasYearData(DATA)) {
     if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; saveData(true); }
-    if (_cloudDirty && !_pullInProgress && cloudApiUrl()) cloudPush();
+    // Pousser même si _cloudDirty est false : un saveData vient peut-être d'être déclenché
+    if (isLicensed() && _fbUser && !_pullInProgress && cloudApiUrl()) cloudPush();
   }
 });
 window.addEventListener('pagehide', () => {
@@ -8987,8 +8991,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.90';
-const SW_VERSION = 'v270';
+const APP_VERSION = '12.91';
+const SW_VERSION = 'v271';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
