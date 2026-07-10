@@ -8991,8 +8991,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.91';
-const SW_VERSION = 'v271';
+const APP_VERSION = '12.92';
+const SW_VERSION = 'v272';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -14528,12 +14528,35 @@ function openLivretConfig(livId, ctxYear) {
   html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📈 Mouvements (coché = inclus)</div>';
   html += rowsHtml;
   html += '</div>';
-  html += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">';
+  html += '<div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">';
+  html += '<button onclick="_addLivretInterestRow(\'' + livId + '\',\'' + useYear + '\')" style="background:none;border:1px solid #27ae60;border-radius:8px;padding:7px 13px;font-size:12px;cursor:pointer;color:#27ae60" title="Ajoute une ligne intérêts dans Charges fixes">💰 + Intérêts</button>';
+  html += '<div style="display:flex;gap:8px">';
   html += '<button onclick="document.getElementById(\'_liv-cfg-overlay\').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>';
   html += '<button onclick="_saveLivretConfig(\'' + livId + '\',\'' + useYear + '\')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>';
-  html += '</div></div>';
+  html += '</div></div></div>';
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
+}
+function _addLivretInterestRow(livId, useYear) {
+  const liv = getLivrets().find(l => l.id === livId);
+  const livName = liv ? liv.name : getLivretName();
+  const label = '💰 Intérêts – ' + livName;
+  const isMain = !livId || livId === 'liv_main';
+  // Vérifier qu'une ligne intérêts n'existe pas déjà pour cette année
+  if (useYear && DATA[useYear]) {
+    const exists = DATA[useYear].charges.some(c => c.label === label && c.cat === 'livret_in');
+    if (exists) { showToast('⚠️ Ligne intérêts déjà présente pour ' + useYear); document.getElementById('_liv-cfg-overlay')?.remove(); return; }
+  }
+  getYears().forEach(y => {
+    if (!DATA[y]) return;
+    const row = {label, cat:'livret_in', v:Array(12).fill(0), paid:Array(12).fill(true), inCalc:true};
+    if (!isMain) row.livretId = livId;
+    DATA[y].charges.push(row);
+  });
+  document.getElementById('_liv-cfg-overlay')?.remove();
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  showToast('✅ Ligne intérêts ajoutée — entrez les montants dans Charges & Dépenses fixes.');
 }
 function _saveLivretConfig(livId, useYear) {
   const overlay = document.getElementById('_liv-cfg-overlay');
