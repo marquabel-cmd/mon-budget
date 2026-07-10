@@ -4473,12 +4473,12 @@ function renderRevSection(year) {
         </div></td>`;
     }).join('');
     const isProtectedRev = r.cat === 'boite_dep' || r.cat === 'depot_banc';
-    return `<tr draggable="true" ondragstart="_onDragStart(event,'${year}','revenus',${ri})" ondragover="_onDragOver(event)" ondragleave="_onDragLeave(event)" ondrop="_onDrop(event,'${year}','revenus',${ri})" ondragend="_onDragEnd(event)"><td class="lbl-col"><div class="lbl-inner">
+    return `<tr ondragover="_onDragOver(event)" ondragleave="_onDragLeave(event)" ondrop="_onDrop(event,'${year}','revenus',${ri})"><td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check cal-check-compte" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','compte',${ri},this.checked)" onclick="event.stopPropagation()">
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
-      <td style="white-space:nowrap;width:60px"><span class="drag-handle" title="Glisser pour déplacer">⠿</span><button class="del-btn" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button>${isProtectedRev?'':'<button class="del-btn" onclick="delRevRow(\''+year+'\','+ri+')">✕</button>'}</td></tr>`;
+      <td style="white-space:nowrap;width:60px"><span class="drag-handle" draggable="true" title="Glisser pour déplacer" ondragstart="_onSpanDragStart(event,'${year}','revenus',${ri})" ondragend="_onDragEnd(event)">⠿</span><button class="del-btn" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button>${isProtectedRev?'':'<button class="del-btn" onclick="delRevRow(\''+year+'\','+ri+')">✕</button>'}</td></tr>`;
   }).join('');
 
   const totRow = Array(12).fill(0).map((_,i)=>`<td class="${monthTots[i]<0?'neg':'pos'}" id="revmth-${year}-${i}">${fmtN(monthTots[i])}</td>`).join('');
@@ -4560,11 +4560,12 @@ function moveRow(year, section, ri, dir) {
   renderYear(year);
 }
 let _dragRow = null;
-function _onDragStart(e, year, section, ri) {
-  if (!e.target.classList.contains('drag-handle')) { e.preventDefault(); return; }
+function _onSpanDragStart(e, year, section, ri) {
   _dragRow = {year, section, ri};
   e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => e.currentTarget.classList.add('row-dragging'), 0);
+  e.dataTransfer.setData('text/plain', '');
+  const tr = e.currentTarget.closest('tr');
+  if (tr) { e.dataTransfer.setDragImage(tr, 20, 10); setTimeout(() => tr.classList.add('row-dragging'), 0); }
 }
 function _onDragOver(e) {
   if (!_dragRow) return;
@@ -4586,7 +4587,8 @@ function _onDrop(e, year, section, ri) {
   renderYear(year);
 }
 function _onDragEnd(e) {
-  e.currentTarget.classList.remove('row-dragging');
+  const tr = e.currentTarget.closest('tr');
+  if (tr) tr.classList.remove('row-dragging');
   _dragRow = null;
   document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
 }
@@ -4621,13 +4623,13 @@ function renderChargeSection(year) {
     const isLivretRow = r.cat==='livret_in'||r.cat==='livret_out';
     const isProtectedChg = isLivretRow || r.cat==='boite_in' || r.cat==='retrait_banc';
     const chkClass = isLivretRow ? 'cal-check-livret' : 'cal-check-compte';
-    tbody += `<tr class="${r.cat==='occasional'?'occ-row':''}" draggable="true" ondragstart="_onDragStart(event,'${year}','charges',${ri})" ondragover="_onDragOver(event)" ondragleave="_onDragLeave(event)" ondrop="_onDrop(event,'${year}','charges',${ri})" ondragend="_onDragEnd(event)">
+    tbody += `<tr class="${r.cat==='occasional'?'occ-row':''}" ondragover="_onDragOver(event)" ondragleave="_onDragLeave(event)" ondrop="_onDrop(event,'${year}','charges',${ri})">
       <td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check ${chkClass}" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','${isLivretRow?'livret':'compte'}',${ri},this.checked,'charge')" onclick="event.stopPropagation()">
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
-      <td style="white-space:nowrap;width:60px"><span class="drag-handle" title="Glisser pour déplacer">⠿</span><button class="del-btn" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button>${isProtectedChg?'':'<button class="del-btn" onclick="delCharge(\''+year+'\','+ri+')">✕</button>'}</td>
+      <td style="white-space:nowrap;width:60px"><span class="drag-handle" draggable="true" title="Glisser pour déplacer" ondragstart="_onSpanDragStart(event,'${year}','charges',${ri})" ondragend="_onDragEnd(event)">⠿</span><button class="del-btn" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button>${isProtectedChg?'':'<button class="del-btn" onclick="delCharge(\''+year+'\','+ri+')">✕</button>'}</td>
     </tr>`;
   });
 
@@ -9035,8 +9037,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.94';
-const SW_VERSION = 'v274';
+const APP_VERSION = '12.95';
+const SW_VERSION = 'v275';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
