@@ -4474,7 +4474,7 @@ function renderRevSection(year) {
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
-      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button>${isProtectedRev?'':'<button class="del-btn" onclick="delRevRow(\''+year+'\','+ri+')">✕</button>'}</td></tr>`;
+      <td style="white-space:nowrap;width:80px"><button class="del-btn" title="Monter" ${ri===0?'disabled':''} onclick="moveRow('${year}','revenus',${ri},'up')">▲</button><button class="del-btn" title="Descendre" ${ri===rows.length-1?'disabled':''} onclick="moveRow('${year}','revenus',${ri},'down')">▼</button><button class="del-btn" style="margin-left:2px" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button>${isProtectedRev?'':'<button class="del-btn" onclick="delRevRow(\''+year+'\','+ri+')">✕</button>'}</td></tr>`;
   }).join('');
 
   const totRow = Array(12).fill(0).map((_,i)=>`<td class="${monthTots[i]<0?'neg':'pos'}" id="revmth-${year}-${i}">${fmtN(monthTots[i])}</td>`).join('');
@@ -4489,7 +4489,7 @@ function renderRevSection(year) {
       <table class="charge-table"><thead><tr>
         <th class="lbl-col">${t('th.label')}</th>
         ${getMonths().map(m=>`<th>${m}</th>`).join('')}
-        <th class="tot-col">${t('th.total')}</th><th style="width:52px"></th>
+        <th class="tot-col">${t('th.total')}</th><th style="width:80px"></th>
       </tr></thead>
       <tbody>${tbody}
         <tr class="sep-row"><td colspan="15" style="background:#2d6a4f;font-size:10px">${t('row.total_revenus_sep')}</td></tr>
@@ -4546,6 +4546,15 @@ function delRevRow(year, ri) {
   const lbl = DATA[year].revenus[ri]?.label || 'ce revenu';
   confirmDelete(t('confirm.delete_row').replace('{0}', lbl), () => { DATA[year].revenus.splice(ri,1); renderYear(year); dSave(); });
 }
+function moveRow(year, section, ri, dir) {
+  const arr = DATA[year]?.[section];
+  if (!arr) return;
+  const ni = ri + (dir === 'up' ? -1 : 1);
+  if (ni < 0 || ni >= arr.length) return;
+  [arr[ri], arr[ni]] = [arr[ni], arr[ri]];
+  dSave();
+  renderYear(year);
+}
 
 // ── CHARGES ──
 function renderChargeSection(year) {
@@ -4583,7 +4592,7 @@ function renderChargeSection(year) {
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
-      <td style="white-space:nowrap;width:52px"><button class="del-btn" style="margin-right:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button>${isProtectedChg?'':'<button class="del-btn" onclick="delCharge(\''+year+'\','+ri+')">✕</button>'}</td>
+      <td style="white-space:nowrap;width:80px"><button class="del-btn" title="Monter" ${ri===0?'disabled':''} onclick="moveRow('${year}','charges',${ri},'up')">▲</button><button class="del-btn" title="Descendre" ${ri===rows.length-1?'disabled':''} onclick="moveRow('${year}','charges',${ri},'down')">▼</button><button class="del-btn" style="margin-left:2px" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button>${isProtectedChg?'':'<button class="del-btn" onclick="delCharge(\''+year+'\','+ri+')">✕</button>'}</td>
     </tr>`;
   });
 
@@ -4608,7 +4617,7 @@ function renderChargeSection(year) {
       <table class="charge-table"><thead><tr>
         <th class="lbl-col">${t('th.label')}</th>
         ${getMonths().map(m=>`<th>${m}</th>`).join('')}
-        <th class="tot-col">${t('th.total')}</th><th style="width:52px"></th>
+        <th class="tot-col">${t('th.total')}</th><th style="width:80px"></th>
       </tr></thead>
       <tbody>
         <tr class="sep-row"><td colspan="15">${t('row.recurring_charges')}</td></tr>
@@ -8991,8 +9000,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.92';
-const SW_VERSION = 'v272';
+const APP_VERSION = '12.93';
+const SW_VERSION = 'v273';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
