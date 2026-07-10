@@ -6693,9 +6693,12 @@ function applyRealtimeData(d) {
   _fixDuplicateIds(); // réparer les collisions d'IDs après fusion temps réel
   const _afterMergeTx = _countAllTx(DATA); // compter AVANT dedup pour ne pas confondre dedup avec ajout local
   _deduplicateTransactions(); // supprimer les doublons de contenu issus du merge
+  // Restaurer fromBank sur lignes intérêts livret si le cloud n'a pas encore ce flag
+  let _fbFix = false;
+  getYears().forEach(y => { (DATA[y]?.charges||[]).forEach(r => { if (r.cat==='livret_in' && !r.fromBank && r.label?.startsWith('💰 Intérêts')) { r.fromBank=true; _fbFix=true; } }); });
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
-  // Repousser vers Firebase UNIQUEMENT si le merge a ajouté des tx locales (pas si c'est juste la dedup qui a retiré)
-  if (_afterMergeTx > _countAllTx(budgetData)) dSave();
+  // Repousser vers Firebase si le merge a ajouté des tx locales OU si le flag fromBank a été corrigé
+  if (_afterMergeTx > _countAllTx(budgetData) || _fbFix) dSave();
   // Re-rendu complet
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
   const activeNavEl = document.querySelector('.nav-btn.active');
@@ -9043,8 +9046,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.96';
-const SW_VERSION = 'v276';
+const APP_VERSION = '12.97';
+const SW_VERSION = 'v277';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
