@@ -5970,7 +5970,6 @@ async function _doAnalyzeTicket(base64, status) {
       const data=await resp.json(); raw=data.choices?.[0]?.message?.content?.trim()||'';
     }
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Réponse invalide');
     const ticket = JSON.parse(jsonMatch[0]);
     if (ticket.erreur) { status.textContent = '⚠️ Ticket illisible — remplis manuellement.'; return; }
@@ -9083,8 +9082,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.02';
-const SW_VERSION = 'v282';
+const APP_VERSION = '13.03';
+const SW_VERSION = 'v283';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
