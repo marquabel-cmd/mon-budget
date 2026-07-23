@@ -5928,31 +5928,48 @@ async function _doProcessScannedTicketBlob(blob) {
 
 async function _doAnalyzeTicket(base64, status) {
   try {
-    // Construire la liste des catégories existantes pour le prompt
     const cats = getVarCats();
     const catList = cats.map(c => `${c.icon || ''} ${c.label}`).join(', ');
     const methods = getMethods();
     const methodList = methods.map(m => m.key + "=" + m.label).join(", ");
-    // Appel Groq Vision
-    const resp = await fetch(GROQ_PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama-3.2-11b-vision-preview',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "paiements": [{"montant":<montant payé avec ce mode>,"mode":"<clé parmi: ${methodList}>"}]}. IMPORTANT: utilise UNIQUEMENT les clés exactes listées dans methodList (ex: si methodList contient repas=Chèque repas, utilise "repas" pas "cheque_repas"). Mets UN objet par mode de paiement visible sur le ticket. Si illisible: {"erreur": "illisible"}.` },
-            { type: 'image_url', image_url: { url: base64 } }
-          ]
-        }],
-        max_tokens: 400,
-        temperature: 0
-      })
-    });
-    if (!resp.ok) { const errTxt = await resp.text().catch(()=>''); throw new Error(`Erreur ${resp.status}${errTxt ? ': ' + errTxt.slice(0,300) : ''}`); }
-    const data = await resp.json();
-    const raw = data.choices?.[0]?.message?.content?.trim() || '';
+    const prompt = `Analyse ce ticket de caisse. Réponds UNIQUEMENT avec un JSON valide sur une seule ligne (sans markdown): {"montant": <total TTC number>, "jour": <1-31 ou null>, "mois": <1-12 ou null>, "annee": <4 chiffres ou null>, "commercant": "<nom ou null>", "categorie": "<choisis la plus proche parmi: ${catList} — ou propose un nouveau nom court si aucune ne convient>", "paiements": [{"montant":<montant payé avec ce mode>,"mode":"<clé parmi: ${methodList}>"}]}. IMPORTANT: utilise UNIQUEMENT les clés exactes listées dans methodList. Mets UN objet par mode de paiement visible sur le ticket. Si illisible: {"erreur": "illisible"}.`;
+    const configKey = localStorage.getItem(AI_KEY_STORAGE) || '';
+    const isGemini = configKey.startsWith('AIza');
+    const isGroqKey = configKey.startsWith('gsk_');
+    let raw = '';
+    if (isGemini) {
+      // Gemini Vision — extrait le base64 pur sans le préfixe data:
+      const mimeType = base64.match(/^data:(image\/\w+);/)?.[1] || 'image/jpeg';
+      const b64data = base64.replace(/^data:image\/\w+;base64,/, '');
+      const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+      let lastErr;
+      for (const model of geminiModels) {
+        const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${configKey}`;
+        const r = await fetch(ep, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+          contents:[{role:'user', parts:[{text:prompt},{inlineData:{mimeType, data:b64data}}]}],
+          generationConfig:{temperature:0, maxOutputTokens:400}
+        })});
+        if (r.status===503||r.status===429){lastErr=new Error(`${model} indisponible`);continue;}
+        if (!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`Gemini ${r.status}: ${e.error?.message||''}`);}
+        const d=await r.json(); raw=d.candidates?.[0]?.content?.parts?.[0]?.text?.trim()||''; break;
+      }
+      if (!raw && lastErr) throw lastErr;
+    } else {
+      // Groq — clé personnelle ou proxy serveur
+      if (!isGroqKey && !configKey) {
+        // Proxy : avertissement si le modèle proxy est décommissionné
+      }
+      const endpoint = isGroqKey ? 'https://api.groq.com/openai/v1/chat/completions' : GROQ_PROXY_URL;
+      const headers = {'Content-Type':'application/json', ...(isGroqKey?{Authorization:`Bearer ${configKey}`}:{})};
+      const resp = await fetch(endpoint, { method:'POST', headers, body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages:[{role:'user', content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:base64}}]}],
+        max_tokens:400, temperature:0
+      })});
+      if (!resp.ok) { const errTxt=await resp.text().catch(()=>''); throw new Error(`Erreur ${resp.status}${errTxt?': '+errTxt.slice(0,300):''}`); }
+      const data=await resp.json(); raw=data.choices?.[0]?.message?.content?.trim()||'';
+    }
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Réponse invalide');
     const ticket = JSON.parse(jsonMatch[0]);
@@ -9066,8 +9083,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.01';
-const SW_VERSION = 'v281';
+const APP_VERSION = '13.02';
+const SW_VERSION = 'v282';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
