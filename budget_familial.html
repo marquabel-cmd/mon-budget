@@ -5872,7 +5872,7 @@ function captureInAppPhoto() {
   canvas.toBlob(blob => {
     closeInAppCamera();
     if (blob) _doProcessScannedTicketBlob(blob);
-  }, 'image/jpeg', 0.9);
+  }, 'image/jpeg', 0.75);
 }
 function closeInAppCamera() {
   if (_cameraStream) { _cameraStream.getTracks().forEach(t => t.stop()); _cameraStream = null; }
@@ -5886,17 +5886,37 @@ async function processScannedTicket(input) {
   _doProcessScannedTicketBlob(file);
 }
 
+async function _compressTicketImage(blob, maxW=1024, quality=0.72) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxW / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(b => resolve(b || blob), 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(blob); };
+    img.src = url;
+  });
+}
+
 async function _doProcessScannedTicketBlob(blob) {
   const status = document.getElementById('qa-scan-status');
   if (!status) return;
   status.style.display = 'block';
-  status.textContent = '🔍 Analyse du ticket en cours…';
+  status.textContent = '🔍 Compression de l\'image…';
   try {
+    const compressed = await _compressTicketImage(blob);
+    status.textContent = '🔍 Analyse du ticket en cours…';
     const base64 = await new Promise((res, rej) => {
       const reader = new FileReader();
       reader.onload = e => res(e.target.result);
       reader.onerror = rej;
-      reader.readAsDataURL(blob);
+      reader.readAsDataURL(compressed);
     });
     _doAnalyzeTicket(base64, status);
   } catch(e) {
@@ -5930,7 +5950,7 @@ async function _doAnalyzeTicket(base64, status) {
         temperature: 0
       })
     });
-    if (!resp.ok) throw new Error('Erreur réseau');
+    if (!resp.ok) { const errTxt = await resp.text().catch(()=>''); throw new Error(`Erreur ${resp.status}${errTxt ? ': ' + errTxt.slice(0,120) : ''}`); }
     const data = await resp.json();
     const raw = data.choices?.[0]?.message?.content?.trim() || '';
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -9046,8 +9066,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.97';
-const SW_VERSION = 'v277';
+const APP_VERSION = '12.98';
+const SW_VERSION = 'v278';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
