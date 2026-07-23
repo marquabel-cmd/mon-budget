@@ -5955,19 +5955,8 @@ async function _doAnalyzeTicket(base64, status) {
       }
       if (!raw && lastErr) throw lastErr;
     } else {
-      // Groq — clé personnelle ou proxy serveur
-      if (!isGroqKey && !configKey) {
-        // Proxy : avertissement si le modèle proxy est décommissionné
-      }
-      const endpoint = isGroqKey ? 'https://api.groq.com/openai/v1/chat/completions' : GROQ_PROXY_URL;
-      const headers = {'Content-Type':'application/json', ...(isGroqKey?{Authorization:`Bearer ${configKey}`}:{})};
-      const resp = await fetch(endpoint, { method:'POST', headers, body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        messages:[{role:'user', content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:base64}}]}],
-        max_tokens:400, temperature:0
-      })});
-      if (!resp.ok) { const errTxt=await resp.text().catch(()=>''); throw new Error(`Erreur ${resp.status}${errTxt?': '+errTxt.slice(0,300):''}`); }
-      const data=await resp.json(); raw=data.choices?.[0]?.message?.content?.trim()||'';
+      // Tous les modèles Groq vision sont décommissionnés — seul Gemini fonctionne
+      throw new Error('L\'analyse de tickets nécessite une clé Gemini. Allez dans Configuration → Assistant IA → "Utiliser ma propre clé API" et entrez votre clé Gemini (AIza...).');
     }
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Réponse invalide');
@@ -9082,8 +9071,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.03';
-const SW_VERSION = 'v283';
+const APP_VERSION = '13.04';
+const SW_VERSION = 'v284';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
