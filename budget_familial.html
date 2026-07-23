@@ -5951,7 +5951,10 @@ async function _doAnalyzeTicket(base64, status) {
         })});
         if (r.status===503||r.status===429){lastErr=new Error(`${model} indisponible`);continue;}
         if (!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`Gemini ${r.status}: ${e.error?.message||''}`);}
-        const d=await r.json(); raw=d.candidates?.[0]?.content?.parts?.[0]?.text?.trim()||''; break;
+        const d=await r.json();
+        const parts=d.candidates?.[0]?.content?.parts||[];
+        raw=parts.filter(p=>!p.thought).map(p=>p.text||'').join('').trim();
+        break;
       }
       if (!raw && lastErr) throw lastErr;
     } else {
@@ -9071,8 +9074,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.04';
-const SW_VERSION = 'v284';
+const APP_VERSION = '13.05';
+const SW_VERSION = 'v285';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
