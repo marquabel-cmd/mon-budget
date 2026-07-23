@@ -5947,8 +5947,7 @@ async function _doAnalyzeTicket(base64, status) {
         const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${configKey}`;
         const r = await fetch(ep, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
           contents:[{role:'user', parts:[{text:prompt},{inlineData:{mimeType, data:b64data}}]}],
-          generationConfig:{temperature:0, maxOutputTokens:600},
-          thinkingConfig:{thinkingBudget:0}
+          generationConfig:{temperature:0, maxOutputTokens:2048}
         })});
         if (r.status===503||r.status===429){lastErr=new Error(`${model} indisponible`);continue;}
         if (!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`Gemini ${r.status}: ${e.error?.message||''}`);}
@@ -9078,8 +9077,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.06';
-const SW_VERSION = 'v286';
+const APP_VERSION = '13.07';
+const SW_VERSION = 'v287';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
