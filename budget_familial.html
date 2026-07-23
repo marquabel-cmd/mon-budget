@@ -5938,7 +5938,7 @@ async function _doAnalyzeTicket(base64, status) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+        model: 'llama-3.2-90b-vision-preview',
         messages: [{
           role: 'user',
           content: [
@@ -9066,8 +9066,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '12.99';
-const SW_VERSION = 'v279';
+const APP_VERSION = '13.00';
+const SW_VERSION = 'v280';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
