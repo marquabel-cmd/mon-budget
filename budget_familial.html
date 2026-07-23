@@ -5947,14 +5947,18 @@ async function _doAnalyzeTicket(base64, status) {
         const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${configKey}`;
         const r = await fetch(ep, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
           contents:[{role:'user', parts:[{text:prompt},{inlineData:{mimeType, data:b64data}}]}],
-          generationConfig:{temperature:0, maxOutputTokens:400}
+          generationConfig:{temperature:0, maxOutputTokens:600},
+          thinkingConfig:{thinkingBudget:0}
         })});
         if (r.status===503||r.status===429){lastErr=new Error(`${model} indisponible`);continue;}
         if (!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`Gemini ${r.status}: ${e.error?.message||''}`);}
         const d=await r.json();
+        const finishReason=d.candidates?.[0]?.finishReason||'';
+        if(finishReason==='SAFETY'||finishReason==='RECITATION'){lastErr=new Error(`${model} bloqué (${finishReason})`);continue;}
         const parts=d.candidates?.[0]?.content?.parts||[];
         raw=parts.filter(p=>!p.thought).map(p=>p.text||'').join('').trim();
-        break;
+        if(raw) break;
+        lastErr=new Error(`${model}: réponse vide (finishReason=${finishReason})`); continue;
       }
       if (!raw && lastErr) throw lastErr;
     } else {
@@ -5962,7 +5966,7 @@ async function _doAnalyzeTicket(base64, status) {
       throw new Error('L\'analyse de tickets nécessite une clé Gemini. Allez dans Configuration → Assistant IA → "Utiliser ma propre clé API" et entrez votre clé Gemini (AIza...).');
     }
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Réponse invalide');
+    if (!jsonMatch) throw new Error(`Réponse invalide — Gemini a répondu: "${raw.slice(0,120)||'(vide)'}"`);
     const ticket = JSON.parse(jsonMatch[0]);
     if (ticket.erreur) { status.textContent = '⚠️ Ticket illisible — remplis manuellement.'; return; }
     // Pré-remplir date
@@ -9074,8 +9078,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.05';
-const SW_VERSION = 'v285';
+const APP_VERSION = '13.06';
+const SW_VERSION = 'v286';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
