@@ -5938,7 +5938,7 @@ async function _doAnalyzeTicket(base64, status) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama-3.2-90b-vision-preview',
+        model: 'llama-3.2-11b-vision-preview',
         messages: [{
           role: 'user',
           content: [
@@ -5950,7 +5950,7 @@ async function _doAnalyzeTicket(base64, status) {
         temperature: 0
       })
     });
-    if (!resp.ok) { const errTxt = await resp.text().catch(()=>''); throw new Error(`Erreur ${resp.status}${errTxt ? ': ' + errTxt.slice(0,120) : ''}`); }
+    if (!resp.ok) { const errTxt = await resp.text().catch(()=>''); throw new Error(`Erreur ${resp.status}${errTxt ? ': ' + errTxt.slice(0,300) : ''}`); }
     const data = await resp.json();
     const raw = data.choices?.[0]?.message?.content?.trim() || '';
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -9066,8 +9066,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.00';
-const SW_VERSION = 'v280';
+const APP_VERSION = '13.01';
+const SW_VERSION = 'v281';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
