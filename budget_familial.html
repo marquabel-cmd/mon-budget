@@ -3702,7 +3702,8 @@ function balance(year) { return revTotal(year).map((v,i)=>v-depTotal(year)[i]); 
 function resteAPayer(year) {
   return Array(12).fill(0).map((_,i) =>
     DATA[year].charges.reduce((s,r) => {
-      if (r.cat === 'livret_in' || r.cat === 'livret_out') return s;
+      if (r.cat === 'livret_out') return s;
+      if (r.cat === 'livret_in' && r.fromBank) return s; // intérêts banque seulement
       return s + (r.paid?.[i] ? 0 : Math.max(0, parseFloat(r.v[i])||0));
     }, 0));
 }
@@ -9078,8 +9079,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.08';
-const SW_VERSION = 'v288';
+const APP_VERSION = '13.09';
+const SW_VERSION = 'v289';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
