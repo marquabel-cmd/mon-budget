@@ -2278,12 +2278,13 @@ function initUsers() {
     saveUsers();
   }
   renderWelcomeScreen();
-  // Auto-login si session récente (< 1h) et pas de PIN — évite d'afficher la welcome screen
-  // notamment quand Android recharge le PWA après avoir ouvert la caméra
+  // Auto-login si session récente (< 1h) OU session Firebase persistante, et pas de PIN.
+  // Évite d'afficher la welcome screen / la modal de connexion à chaque ouverture :
+  // le refreshToken permet de récupérer un idToken sans ressaisie. Le PIN reste prioritaire.
   const _sgUser = localStorage.getItem('budget_current_user');
   if (_sgUser && USERS[_sgUser] && _sgUser !== '_demo') {
-    if (_hasValidSession() && !USERS[_sgUser].pin) {
-      // Session valide sans PIN → connexion directe silencieuse
+    if (!USERS[_sgUser].pin && (_hasValidSession() || _fbHasPersistentSession())) {
+      // Session valide ou refreshToken disponible, sans PIN → connexion directe silencieuse
       setTimeout(() => doLogin(_sgUser), 100);
       return;
     }
@@ -2448,11 +2449,16 @@ function _hasValidSession() {
   const ts = parseInt(localStorage.getItem('budget_session_ts') || '0');
   return ts > 0 && (Date.now() - ts) < 3600000;
 }
+// Le refreshToken Firebase ne périme pas (sauf révocation) : tant qu'il est présent,
+// on peut régénérer un idToken en silence → inutile de redemander les identifiants.
+function _fbHasPersistentSession() {
+  return !!localStorage.getItem('mbudget-fb-refresh');
+}
 function selectUserFromWelcome(id) {
   if (!USERS[id]) return;
   if (USERS[id].pin) {
     showPinOverlay(id, 'login');
-  } else if (!_hasValidSession() && _fbLoad()) {
+  } else if (!_hasValidSession() && _fbLoad() && !_fbHasPersistentSession()) {
     showToast('Session expirée — reconnectez-vous avec Google');
     openAuthModal('login');
   } else {
@@ -2552,9 +2558,34 @@ function doLogin(id) {
   }
 }
 
+let _fbReauthTimer = null;
+// Le refresh a échoué alors que le refreshToken est toujours présent → coupure réseau,
+// pas une vraie déconnexion. On réessaie en silence au lieu de redemander les identifiants.
+function _scheduleFbReauth(id) {
+  if (_fbReauthTimer) return;
+  const stop = () => { clearInterval(_fbReauthTimer); _fbReauthTimer = null; };
+  const tryAgain = async () => {
+    if (_fbUser) { stop(); return; }
+    if (!_fbHasPersistentSession()) { // token réellement révoqué → login requis
+      stop();
+      if (!_DEV_PREVIEW) openAuthModal('login');
+      return;
+    }
+    const u = await _fbRefreshToken();
+    if (u) { stop(); _fbUser = u; _finishLogin(id); }
+  };
+  _fbReauthTimer = setInterval(tryAgain, 30000);
+  window.addEventListener('online', tryAgain, { once: true });
+}
+
 function _finishLogin(id) {
   fbInitAuth().then(() => {
-    if (!_fbUser) { if (!_DEV_PREVIEW) setTimeout(() => openAuthModal('login'), 700); return; }
+    if (!_fbUser) {
+      // Identifiants réellement absents → login. Sinon (échec réseau) → retry silencieux.
+      if (_fbHasPersistentSession()) { setCloudStatus('off'); _scheduleFbReauth(id); }
+      else if (!_DEV_PREVIEW) setTimeout(() => openAuthModal('login'), 700);
+      return;
+    }
     // Cloud sync uniquement si l'utilisateur actif est le compte Firebase (pas un autre profil local)
     let fbLocalId = localStorage.getItem('mbudget-fb-localid');
     // Premier appareil ou migration : lier automatiquement le compte courant
@@ -6469,8 +6500,14 @@ async function cloudPush() {
   if (!token) {
     _sessionExpiredCount++;
     if (_sessionExpiredCount >= 2) {
-      // 2 échecs consécutifs → reconnexion automatique
       _sessionExpiredCount = 0;
+      // Refresh token toujours présent → coupure réseau, pas une déconnexion : retry silencieux
+      if (_fbHasPersistentSession()) {
+        setCloudStatus('error', _lang==='en' ? 'Offline — retrying…' : 'Hors ligne — nouvelle tentative…');
+        _schedSyncRetry(60);
+        return;
+      }
+      // 2 échecs consécutifs sans identifiants → reconnexion requise
       setCloudStatus('error', _lang==='en' ? 'Session expired' : 'Session expirée');
       showToast(_lang==='en' ? '⚠️ Session expired — please reconnect' : '⚠️ Session expirée — reconnexion requise');
       setTimeout(() => openAuthModal('login'), 1500);
@@ -9079,8 +9116,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.09';
-const SW_VERSION = 'v289';
+const APP_VERSION = '13.10';
+const SW_VERSION = 'v290';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -10962,6 +10999,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.10': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🔓', text: 'Plus de connexion à chaque ouverture : la session Firebase est renouvelée en silence grâce au refreshToken. Le code PIN reste disponible si vous voulez garder un verrou.' },
+      { icon: '📶', text: 'Coupure réseau : l\'app ne redemande plus vos identifiants par erreur — elle réessaie automatiquement la synchro dès le retour de la connexion.' }
+    ]
+  },
   '12.82': {
     date: 'Juillet 2026',
     items: [
