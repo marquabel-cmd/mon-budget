@@ -2605,6 +2605,7 @@ function _finishLogin(id) {
           return;
         }
         if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
+        _setSyncedSnapshot(cloudData); // ancêtre de référence pour la session
         _backupBeforeCloudReplace();
         const _cloudTxCount = _countAllTx(cloudData);
         // Comparer les timestamps pour savoir qui est le plus récent
@@ -6666,8 +6667,9 @@ async function cloudPull() {
       showToast(t('toast.gist_token_restored'));
       renderConfigTab();
     }
-    // Ancêtre de référence pour la fusion 3 voies : ce que le cloud contient à cet instant
-    _setSyncedSnapshot(budgetData);
+    // NB : ne pas toucher _lastSyncedSnapshot ici. L'ancêtre doit rester l'état
+    // d'AVANT ce pull, sinon toute modification distante serait prise pour une
+    // modification locale et la version périmée de cet appareil l'emporterait.
     return budgetData;
   } catch(e) { _lastSyncError = e.message || 'Réseau inaccessible'; return null; }
 }
@@ -6840,6 +6842,8 @@ function applyRealtimeData(d) {
   let _fbFix = false;
   getYears().forEach(y => { (DATA[y]?.charges||[]).forEach(r => { if (r.cat==='livret_in' && !r.fromBank && r.label?.startsWith('💰 Intérêts')) { r.fromBank=true; _fbFix=true; } }); });
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
+  // L'état cloud qu'on vient de réconcilier devient le nouvel ancêtre commun
+  _setSyncedSnapshot(budgetData);
   // Repousser vers Firebase si le merge a ajouté des tx locales, préservé des lignes
   // charges/revenus locales, OU si le flag fromBank a été corrigé
   if (_afterMergeTx > _countAllTx(budgetData) || _fbFix || _fixedKept > 0) { _cloudDirty = true; dSave(); }
@@ -6870,14 +6874,26 @@ document.addEventListener('visibilitychange', () => {
     // Rafraîchir le token proactivement en premier plan (fiable) pour qu'il soit prêt
     // quand l'app part en arrière-plan — évite l'échec de refresh en background sur Android
     _fbRefreshToken().then(u => { if (u) _fbUser = u; });
-    if (_cloudDirty && !_pullInProgress && cloudApiUrl() && _hasYearData(DATA)) setTimeout(() => cloudPush(), 1000);
+    // Rapatrier l'état cloud AVANT tout push : pendant la veille, la connexion SSE est
+    // coupée et cet appareil a pu manquer des modifications faites ailleurs. Sans ce pull,
+    // il repartait avec des données périmées et les réécrivait sur le cloud en sortant.
+    const _resume = () => { if (_cloudDirty && cloudApiUrl() && _hasYearData(DATA)) setTimeout(() => cloudPush(), 1000); };
+    if (!_pullInProgress && cloudApiUrl()) {
+      _pullInProgress = true;
+      cloudPull()
+        .then(cd => { _pullInProgress = false; if (cd) applyRealtimeData(cd); _resume(); })
+        .catch(() => { _pullInProgress = false; _resume(); });
+    } else _resume();
   }
   // Sur mobile Android, beforeunload ne se déclenche pas quand l'app est tuée.
   // visibilitychange:hidden est le seul événement fiable → forcer save + push immédiat.
   if (document.visibilityState === 'hidden' && _hasYearData(DATA)) {
     if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; saveData(true); }
-    // Pousser même si _cloudDirty est false : un saveData vient peut-être d'être déclenché
-    if (isLicensed() && _fbUser && !_pullInProgress && cloudApiUrl()) cloudPush();
+    // Ne pousser QUE s'il reste des modifications locales en attente. Un push
+    // inconditionnel écrasait le cloud avec l'état de cet appareil, même périmé :
+    // une saisie faite ailleurs disparaissait dès qu'un vieil onglet passait en veille.
+    // (saveData() ci-dessus met _cloudDirty à true, le cas "sauvegarde en attente" est couvert.)
+    if (isLicensed() && _fbUser && _cloudDirty && !_pullInProgress && cloudApiUrl()) cloudPush();
   }
 });
 window.addEventListener('pagehide', () => {
@@ -8935,6 +8951,7 @@ async function _autoRestoreFromFirebase() {
       DATA = cloudData;
       if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
       localStorage.setItem(dataKey(), JSON.stringify(DATA));
+      _setSyncedSnapshot(DATA); // local identique au cloud à cet instant
       setCloudStatus('ok');
     } else {
       loadData();
@@ -9190,8 +9207,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.11';
-const SW_VERSION = 'v291';
+const APP_VERSION = '13.12';
+const SW_VERSION = 'v292';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11073,6 +11090,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.12': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🚨', text: 'Fix critique : un appareil resté en veille avec des données périmées les réécrivait sur le cloud en repassant en arrière-plan, effaçant une saisie faite ailleurs. Il ne pousse plus que s\'il a réellement des modifications en attente.' },
+      { icon: '⬇️', text: 'Au réveil de l\'app, les données du cloud sont désormais rapatriées avant toute autre opération — fini les appareils qui repartent avec un état obsolète.' }
+    ]
+  },
   '13.11': {
     date: 'Août 2026',
     items: [
