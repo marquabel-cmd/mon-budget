@@ -3010,10 +3010,57 @@ function _countAllTx(d) {
   Object.keys(d).forEach(k => { if (/^\d{4}$/.test(k) && d[k]?.vars) Object.values(d[k].vars).forEach(txs => { if (Array.isArray(txs)) n += txs.length; }); });
   return n;
 }
-// Fusionne local + cloud : le cloud sert de base (paramètres, budgets, charges, revenus)
+// ── FUSION DES LIGNES FIXES (charges / revenus) ──────────────────────────
+// Ces lignes n'ont pas d'ID : on les apparie par (catégorie + libellé).
+// Fusion 3 voies : `ancestor` = dernier état connu commun avec le cloud.
+// Une ligne modifiée localement depuis l'ancêtre gagne ; sinon on accepte le cloud.
+// Sans ancêtre (1re sync de la session), on retombe sur `dirtyFallback` :
+// garder le local uniquement s'il reste des modifications non poussées.
+let _lastMergeFixedPreserved = 0;
+function _fixedRowKey(r) { return (r?.cat || '') + '|' + (r?.label || ''); }
+function _indexFixedRows(arr) {
+  const m = new Map();
+  (Array.isArray(arr) ? arr : []).forEach(r => {
+    const k = _fixedRowKey(r);
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(r);
+  });
+  return m;
+}
+function _mergeFixedRows(ancestor, ours, theirs, dirtyFallback) {
+  if (!Array.isArray(ours))   return { rows: Array.isArray(theirs) ? theirs : [], changed: 0 };
+  if (!Array.isArray(theirs)) return { rows: ours, changed: 0 };
+  const ancPool   = _indexFixedRows(ancestor); // consommé au fil de l'appariement
+  const ancLookup = _indexFixedRows(ancestor); // conservé pour détecter les suppressions locales
+  const theirPool = _indexFixedRows(theirs);
+  const take = (m, k) => { const l = m.get(k); return (l && l.length) ? l.shift() : null; };
+  const rows = [];
+  let changed = 0;
+  ours.forEach(row => {
+    const k = _fixedRowKey(row);
+    const anc   = take(ancPool, k);
+    const their = take(theirPool, k);
+    if (!their) { rows.push(row); changed++; return; } // absente du cloud → ligne créée ici, on la garde
+    const localChanged = anc ? JSON.stringify(anc) !== JSON.stringify(row) : !!dirtyFallback;
+    if (localChanged && JSON.stringify(their) !== JSON.stringify(row)) { rows.push(row); changed++; return; }
+    rows.push(their);
+  });
+  // Lignes restées côté cloud : créées/modifiées sur un autre appareil → à reprendre.
+  // Sauf si elles sont identiques à l'ancêtre : dans ce cas leur absence en local
+  // signifie que l'utilisateur les a supprimées ici — ne pas les ressusciter.
+  theirPool.forEach((list, k) => list.forEach(r => {
+    const ancMatches = ancLookup.get(k) || [];
+    const deletedLocally = ancMatches.some(a => JSON.stringify(a) === JSON.stringify(r));
+    if (!deletedLocally) rows.push(r);
+  }));
+  return { rows, changed };
+}
+
+// Fusionne local + cloud : le cloud sert de base (paramètres, budgets)
 // mais toute transaction locale absente du cloud est réinjectée, SAUF si elle a été supprimée
-// intentionnellement (son ID est dans DATA._deletedIds ou cloud._deletedIds)
-function _mergeBudgetData(local, cloud) {
+// intentionnellement (son ID est dans DATA._deletedIds ou cloud._deletedIds).
+// `opts.enabled` active en plus la fusion 3 voies des charges/revenus (voir _mergeFixedRows).
+function _mergeBudgetData(local, cloud, opts) {
   if (!local || !_hasYearData(local)) return cloud;
   if (!cloud  || !_hasYearData(cloud))  return local;
   // Partir du cloud comme base
@@ -3073,8 +3120,24 @@ function _mergeBudgetData(local, cloud) {
       });
     });
   });
+  // ── Charges & revenus (lignes fixes) ──
+  // Sans ce bloc le cloud écrase intégralement les charges/revenus locaux :
+  // toute saisie non encore poussée (montants mensuels, cases "payé", nouvelles
+  // lignes) était perdue au premier événement de synchro entrant.
+  _lastMergeFixedPreserved = 0;
+  if (opts && opts.enabled) {
+    Object.keys(local).forEach(yr => {
+      if (!/^\d{4}$/.test(yr) || !local[yr] || !result[yr]) return;
+      ['charges','revenus'].forEach(sec => {
+        const m = _mergeFixedRows(opts.ancestor?.[yr]?.[sec], local[yr][sec], result[yr][sec], opts.dirty);
+        result[yr][sec] = m.rows;
+        _lastMergeFixedPreserved += m.changed;
+      });
+    });
+  }
   if (rescued > 0) { console.warn(`🛡️ Fusion : ${rescued} tx locale(s) réinjectée(s) (absentes du cloud, non supprimées)`); showToast(t('toast.local_tx_preserved').replace('{0}', rescued)); }
   if (edited > 0) console.info(`🛡️ Fusion : ${edited} tx locale(s) préservée(s) (éditées localement, non encore synchronisées)`);
+  if (_lastMergeFixedPreserved > 0) console.warn(`🛡️ Fusion : ${_lastMergeFixedPreserved} ligne(s) charges/revenus locale(s) préservée(s)`);
   return result;
 }
 // Crée un backup avant remplacement cloud — max 1 par heure, 5 au total
@@ -6551,7 +6614,7 @@ async function cloudPush() {
     };
     _lastPushTime = Date.now(); // Marquer AVANT le fetch pour éviter la race condition avec l'écho SSE
     const r = await _fbFetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}, token);
-    if (r.ok) { _cloudDirty = false; setCloudStatus('ok'); _lastSyncError = ''; }
+    if (r.ok) { _cloudDirty = false; _setSyncedSnapshot(DATA); setCloudStatus('ok'); _lastSyncError = ''; }
     else if (r.status === 401) {
       _lastPushTime = 0; // reset pour permettre un vrai sync entrant
       setCloudStatus('error', _lang==='en' ? 'Session expired — retrying…' : 'Session expirée — nouvelle tentative…');
@@ -6603,6 +6666,8 @@ async function cloudPull() {
       showToast(t('toast.gist_token_restored'));
       renderConfigTab();
     }
+    // Ancêtre de référence pour la fusion 3 voies : ce que le cloud contient à cet instant
+    _setSyncedSnapshot(budgetData);
     return budgetData;
   } catch(e) { _lastSyncError = e.message || 'Réseau inaccessible'; return null; }
 }
@@ -6659,6 +6724,13 @@ let _cloudSyncTimestamp = 0;  // si > 0, saveData() utilisera ce timestamp pour 
 let _syncRetryTimer = null;   // timer de réessai automatique en cas d'échec
 let _sessionExpiredCount = 0; // nombre de tentatives échouées pour session expirée
 let _pullInProgress = false;  // true pendant un cloudPull — bloque tout push pour éviter la race condition
+// Dernier état connu comme commun avec le cloud — sert d'ancêtre à la fusion 3 voies
+// des charges/revenus, pour distinguer "modifié ici" de "modifié sur un autre appareil"
+let _lastSyncedSnapshot = null;
+function _setSyncedSnapshot(d) {
+  try { _lastSyncedSnapshot = d ? JSON.parse(JSON.stringify(d)) : null; }
+  catch { _lastSyncedSnapshot = null; }
+}
 let _pendingRealtimeData = null;
 
 let _lastSseEventTime = 0; // timestamp du dernier événement SSE reçu (heartbeat)
@@ -6757,7 +6829,8 @@ function applyRealtimeData(d) {
   // Backup automatique avant tout remplacement
   _backupBeforeCloudReplace();
   const _beforeMergeTx = _countAllTx(DATA);
-  DATA = _mergeBudgetData(DATA, budgetData);
+  DATA = _mergeBudgetData(DATA, budgetData, { enabled: true, ancestor: _lastSyncedSnapshot, dirty: _cloudDirty });
+  const _fixedKept = _lastMergeFixedPreserved;
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
   _syncIdCounter();
   _fixDuplicateIds(); // réparer les collisions d'IDs après fusion temps réel
@@ -6767,8 +6840,9 @@ function applyRealtimeData(d) {
   let _fbFix = false;
   getYears().forEach(y => { (DATA[y]?.charges||[]).forEach(r => { if (r.cat==='livret_in' && !r.fromBank && r.label?.startsWith('💰 Intérêts')) { r.fromBank=true; _fbFix=true; } }); });
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
-  // Repousser vers Firebase si le merge a ajouté des tx locales OU si le flag fromBank a été corrigé
-  if (_afterMergeTx > _countAllTx(budgetData) || _fbFix) dSave();
+  // Repousser vers Firebase si le merge a ajouté des tx locales, préservé des lignes
+  // charges/revenus locales, OU si le flag fromBank a été corrigé
+  if (_afterMergeTx > _countAllTx(budgetData) || _fbFix || _fixedKept > 0) { _cloudDirty = true; dSave(); }
   // Re-rendu complet
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
   const activeNavEl = document.querySelector('.nav-btn.active');
@@ -9116,8 +9190,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.10';
-const SW_VERSION = 'v290';
+const APP_VERSION = '13.11';
+const SW_VERSION = 'v291';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -10999,6 +11073,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.11': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🛡️', text: 'Fix majeur perte de données : les charges et revenus saisis ici ne sont plus écrasés par une synchro entrante. Ils bénéficient enfin de la même protection que les dépenses variables.' },
+      { icon: '🔀', text: 'Fusion intelligente : une ligne modifiée sur cet appareil est conservée, une ligne modifiée sur un autre appareil est reprise — plus besoin de choisir.' }
+    ]
+  },
   '13.10': {
     date: 'Août 2026',
     items: [
