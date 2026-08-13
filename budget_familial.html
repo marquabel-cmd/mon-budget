@@ -6686,6 +6686,16 @@ async function cloudPullNow() {
   DATA = cloudData;
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
+  // Remplacement pur : cet appareil est désormais aligné sur le cloud.
+  // Sans ces trois lignes, il se croyait encore porteur de modifications et
+  // repoussait aussitôt son ancien état — la récupération était annulée.
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+  _cloudDirty = false;
+  _setSyncedSnapshot(DATA);
+  // Dater la sauvegarde locale à l'heure du push cloud (et non "maintenant") :
+  // sinon _localIsNewer serait vrai au prochain démarrage et cet appareil
+  // se croirait à nouveau prioritaire sur le cloud qu'il vient d'adopter.
+  if (cloudData._lastPush) localStorage.setItem('budget_lastsave_' + CURRENT_USER_ID, new Date(cloudData._lastPush).toISOString());
   document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
   renderTabs();
   getYears().forEach(y => renderYear(y));
@@ -9207,8 +9217,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.12';
-const SW_VERSION = 'v292';
+const APP_VERSION = '13.13';
+const SW_VERSION = 'v293';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11090,6 +11100,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.13': {
+    date: 'Août 2026',
+    items: [
+      { icon: '⬇️', text: '« Récupérer depuis le cloud » aligne vraiment l\'appareil : il ne repousse plus son ancien état juste après, ce qui annulait la récupération.' }
+    ]
+  },
   '13.12': {
     date: 'Août 2026',
     items: [
