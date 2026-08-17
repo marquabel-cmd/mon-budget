@@ -8386,6 +8386,23 @@ function renderConfigTab() {
               </div>
             </div>
             <div style="font-size:11px;color:var(--gray);margin-bottom:10px">${t('cfg.cloud_last_sync')} : <b>${lastSyncFmt}</b></div>
+            ${(() => {
+              // État de synchro lisible : permet de voir d'un coup d'œil, sur chaque
+              // appareil, s'il est à jour, en retard, ou porteur de saisies non envoyées
+              const seen    = _getSeenRev();
+              const pending = _hasPendingLocal();
+              const cloud   = _knownCloudRev;
+              const enRetard = cloud > 0 && seen < cloud;
+              const etat = !seen && !cloud ? { txt: 'Compteur pas encore initialisé', col: 'var(--gray)' }
+                : enRetard && pending      ? { txt: 'En retard + saisies locales — fusion au prochain démarrage', col: '#f0c040' }
+                : enRetard                 ? { txt: 'En retard sur le cloud', col: '#f0c040' }
+                : pending                  ? { txt: 'Saisies en attente d\'envoi', col: '#f0c040' }
+                :                            { txt: 'À jour avec le cloud', col: 'var(--green)' };
+              return `<div style="font-size:11px;color:var(--gray);margin-bottom:10px">
+                État : <b style="color:${etat.col}">${etat.txt}</b>
+                <span style="opacity:.7"> · version vue ${seen}${cloud ? ' / cloud ' + cloud : ''}</span>
+              </div>`;
+            })()}
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button onclick="saveData()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">${t('cfg.cloud_push')}</button>
               <button onclick="cloudPullNow()" style="flex:1;background:var(--green-light);color:var(--green);border:1px solid var(--green);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">${t('cfg.cloud_pull')}</button>
@@ -9320,8 +9337,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.14';
-const SW_VERSION = 'v294';
+const APP_VERSION = '13.15';
+const SW_VERSION = 'v295';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11203,6 +11220,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.15': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🔎', text: 'Configuration → Cloud affiche désormais l\'état de synchro de l\'appareil : à jour, en retard, ou porteur de saisies pas encore envoyées.' }
+    ]
+  },
   '13.14': {
     date: 'Août 2026',
     items: [
