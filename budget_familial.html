@@ -2619,11 +2619,39 @@ function _finishLogin(id) {
         const _localForceSync = parseInt(localStorage.getItem(_localForceSyncKey) || '0');
         const _mustAcceptCloud = _cloudForceSync > _localForceSync;
         if (_mustAcceptCloud) localStorage.setItem(_localForceSyncKey, String(_cloudForceSync));
-        // Le local est "plus récent" si : sauvegardé localement APRÈS le dernier push cloud (+ marge 5s)
-        // SAUF si force-sync actif (import JSON sur un autre appareil)
-        const _localIsNewer = !_mustAcceptCloud && (_localSaveTime > _cloudPushTime + 5000);
-        if (_localIsNewer) {
-          // Local modifié après le dernier push Firebase → garder local comme base, ajouter vars cloud manquantes
+        // ── Arbitrage local / cloud ──
+        // Quand le cloud porte un compteur de version (_rev), la décision se prend
+        // sur des numéros et non sur des horloges : `seenRev` dit à quel état du
+        // cloud cet appareil est aligné, `pending` s'il a des modifications à faire
+        // valoir. Un appareil qui n'a rien modifié ne peut donc plus se croire
+        // prioritaire, quelle que soit l'heure de sa dernière sauvegarde locale.
+        // Repli sur l'ancienne comparaison de dates tant que le cloud n'a pas
+        // encore été écrit par une version qui pose _rev.
+        const _cloudRev = parseInt(cloudData._rev || 0) || 0;
+        const _seenRev  = _getSeenRev();
+        // Migration : un appareil qui n'a jamais tourné sous le nouveau schéma
+        // (seenRev à 0) n'a pas pu poser le drapeau `pending` sur ses dernières
+        // saisies. On le déduit alors de l'ancienne comparaison de dates, pour
+        // ne pas adopter le cloud à l'aveugle et perdre ces saisies.
+        const _migrated = _seenRev > 0;
+        const _pending  = _migrated
+          ? _hasPendingLocal()
+          : (_hasPendingLocal() || _localSaveTime > _cloudPushTime + 5000);
+        const _decision = _decideSync({
+          cloudRev: _cloudRev, seenRev: _seenRev, pending: _pending,
+          mustAcceptCloud: _mustAcceptCloud,
+          localSaveTime: _localSaveTime, cloudPushTime: _cloudPushTime
+        });
+        const _localIsNewer = _decision.localIsNewer;
+        const _conflict     = _decision.conflict;
+        console.info(`🔄 Sync démarrage : ${_decision.reason} (rev cloud ${_cloudRev}, vue ${_seenRev}, en attente ${_pending})`);
+        if (_conflict) {
+          // Vrai conflit : fusion ligne par ligne. Pas d'ancêtre disponible au
+          // démarrage (le snapshot est en mémoire), donc repli `dirty` — en cas
+          // de doute on conserve le local plutôt que de risquer de le perdre.
+          DATA = _mergeBudgetData(DATA, cloudData, { enabled: true, ancestor: null, dirty: true });
+        } else if (_localIsNewer) {
+          // Local en avance → garder local comme base, ajouter vars cloud manquantes
           DATA = _mergeBudgetData(cloudData, DATA); // args inversés : local devient base
         } else {
           // Cloud plus récent (ex: autre appareil a poussé) → cloud fait autorité
@@ -2632,16 +2660,20 @@ function _finishLogin(id) {
         if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
         _syncIdCounter();
         _fixDuplicateIds(); // réparer les collisions d'IDs après fusion cloud/local
-        // Repousser si : local plus récent, ou tx locales réinjectées
-        if (_localIsNewer || _countAllTx(DATA) > _cloudTxCount) {
+        // Repousser si : local plus récent, tx locales réinjectées, ou lignes fixes préservées
+        if (_localIsNewer || _countAllTx(DATA) > _cloudTxCount || _lastMergeFixedPreserved > 0) {
           // Si cloud gagne mais des tx locales ont été réinjectées, conserver le timestamp cloud
           // pour éviter que budget_lastsave_ > _cloudPushTime au prochain chargement (boucle de reversion)
           if (!_localIsNewer && _cloudPushTime) _cloudSyncTimestamp = _cloudPushTime;
+          _setPendingLocal(true); // il reste quelque chose à faire valoir → cloudPush le lèvera
           dSave();
         } else {
-          // Cloud gagne, rien à réinjecter : juste sauvegarder localement avec le timestamp cloud
-          // pour corriger un éventuel budget_lastsave_ trop récent sur cet appareil
+          // Cloud gagne, rien à réinjecter : cet appareil est aligné sur le cloud.
+          // Enregistrer le numéro de version vu, sinon il se croirait en retard au
+          // prochain démarrage et referait une fusion inutile.
           _cloudDirty = false;
+          _setPendingLocal(false);
+          if (_cloudRev) _setSeenRev(_cloudRev);
           if (_cloudPushTime) {
             const json = JSON.stringify(DATA);
             localStorage.setItem(dataKey(), json);
@@ -6605,17 +6637,27 @@ async function cloudPush() {
       } catch {}
     }
     const _deletedUsersList = JSON.parse(localStorage.getItem('budget_deleted_users') || '[]');
+    // Numéro de version de ce push : au-dessus du dernier connu du cloud
+    const _newRev = Math.max(_knownCloudRev, _getSeenRev()) + 1;
     const payload = {
       ...DATA,
       _syncedUsers: usersToSync,
       _deletedUsers: _deletedUsersList,
       _lastPush: Date.now(),
+      _rev: _newRev,
       ...(gistToken ? { _gistToken: gistToken } : {}),
       ...(gistId    ? { _gistId:    gistId    } : {})
     };
     _lastPushTime = Date.now(); // Marquer AVANT le fetch pour éviter la race condition avec l'écho SSE
     const r = await _fbFetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}, token);
-    if (r.ok) { _cloudDirty = false; _setSyncedSnapshot(DATA); setCloudStatus('ok'); _lastSyncError = ''; }
+    if (r.ok) {
+      // Cet appareil est désormais aligné sur ce qu'il vient d'écrire
+      _cloudDirty = false;
+      _setSeenRev(_newRev);
+      _setPendingLocal(false);
+      _setSyncedSnapshot(DATA);
+      setCloudStatus('ok'); _lastSyncError = '';
+    }
     else if (r.status === 401) {
       _lastPushTime = 0; // reset pour permettre un vrai sync entrant
       setCloudStatus('error', _lang==='en' ? 'Session expired — retrying…' : 'Session expirée — nouvelle tentative…');
@@ -6667,6 +6709,9 @@ async function cloudPull() {
       showToast(t('toast.gist_token_restored'));
       renderConfigTab();
     }
+    // Mémoriser le numéro de version que porte le cloud (0 si écrit par une
+    // version antérieure à 13.14 — on retombera alors sur l'ancienne heuristique)
+    _knownCloudRev = Math.max(_knownCloudRev, parseInt(budgetData._rev || 0) || 0);
     // NB : ne pas toucher _lastSyncedSnapshot ici. L'ancêtre doit rester l'état
     // d'AVANT ce pull, sinon toute modification distante serait prise pour une
     // modification locale et la version périmée de cet appareil l'emporterait.
@@ -6691,6 +6736,8 @@ async function cloudPullNow() {
   // repoussait aussitôt son ancien état — la récupération était annulée.
   if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
   _cloudDirty = false;
+  _setPendingLocal(false);
+  if (cloudData._rev) _setSeenRev(cloudData._rev);
   _setSyncedSnapshot(DATA);
   // Dater la sauvegarde locale à l'heure du push cloud (et non "maintenant") :
   // sinon _localIsNewer serait vrai au prochain démarrage et cet appareil
@@ -6742,6 +6789,51 @@ let _lastSyncedSnapshot = null;
 function _setSyncedSnapshot(d) {
   try { _lastSyncedSnapshot = d ? JSON.parse(JSON.stringify(d)) : null; }
   catch { _lastSyncedSnapshot = null; }
+}
+
+// Arbitrage local / cloud au démarrage. Fonction pure : toute la décision tient ici.
+//   seenRev < cloudRev → cet appareil est en retard sur le cloud
+//   pending            → cet appareil a des modifications à faire valoir
+// Les deux à la fois = vrai conflit (seul cas qui déclenche une fusion ligne à ligne).
+// Sans compteur côté cloud (données écrites avant la 13.14), repli sur l'ancienne
+// comparaison de dates pour rester compatible avec les appareils pas encore à jour.
+function _decideSync({ cloudRev, seenRev, pending, mustAcceptCloud, localSaveTime, cloudPushTime }) {
+  if (mustAcceptCloud) return { localIsNewer: false, conflict: false, reason: 'force-sync' };
+  if (!(cloudRev > 0)) {
+    return { localIsNewer: localSaveTime > cloudPushTime + 5000, conflict: false, reason: 'heritage-dates' };
+  }
+  const behind = seenRev < cloudRev;
+  if (behind && pending) return { localIsNewer: true,  conflict: true,  reason: 'conflit' };
+  if (behind)            return { localIsNewer: false, conflict: false, reason: 'en-retard' };
+  return { localIsNewer: pending, conflict: false, reason: pending ? 'en-avance' : 'a-jour' };
+}
+
+// ── COMPTEUR DE VERSION DES DONNÉES (_rev) ───────────────────────────────
+// Remplace la comparaison d'horloges entre appareils, qui était fragile :
+// les horloges divergent, et une simple sauvegarde locale à l'ouverture
+// suffisait à faire croire à un appareil qu'il était prioritaire.
+//
+// Le cloud porte un entier `_rev` incrémenté à chaque push. Chaque appareil
+// retient dans `budget_seenrev_<user>` le numéro auquel il est aligné, et
+// dans `budget_pending_<user>` s'il lui reste des modifications à pousser
+// (ce drapeau survit à un redémarrage, contrairement à _cloudDirty).
+//   seenRev < cloudRev  → cet appareil est en retard
+//   pending             → cet appareil a des modifications à faire valoir
+// Les deux ensemble = vrai conflit, seul cas qui déclenche une fusion.
+let _knownCloudRev = 0;
+function _revKey()     { return 'budget_seenrev_' + (CURRENT_USER_ID || ''); }
+function _pendingKey() { return 'budget_pending_' + (CURRENT_USER_ID || ''); }
+function _getSeenRev() { return parseInt(localStorage.getItem(_revKey()) || '0') || 0; }
+function _setSeenRev(n) {
+  const v = parseInt(n || 0) || 0;
+  localStorage.setItem(_revKey(), String(v));
+  if (v > _knownCloudRev) _knownCloudRev = v;
+}
+function _hasPendingLocal() { return localStorage.getItem(_pendingKey()) === '1'; }
+function _setPendingLocal(on) {
+  if (!CURRENT_USER_ID) return;
+  if (on) localStorage.setItem(_pendingKey(), '1');
+  else localStorage.removeItem(_pendingKey());
 }
 let _pendingRealtimeData = null;
 
@@ -6854,9 +6946,17 @@ function applyRealtimeData(d) {
   localStorage.setItem(dataKey(), JSON.stringify(DATA));
   // L'état cloud qu'on vient de réconcilier devient le nouvel ancêtre commun
   _setSyncedSnapshot(budgetData);
+  const _incomingRev = parseInt(budgetData._rev || 0) || 0;
+  if (_incomingRev) _knownCloudRev = Math.max(_knownCloudRev, _incomingRev);
   // Repousser vers Firebase si le merge a ajouté des tx locales, préservé des lignes
   // charges/revenus locales, OU si le flag fromBank a été corrigé
-  if (_afterMergeTx > _countAllTx(budgetData) || _fbFix || _fixedKept > 0) { _cloudDirty = true; dSave(); }
+  if (_afterMergeTx > _countAllTx(budgetData) || _fbFix || _fixedKept > 0) {
+    _cloudDirty = true; _setPendingLocal(true); dSave();
+  } else if (_incomingRev && !_cloudDirty) {
+    // Rien de local à faire valoir : cet appareil est aligné sur cette version
+    _setSeenRev(_incomingRev);
+    _setPendingLocal(false);
+  }
   // Re-rendu complet
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
   const activeNavEl = document.querySelector('.nav-btn.active');
@@ -6962,6 +7062,7 @@ function saveData(silent = false) {
   updateLastSaveDisplay();
   // ── Protections multi-couches ──
   _cloudDirty = true;                   // données locales à pousser
+  _setPendingLocal(true);               // drapeau persistant : survit à une fermeture de l'app
   cloudPush();                          // Firebase (Premium)
   opfsSave();                           // OPFS local persistant (tous)
   gistPush();                           // GitHub Gist (si configuré)
@@ -8962,6 +9063,8 @@ async function _autoRestoreFromFirebase() {
       if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
       localStorage.setItem(dataKey(), JSON.stringify(DATA));
       _setSyncedSnapshot(DATA); // local identique au cloud à cet instant
+      _setPendingLocal(false);
+      if (DATA._rev) _setSeenRev(DATA._rev);
       setCloudStatus('ok');
     } else {
       loadData();
@@ -9217,8 +9320,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.13';
-const SW_VERSION = 'v293';
+const APP_VERSION = '13.14';
+const SW_VERSION = 'v294';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11100,6 +11203,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.14': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🔢', text: 'Synchro repensée : la priorité entre appareils se décide sur un compteur de version des données, plus sur une comparaison d\'heures. Un appareil qui n\'a rien modifié ne peut plus refuser les données du cloud.' },
+      { icon: '💾', text: 'Les modifications en attente d\'envoi sont mémorisées durablement : elles survivent à une fermeture de l\'app et ne peuvent plus être adoptées par erreur au redémarrage.' }
+    ]
+  },
   '13.13': {
     date: 'Août 2026',
     items: [
