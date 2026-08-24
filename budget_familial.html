@@ -369,6 +369,15 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .charge-table tbody td.tot-col{font-weight:800;background:#dde3eb;min-width:95px;font-size:13px;border-left:3px solid #b0bec5;color:#1a252f}
 /* separator row */
 .sep-row td{background:#1a3c6e;color:#fff;font-weight:700;padding:6px 14px;font-size:11px;letter-spacing:.5px}
+/* Aligner à gauche est indispensable : ce td s'étend sur les 15 colonnes, et
+   `.charge-table tbody td` le centre. Le libellé se retrouvait donc au milieu
+   d'une cellule de plus de 1300 px, hors écran tant qu'on n'avait pas fait
+   défiler le tableau. Sélecteur volontairement plus spécifique que celui-là. */
+tr.sep-row td{text-align:left}
+/* Le libellé d'un séparateur s'étale sur les 15 colonnes : en début de défilement
+   horizontal (mobile, janvier à l'écran) il se retrouvait hors champ. On le rend
+   solidaire du bord gauche, comme la colonne des libellés juste au-dessus. */
+.sep-row td > .sep-lbl{position:sticky;left:0;display:inline-block;white-space:nowrap}
 /* occasional row */
 .occ-row td{background:#fffde7}
 .occ-row td.lbl-col::before{content:'📌 ';font-size:10px}
@@ -4737,7 +4746,7 @@ function renderRevSection(year) {
         <th class="tot-col">${t('th.total')}</th><th style="width:60px"></th>
       </tr></thead>
       <tbody>${tbody}
-        <tr class="sep-row"><td colspan="15" style="background:#2d6a4f;font-size:10px">${t('row.total_revenus_sep')}</td></tr>
+        <tr class="sep-row"><td colspan="15" style="background:#2d6a4f;font-size:10px"><span class="sep-lbl">${t('row.total_revenus_sep')}</span></td></tr>
         <tr style="background:var(--row-success);font-weight:700">
           <td class="lbl-col">${t('row.total_revenus')}</td>${totRow}
           <td class="tot-col pos" id="revtot-${year}">${fmtN(grandTot)}</td><td></td>
@@ -4907,7 +4916,7 @@ function renderChargeSection(year) {
   // argument, à la place du nom de livret — d'où une flèche explicite.
   tbody += _courantes.map(ri => renderRow(ri)).join('');
   if (_occas.length) {
-    tbody += `<tr class="sep-row"><td colspan="15">${t('row.occasional_charges')}</td></tr>`;
+    tbody += `<tr class="sep-row"><td colspan="15"><span class="sep-lbl">${t('row.occasional_charges')}</span></td></tr>`;
     tbody += _occas.map(ri => renderRow(ri)).join('');
   }
   // Un bloc par livret, dans l'ordre de la configuration, titré à son nom
@@ -4919,7 +4928,7 @@ function renderChargeSection(year) {
   _cles.forEach(k => {
     const liv = _livsOrdre.find(l => l.id === k);
     const nom = liv ? liv.name : getLivretName();
-    tbody += `<tr class="sep-row"><td colspan="15" style="background:#17513a;color:#8ff0c0">📈 ${_esc(nom)}</td></tr>`;
+    tbody += `<tr class="sep-row"><td colspan="15" style="background:#17513a;color:#8ff0c0"><span class="sep-lbl">📈 ${_esc(nom)}</span></td></tr>`;
     tbody += _parLivret.get(k).map(ri => renderRow(ri, nom)).join('');
   });
 
@@ -4947,9 +4956,9 @@ function renderChargeSection(year) {
         <th class="tot-col">${t('th.total')}</th><th style="width:60px"></th>
       </tr></thead>
       <tbody>
-        <tr class="sep-row"><td colspan="15">${t('row.recurring_charges')}</td></tr>
+        <tr class="sep-row"><td colspan="15"><span class="sep-lbl">${t('row.recurring_charges')}</span></td></tr>
         ${tbody}
-        <tr class="sep-row"><td colspan="15" style="background:#2c3e50">${t('row.total_charges_sep')}</td></tr>
+        <tr class="sep-row"><td colspan="15" style="background:#2c3e50"><span class="sep-lbl">${t('row.total_charges_sep')}</span></td></tr>
         <tr style="font-weight:800;background:rgba(91,106,240,.22);color:#fff;border-top:3px solid rgba(91,106,240,.5)">
           <td class="lbl-col" style="color:#fff;font-size:13px">${t('row.total_charges')}</td>${totRow}
           <td class="tot-col" style="color:#a0aaff;font-size:15px;font-weight:900" id="chtot-${year}">${fmtN(gt)}</td><td></td>
@@ -9753,8 +9762,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.27';
-const SW_VERSION = 'v307';
+const APP_VERSION = '13.28';
+const SW_VERSION = 'v308';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11636,6 +11645,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.28': {
+    date: 'Août 2026',
+    items: [
+      { icon: '📱', text: 'Sur mobile, les intitulés de section (charges récurrentes, occasionnelles, livrets) restent maintenant visibles quelle que soit la position du défilement horizontal. Ils n\'apparaissaient qu\'en faisant glisser le tableau vers la droite.' }
+    ]
+  },
   '13.27': {
     date: 'Août 2026',
     items: [
