@@ -8539,18 +8539,27 @@ function renderConfigTab() {
             <div style="margin-top:4px;margin-left:20px;display:flex;gap:4px;flex-wrap:wrap">${methTags}</div>
           </div>`;
         }).join('');
+        // Année de contexte pour la configuration d'un livret : l'année courante si
+        // elle existe, sinon la plus récente. Sans ça le réglage porterait sur la
+        // première année du budget, rarement celle que l'on a sous les yeux.
+        const _cfgYear = (() => {
+          const ys = getYears(); const cur = String(new Date().getFullYear());
+          return ys.includes(cur) ? cur : (ys[ys.length - 1] || '');
+        })();
         const livRows = livs.map((l,i) => `
           <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
             <span style="font-size:13px">📈</span>
             <input type="text" value="${l.name}" style="flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;background:var(--surface);color:var(--text)"
               onchange="renameLivret('${l.id}',this.value)" placeholder="Nom du livret">
+            <button onclick="openLivretConfig('${l.id}','${_cfgYear}')" title="Lignes incluses, intérêts, plus/moins-value" style="background:none;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:13px;cursor:pointer;color:var(--text)">⚙️</button>
             ${i === 0 ? '' : isLicensed() ? `<button class="del-btn" onclick="removeLivret('${l.id}')" title="Supprimer">✕</button>` : ''}
           </div>`).join('');
         const addAccForm = isLicensed() ? `
           <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
             <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:5px">${t('cfg.add_account')}</div>
             <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-              <input type="text" id="new-acc-name" placeholder="Nom du compte (ex: Compte B)" style="flex:2;min-width:120px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
+              <input type="text" id="new-acc-name" placeholder="Nom du compte (ex: Compte B)" style="flex:2;min-width:120px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();addAccount(this.value,document.getElementById('new-acc-color').value);this.value='';}">
               <input type="color" id="new-acc-color" value="#5B6AF0" style="width:30px;height:30px;border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:2px">
               <button class="btn btn-save" style="padding:5px 10px;font-size:12px" onclick="addAccount(document.getElementById('new-acc-name').value,document.getElementById('new-acc-color').value);document.getElementById('new-acc-name').value=''">＋</button>
             </div>
@@ -8559,7 +8568,8 @@ function renderConfigTab() {
           <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
             <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:5px">${t('cfg.add_livret')}</div>
             <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-              <input type="text" id="new-liv-name" placeholder="Nom du livret (ex: Livret B)" style="flex:2;min-width:120px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px">
+              <input type="text" id="new-liv-name" placeholder="Nom du livret (ex: Livret B)" style="flex:2;min-width:120px;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:12px"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();addLivret(this.value,document.getElementById('new-liv-acc').value);this.value='';}">
               <select id="new-liv-acc" style="flex:1;min-width:100px;border:1px solid var(--border);border-radius:4px;padding:5px 6px;font-size:12px;background:var(--surface);color:var(--text)">
                 ${accs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}
               </select>
@@ -9694,8 +9704,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.23';
-const SW_VERSION = 'v303';
+const APP_VERSION = '13.24';
+const SW_VERSION = 'v304';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11577,6 +11587,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.24': {
+    date: 'Août 2026',
+    items: [
+      { icon: '⚙️', text: 'Chaque livret a désormais son engrenage directement dans Configuration → Comptes & Livrets, pour accéder aux intérêts et aux plus/moins-values sans passer par la vue annuelle.' },
+      { icon: '⏎', text: 'La touche Entrée valide enfin l\'ajout d\'un compte ou d\'un livret — il fallait obligatoirement cliquer le bouton ＋.' }
+    ]
+  },
   '13.23': {
     date: 'Août 2026',
     items: [
