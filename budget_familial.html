@@ -4837,14 +4837,26 @@ function _onDragEnd(e) {
 // ── CHARGES ──
 function renderChargeSection(year) {
   const rows = DATA[year].charges;
-  let sepDone = false;
   let tbody = '';
 
+  // Regroupement à l'affichage. Les séparateurs étaient posés au fil du tableau :
+  // toute ligne ajoutée après la première ligne occasionnelle — donc en fin de
+  // tableau — se retrouvait rangée sous « Charges occasionnelles », y compris les
+  // mouvements de livret. On classe désormais explicitement, en conservant l'index
+  // réel de chaque ligne pour que l'édition et le glisser-déposer restent justes.
+  const _estLivret = r => r.cat === 'livret_in' || r.cat === 'livret_out';
+  const _courantes = [], _occas = [], _parLivret = new Map();
   rows.forEach((r, ri) => {
-    if (r.cat === 'occasional' && !sepDone) {
-      tbody += `<tr class="sep-row"><td colspan="15">${t('row.occasional_charges')}</td></tr>`;
-      sepDone = true;
-    }
+    if (_estLivret(r)) {
+      const k = r.livretId || 'liv_main';
+      if (!_parLivret.has(k)) _parLivret.set(k, []);
+      _parLivret.get(k).push(ri);
+    } else if (r.cat === 'occasional') _occas.push(ri);
+    else _courantes.push(ri);
+  });
+
+  const renderRow = (ri) => {
+    const r = rows[ri];
     const rowTot = sum(r.v);
     const cells = r.v.map((v,mi) => {
       const paid = r.paid[mi];
@@ -4864,7 +4876,7 @@ function renderChargeSection(year) {
     const isLivretRow = r.cat==='livret_in'||r.cat==='livret_out';
     const isProtectedChg = isLivretRow || r.cat==='boite_in' || r.cat==='retrait_banc';
     const chkClass = isLivretRow ? 'cal-check-livret' : 'cal-check-compte';
-    tbody += `<tr class="${r.cat==='occasional'?'occ-row':''}" ondragover="_onDragOver(event)" ondragleave="_onDragLeave(event)" ondrop="_onDrop(event,'${year}','charges',${ri})">
+    return `<tr class="${r.cat==='occasional'?'occ-row':''}" ondragover="_onDragOver(event)" ondragleave="_onDragLeave(event)" ondrop="_onDrop(event,'${year}','charges',${ri})">
       <td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check ${chkClass}" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','${isLivretRow?'livret':'compte'}',${ri},this.checked,'charge')" onclick="event.stopPropagation()">
         <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
@@ -4872,6 +4884,24 @@ function renderChargeSection(year) {
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
       <td style="white-space:nowrap;width:60px"><span class="drag-handle" draggable="true" title="Glisser pour déplacer" ondragstart="_onSpanDragStart(event,'${year}','charges',${ri})" ondragend="_onDragEnd(event)">⠿</span><button class="del-btn" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button>${isProtectedChg?'':'<button class="del-btn" onclick="delCharge(\''+year+'\','+ri+')">✕</button>'}</td>
     </tr>`;
+  };
+
+  tbody += _courantes.map(renderRow).join('');
+  if (_occas.length) {
+    tbody += `<tr class="sep-row"><td colspan="15">${t('row.occasional_charges')}</td></tr>`;
+    tbody += _occas.map(renderRow).join('');
+  }
+  // Un bloc par livret, dans l'ordre de la configuration, titré à son nom
+  const _livsOrdre = getLivrets();
+  const _cles = [..._parLivret.keys()].sort((a, b) => {
+    const ia = _livsOrdre.findIndex(l => l.id === a), ib = _livsOrdre.findIndex(l => l.id === b);
+    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+  });
+  _cles.forEach(k => {
+    const liv = _livsOrdre.find(l => l.id === k);
+    const nom = liv ? liv.name : getLivretName();
+    tbody += `<tr class="sep-row"><td colspan="15" style="background:#17513a;color:#8ff0c0">📈 ${_esc(nom)}</td></tr>`;
+    tbody += _parLivret.get(k).map(renderRow).join('');
   });
 
   const mths = chgTotal(year);
@@ -9704,8 +9734,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.24';
-const SW_VERSION = 'v304';
+const APP_VERSION = '13.25';
+const SW_VERSION = 'v305';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11587,6 +11617,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.25': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🗂️', text: 'Charges & dépenses fixes : chaque livret a maintenant son propre bloc, titré à son nom. Les mouvements d\'épargne et de placement ne sont plus mélangés aux charges occasionnelles.' }
+    ]
+  },
   '13.24': {
     date: 'Août 2026',
     items: [
