@@ -4855,8 +4855,25 @@ function renderChargeSection(year) {
     else _courantes.push(ri);
   });
 
-  const renderRow = (ri) => {
+  // Dans un bloc de livret, le nom est déjà porté par le titre : le répéter dans
+  // chaque libellé n'apporte rien et fait déborder la colonne. On l'élide à
+  // l'affichage uniquement — la donnée, l'export et la modal d'édition gardent
+  // le libellé complet, disponible au survol.
+  const _labelCourt = (label, nom) => {
+    if (!nom) return label;
+    const e = nom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const court = label
+      .replace(new RegExp('\\s*[–—-]\\s*' + e + '\\s*$', 'i'), '')  // « Plus-value – Nom »
+      .replace(new RegExp('\\s*→\\s*' + e + '\\s*$', 'i'), '')      // « Ordre permanent → Nom »
+      .replace(new RegExp('\\s*' + e + '\\s*→\\s*', 'i'), ' → ')    // « Retrait Nom → Compte »
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    return court || label;
+  };
+
+  const renderRow = (ri, nomLivret) => {
     const r = rows[ri];
+    const labelAffiche = nomLivret ? _labelCourt(r.label, nomLivret) : r.label;
     const rowTot = sum(r.v);
     const cells = r.v.map((v,mi) => {
       const paid = r.paid[mi];
@@ -4879,7 +4896,7 @@ function renderChargeSection(year) {
     return `<tr class="${r.cat==='occasional'?'occ-row':''}" ondragover="_onDragOver(event)" ondragleave="_onDragLeave(event)" ondrop="_onDrop(event,'${year}','charges',${ri})">
       <td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check ${chkClass}" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','${isLivretRow?'livret':'compte'}',${ri},this.checked,'charge')" onclick="event.stopPropagation()">
-        <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
+        <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(labelAffiche)}" title="${_esc(r.label)}" readonly tabindex="-1">
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
       <td style="white-space:nowrap;width:60px"><span class="drag-handle" draggable="true" title="Glisser pour déplacer" ondragstart="_onSpanDragStart(event,'${year}','charges',${ri})" ondragend="_onDragEnd(event)">⠿</span><button class="del-btn" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button>${isProtectedChg?'':'<button class="del-btn" onclick="delCharge(\''+year+'\','+ri+')">✕</button>'}</td>
@@ -4901,7 +4918,7 @@ function renderChargeSection(year) {
     const liv = _livsOrdre.find(l => l.id === k);
     const nom = liv ? liv.name : getLivretName();
     tbody += `<tr class="sep-row"><td colspan="15" style="background:#17513a;color:#8ff0c0">📈 ${_esc(nom)}</td></tr>`;
-    tbody += _parLivret.get(k).map(renderRow).join('');
+    tbody += _parLivret.get(k).map(ri => renderRow(ri, nom)).join('');
   });
 
   const mths = chgTotal(year);
@@ -9734,8 +9751,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.25';
-const SW_VERSION = 'v305';
+const APP_VERSION = '13.26';
+const SW_VERSION = 'v306';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11617,6 +11634,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.26': {
+    date: 'Août 2026',
+    items: [
+      { icon: '✂️', text: 'Dans un bloc de livret, le nom n\'est plus répété dans chaque libellé : le titre du bloc le porte déjà. Fini les intitulés tronqués. Le libellé complet reste visible au survol et dans la fenêtre de modification.' }
+    ]
+  },
   '13.25': {
     date: 'Août 2026',
     items: [
