@@ -6710,7 +6710,14 @@ async function cloudPush() {
 async function cloudPull() {
   const url = cloudApiUrl();
   if (!url) return null;
-  if (!_deviceAllowed) return null;
+  if (!_deviceAllowed) {
+    // Ne PAS renvoyer un null muet : l'appelant le lirait comme « cloud vide »
+    // et pousserait les données locales, potentiellement périmées.
+    _lastSyncError = _lang === 'en'
+      ? `Device not authorized — max ${MAX_DEVICES} devices`
+      : `Appareil non autorisé — ${MAX_DEVICES} appareils maximum`;
+    return null;
+  }
   const token = await fbGetToken();
   if (!token) return null; // Session expirée — pas de pull silencieux
   try {
@@ -8491,7 +8498,8 @@ function renderConfigTab() {
               const pending = _hasPendingLocal();
               const cloud   = _knownCloudRev;
               const enRetard = cloud > 0 && seen < cloud;
-              const etat = !seen && !cloud ? { txt: 'Compteur pas encore initialisé', col: 'var(--gray)' }
+              const etat = !_deviceAllowed ? { txt: `Synchro bloquée — ${MAX_DEVICES} appareils maximum atteints`, col: '#ffb3b3' }
+                : !seen && !cloud          ? { txt: 'Compteur pas encore initialisé', col: 'var(--gray)' }
                 : enRetard && pending      ? { txt: 'En retard + saisies locales — fusion au prochain démarrage', col: '#f0c040' }
                 : enRetard                 ? { txt: 'En retard sur le cloud', col: '#f0c040' }
                 : pending                  ? { txt: 'Saisies en attente d\'envoi', col: '#f0c040' }
@@ -8499,7 +8507,12 @@ function renderConfigTab() {
               return `<div style="font-size:11px;color:var(--gray);margin-bottom:10px">
                 État : <b style="color:${etat.col}">${etat.txt}</b>
                 <span style="opacity:.7"> · version vue ${seen}${cloud ? ' / cloud ' + cloud : ''}</span>
-              </div>`;
+              </div>
+              ${!_deviceAllowed ? `<div style="font-size:11px;color:#ffb3b3;background:rgba(255,179,179,.1);border:1px solid rgba(255,179,179,.3);border-radius:7px;padding:8px 10px;margin-bottom:10px;line-height:1.5">
+                Cet appareil ne peut ni envoyer ni recevoir. Retirez un appareil inutilisé ci-dessous, puis rechargez l'application.
+              </div>` : ''}
+              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin:12px 0 6px">📱 Mes appareils</div>
+              <div id="devices-box" style="margin-bottom:10px"><button onclick="renderDevicesList()" style="font-size:11px;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:5px 11px;cursor:pointer">Afficher mes appareils</button></div>`;
             })()}
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button onclick="cloudPushNow()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">${t('cfg.cloud_push')}</button>
@@ -9286,6 +9299,65 @@ async function fbRegisterDevice(uid, email, idToken) {
   } catch(e) { /* non-bloquant */ }
 }
 
+// ── GESTION DES APPAREILS ──
+// Vider le stockage d'un appareil lui attribue un nouvel identifiant : l'ancienne
+// entrée reste enregistrée et occupe une place. Sans moyen de la retirer, la
+// synchronisation se coupe silencieusement sur l'appareil de trop.
+let _devicesCache = null;
+async function loadDevices() {
+  if (!_fbUser) return [];
+  const token = await fbGetToken();
+  if (!token) return [];
+  try {
+    const r = await _fbFetch(`${LICENSE_DB}/users/${_fbUser.uid}/devices.json`, {}, token);
+    if (!r.ok) return [];
+    const d = (await r.json()) || {};
+    _devicesCache = Object.entries(d).map(([id, info]) => ({
+      id,
+      label: (info && info.label) || 'Appareil inconnu',
+      lastSeen: (info && info.lastSeen) || 0,
+      current: id === _getDeviceId()
+    })).sort((a, b) => b.lastSeen - a.lastSeen);
+    return _devicesCache;
+  } catch { return []; }
+}
+async function removeDevice(deviceId) {
+  if (!_fbUser) return;
+  if (deviceId === _getDeviceId()) { showToast('⚠️ Impossible de retirer l\'appareil courant'); return; }
+  const dev = (_devicesCache || []).find(d => d.id === deviceId);
+  if (!confirm(`Retirer « ${dev ? dev.label : deviceId} » ?\n\nIl libérera une place. Si vous le réutilisez plus tard, il se réenregistrera automatiquement.`)) return;
+  const token = await fbGetToken();
+  if (!token) { showToast(t('toast.login_required')); return; }
+  try {
+    const r = await _fbFetch(`${LICENSE_DB}/users/${_fbUser.uid}/devices/${deviceId}.json`, { method:'DELETE' }, token);
+    if (!r.ok) { showToast('❌ Suppression impossible (HTTP ' + r.status + ')'); return; }
+    showToast('✅ Appareil retiré');
+    // Ré-évaluer l'autorisation de cet appareil dans la foulée
+    await fbRegisterDevice(_fbUser.uid, _fbUser.email, token);
+    renderConfigTab();
+  } catch (e) { showToast('❌ ' + (e.message || 'Erreur réseau')); }
+}
+async function renderDevicesList() {
+  const box = document.getElementById('devices-box');
+  if (!box) return;
+  box.innerHTML = `<div style="font-size:11px;color:var(--gray)">Chargement…</div>`;
+  const devs = await loadDevices();
+  if (!devs.length) { box.innerHTML = `<div style="font-size:11px;color:var(--gray)">Aucun appareil enregistré</div>`; return; }
+  const fmt = ts => ts ? new Date(ts).toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+  box.innerHTML = `
+    <div style="font-size:11px;color:var(--gray);margin-bottom:8px">${devs.length}/${MAX_DEVICES} places utilisées</div>
+    ${devs.map(d => `
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface-alt);border:1px solid var(--border);border-radius:7px;margin-bottom:6px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${_esc(d.label)}${d.current ? ' <span style="color:var(--green);font-weight:700">· cet appareil</span>' : ''}
+          </div>
+          <div style="font-size:10px;color:var(--gray)">Vu le ${fmt(d.lastSeen)}</div>
+        </div>
+        ${d.current ? '' : `<button onclick="removeDevice('${d.id}')" style="font-size:11px;color:var(--red);background:none;border:1px solid var(--red);border-radius:6px;padding:3px 9px;cursor:pointer;white-space:nowrap">Retirer</button>`}
+      </div>`).join('')}`;
+}
+
 // ── GOOGLE SIGN-IN ──
 async function _fbSignInWithIdp(idToken) {
   const requestUri = window.location.origin + window.location.pathname;
@@ -9435,8 +9507,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.17';
-const SW_VERSION = 'v297';
+const APP_VERSION = '13.18';
+const SW_VERSION = 'v298';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11318,6 +11390,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.18': {
+    date: 'Août 2026',
+    items: [
+      { icon: '📱', text: 'Gestion des appareils : Configuration → Cloud liste vos appareils enregistrés et permet d\'en retirer un. Vider le stockage d\'un appareil lui donnait un nouvel identifiant et l\'ancienne entrée occupait une place à vie.' },
+      { icon: '🔇', text: 'Fix : quand la limite d\'appareils était atteinte, la synchro se coupait sans le dire et l\'app croyait le cloud vide — au point de vouloir y envoyer les données locales. C\'est désormais signalé clairement.' }
+    ]
+  },
   '13.17': {
     date: 'Août 2026',
     items: [
