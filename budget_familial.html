@@ -4860,7 +4860,7 @@ function renderChargeSection(year) {
   // l'affichage uniquement — la donnée, l'export et la modal d'édition gardent
   // le libellé complet, disponible au survol.
   const _labelCourt = (label, nom) => {
-    if (!nom) return label;
+    if (!nom || typeof nom !== 'string') return label;
     const e = nom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const court = label
       .replace(new RegExp('\\s*[–—-]\\s*' + e + '\\s*$', 'i'), '')  // « Plus-value – Nom »
@@ -4903,10 +4903,12 @@ function renderChargeSection(year) {
     </tr>`;
   };
 
-  tbody += _courantes.map(renderRow).join('');
+  // NB : passer renderRow directement à map lui transmettrait l'index en 2e
+  // argument, à la place du nom de livret — d'où une flèche explicite.
+  tbody += _courantes.map(ri => renderRow(ri)).join('');
   if (_occas.length) {
     tbody += `<tr class="sep-row"><td colspan="15">${t('row.occasional_charges')}</td></tr>`;
-    tbody += _occas.map(renderRow).join('');
+    tbody += _occas.map(ri => renderRow(ri)).join('');
   }
   // Un bloc par livret, dans l'ordre de la configuration, titré à son nom
   const _livsOrdre = getLivrets();
@@ -9751,8 +9753,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.26';
-const SW_VERSION = 'v306';
+const APP_VERSION = '13.27';
+const SW_VERSION = 'v307';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11634,6 +11636,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.27': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🚑', text: 'Correctif urgent : le tableau des charges ne s\'affichait plus (« nom.replace is not a function ») dès qu\'une année comptait plus d\'une charge récurrente. Régression introduite par la version précédente.' }
+    ]
+  },
   '13.26': {
     date: 'Août 2026',
     items: [
