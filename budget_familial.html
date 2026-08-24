@@ -2645,17 +2645,25 @@ function _finishLogin(id) {
           mustAcceptCloud: _mustAcceptCloud,
           localSaveTime: _localSaveTime, cloudPushTime: _cloudPushTime
         });
-        const _localIsNewer = _decision.localIsNewer;
-        const _conflict     = _decision.conflict;
+        let _localIsNewer = _decision.localIsNewer;
+        const _conflict   = _decision.conflict;
         console.info(`🔄 Sync démarrage : ${_decision.reason} (rev cloud ${_cloudRev}, vue ${_seenRev}, en attente ${_pending})`);
-        if (_conflict) {
-          // Vrai conflit : fusion ligne par ligne contre l'ancêtre persisté.
-          // Une ligne que cet appareil n'a pas touchée depuis la dernière synchro
-          // laisse passer la version distante ; seules ses vraies modifications
-          // sont défendues. Repli `dirty` uniquement si aucun ancêtre n'existe.
+        if (_conflict && _ancestorForMerge) {
+          // Vrai conflit, avec ancêtre : fusion champ par champ. Une ligne que cet
+          // appareil n'a pas touchée depuis la dernière synchro laisse passer la
+          // version distante ; seules ses vraies modifications sont défendues.
           DATA = _mergeBudgetData(DATA, cloudData, {
-            enabled: true, ancestor: _ancestorForMerge, dirty: !_ancestorForMerge
+            enabled: true, ancestor: _ancestorForMerge, dirty: false
           });
+        } else if (_conflict) {
+          // Conflit sans ancêtre (premier démarrage sous ce schéma) : aucune fusion
+          // 3 voies n'est possible. On s'en remet alors au seul signal fiable, le
+          // compteur, qui dit que cet appareil est en retard → le cloud fait
+          // autorité. Conserver le local ici propagerait un état périmé à tout le
+          // parc, ce qui est le défaut le plus coûteux.
+          console.warn('🔄 Conflit sans ancêtre — le cloud fait autorité (ancêtre posé pour la suite)');
+          DATA = _mergeBudgetData(DATA, cloudData);
+          _localIsNewer = false;
         } else if (_localIsNewer) {
           // Local en avance → garder local comme base, ajouter vars cloud manquantes
           DATA = _mergeBudgetData(cloudData, DATA); // args inversés : local devient base
@@ -9427,8 +9435,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.16';
-const SW_VERSION = 'v296';
+const APP_VERSION = '13.17';
+const SW_VERSION = 'v297';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11310,6 +11318,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.17': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🩹', text: 'Fix de transition : au tout premier démarrage sous le nouveau mécanisme, un appareil en retard adopte les données du cloud au lieu de conserver son état périmé — ce qui pouvait encore effacer une saisie faite ailleurs.' }
+    ]
+  },
   '13.16': {
     date: 'Août 2026',
     items: [
