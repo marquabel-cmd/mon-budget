@@ -2605,7 +2605,10 @@ function _finishLogin(id) {
           return;
         }
         if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
-        _setSyncedSnapshot(cloudData); // ancêtre de référence pour la session
+        // Capturer l'ancêtre AVANT toute chose : c'est l'état commun de la dernière
+        // synchro réussie. L'écraser ici par cloudData ferait passer toute
+        // modification distante pour une modification locale.
+        const _ancestorForMerge = _getAncestor();
         _backupBeforeCloudReplace();
         const _cloudTxCount = _countAllTx(cloudData);
         // Comparer les timestamps pour savoir qui est le plus récent
@@ -2646,10 +2649,13 @@ function _finishLogin(id) {
         const _conflict     = _decision.conflict;
         console.info(`🔄 Sync démarrage : ${_decision.reason} (rev cloud ${_cloudRev}, vue ${_seenRev}, en attente ${_pending})`);
         if (_conflict) {
-          // Vrai conflit : fusion ligne par ligne. Pas d'ancêtre disponible au
-          // démarrage (le snapshot est en mémoire), donc repli `dirty` — en cas
-          // de doute on conserve le local plutôt que de risquer de le perdre.
-          DATA = _mergeBudgetData(DATA, cloudData, { enabled: true, ancestor: null, dirty: true });
+          // Vrai conflit : fusion ligne par ligne contre l'ancêtre persisté.
+          // Une ligne que cet appareil n'a pas touchée depuis la dernière synchro
+          // laisse passer la version distante ; seules ses vraies modifications
+          // sont défendues. Repli `dirty` uniquement si aucun ancêtre n'existe.
+          DATA = _mergeBudgetData(DATA, cloudData, {
+            enabled: true, ancestor: _ancestorForMerge, dirty: !_ancestorForMerge
+          });
         } else if (_localIsNewer) {
           // Local en avance → garder local comme base, ajouter vars cloud manquantes
           DATA = _mergeBudgetData(cloudData, DATA); // args inversés : local devient base
@@ -2674,6 +2680,7 @@ function _finishLogin(id) {
           _cloudDirty = false;
           _setPendingLocal(false);
           if (_cloudRev) _setSeenRev(_cloudRev);
+          _setSyncedSnapshot(DATA); // aligné sur le cloud : nouvel ancêtre commun
           if (_cloudPushTime) {
             const json = JSON.stringify(DATA);
             localStorage.setItem(dataKey(), json);
@@ -3060,6 +3067,26 @@ function _indexFixedRows(arr) {
   });
   return m;
 }
+// Fusion 3 voies d'une ligne, champ par champ — et pour `v` / `paid`, mois par mois.
+// Indispensable : cocher août sur le PC et avril sur le téléphone touche la même
+// ligne. Un arbitrage au niveau de la ligne entière en perdrait forcément un des deux.
+function _merge3Row(anc, ours, theirs) {
+  if (!anc)   return ours;
+  if (!ours)  return theirs;
+  if (!theirs) return ours;
+  const out = { ...theirs };
+  new Set([...Object.keys(ours), ...Object.keys(theirs)]).forEach(k => {
+    const a = anc[k], o = ours[k], t = theirs[k];
+    if (Array.isArray(o) && Array.isArray(t) && o.length === t.length) {
+      const ancArr = Array.isArray(a) ? a : [];
+      // Cellule modifiée ici depuis la dernière synchro → elle gagne ; sinon on prend la distante
+      out[k] = o.map((val, i) => JSON.stringify(val) !== JSON.stringify(ancArr[i]) ? val : t[i]);
+    } else {
+      out[k] = JSON.stringify(o) !== JSON.stringify(a) ? o : t;
+    }
+  });
+  return out;
+}
 function _mergeFixedRows(ancestor, ours, theirs, dirtyFallback) {
   if (!Array.isArray(ours))   return { rows: Array.isArray(theirs) ? theirs : [], changed: 0 };
   if (!Array.isArray(theirs)) return { rows: ours, changed: 0 };
@@ -3074,9 +3101,15 @@ function _mergeFixedRows(ancestor, ours, theirs, dirtyFallback) {
     const anc   = take(ancPool, k);
     const their = take(theirPool, k);
     if (!their) { rows.push(row); changed++; return; } // absente du cloud → ligne créée ici, on la garde
-    const localChanged = anc ? JSON.stringify(anc) !== JSON.stringify(row) : !!dirtyFallback;
-    if (localChanged && JSON.stringify(their) !== JSON.stringify(row)) { rows.push(row); changed++; return; }
-    rows.push(their);
+    if (!anc) {
+      // Aucun ancêtre : impossible de départager champ par champ. On garde le
+      // local seulement s'il reste des modifications non envoyées.
+      if (dirtyFallback && JSON.stringify(their) !== JSON.stringify(row)) { rows.push(row); changed++; return; }
+      rows.push(their); return;
+    }
+    const merged = _merge3Row(anc, row, their);
+    rows.push(merged);
+    if (JSON.stringify(merged) !== JSON.stringify(their)) changed++; // du local a survécu → à repousser
   });
   // Lignes restées côté cloud : créées/modifiées sur un autre appareil → à reprendre.
   // Sauf si elles sont identiques à l'ancêtre : dans ce cas leur absence en local
@@ -6718,6 +6751,36 @@ async function cloudPull() {
     return budgetData;
   } catch(e) { _lastSyncError = e.message || 'Réseau inaccessible'; return null; }
 }
+// Lit uniquement le numéro de version côté cloud (requête minuscule)
+async function _fetchCloudRev() {
+  const url = cloudApiUrl();
+  if (!url || !/\/budget\.json$/.test(url)) return null;
+  const token = await fbGetToken();
+  if (!token) return null;
+  try {
+    const r = await _fbFetch(url.replace(/\/budget\.json$/, '/budget/_rev.json'), {}, token);
+    if (!r.ok) return null;
+    return parseInt(await r.json() || 0) || 0;
+  } catch { return null; }
+}
+
+// Envoi manuel, avec garde-fou : pousser depuis un appareil en retard écrase le
+// cloud avec un état périmé — c'est exactement ainsi qu'une saisie faite sur un
+// autre appareil a déjà été perdue.
+async function cloudPushNow() {
+  if (!isLicensed()) { showToast(t('toast.license_required')); return; }
+  if (!_fbUser) { showToast(t('toast.login_required')); openAuthModal('login'); return; }
+  const remoteRev = await _fetchCloudRev();
+  const seen = _getSeenRev();
+  if (remoteRev && seen < remoteRev) {
+    const msg = _lang === 'en'
+      ? `This device is behind the cloud (version ${seen} vs ${remoteRev}).\n\nSending now will overwrite the cloud with this device's data, including anything entered elsewhere in the meantime.\n\nIf you meant to retrieve the cloud data instead, cancel and use "Retrieve from cloud".\n\nSend anyway?`
+      : `Cet appareil est en retard sur le cloud (version ${seen} contre ${remoteRev}).\n\nEnvoyer maintenant écrasera les données du cloud par celles de cet appareil, y compris ce qui a été saisi ailleurs entre-temps.\n\nSi vous vouliez au contraire récupérer les données du cloud, annulez et utilisez « Récupérer depuis le cloud ».\n\nEnvoyer quand même ?`;
+    if (!confirm(msg)) { showToast(_lang === 'en' ? 'Send cancelled' : 'Envoi annulé'); return; }
+  }
+  saveData();
+}
+
 async function cloudPullNow() {
   if (!isLicensed()) { showToast(t('toast.license_required')); return; }
   if (!_fbUser) { showToast(t('toast.login_required')); openAuthModal('login'); return; }
@@ -6786,9 +6849,35 @@ let _pullInProgress = false;  // true pendant un cloudPull — bloque tout push 
 // Dernier état connu comme commun avec le cloud — sert d'ancêtre à la fusion 3 voies
 // des charges/revenus, pour distinguer "modifié ici" de "modifié sur un autre appareil"
 let _lastSyncedSnapshot = null;
+function _ancestorKey() { return 'budget_ancestor_' + (CURRENT_USER_ID || ''); }
+// Ancêtre compact : seules les lignes fixes servent à la fusion 3 voies,
+// inutile de dupliquer tout le budget en stockage local.
+function _compactAncestor(d) {
+  if (!d) return null;
+  const out = {};
+  Object.keys(d).forEach(yr => {
+    if (!/^\d{4}$/.test(yr) || !d[yr]) return;
+    out[yr] = {
+      charges: Array.isArray(d[yr].charges) ? d[yr].charges : [],
+      revenus: Array.isArray(d[yr].revenus) ? d[yr].revenus : []
+    };
+  });
+  return out;
+}
 function _setSyncedSnapshot(d) {
-  try { _lastSyncedSnapshot = d ? JSON.parse(JSON.stringify(d)) : null; }
-  catch { _lastSyncedSnapshot = null; }
+  try {
+    _lastSyncedSnapshot = d ? JSON.parse(JSON.stringify(d)) : null;
+    // Persisté : sans ancêtre au redémarrage, la fusion conservait aveuglément
+    // toutes les lignes locales divergentes — un appareil périmé écrasait alors
+    // une saisie faite ailleurs, puis la propageait au reste du parc.
+    const compact = _compactAncestor(d);
+    if (compact && CURRENT_USER_ID) localStorage.setItem(_ancestorKey(), JSON.stringify(compact));
+  } catch { _lastSyncedSnapshot = null; }
+}
+function _getAncestor() {
+  if (_lastSyncedSnapshot) return _lastSyncedSnapshot;
+  try { const raw = localStorage.getItem(_ancestorKey()); return raw ? JSON.parse(raw) : null; }
+  catch { return null; }
 }
 
 // Arbitrage local / cloud au démarrage. Fonction pure : toute la décision tient ici.
@@ -6933,7 +7022,8 @@ function applyRealtimeData(d) {
   // Backup automatique avant tout remplacement
   _backupBeforeCloudReplace();
   const _beforeMergeTx = _countAllTx(DATA);
-  DATA = _mergeBudgetData(DATA, budgetData, { enabled: true, ancestor: _lastSyncedSnapshot, dirty: _cloudDirty });
+  const _ancRt = _getAncestor();
+  DATA = _mergeBudgetData(DATA, budgetData, { enabled: true, ancestor: _ancRt, dirty: _ancRt ? false : _cloudDirty });
   const _fixedKept = _lastMergeFixedPreserved;
   if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
   _syncIdCounter();
@@ -8404,7 +8494,7 @@ function renderConfigTab() {
               </div>`;
             })()}
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button onclick="saveData()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">${t('cfg.cloud_push')}</button>
+              <button onclick="cloudPushNow()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">${t('cfg.cloud_push')}</button>
               <button onclick="cloudPullNow()" style="flex:1;background:var(--green-light);color:var(--green);border:1px solid var(--green);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">${t('cfg.cloud_pull')}</button>
             </div>
             <div style="font-size:10px;color:var(--gray);margin-top:8px;line-height:1.5">${t('cfg.cloud_new_device')}</div>
@@ -9337,8 +9427,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.15';
-const SW_VERSION = 'v295';
+const APP_VERSION = '13.16';
+const SW_VERSION = 'v296';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11220,6 +11310,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.16': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🧬', text: 'Fix majeur : la fusion au démarrage compare désormais chaque ligne à son état lors de la dernière synchro réussie. Un appareil ne défend plus que ses vraies modifications, au lieu de conserver aveuglément tout ce qui diffère du cloud.' },
+      { icon: '⚠️', text: '« Envoyer vers le cloud » prévient maintenant si l\'appareil est en retard — cet envoi écraserait les saisies faites ailleurs.' }
+    ]
+  },
   '13.15': {
     date: 'Août 2026',
     items: [
