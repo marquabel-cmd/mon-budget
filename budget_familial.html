@@ -3597,9 +3597,11 @@ function computeCompte(year, accId) {
     r.v.forEach((v,i) => {
       if (!r.paid[i]) return;
       const amt = Math.abs(parseFloat(v) || 0);
-      if (r.cat === 'livret_out') bal += amt;
-      else if (r.cat === 'livret_in' && !r.fromBank) bal -= amt;
-      else if (r.cat !== 'livret_in') bal -= parseFloat(v) || 0;
+      // `fromBank` = la valeur bouge sans contrepartie sur le compte courant :
+      // intérêts et plus-values côté livret_in, moins-values côté livret_out.
+      if (r.cat === 'livret_out') { if (!r.fromBank) bal += amt; }
+      else if (r.cat === 'livret_in') { if (!r.fromBank) bal -= amt; }
+      else bal -= parseFloat(v) || 0;
     });
   });
   // Variables
@@ -3670,9 +3672,11 @@ function showCompteDetail(year, accId) {
     r.v.forEach((v, i) => {
       if (!r.paid[i]) return;
       const amt = parseFloat(v) || 0;
-      if (r.cat === 'livret_out') { bal += Math.abs(amt); total -= Math.abs(amt); }
-      else if (r.cat === 'livret_in' && !r.fromBank) { bal -= Math.abs(amt); total += Math.abs(amt); }
-      else if (r.cat !== 'livret_in') { bal -= amt; total += amt; }
+      // Une moins-value (livret_out + fromBank) ne recrédite pas le compte,
+      // exactement comme une plus-value ne le débite pas.
+      if (r.cat === 'livret_out') { if (!r.fromBank) { bal += Math.abs(amt); total -= Math.abs(amt); } }
+      else if (r.cat === 'livret_in') { if (!r.fromBank) { bal -= Math.abs(amt); total += Math.abs(amt); } }
+      else { bal -= amt; total += amt; }
     });
     const unpaid = r.v.reduce((s, v, i) => (!r.paid[i]) ? s + (parseFloat(v)||0) : s, 0);
     chgLines.push({label: r.label, total, unpaid, skipped: false, cat: r.cat});
@@ -9690,8 +9694,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.22';
-const SW_VERSION = 'v302';
+const APP_VERSION = '13.23';
+const SW_VERSION = 'v303';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11573,6 +11577,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.23': {
+    date: 'Août 2026',
+    items: [
+      { icon: '📊', text: 'Comptes de placement : nouveau bouton « Plus/moins-value » dans la configuration d\'un livret. Il ajoute deux lignes permettant d\'enregistrer un gain ou une perte de valeur, sans mouvement sur le compte courant.' }
+    ]
+  },
   '13.22': {
     date: 'Août 2026',
     items: [
@@ -15316,7 +15326,10 @@ function openLivretConfig(livId, ctxYear) {
   html += rowsHtml;
   html += '</div>';
   html += '<div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">';
-  html += '<button onclick="_addLivretInterestRow(\'' + livId + '\',\'' + useYear + '\')" style="background:none;border:1px solid #27ae60;border-radius:8px;padding:7px 13px;font-size:12px;cursor:pointer;color:#27ae60" title="Ajoute une ligne intérêts dans Charges fixes">💰 + Intérêts</button>';
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  html += '<button onclick="_addLivretInterestRow(\'' + livId + '\',\'' + useYear + '\')" style="background:none;border:1px solid #27ae60;border-radius:8px;padding:7px 11px;font-size:12px;cursor:pointer;color:#27ae60" title="Ajoute une ligne intérêts dans Charges fixes">💰 + Intérêts</button>';
+  html += '<button onclick="_addLivretGainLossRows(\'' + livId + '\',\'' + useYear + '\')" style="background:none;border:1px solid #8B5CF6;border-radius:8px;padding:7px 11px;font-size:12px;cursor:pointer;color:#8B5CF6" title="Pour un compte de placement : ajoute une ligne plus-value et une ligne moins-value">📊 + Plus/moins-value</button>';
+  html += '</div>';
   html += '<div style="display:flex;gap:8px">';
   html += '<button onclick="document.getElementById(\'_liv-cfg-overlay\').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>';
   html += '<button onclick="_saveLivretConfig(\'' + livId + '\',\'' + useYear + '\')" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>';
@@ -15344,6 +15357,41 @@ function _addLivretInterestRow(livId, useYear) {
   dSave();
   getYears().forEach(y => renderYear(y));
   showToast('✅ Ligne intérêts ajoutée — entrez les montants dans Charges & Dépenses fixes.');
+}
+// Ajoute la paire de lignes de valorisation d'un placement : la valeur monte ou
+// descend sans contrepartie sur le compte courant, d'où `fromBank` des deux côtés.
+// Deux lignes plutôt qu'une signée : les montants restent positifs, ce qui évite
+// toute saisie de nombre négatif dans le tableau.
+function _addLivretGainLossRows(livId, useYear) {
+  const liv = getLivrets().find(l => l.id === livId);
+  const livName = liv ? liv.name : getLivretName();
+  const isMain = !livId || livId === 'liv_main';
+  const defs = [
+    { label: '📈 Plus-value – '  + livName, cat: 'livret_in'  },
+    { label: '📉 Moins-value – ' + livName, cat: 'livret_out' }
+  ];
+  if (useYear && DATA[useYear]) {
+    const dejaLa = defs.filter(d => DATA[useYear].charges.some(c => c.label === d.label && c.cat === d.cat));
+    if (dejaLa.length === defs.length) {
+      showToast('⚠️ Lignes de valorisation déjà présentes pour ' + useYear);
+      document.getElementById('_liv-cfg-overlay')?.remove();
+      return;
+    }
+  }
+  getYears().forEach(y => {
+    if (!DATA[y]) return;
+    defs.forEach(d => {
+      if (DATA[y].charges.some(c => c.label === d.label && c.cat === d.cat)) return;
+      const row = { label: d.label, cat: d.cat, fromBank: true,
+        v: Array(12).fill(0), paid: Array(12).fill(true), inCalc: true };
+      if (!isMain) row.livretId = livId;
+      DATA[y].charges.push(row);
+    });
+  });
+  document.getElementById('_liv-cfg-overlay')?.remove();
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  showToast('✅ Lignes plus-value et moins-value ajoutées — saisissez les montants dans Charges & Dépenses fixes.');
 }
 function _saveLivretConfig(livId, useYear) {
   const overlay = document.getElementById('_liv-cfg-overlay');
