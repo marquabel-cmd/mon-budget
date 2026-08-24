@@ -2595,16 +2595,18 @@ function _finishLogin(id) {
     }
     if (isLicensed() && id === fbLocalId) {
       setCloudStatus('syncing');
+      _syncLog(`DÉMARRAGE pull — vue ${_getSeenRev()}, en attente ${_hasPendingLocal()}`);
       _pullInProgress = true; // Bloquer tout push pendant le pull initial
       cloudPull().then(cloudData => {
         _pullInProgress = false;
         if (cloudData === null && !_lastSyncError) {
           // Cloud vide ou données locales plus récentes — pousser les données locales
+          _syncLog('pull vide (aucune donnée cloud) → envoi du local programmé');
           if (_hasYearData(DATA)) { _cloudDirty = true; setTimeout(() => cloudPush(), 2000); }
           else { setCloudStatus('off'); }
           return;
         }
-        if (!cloudData) { setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
+        if (!cloudData) { _syncLog('pull ÉCHOUÉ : ' + (_lastSyncError || 'inconnu')); setCloudStatus('error', _lastSyncError || 'Données cloud vides ou inaccessibles'); return; }
         // Capturer l'ancêtre AVANT toute chose : c'est l'état commun de la dernière
         // synchro réussie. L'écraser ici par cloudData ferait passer toute
         // modification distante pour une modification locale.
@@ -2647,7 +2649,7 @@ function _finishLogin(id) {
         });
         let _localIsNewer = _decision.localIsNewer;
         const _conflict   = _decision.conflict;
-        console.info(`🔄 Sync démarrage : ${_decision.reason} (rev cloud ${_cloudRev}, vue ${_seenRev}, en attente ${_pending})`);
+        _syncLog(`décision « ${_decision.reason} » — cloud ${_cloudRev}, vue ${_seenRev}, en attente ${_pending}, ancêtre ${_ancestorForMerge ? 'oui' : 'NON'}`);
         if (_conflict && _ancestorForMerge) {
           // Vrai conflit, avec ancêtre : fusion champ par champ. Une ligne que cet
           // appareil n'a pas touchée depuis la dernière synchro laisse passer la
@@ -2679,6 +2681,7 @@ function _finishLogin(id) {
           // Si cloud gagne mais des tx locales ont été réinjectées, conserver le timestamp cloud
           // pour éviter que budget_lastsave_ > _cloudPushTime au prochain chargement (boucle de reversion)
           if (!_localIsNewer && _cloudPushTime) _cloudSyncTimestamp = _cloudPushTime;
+          _syncLog(`→ envoi prévu (local ${_localIsNewer}, tx ${_countAllTx(DATA)}/${_cloudTxCount}, lignes gardées ${_lastMergeFixedPreserved})`);
           _setPendingLocal(true); // il reste quelque chose à faire valoir → cloudPush le lèvera
           dSave();
         } else {
@@ -2687,6 +2690,7 @@ function _finishLogin(id) {
           // prochain démarrage et referait une fusion inutile.
           _cloudDirty = false;
           _setPendingLocal(false);
+          _syncLog(`→ cloud adopté, aligné sur ${_cloudRev || '(sans numéro)'}`);
           if (_cloudRev) _setSeenRev(_cloudRev);
           _setSyncedSnapshot(DATA); // aligné sur le cloud : nouvel ancêtre commun
           if (_cloudPushTime) {
@@ -6704,6 +6708,7 @@ async function cloudPush() {
       _setSeenRev(_newRev);
       _setPendingLocal(false);
       _setSyncedSnapshot(DATA);
+      _syncLog(`ENVOI réussi — cloud passé en ${_newRev}`);
       setCloudStatus('ok'); _lastSyncError = '';
     }
     else if (r.status === 401) {
@@ -6935,6 +6940,49 @@ let _knownCloudRev = 0;
 // true si le profil local actif n'est pas celui lié au compte cloud : dans ce cas
 // la synchro au démarrage est sautée, et il faut le dire à l'utilisateur.
 let _syncProfileMismatch = false;
+
+// ── JOURNAL DE SYNCHRO ───────────────────────────────────────────────────
+// Anneau des 25 derniers événements, persisté. Sans lui, un appareil qui ne
+// se synchronise pas ne laisse aucune trace exploitable : la console d'un
+// téléphone est inaccessible en pratique.
+const SYNC_LOG_MAX = 25;
+function _syncLogKey() { return 'budget_synclog_' + (CURRENT_USER_ID || ''); }
+function _syncLog(msg) {
+  try {
+    console.info('🔄 ' + msg);
+    if (!CURRENT_USER_ID) return;
+    const arr = JSON.parse(localStorage.getItem(_syncLogKey()) || '[]');
+    arr.push({ t: Date.now(), m: String(msg).slice(0, 160) });
+    localStorage.setItem(_syncLogKey(), JSON.stringify(arr.slice(-SYNC_LOG_MAX)));
+  } catch {}
+}
+function _syncLogText() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(_syncLogKey()) || '[]');
+    if (!arr.length) return 'Journal vide';
+    const pad = n => String(n).padStart(2, '0');
+    return arr.map(e => {
+      const d = new Date(e.t);
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}  ${e.m}`;
+    }).join('\n');
+  } catch { return 'Journal illisible'; }
+}
+function copySyncLog() {
+  const txt = `Mon Budget ${APP_VERSION} / SW ${SW_VERSION}\n`
+    + `vue ${_getSeenRev()} / cloud ${_knownCloudRev} · en attente ${_hasPendingLocal()}`
+    + ` · appareil autorisé ${_deviceAllowed} · profil lié ${!_syncProfileMismatch}\n`
+    + `ancêtre ${localStorage.getItem(_ancestorKey()) ? 'présent' : 'ABSENT'}\n\n` + _syncLogText();
+  const done = () => showToast('📋 Journal copié');
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => _fallbackCopy(txt, done));
+  else _fallbackCopy(txt, done);
+}
+function _fallbackCopy(txt, done) {
+  const ta = document.createElement('textarea');
+  ta.value = txt; ta.style.cssText = 'position:fixed;left:-9999px';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch { showToast('❌ Copie impossible'); }
+  document.body.removeChild(ta);
+}
 // Relie le profil actif au compte cloud, puis relance une synchro complète
 function relinkProfileToCloud() {
   if (!CURRENT_USER_ID) return;
@@ -7018,6 +7066,7 @@ function applyRealtimeData(d) {
   // Ne pas interrompre une saisie en cours — mettre en attente
   const activeEl = document.activeElement;
   if (activeEl && ['INPUT','TEXTAREA','SELECT'].includes(activeEl.tagName)) {
+    _syncLog('entrant reporté (saisie en cours)');
     _pendingRealtimeData = d;
     activeEl.addEventListener('blur', () => {
       if (_pendingRealtimeData) { const pd = _pendingRealtimeData; _pendingRealtimeData = null; applyRealtimeData(pd); }
@@ -7051,9 +7100,10 @@ function applyRealtimeData(d) {
     localStorage.setItem('budget_known_userids', JSON.stringify(Object.keys(USERS).filter(id => id !== '_demo')));
   }
   // Refuser des données vides si on a des données locales valides
-  if (!_hasYearData(budgetData)) { showToast(t('toast.sync_ignored')); return; }
+  if (!_hasYearData(budgetData)) { _syncLog('entrant IGNORÉ (données vides)'); showToast(t('toast.sync_ignored')); return; }
   // Ne rien faire si données identiques
-  if (JSON.stringify(DATA) === JSON.stringify(budgetData)) return;
+  if (JSON.stringify(DATA) === JSON.stringify(budgetData)) { _syncLog('entrant identique — rien à faire'); return; }
+  _syncLog(`entrant rev ${budgetData._rev || '?'} — fusion (ancêtre ${_getAncestor() ? 'oui' : 'NON'}, en attente ${_cloudDirty})`);
   // Backup automatique avant tout remplacement
   _backupBeforeCloudReplace();
   const _beforeMergeTx = _countAllTx(DATA);
@@ -7076,11 +7126,15 @@ function applyRealtimeData(d) {
   // Repousser vers Firebase si le merge a ajouté des tx locales, préservé des lignes
   // charges/revenus locales, OU si le flag fromBank a été corrigé
   if (_afterMergeTx > _countAllTx(budgetData) || _fbFix || _fixedKept > 0) {
+    _syncLog(`entrant fusionné, du local conservé (lignes ${_fixedKept}) → renvoi`);
     _cloudDirty = true; _setPendingLocal(true); dSave();
   } else if (_incomingRev && !_cloudDirty) {
     // Rien de local à faire valoir : cet appareil est aligné sur cette version
+    _syncLog(`entrant adopté, aligné sur ${_incomingRev}`);
     _setSeenRev(_incomingRev);
     _setPendingLocal(false);
+  } else {
+    _syncLog(`entrant appliqué mais NON aligné (rev ${_incomingRev}, envoi en attente ${_cloudDirty})`);
   }
   // Re-rendu complet
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
@@ -8536,6 +8590,9 @@ function renderConfigTab() {
               ${!_deviceAllowed ? `<div style="font-size:11px;color:#ffb3b3;background:rgba(255,179,179,.1);border:1px solid rgba(255,179,179,.3);border-radius:7px;padding:8px 10px;margin-bottom:10px;line-height:1.5">
                 Cet appareil ne peut ni envoyer ni recevoir. Retirez un appareil inutilisé ci-dessous, puis rechargez l'application.
               </div>` : ''}
+              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin:12px 0 6px">🔎 Journal de synchro</div>
+              <pre style="font-size:10px;line-height:1.5;color:var(--gray);background:var(--surface-alt);border:1px solid var(--border);border-radius:7px;padding:8px;margin:0 0 6px;max-height:190px;overflow:auto;white-space:pre-wrap;word-break:break-word">${_esc(_syncLogText())}</pre>
+              <button onclick="copySyncLog()" style="width:100%;font-size:11px;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:6px;cursor:pointer;margin-bottom:12px">📋 Copier le journal</button>
               <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin:12px 0 6px">📱 Mes appareils</div>
               <div id="devices-box" style="margin-bottom:10px"><button onclick="renderDevicesList()" style="font-size:11px;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:5px 11px;cursor:pointer">Afficher mes appareils</button></div>`;
             })()}
@@ -9534,8 +9591,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.19';
-const SW_VERSION = 'v299';
+const APP_VERSION = '13.20';
+const SW_VERSION = 'v300';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11417,6 +11474,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.20': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🔎', text: 'Journal de synchro dans Configuration → Cloud : chaque démarrage et chaque échange avec le cloud y laisse une trace datée, copiable en un clic. Permet enfin de comprendre pourquoi un appareil ne se met pas à jour.' }
+    ]
+  },
   '13.19': {
     date: 'Août 2026',
     items: [
