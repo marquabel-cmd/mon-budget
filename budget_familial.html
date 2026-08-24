@@ -2712,7 +2712,13 @@ function _finishLogin(id) {
         localStorage.setItem('budget_tour_done_' + CURRENT_USER_ID, '1');
         if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
         startRealtimeSync();
-      }).catch(() => { _pullInProgress = false; });
+      }).catch(err => {
+        // Ce catch a masqué pendant des jours une exception qui avortait tout le
+        // démarrage de la synchro. Plus jamais muet.
+        _pullInProgress = false;
+        _syncLog('ERREUR démarrage : ' + (err && err.message ? err.message : String(err)));
+        setCloudStatus('error', (err && err.message) || 'Erreur de synchronisation');
+      });
     } else {
       setCloudStatus('off');
       if (isLicensed() && id !== fbLocalId) {
@@ -3279,7 +3285,12 @@ function _backupBeforeCloudReplace() {
     }
   }
   const key = pfx + new Date().toISOString().slice(0,16).replace('T','_').replace(':','h');
-  localStorage.setItem(key, JSON.stringify(DATA));
+  // Sauvegarde de confort : elle ne doit JAMAIS interrompre la synchro. Non protégée,
+  // son QuotaExceededError remontait et avortait la fusion en cours — l'appareil
+  // n'adoptait alors jamais le cloud, sans aucune trace. Et comme l'écriture échouait
+  // toujours, aucune clé n'était créée : l'anti-répétition d'une heure ne s'armait
+  // jamais et l'échec se reproduisait à chaque tentative.
+  if (!_safeSetItem(key, JSON.stringify(DATA))) return;
   // Garder max 5 pre-cloud au total
   const all = Object.keys(localStorage).filter(k => k.startsWith(pfx)).sort();
   if (all.length > 5) all.slice(0, all.length - 5).forEach(k => localStorage.removeItem(k));
@@ -7075,7 +7086,9 @@ async function startRealtimeSync() {
         const { _syncedUsers: su, _gistToken: gt, _gistId: gi, ...budgetData } = incoming;
         if (wasFirst && JSON.stringify(DATA) === JSON.stringify(budgetData)) return;
         applyRealtimeData(incoming);
-      } catch(err) {}
+      } catch(err) {
+        _syncLog('ERREUR entrant : ' + (err && err.message ? err.message : String(err)));
+      }
     });
     _realtimeSource.onerror = () => {
       stopRealtimeSync();
@@ -7215,7 +7228,11 @@ document.addEventListener('visibilitychange', () => {
       _pullInProgress = true;
       cloudPull()
         .then(cd => { _pullInProgress = false; if (cd) applyRealtimeData(cd); _resume(); })
-        .catch(() => { _pullInProgress = false; _resume(); });
+        .catch(err => {
+          _pullInProgress = false;
+          _syncLog('ERREUR réveil : ' + (err && err.message ? err.message : String(err)));
+          _resume();
+        });
     } else _resume();
   }
   // Sur mobile Android, beforeunload ne se déclenche pas quand l'app est tuée.
@@ -9673,8 +9690,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.21';
-const SW_VERSION = 'v301';
+const APP_VERSION = '13.22';
+const SW_VERSION = 'v302';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11556,6 +11573,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.22': {
+    date: 'Août 2026',
+    items: [
+      { icon: '🎯', text: 'La sauvegarde de confort créée avant chaque mise à jour cloud n\'était pas protégée : sur un stockage saturé, son échec interrompait la synchro en cours. L\'appareil récupérait bien les données, puis abandonnait juste avant de les enregistrer.' },
+      { icon: '🔊', text: 'Fin des pannes muettes : les trois blocs qui avalaient les erreurs de synchro les inscrivent désormais au journal et les affichent.' }
+    ]
+  },
   '13.21': {
     date: 'Août 2026',
     items: [
