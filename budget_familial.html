@@ -411,6 +411,8 @@ td.is-paid .cell-amt{color:var(--green);font-weight:600;transition:color .25s ea
 .cfg-compte .cal-check-compte{display:inline-block}
 .cfg-livret .cal-check-livret{display:inline-block}
 .lbl-inner{display:flex;align-items:center;gap:5px}
+.lbl-stack{display:flex;flex-direction:column;flex:1;min-width:0}
+.row-end-tag{font-size:9.5px;font-weight:600;color:#F5A623;line-height:1.15;padding-left:2px;white-space:nowrap}
 .cfg-compte .solde-card .calc-config-btn[data-type="compte"],.cfg-livret .solde-card .calc-config-btn[data-type="livret"]{background:var(--blue-light);border-radius:3px;outline:2px solid var(--blue)}
 .del-btn:hover{color:var(--red);background:var(--red-light)}
 .drag-handle{cursor:grab;color:var(--gray);font-size:15px;padding:0 3px;user-select:none;opacity:.55;vertical-align:middle}
@@ -4307,6 +4309,17 @@ function addYear() {
       <td><input class="rev-dialog-input" type="number" step="0.01" id="chg-inp-${i}" placeholder="${last > 0 ? fmtN(last) : '0'}"></td></tr>`;
   }).join('');
 
+  // Lignes arrivées à échéance : non reprises. Elles étaient écartées sans rien
+  // dire — une date de fin posée par erreur faisait disparaître une charge.
+  const _terminees = [...prev.revenus, ...prev.charges]
+    .filter(r => !r._adjust && r.noEnd !== true && r.endYear !== undefined && parseInt(r.endYear) < newYearInt)
+    .map(r => `${_esc(r.label)} <span style="opacity:.7">(fin ${String(getMonths()[r.endMonth] || '').toLowerCase()} ${r.endYear})</span>`);
+  if (_terminees.length) {
+    document.getElementById('chg-dialog-tbody').innerHTML +=
+      `<tr><td colspan="3" style="padding-top:12px;font-size:11px;color:#F5A623;line-height:1.6">
+        ⏹ Non reprises (date de fin dépassée) : ${_terminees.join(' · ')}
+      </td></tr>`;
+  }
   document.getElementById('rev-dialog-modal').classList.add('open');
 }
 function cancelRevDialog() {
@@ -4924,7 +4937,7 @@ function renderRevSection(year) {
     const isProtectedRev = r.cat === 'boite_dep' || r.cat === 'depot_banc';
     return `<tr ondragover="_onDragOver(event)" ondragleave="_onDragLeave(event)" ondrop="_onDrop(event,'${year}','revenus',${ri})"><td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check cal-check-compte" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','compte',${ri},this.checked)" onclick="event.stopPropagation()">
-        <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">
+        <span class="lbl-stack"><input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(r.label)}" readonly tabindex="-1">${_endTag(r)}</span>
       </div></td>${cells}
       <td class="tot-col ${tot<0?'neg':'pos'}" id="revrow-${year}-${ri}">${fmtN(tot)}</td>
       <td style="white-space:nowrap;width:60px"><span class="drag-handle" draggable="true" title="Glisser pour déplacer" ondragstart="_onSpanDragStart(event,'${year}','revenus',${ri})" ondragend="_onDragEnd(event)">⠿</span><button class="del-btn" onclick="openEditRowModal('${year}','revenus',${ri})">✏️</button>${isProtectedRev?'':'<button class="del-btn" onclick="delRevRow(\''+year+'\','+ri+')">✕</button>'}</td></tr>`;
@@ -5104,7 +5117,7 @@ function renderChargeSection(year) {
     return `<tr class="${r.cat==='occasional'?'occ-row':''}" ondragover="_onDragOver(event)" ondragleave="_onDragLeave(event)" ondrop="_onDrop(event,'${year}','charges',${ri})">
       <td class="lbl-col"><div class="lbl-inner">
         <input class="cal-check ${chkClass}" type="checkbox" ${r.inCalc!==false?'checked':''} onchange="toggleRowCalc('${year}','${isLivretRow?'livret':'compte'}',${ri},this.checked,'charge')" onclick="event.stopPropagation()">
-        <input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(labelAffiche)}" title="${_esc(r.label)}" readonly tabindex="-1">
+        <span class="lbl-stack"><input class="cell-amt" style="text-align:left;width:100%;font-weight:500;cursor:default;pointer-events:none;background:transparent;border:none;outline:none" type="text" value="${_esc(labelAffiche)}" title="${_esc(r.label)}" readonly tabindex="-1">${_endTag(r)}</span>
       </div></td>${cells}
       <td class="tot-col" id="chrow-${year}-${ri}">${fmtN(rowTot)}</td>
       <td style="white-space:nowrap;width:60px"><span class="drag-handle" draggable="true" title="Glisser pour déplacer" ondragstart="_onSpanDragStart(event,'${year}','charges',${ri})" ondragend="_onDragEnd(event)">⠿</span><button class="del-btn" onclick="openEditRowModal('${year}','charges',${ri})">✏️</button>${isProtectedChg?'':'<button class="del-btn" onclick="delCharge(\''+year+'\','+ri+')">✕</button>'}</td>
@@ -5224,12 +5237,22 @@ function delCharge(year, ri) {
 // ── ADD ROW MODAL ──
 let _arYear = null, _arEditMode = false, _arEditIdx = null, _arEditDataType = null;
 
+// Mention « fin mars 2028 » sous le libellé d'une ligne qui a une date de fin :
+// sans elle, rien n'indiquait qu'une ligne allait s'arrêter ou disparaître.
+function _endTag(r) {
+  if (!r || r.noEnd === true || r.endYear === undefined || r.endMonth === undefined) return '';
+  const mois = String(getMonths()[r.endMonth] || '').toLowerCase();
+  return `<span class="row-end-tag" title="Date de fin enregistrée sur cette ligne">⏹ fin ${mois} ${r.endYear}</span>`;
+}
 function _arPopulateMonths() {
   const _mths = getMonths();
   const sm = document.getElementById('ar-startmonth');
   sm.innerHTML = _mths.map((m,i) => `<option value="${i}">${m}</option>`).join('');
   const em = document.getElementById('ar-endmonth');
   em.innerHTML = _mths.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  // Décembre par défaut : reconstruite, la liste retombait sur janvier, et une
+  // date de fin laissée telle quelle effaçait tous les mois suivants.
+  em.value = 11;
 }
 function openAddRowModal(year, type) {
   _arYear = year;
@@ -5244,8 +5267,11 @@ function openAddRowModal(year, type) {
   _arPopulateMonths();
   document.getElementById('ar-startmonth').value = new Date().getMonth();
   document.getElementById('ar-endyear').value = year;
-  document.getElementById('ar-noend').checked = false;
-  document.getElementById('ar-enddate-fields').style.display = 'grid';
+  // « Sans fin » par défaut : la date de fin est une option à activer. Proposée
+  // d'office, elle donnait à toute nouvelle ligne une fin en janvier de l'année,
+  // qui vidait ses montants et la faisait disparaître l'année suivante.
+  document.getElementById('ar-noend').checked = true;
+  document.getElementById('ar-enddate-fields').style.display = 'none';
   document.getElementById('ar-amount').value = '';
   document.getElementById('ar-error').textContent = '';
   document.getElementById('ar-preview').style.display = 'none';
@@ -5279,14 +5305,18 @@ function openEditRowModal(year, dataType, ri) {
   document.getElementById('ar-freq').value = Math.min(Math.max(detectedInterval, 1), 12);
   document.getElementById('ar-amount').value = firstAmt || '';
   document.getElementById('ar-error').textContent = '';
-  // Restaurer date de fin et répétitions depuis la ligne sauvegardée
-  const hasNoEnd = row.noEnd || false;
+  // Restaurer date de fin et répétitions depuis la ligne sauvegardée.
+  // Une ligne sans date de fin enregistrée (endYear absent) est « sans fin » :
+  // la traiter autrement lui inventait une fin à l'enregistrement, même quand on
+  // ne modifiait que son libellé ou son type.
+  const hasNoEnd = row.noEnd === true || row.endYear === undefined;
   document.getElementById('ar-noend').checked = hasNoEnd;
   document.getElementById('ar-enddate-fields').style.display = hasNoEnd ? 'none' : 'grid';
-  if (!hasNoEnd && row.endMonth !== undefined && row.endYear !== undefined) {
-    document.getElementById('ar-endmonth').value = row.endMonth;
+  if (!hasNoEnd) {
+    document.getElementById('ar-endmonth').value = row.endMonth ?? 11;
     document.getElementById('ar-endyear').value = row.endYear;
-  } else if (!hasNoEnd) {
+  } else {
+    // Valeurs proposées si l'utilisateur décide d'ajouter une date de fin
     document.getElementById('ar-endyear').value = year;
   }
   const repsEl2 = document.getElementById('ar-reps');
@@ -9965,8 +9995,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.30';
-const SW_VERSION = 'v310';
+const APP_VERSION = '13.31';
+const SW_VERSION = 'v311';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11848,6 +11878,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.31': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '🚨', text: 'Correctif important : modifier une ligne sans date de fin (même juste son libellé ou son type) lui attribuait une fin en janvier, effaçait ses montants suivants et la faisait disparaître l\'année d\'après. Une nouvelle ligne créée sans toucher à la date de fin se retrouvait vide. « Sans fin » est désormais le choix par défaut.' },
+      { icon: '⏹', text: 'Les lignes qui ont une date de fin l\'affichent sous leur libellé (ex. « fin mars 2028 »), et la création d\'une année liste celles qui ne seront pas reprises.' }
+    ]
+  },
   '13.30': {
     date: 'Septembre 2026',
     items: [
