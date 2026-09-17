@@ -5244,6 +5244,92 @@ function _endTag(r) {
   const mois = String(getMonths()[r.endMonth] || '').toLowerCase();
   return `<span class="row-end-tag" title="Date de fin enregistrée sur cette ligne">⏹ fin ${mois} ${r.endYear}</span>`;
 }
+// ── DATES DE FIN SUR PLUSIEURS ANNÉES ────────────────────────────────────
+// Une date de fin est portée par la ligne d'une année. Posée dans 2026 alors
+// que 2027 existe déjà, elle restait ignorée de 2027 — et donc de 2028, créée
+// à partir de 2027 : un prêt ne s'arrêtait jamais. On la reporte désormais sur
+// la même ligne (libellé + type) des années suivantes.
+const _END_KEYS = ['noEnd', 'endMonth', 'endYear', 'reps'];
+function _endKey(r) {
+  return (!r || r.noEnd === true || r.endYear === undefined) ? '' : `${r.endMonth}/${r.endYear}/${r.reps ?? ''}`;
+}
+function _copyEndMeta(src, dst) {
+  _END_KEYS.forEach(k => { if (src[k] === undefined) delete dst[k]; else dst[k] = src[k]; });
+}
+function _findRowLike(arr, label, cat) {
+  return (arr || []).find(r => !r._adjust && r.label === label && (r.cat || '') === (cat || ''));
+}
+// Remet à zéro les mois non payés situés après la fin (tous si l'année est
+// postérieure à l'année de fin). Les mois déjà payés ne sont jamais touchés.
+function _applyEndToYear(row, year) {
+  if (_endKey(row) === '') return false;
+  const ey = parseInt(row.endYear), em = parseInt(row.endMonth), y = parseInt(year);
+  if (y < ey) return false;
+  let changed = false;
+  for (let m = (y === ey ? em + 1 : 0); m < 12; m++) {
+    if ((parseFloat(row.v[m]) || 0) !== 0 && !(row.paid && row.paid[m])) {
+      row.v[m] = 0;
+      if (row.paid) row.paid[m] = true;
+      changed = true;
+    }
+  }
+  return changed;
+}
+// Après modification d'une ligne : reporte un ajout ou un changement de date de
+// fin sur les années suivantes. Une suppression de date n'est reportée que là où
+// la même date avait été reprise, pour ne pas effacer une fin posée ailleurs.
+function _propagateEndForward(year, section, row, oldLabel, oldCat, oldEndKey) {
+  const newKey = _endKey(row);
+  if (newKey === oldEndKey) return 0;
+  let n = 0;
+  getYears().filter(y => parseInt(y) > parseInt(year)).sort().forEach(y => {
+    const arr = DATA[y]?.[section];
+    const r2 = _findRowLike(arr, oldLabel, oldCat) || _findRowLike(arr, row.label, row.cat);
+    if (!r2 || r2 === row) return;
+    if (newKey === '' && _endKey(r2) !== oldEndKey) return;
+    _copyEndMeta(row, r2);
+    _applyEndToYear(r2, y);
+    n++;
+  });
+  return n;
+}
+// Rattrapage : lignes dont l'année précédente porte une date de fin encore à
+// venir, mais qui n'en ont pas elles-mêmes. Les fins déjà passées ne sont pas
+// reportées : elles peuvent venir de l'ancien bug qui inventait « fin janvier ».
+function _endDatesToInherit() {
+  const ys = getYears().sort();
+  const plan = [];
+  ys.forEach((y, i) => {
+    const ny = ys[i + 1];
+    if (!ny || parseInt(ny) !== parseInt(y) + 1) return;
+    ['revenus', 'charges'].forEach(sec => {
+      (DATA[y][sec] || []).forEach(r => {
+        if (r._adjust || _endKey(r) === '' || parseInt(r.endYear) < parseInt(ny)) return;
+        const r2 = _findRowLike(DATA[ny][sec], r.label, r.cat);
+        if (!r2 || r2.endYear !== undefined) return;
+        plan.push({ year: ny, sec, from: r, to: r2 });
+      });
+    });
+  });
+  return plan;
+}
+function _inheritEndDates() {
+  const first = _endDatesToInherit();
+  if (!first.length) { showToast('Rien à reporter'); return; }
+  const lignes = first.map(p => `${p.year} · ${p.to.label} → fin ${String(getMonths()[p.from.endMonth] || '').toLowerCase()} ${p.from.endYear}`);
+  if (!confirm(`Ces lignes n'ont pas la date de fin de l'année précédente.\nLa reporter ?\n\n${lignes.join('\n')}\n\nLes mois non payés après la fin seront remis à zéro.`)) return;
+  // En boucle : une date reportée sur 2027 doit ensuite atteindre 2028
+  let n = 0;
+  for (let pass = 0, plan = first; plan.length && pass < 20; pass++, plan = _endDatesToInherit()) {
+    plan.forEach(p => { _copyEndMeta(p.from, p.to); _applyEndToYear(p.to, p.year); n++; });
+  }
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  renderSummary();
+  renderConfigTab();
+  showToast(`✅ Date de fin reportée sur ${n} ligne(s)`);
+}
+
 function _arPopulateMonths() {
   const _mths = getMonths();
   const sm = document.getElementById('ar-startmonth');
@@ -5425,15 +5511,17 @@ function submitAddRow() {
   const accountId = document.getElementById('ar-account')?.value || 'acc_main';
   if (_arEditMode && _arEditIdx !== null) {
     const row = DATA[year][_arEditDataType][_arEditIdx];
+    const oldLabel = row.label, oldCat = row.cat, oldEndKey = _endKey(row);
     row.label = label;
     if (_arEditDataType === 'charges') row.cat = type;
     for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
     Object.assign(row, rowMeta);
     if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
-    renderYear(year);
+    const reportee = _propagateEndForward(year, _arEditDataType, row, oldLabel, oldCat, oldEndKey);
+    getYears().forEach(y => { if (y === String(year) || (reportee && parseInt(y) > parseInt(year))) renderYear(y); });
     dSave();
     document.getElementById('add-row-modal').style.display = 'none';
-    showToast(t('toast.row_updated').replace('{0}', label));
+    showToast(t('toast.row_updated').replace('{0}', label) + (reportee ? ` — date de fin reportée sur ${reportee} année(s) suivante(s)` : ''));
     _arEditMode = false; _arEditIdx = null; _arEditDataType = null;
     return;
   }
@@ -9101,6 +9189,7 @@ function renderConfigTab() {
           <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">${t('cfg.see_backups')}</button>
           ${_countBrokenDates() > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_fixBrokenDates(true)">🔧 Réparer ${_countBrokenDates()} date(s) invalide(s)</button>` : ''}
           ${(() => { const n = _countYearRepairs(); return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_repairYearMonths()">🔧 Rétablir les mois de ${n} ligne(s) recopiée(s) sur 12 mois</button>` : ''; })()}
+          ${(() => { const n = _endDatesToInherit().length; return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_inheritEndDates()">🔧 Reporter ${n} date(s) de fin sur l'année suivante</button>` : ''; })()}
           ${years.length > 1 ? `
           <div style="border:2px solid #F04F5B;border-radius:10px;padding:12px;background:#FEF0F1">
             <div style="font-size:12px;font-weight:700;color:#c0392b;margin-bottom:8px">${t('cfg.delete_year')}</div>
@@ -9995,8 +10084,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.31';
-const SW_VERSION = 'v311';
+const APP_VERSION = '13.32';
+const SW_VERSION = 'v312';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11878,6 +11967,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.32': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '⏭️', text: 'Une date de fin ajoutée ou modifiée sur une ligne est reportée sur la même ligne des années suivantes déjà créées. Avant, elle ne valait que pour l\'année ouverte : un prêt arrêté en 2026 continuait en 2027 et au-delà.' },
+      { icon: '🔧', text: 'Configuration → Données propose de reporter les dates de fin déjà saisies sur les années suivantes qui ne les ont pas.' }
+    ]
+  },
   '13.31': {
     date: 'Septembre 2026',
     items: [
