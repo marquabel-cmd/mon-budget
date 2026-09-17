@@ -5244,6 +5244,47 @@ function _endTag(r) {
   const mois = String(getMonths()[r.endMonth] || '').toLowerCase();
   return `<span class="row-end-tag" title="Date de fin enregistrée sur cette ligne">⏹ fin ${mois} ${r.endYear}</span>`;
 }
+// ── LIGNES SPÉCIALES (livret, boîte, retrait bancaire) ───────────────────
+const _SPECIAL_CHG_CATS = ['livret_in', 'livret_out', 'boite_in', 'retrait_banc'];
+// Retrouve le type qu'une ligne spéciale a perdu dans la fenêtre de modification
+// (avant 13.33, le type était remplacé par une valeur vide). livretId et fromBank
+// sont des signaux sûrs ; à défaut, le libellé dit de quel mouvement il s'agit.
+function _guessSpecialCat(r) {
+  if (r._adjust) return null; // le sens de l'écart ne se déduit pas du libellé
+  const l = String(r.label || '').toLowerCase();
+  const livret = r.livretId || r.fromBank || /livret|intérêts|plus-value|moins-value|ordre permanent/.test(l);
+  if (livret) return (l.startsWith('📉') || /retrait|moins-value/.test(l)) ? 'livret_out' : 'livret_in';
+  if (/boîte|boite/.test(l)) return 'boite_in';
+  if (/retrait bancaire/.test(l)) return 'retrait_banc';
+  return null;
+}
+function _rowsWithLostCat() {
+  const plan = [];
+  getYears().forEach(y => (DATA[y].charges || []).forEach((r, ri) => {
+    if (_SPECIAL_CHG_CATS.includes(r.cat)) return;
+    // Type vide : uniquement produit par le bug. Sinon, seule une ligne rattachée
+    // à un livret (livretId / fromBank) est considérée comme ayant perdu son type.
+    if (r.cat !== '' && !r.livretId && !r.fromBank) return;
+    const cat = _guessSpecialCat(r) || (r.cat === '' ? 'fixed' : null);
+    if (cat && cat !== r.cat) plan.push({ y, ri, label: r.label, cat });
+  }));
+  return plan;
+}
+function _repairLostCats() {
+  const plan = _rowsWithLostCat();
+  if (!plan.length) { showToast('Rien à rétablir'); return; }
+  const nom = { livret_in: 'entrée livret/placement', livret_out: 'sortie livret/placement',
+    boite_in: 'boîte à argent', retrait_banc: 'retrait bancaire', fixed: 'charge fixe' };
+  const lignes = plan.map(p => `${p.y} · ${p.label} → ${nom[p.cat] || p.cat}`);
+  if (!confirm(`Ces lignes ont perdu leur type lors d'une modification.\nLe rétablir ?\n\n${lignes.join('\n')}`)) return;
+  plan.forEach(p => { DATA[p.y].charges[p.ri].cat = p.cat; });
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  renderSummary();
+  renderConfigTab();
+  showToast(`✅ ${plan.length} ligne(s) rétablie(s)`);
+}
+
 // ── DATES DE FIN SUR PLUSIEURS ANNÉES ────────────────────────────────────
 // Une date de fin est portée par la ligne d'une année. Posée dans 2026 alors
 // que 2027 existe déjà, elle restait ignorée de 2027 — et donc de 2028, créée
@@ -5346,7 +5387,10 @@ function openAddRowModal(year, type) {
   document.getElementById('ar-modal-title').textContent = t('modal.new_row');
   document.getElementById('ar-submit-btn').textContent = t('btn.add_row_submit');
   document.getElementById('ar-edit-warning').style.display = 'none';
-  document.getElementById('ar-type').value = type;
+  const sel = document.getElementById('ar-type');
+  sel.querySelectorAll('option[data-special]').forEach(o => o.remove()); // laissée par une édition de livret
+  sel.disabled = false;
+  sel.value = type;
   const labels = {revenu:t('modal.type_revenu'), fixed:t('modal.type_fixed'), occasional:t('modal.type_occas')};
   document.getElementById('ar-label').value = labels[type] || '';
   document.getElementById('ar-freq').value = 1;
@@ -5380,7 +5424,23 @@ function openEditRowModal(year, dataType, ri) {
   document.getElementById('ar-submit-btn').textContent = t('btn.edit_row_submit');
   document.getElementById('ar-edit-warning').style.display = 'block';
   const type = dataType === 'revenus' ? 'revenu' : (row.cat || 'fixed');
-  document.getElementById('ar-type').value = type;
+  // La liste ne connaît que revenu / fixe / occasionnelle. Pour une ligne de
+  // livret, boîte ou retrait, la valeur était introuvable : la liste restait vide
+  // et l'enregistrement effaçait le type — la ligne sortait de son livret et
+  // n'était plus comptée dans son solde. On affiche son type réel, verrouillé.
+  const sel = document.getElementById('ar-type');
+  sel.querySelectorAll('option[data-special]').forEach(o => o.remove());
+  const special = dataType === 'charges' && _SPECIAL_CHG_CATS.includes(row.cat);
+  if (special) {
+    const o = document.createElement('option');
+    o.value = row.cat;
+    o.dataset.special = '1';
+    o.textContent = row.cat.startsWith('livret') ? '📈 Mouvement de livret / placement'
+      : row.cat === 'boite_in' ? '💵 Boîte à argent' : '🏧 Retrait bancaire';
+    sel.appendChild(o);
+  }
+  sel.value = type;
+  sel.disabled = special;
   document.getElementById('ar-label').value = row.label || '';
   const nonZero = row.v.map((v,i) => v > 0 ? i : -1).filter(i => i >= 0);
   const firstAmt = nonZero.length ? row.v[nonZero[0]] : 0;
@@ -5513,7 +5573,9 @@ function submitAddRow() {
     const row = DATA[year][_arEditDataType][_arEditIdx];
     const oldLabel = row.label, oldCat = row.cat, oldEndKey = _endKey(row);
     row.label = label;
-    if (_arEditDataType === 'charges') row.cat = type;
+    // Le type ne change qu'entre fixe et occasionnelle ; une ligne spéciale garde le sien
+    if (_arEditDataType === 'charges' && !_SPECIAL_CHG_CATS.includes(row.cat)
+        && (type === 'fixed' || type === 'occasional')) row.cat = type;
     for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
     Object.assign(row, rowMeta);
     if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
@@ -9189,6 +9251,7 @@ function renderConfigTab() {
           <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">${t('cfg.see_backups')}</button>
           ${_countBrokenDates() > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_fixBrokenDates(true)">🔧 Réparer ${_countBrokenDates()} date(s) invalide(s)</button>` : ''}
           ${(() => { const n = _countYearRepairs(); return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_repairYearMonths()">🔧 Rétablir les mois de ${n} ligne(s) recopiée(s) sur 12 mois</button>` : ''; })()}
+          ${(() => { const n = _rowsWithLostCat().length; return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_repairLostCats()">🔧 Rétablir le type de ${n} ligne(s) de livret</button>` : ''; })()}
           ${(() => { const n = _endDatesToInherit().length; return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_inheritEndDates()">🔧 Reporter ${n} date(s) de fin sur l'année suivante</button>` : ''; })()}
           ${years.length > 1 ? `
           <div style="border:2px solid #F04F5B;border-radius:10px;padding:12px;background:#FEF0F1">
@@ -10084,8 +10147,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.32';
-const SW_VERSION = 'v312';
+const APP_VERSION = '13.33';
+const SW_VERSION = 'v313';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11967,6 +12030,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.33': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '🚨', text: 'Modifier une ligne de livret ou de placement (ordre permanent, virement, retrait, intérêts…) lui faisait perdre son type : elle passait dans les charges récurrentes et n\'était plus comptée dans le solde du livret. Son type est maintenant affiché et verrouillé dans la fenêtre de modification.' },
+      { icon: '🔧', text: 'Les lignes déjà touchées peuvent être rétablies depuis Configuration → Données.' }
+    ]
+  },
   '13.32': {
     date: 'Septembre 2026',
     items: [
