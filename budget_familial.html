@@ -5246,6 +5246,14 @@ function _endTag(r) {
 }
 // ── LIGNES SPÉCIALES (livret, boîte, retrait bancaire) ───────────────────
 const _SPECIAL_CHG_CATS = ['livret_in', 'livret_out', 'boite_in', 'retrait_banc'];
+// Un mouvement de livret n'est compté que si son mois est coché : les lignes
+// créées avec un livret le sont d'office, et la saisie d'un montant le coche.
+// Une ligne qui devient mouvement de livret (conversion, réparation) doit suivre
+// la même règle, sinon ses montants n'apparaissent pas dans le solde du livret.
+function _markLivretPaid(r) {
+  if (!Array.isArray(r.paid)) r.paid = Array(12).fill(true);
+  (r.v || []).forEach((x, m) => { if ((parseFloat(x) || 0) !== 0) r.paid[m] = true; });
+}
 // Retrouve le type qu'une ligne spéciale a perdu dans la fenêtre de modification
 // (avant 13.33, le type était remplacé par une valeur vide). livretId et fromBank
 // sont des signaux sûrs ; à défaut, le libellé dit de quel mouvement il s'agit.
@@ -5277,7 +5285,11 @@ function _repairLostCats() {
     boite_in: 'boîte à argent', retrait_banc: 'retrait bancaire', fixed: 'charge fixe' };
   const lignes = plan.map(p => `${p.y} · ${p.label} → ${nom[p.cat] || p.cat}`);
   if (!confirm(`Ces lignes ont perdu leur type lors d'une modification.\nLe rétablir ?\n\n${lignes.join('\n')}`)) return;
-  plan.forEach(p => { DATA[p.y].charges[p.ri].cat = p.cat; });
+  plan.forEach(p => {
+    const r = DATA[p.y].charges[p.ri];
+    r.cat = p.cat;
+    if (p.cat === 'livret_in' || p.cat === 'livret_out') _markLivretPaid(r);
+  });
   dSave();
   getYears().forEach(y => renderYear(y));
   renderSummary();
@@ -5334,6 +5346,55 @@ function _propagateEndForward(year, section, row, oldLabel, oldCat, oldEndKey) {
   });
   return n;
 }
+// Après modification d'une ligne : reporte sur la même ligne des années suivantes
+// ce qui relève du « contrat » plutôt que d'une année — libellé, type et livret,
+// et le montant là où l'année suivante reprenait tel quel l'ancien montant.
+// Une ligne suivante qui a perdu son type (bug d'avant 13.33) est réalignée
+// même si le type n'a pas changé : réenregistrer 2026 répare aussi 2027.
+function _propagateRowForward(year, section, row, avant, nouveauMontant) {
+  const estLivret = r => r.cat === 'livret_in' || r.cat === 'livret_out';
+  const abimee = r => r.cat === '' || ((r.livretId || r.fromBank) && !_SPECIAL_CHG_CATS.includes(r.cat));
+  const typeChange = row.cat !== avant.cat || (row.livretId || null) !== avant.livretId;
+  const montantChange = avant.montant > 0 && nouveauMontant > 0 && Math.abs(nouveauMontant - avant.montant) >= 0.005;
+  let n = 0;
+  getYears().filter(y => parseInt(y) > parseInt(year)).sort().forEach(y => {
+    const arr = DATA[y]?.[section];
+    // Une ligne abîmée n'a plus le même type : on la retrouve aussi par son libellé
+    const r2 = _findRowLike(arr, avant.label, avant.cat) || _findRowLike(arr, row.label, row.cat)
+      || (section === 'charges' ? (arr || []).find(r => !r._adjust && (r.label === avant.label || r.label === row.label) && abimee(r)) : null);
+    if (!r2 || r2 === row) return;
+    let touche = false;
+    if (section === 'charges' && !r2.fromBank && !r2._adjust && (typeChange || abimee(r2))) {
+      if (r2.cat !== row.cat || (r2.livretId || null) !== (row.livretId || null)) {
+        const devientLivret = estLivret(row) && !estLivret(r2);
+        r2.cat = row.cat;
+        if (row.livretId) r2.livretId = row.livretId; else delete r2.livretId;
+        if (devientLivret) _markLivretPaid(r2);
+        touche = true;
+      }
+    }
+    if (row.label !== avant.label && r2.label === avant.label) { r2.label = row.label; touche = true; }
+    if (montantChange) {
+      r2.v.forEach((x, m) => {
+        // Un mois payé d'une ligne ordinaire est un fait : on n'y touche pas
+        if (Math.abs((parseFloat(x) || 0) - avant.montant) < 0.005 && (estLivret(r2) || !(r2.paid && r2.paid[m]))) {
+          r2.v[m] = nouveauMontant;
+          touche = true;
+        }
+      });
+    }
+    // Mouvement de livret dont aucun mois n'est coché : état laissé par la
+    // réparation de la 13.33, qui rétablissait le type sans cocher les mois.
+    // Une ligne de livret est normalement cochée dès la saisie.
+    if (section === 'charges' && estLivret(row) && estLivret(r2) && !r2.fromBank && !r2._adjust) {
+      const nz = r2.v.map((x, m) => (parseFloat(x) || 0) !== 0 ? m : -1).filter(m => m >= 0);
+      if (nz.length && nz.every(m => !(r2.paid && r2.paid[m]))) { _markLivretPaid(r2); touche = true; }
+    }
+    if (touche) n++;
+  });
+  return n;
+}
+
 // Rattrapage : lignes dont l'année précédente porte une date de fin encore à
 // venir, mais qui n'en ont pas elles-mêmes. Les fins déjà passées ne sont pas
 // reportées : elles peuvent venir de l'ancien bug qui inventait « fin janvier ».
@@ -5612,7 +5673,10 @@ function submitAddRow() {
   if (_arEditMode && _arEditIdx !== null) {
     const row = DATA[year][_arEditDataType][_arEditIdx];
     const oldLabel = row.label, oldCat = row.cat, oldEndKey = _endKey(row);
+    const avant = { label: row.label, cat: row.cat, livretId: row.livretId || null,
+      montant: parseFloat(row.v.find(x => (parseFloat(x) || 0) > 0)) || 0 };
     row.label = label;
+    let devientLivret = false;
     if (_arEditDataType === 'charges') {
       const choix = _arParseType(type);
       if (document.getElementById('ar-type').disabled) {
@@ -5622,19 +5686,25 @@ function submitAddRow() {
         row.cat = choix.cat;
         if (choix.livretId && choix.livretId !== 'liv_main') row.livretId = choix.livretId;
         else delete row.livretId;
+        devientLivret = !(avant.cat === 'livret_in' || avant.cat === 'livret_out');
       } else if (choix.cat === 'fixed' || choix.cat === 'occasional') {
         row.cat = choix.cat;
         delete row.livretId; // sortie volontaire d'un livret
       }
     }
     for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
+    if (devientLivret) _markLivretPaid(row);
     Object.assign(row, rowMeta);
     if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
-    const reportee = _propagateEndForward(year, _arEditDataType, row, oldLabel, oldCat, oldEndKey);
+    // Ligne d'abord (réaligne libellé et type), puis date de fin : celle-ci
+    // retrouve ainsi aussi les lignes qui viennent d'être réalignées
+    const ligneReportee = _propagateRowForward(year, _arEditDataType, row, avant, amount);
+    const finReportee = _propagateEndForward(year, _arEditDataType, row, oldLabel, oldCat, oldEndKey);
+    const reportee = Math.max(finReportee, ligneReportee);
     getYears().forEach(y => { if (y === String(year) || (reportee && parseInt(y) > parseInt(year))) renderYear(y); });
     dSave();
     document.getElementById('add-row-modal').style.display = 'none';
-    showToast(t('toast.row_updated').replace('{0}', label) + (reportee ? ` — date de fin reportée sur ${reportee} année(s) suivante(s)` : ''));
+    showToast(t('toast.row_updated').replace('{0}', label) + (reportee ? ` — reporté sur ${reportee} année(s) suivante(s)` : ''));
     _arEditMode = false; _arEditIdx = null; _arEditDataType = null;
     return;
   }
@@ -10205,8 +10275,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.34';
-const SW_VERSION = 'v314';
+const APP_VERSION = '13.35';
+const SW_VERSION = 'v315';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12092,6 +12162,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.35': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '⏭️', text: 'Modifier une ligne met aussi à jour la même ligne des années suivantes : libellé, type, livret de rattachement, et montant là où l\'année suivante reprenait l\'ancien montant. Les mois déjà payés ne sont jamais modifiés.' },
+      { icon: '🩹', text: 'Réenregistrer une ligne de livret remet aussi en place la même ligne des années suivantes si elle avait perdu son type.' }
+    ]
+  },
   '13.34': {
     date: 'Septembre 2026',
     items: [
