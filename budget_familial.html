@@ -2721,6 +2721,7 @@ function _finishLogin(id) {
         localStorage.setItem('budget_tour_done_' + CURRENT_USER_ID, '1');
         if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
         startRealtimeSync();
+        setTimeout(_maybeRemindOpeningBalances, 1200); // après adoption des données cloud
       }).catch(err => {
         // Ce catch a masqué pendant des jours une exception qui avortait tout le
         // démarrage de la synchro. Plus jamais muet.
@@ -2738,6 +2739,7 @@ function _finishLogin(id) {
         _syncProfileMismatch = true;
       }
       // Pas de Premium mais connecté : démarrer quand même si licence activée plus tard
+      setTimeout(_maybeRemindOpeningBalances, 1200); // pas de cloud : données locales seulement
     }
   });
   loadData();
@@ -4291,6 +4293,7 @@ function addYear() {
 
   // ── Charges ──
   document.getElementById('chg-dialog-tbody').innerHTML = prev.charges.map((r, i) => {
+    if (r._adjust) return ''; // ajustement de solde réel : propre à son 31 décembre
     if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < newYearInt) return '';
     const last = _lastPaidAmt(r);
     const isProtected = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in';
@@ -4321,7 +4324,8 @@ function confirmRevDialog() {
   const addLivFinals = {};
   getLivrets().slice(1).forEach(l => { addLivFinals[l.id] = computeLivret(lastYear, l.id); });
 
-  const newSoldes = { compteIng: 0, comptePro: 0, livretInitial: livretFinal, boite: 0 };
+  // _openingConfirmed:false → les soldes réels du 01/01 restent à saisir (rappel)
+  const newSoldes = { compteIng: 0, comptePro: 0, livretInitial: livretFinal, boite: 0, _openingConfirmed: false };
   if (Object.keys(addAccFinals).length) newSoldes.comptes = Object.fromEntries(Object.entries(addAccFinals).map(([k,v]) => [k, 0]));
   if (Object.keys(addLivFinals).length) newSoldes.livrets_bal = addLivFinals;
 
@@ -4351,6 +4355,7 @@ function confirmRevDialog() {
     }).filter(r => r !== null),
     charges: prev.charges.map((r, i) => {
       const ny = parseInt(newYear);
+      if (r._adjust) return null; // ajustement de solde réel : propre à son 31 décembre
       const isSpecialRow = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in' || r.cat === 'retrait_banc';
       // Ligne terminée avant la nouvelle année → ne pas reprendre (sauf lignes protégées)
       if (!isSpecialRow && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
@@ -4389,57 +4394,154 @@ function confirmRevDialog() {
   });
   dSave(); renderSummary();
   showToast(t('toast.year_created').replace('{0}', newYear));
-  // Demander les soldes d'ouverture au 01/01
-  setTimeout(() => _askOpeningBalances(newYear), 200);
+  // Soldes réels au 01/01 : demandés tout de suite si l'année a déjà commencé,
+  // sinon rappelés au premier lancement à partir du 1er janvier.
+  if (parseInt(newYear) <= new Date().getFullYear()) setTimeout(() => _askOpeningBalances(newYear), 200);
+  else setTimeout(() => showToast(`🔔 Rappel le 1er janvier ${newYear} pour saisir les soldes réels`), 1800);
+}
+
+// ── SOLDES D'OUVERTURE (01/01) ───────────────────────────────────────────
+// Les comptes repartent chaque année d'un solde saisi (0 à la création).
+// Les livrets et placements, eux, enchaînent sur la fin calculée de l'année
+// précédente : leur départ n'est pas modifiable directement. Quand la valeur
+// réelle diffère (intérêts du 1er janvier, variation d'un placement), l'écart
+// est comptabilisé en décembre de l'année précédente, comme des intérêts ou une
+// plus/moins-value — le 01/01 devient exact sans casser la chaîne des années.
+function _prevYearOf(year) {
+  const ys = getYears().sort();
+  return ys[ys.indexOf(String(year)) - 1] || null;
+}
+function _livretStart(year, livId) {
+  const p = _prevYearOf(year);
+  if (p) return computeLivret(p, livId);
+  const s = DATA[year].soldes;
+  return livId === 'liv_main' ? (parseFloat(s.livretInitial) || 0) : (parseFloat(s.livrets_bal?.[livId]) || 0);
+}
+function _applyLivretOpening(year, liv, reel) {
+  const isMain = liv.id === 'liv_main';
+  const p = _prevYearOf(year);
+  if (!p) {
+    // Première année du budget : le solde de départ est une simple saisie
+    const s = DATA[year].soldes;
+    if (isMain) s.livretInitial = reel;
+    else { if (!s.livrets_bal) s.livrets_bal = {}; s.livrets_bal[liv.id] = reel; }
+    return;
+  }
+  const chg = DATA[p].charges;
+  const aCeLivret = r => r._adjust && (isMain ? (!r.livretId || r.livretId === 'liv_main') : r.livretId === liv.id);
+  // Retirer l'ajustement précédent avant de recalculer l'écart
+  for (let i = chg.length - 1; i >= 0; i--) if (aCeLivret(chg[i])) chg.splice(i, 1);
+  const ecart = Math.round((reel - computeLivret(p, liv.id)) * 100) / 100;
+  if (Math.abs(ecart) < 0.005) return;
+  const v = Array(12).fill(0);
+  v[11] = Math.abs(ecart);
+  const row = { label: '🔧 Ajustement solde réel – ' + liv.name, cat: ecart > 0 ? 'livret_in' : 'livret_out',
+    fromBank: true, _adjust: true, v, paid: Array(12).fill(true), inCalc: true };
+  if (!isMain) row.livretId = liv.id;
+  chg.push(row);
 }
 
 function _askOpeningBalances(year) {
-  const accs = getAccounts();
   const s = DATA[year]?.soldes;
-  if (!s) return;
-  let inputsHtml = '';
-  // Compte principal
-  inputsHtml += '<div style="margin-bottom:12px">';
-  inputsHtml += '<label style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px">🏦 ' + _esc(getAccountName()) + '</label>';
-  inputsHtml += '<input id="_ob_main" type="number" step="0.01" value="' + (s.compteIng || 0) + '" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:700;background:var(--surface-alt);color:var(--text)">';
-  inputsHtml += '</div>';
-  // Comptes secondaires
-  accs.slice(1).forEach(a => {
-    const v = s.comptes?.[a.id] || 0;
-    inputsHtml += '<div style="margin-bottom:12px">';
-    inputsHtml += '<label style="font-size:11px;font-weight:700;color:' + (a.color||'#5B6AF0') + ';text-transform:uppercase;display:block;margin-bottom:4px">🏦 ' + _esc(a.name) + '</label>';
-    inputsHtml += '<input id="_ob_' + a.id + '" type="number" step="0.01" value="' + v + '" style="width:100%;border:1px solid ' + (a.color||'#5B6AF0') + '55;border-radius:8px;padding:9px 12px;font-size:15px;font-weight:700;background:var(--surface-alt);color:var(--text)">';
-    inputsHtml += '</div>';
+  if (!s || document.getElementById('_ob-overlay')) return;
+  const p = _prevYearOf(year);
+  const champ = (id, label, couleur, valeur, aide, extra = '') => `
+    <div style="margin-bottom:11px">
+      <label for="${id}" style="font-size:11px;font-weight:700;color:${couleur};text-transform:uppercase;display:block;margin-bottom:4px">${label}</label>
+      <input id="${id}" type="number" step="0.01" inputmode="decimal" value="${valeur}" ${extra} style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:700;background:var(--surface-alt);color:var(--text)">
+      ${aide ? `<div style="font-size:10px;color:var(--gray);margin-top:3px">${aide}</div>` : ''}
+    </div>`;
+  const titre = txt => `<div style="font-size:10px;font-weight:700;color:var(--gray);letter-spacing:.6px;margin:4px 0 8px">${txt}</div>`;
+  const aideCompte = id => p ? `Calculé fin ${p} : ${fmt(computeCompte(p, id))}` : '';
+  let html = titre('COMPTES');
+  const main = parseFloat(s.compteIng) || 0;
+  html += champ('_ob_main', '🏦 ' + _esc(getAccountName()), 'var(--gray)', main || '', aideCompte('acc_main'));
+  getAccounts().slice(1).forEach(a => {
+    const v = parseFloat(s.comptes?.[a.id]) || 0;
+    html += champ('_ob_' + a.id, '🏦 ' + _esc(a.name), a.color || '#5B6AF0', v || '', aideCompte(a.id));
+  });
+  html += titre('LIVRETS &amp; PLACEMENTS');
+  getLivrets().forEach(l => {
+    const calc = Math.round(_livretStart(year, l.id) * 100) / 100;
+    html += champ('_ob_liv_' + l.id, '📈 ' + _esc(l.name), '#27ae60', calc,
+      p ? `Valeur calculée. Si le montant réel diffère, l'écart sera enregistré en décembre ${p}.` : '',
+      `data-calc="${calc}"`);
   });
   const overlay = document.createElement('div');
   overlay.id = '_ob-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:9999;display:flex;align-items:center;justify-content:center';
-  overlay.innerHTML = '<div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:340px;max-width:94vw;box-shadow:0 10px 50px rgba(0,0,0,.5)">' +
-    '<div style="font-size:16px;font-weight:800;margin-bottom:4px">🏁 Soldes au 01/01/' + year + '</div>' +
-    '<div style="font-size:12px;color:var(--gray);margin-bottom:18px;line-height:1.5">Saisissez le solde réel de chaque compte au 1er janvier pour que les calculs soient corrects.</div>' +
-    inputsHtml +
-    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">' +
-    '<button onclick="document.getElementById(\'_ob-overlay\').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;color:var(--text)">Plus tard</button>' +
-    '<button onclick="_saveOpeningBalances(\'' + year + '\')" style="background:var(--blue);color:#fff;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>' +
-    '</div></div>';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px';
+  overlay.innerHTML = '<div style="background:var(--surface);border-radius:16px;padding:20px 22px;width:360px;max-width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,.5)">' +
+    '<div style="font-size:16px;font-weight:800;margin-bottom:4px">🏁 Soldes réels au 01/01/' + year + '</div>' +
+    '<div style="font-size:12px;color:var(--gray);margin-bottom:14px;line-height:1.5">Reprenez le solde de chaque compte tel qu\'affiché par votre banque au 1er janvier. Un champ laissé vide n\'est pas modifié.</div>' +
+    '<div style="overflow-y:auto;flex:1;padding-right:2px">' + html + '</div>' +
+    '<div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap">' +
+    '<button onclick="_skipOpeningBalances(\'' + year + '\')" style="background:none;border:none;padding:6px 0;font-size:11px;cursor:pointer;color:var(--gray);text-decoration:underline">Ne plus demander pour ' + year + '</button>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button onclick="_snoozeOpeningBalances(\'' + year + '\')" style="background:none;border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;color:var(--text)">Plus tard</button>' +
+    '<button onclick="_saveOpeningBalances(\'' + year + '\')" style="background:var(--blue);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>' +
+    '</div></div></div>';
   document.body.appendChild(overlay);
-  // Focus sur le premier input
-  setTimeout(() => document.getElementById('_ob_main')?.select(), 100);
+  setTimeout(() => document.getElementById('_ob_main')?.focus(), 100);
 }
 function _saveOpeningBalances(year) {
   const s = DATA[year]?.soldes;
   if (!s) return;
-  const mainVal = parseFloat(document.getElementById('_ob_main')?.value);
-  if (!isNaN(mainVal)) s.compteIng = mainVal;
+  const lire = id => {
+    const el = document.getElementById(id);
+    if (!el || String(el.value).trim() === '') return null;
+    const n = parseFloat(el.value);
+    return isNaN(n) ? null : n;
+  };
+  const main = lire('_ob_main');
+  if (main !== null) s.compteIng = main;
   getAccounts().slice(1).forEach(a => {
-    const v = parseFloat(document.getElementById('_ob_' + a.id)?.value);
-    if (!isNaN(v)) { if (!s.comptes) s.comptes = {}; s.comptes[a.id] = v; }
+    const v = lire('_ob_' + a.id);
+    if (v !== null) { if (!s.comptes) s.comptes = {}; s.comptes[a.id] = v; }
   });
+  let ajustes = 0;
+  getLivrets().forEach(l => {
+    const el = document.getElementById('_ob_liv_' + l.id);
+    const v = lire('_ob_liv_' + l.id);
+    if (!el || v === null) return;
+    if (Math.abs(v - (parseFloat(el.dataset.calc) || 0)) < 0.005) return;
+    _applyLivretOpening(year, l, v);
+    ajustes++;
+  });
+  s._openingConfirmed = true;
   document.getElementById('_ob-overlay')?.remove();
   dSave();
-  renderYear(year);
+  getYears().forEach(y => renderYear(y));
   renderSummary();
-  showToast('✅ Soldes d\'ouverture enregistrés');
+  const p = _prevYearOf(year);
+  showToast(ajustes && p
+    ? `✅ Soldes enregistrés — ${ajustes} livret(s) ajusté(s) en décembre ${p}`
+    : '✅ Soldes d\'ouverture enregistrés');
+}
+function _snoozeOpeningBalances(year) {
+  try { localStorage.setItem('budget_ob_snooze_' + CURRENT_USER_ID + '_' + year, new Date().toISOString().slice(0, 10)); } catch {}
+  document.getElementById('_ob-overlay')?.remove();
+  showToast('🔔 Rappel demain');
+}
+function _skipOpeningBalances(year) {
+  const s = DATA[year]?.soldes;
+  if (s) { s._openingConfirmed = true; dSave(); }
+  document.getElementById('_ob-overlay')?.remove();
+}
+// Rappel à partir du 1er janvier, une fois par jour, tant que les soldes réels de
+// l'année en cours n'ont pas été confirmés. Les années créées avant ce rappel ne
+// portent pas de drapeau : on ne relance alors que si le solde du compte principal
+// n'a jamais été saisi (0 à la création), pour ne pas harceler sur une année en cours.
+function _maybeRemindOpeningBalances() {
+  try {
+    if (!DATA || !CURRENT_USER_ID || CURRENT_USER_ID === '_demo' || _compareMode || _isAdminMode) return;
+    const y = String(new Date().getFullYear());
+    const s = DATA[y]?.soldes;
+    if (!s || s._openingConfirmed === true) return;
+    if (s._openingConfirmed !== false && parseFloat(s.compteIng)) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem('budget_ob_snooze_' + CURRENT_USER_ID + '_' + y) === today) return;
+    _askOpeningBalances(y);
+  } catch {}
 }
 
 function txDay(d) {
@@ -7382,7 +7484,10 @@ document.addEventListener('visibilitychange', () => {
     // Rapatrier l'état cloud AVANT tout push : pendant la veille, la connexion SSE est
     // coupée et cet appareil a pu manquer des modifications faites ailleurs. Sans ce pull,
     // il repartait avec des données périmées et les réécrivait sur le cloud en sortant.
-    const _resume = () => { if (_cloudDirty && cloudApiUrl() && _hasYearData(DATA)) setTimeout(() => cloudPush(), 1000); };
+    const _resume = () => {
+      if (_cloudDirty && cloudApiUrl() && _hasYearData(DATA)) setTimeout(() => cloudPush(), 1000);
+      setTimeout(_maybeRemindOpeningBalances, 800); // ex. app restée ouverte le 31 décembre
+    };
     if (!_pullInProgress && cloudApiUrl()) {
       _pullInProgress = true;
       cloudPull()
@@ -9860,8 +9965,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.29';
-const SW_VERSION = 'v309';
+const APP_VERSION = '13.30';
+const SW_VERSION = 'v310';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11743,6 +11848,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.30': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '🔔', text: 'Rappel des soldes réels au 1er janvier : à partir du 1er janvier, l\'app demande le solde réel de chaque compte, livret et placement, une fois par jour jusqu\'à saisie. Une année créée à l\'avance ne le demande plus prématurément.' },
+      { icon: '🔧', text: 'Livrets et placements : si la valeur réelle au 1er janvier diffère du calcul (intérêts, variation de marché), l\'écart est enregistré automatiquement en décembre de l\'année précédente, dans une ligne « Ajustement solde réel ».' }
+    ]
+  },
   '13.29': {
     date: 'Septembre 2026',
     items: [
