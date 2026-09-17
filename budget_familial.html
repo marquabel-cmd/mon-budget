@@ -5381,6 +5381,35 @@ function _arPopulateMonths() {
   // date de fin laissée telle quelle effaçait tous les mois suivants.
   em.value = 11;
 }
+// Liste « Type » : aux trois choix fixes (revenu, fixe, occasionnelle) s'ajoutent
+// les livrets et placements, pour ranger une ligne en versement ou en retrait
+// d'un livret précis. Valeur d'une option livret : « livret_in|<id du livret> ».
+// `verrou` : type imposé et non modifiable (boîte, retrait bancaire, intérêts,
+// plus/moins-values, ajustements), affiché tel quel.
+function _arBuildTypeOptions(sel, { avecLivrets, verrou }) {
+  sel.querySelectorAll('[data-dyn]').forEach(o => o.remove());
+  if (verrou) {
+    const o = new Option(verrou.texte, verrou.valeur);
+    o.dataset.dyn = '1';
+    sel.appendChild(o);
+    return;
+  }
+  if (!avecLivrets) return;
+  const grp = document.createElement('optgroup');
+  grp.label = _lang === 'en' ? 'Savings & investments' : 'Livrets & placements';
+  grp.dataset.dyn = '1';
+  getLivrets().forEach(l => {
+    grp.appendChild(new Option((_lang === 'en' ? '📈 Deposit → ' : '📈 Versement → ') + l.name, `livret_in|${l.id}`));
+    grp.appendChild(new Option((_lang === 'en' ? '📉 Withdrawal ← ' : '📉 Retrait ← ') + l.name, `livret_out|${l.id}`));
+  });
+  sel.appendChild(grp);
+}
+// Traduit la valeur choisie en type + livret
+function _arParseType(val) {
+  const [cat, livretId] = String(val || '').split('|');
+  return { cat, livretId: livretId || null };
+}
+
 function openAddRowModal(year, type) {
   _arYear = year;
   _arEditMode = false; _arEditIdx = null; _arEditDataType = null;
@@ -5388,7 +5417,7 @@ function openAddRowModal(year, type) {
   document.getElementById('ar-submit-btn').textContent = t('btn.add_row_submit');
   document.getElementById('ar-edit-warning').style.display = 'none';
   const sel = document.getElementById('ar-type');
-  sel.querySelectorAll('option[data-special]').forEach(o => o.remove()); // laissée par une édition de livret
+  _arBuildTypeOptions(sel, { avecLivrets: true });
   sel.disabled = false;
   sel.value = type;
   const labels = {revenu:t('modal.type_revenu'), fixed:t('modal.type_fixed'), occasional:t('modal.type_occas')};
@@ -5423,24 +5452,35 @@ function openEditRowModal(year, dataType, ri) {
   document.getElementById('ar-modal-title').textContent = t('modal.edit_row');
   document.getElementById('ar-submit-btn').textContent = t('btn.edit_row_submit');
   document.getElementById('ar-edit-warning').style.display = 'block';
-  const type = dataType === 'revenus' ? 'revenu' : (row.cat || 'fixed');
-  // La liste ne connaît que revenu / fixe / occasionnelle. Pour une ligne de
-  // livret, boîte ou retrait, la valeur était introuvable : la liste restait vide
-  // et l'enregistrement effaçait le type — la ligne sortait de son livret et
-  // n'était plus comptée dans son solde. On affiche son type réel, verrouillé.
-  const sel = document.getElementById('ar-type');
-  sel.querySelectorAll('option[data-special]').forEach(o => o.remove());
-  const special = dataType === 'charges' && _SPECIAL_CHG_CATS.includes(row.cat);
-  if (special) {
-    const o = document.createElement('option');
-    o.value = row.cat;
-    o.dataset.special = '1';
-    o.textContent = row.cat.startsWith('livret') ? '📈 Mouvement de livret / placement'
-      : row.cat === 'boite_in' ? '💵 Boîte à argent' : '🏧 Retrait bancaire';
-    sel.appendChild(o);
+  // Type réel de la ligne. Une ligne abîmée avant la 13.33 (type effacé) est
+  // présentée avec le type qu'elle a perdu : il suffit de l'enregistrer.
+  let effCat = row.cat;
+  if (dataType === 'charges' && (row.cat === '' || ((row.livretId || row.fromBank) && !_SPECIAL_CHG_CATS.includes(row.cat)))) {
+    effCat = _guessSpecialCat(row) || row.cat || 'fixed';
   }
+  const sel = document.getElementById('ar-type');
+  let type = 'revenu', verrou = null;
+  if (dataType === 'charges') {
+    const valorisation = row.fromBank || row._adjust;
+    if (valorisation || effCat === 'boite_in' || effCat === 'retrait_banc') {
+      // Type imposé : intérêts, plus/moins-values, ajustements, boîte, retrait bancaire
+      const texte = effCat === 'boite_in' ? '💵 Boîte à argent'
+        : effCat === 'retrait_banc' ? '🏧 Retrait bancaire'
+        : (effCat === 'livret_out' ? '📉 ' : '📈 ') + (_lang === 'en' ? 'Value change' : 'Valorisation') + ' – '
+          + (getLivrets().find(l => l.id === (row.livretId || 'liv_main'))?.name || getLivretName());
+      type = effCat + (effCat.startsWith('livret') ? '|' + (row.livretId || 'liv_main') : '');
+      verrou = { texte, valeur: type };
+    } else if (effCat === 'livret_in' || effCat === 'livret_out') {
+      type = `${effCat}|${row.livretId || 'liv_main'}`;
+    } else {
+      type = effCat || 'fixed';
+    }
+  }
+  // Avant la 13.33, la liste ne connaissait pas les lignes de livret : la valeur
+  // était introuvable, la liste restait vide et l'enregistrement effaçait le type.
+  _arBuildTypeOptions(sel, { avecLivrets: dataType === 'charges', verrou });
   sel.value = type;
-  sel.disabled = special;
+  sel.disabled = !!verrou;
   document.getElementById('ar-label').value = row.label || '';
   const nonZero = row.v.map((v,i) => v > 0 ? i : -1).filter(i => i >= 0);
   const firstAmt = nonZero.length ? row.v[nonZero[0]] : 0;
@@ -5573,9 +5613,20 @@ function submitAddRow() {
     const row = DATA[year][_arEditDataType][_arEditIdx];
     const oldLabel = row.label, oldCat = row.cat, oldEndKey = _endKey(row);
     row.label = label;
-    // Le type ne change qu'entre fixe et occasionnelle ; une ligne spéciale garde le sien
-    if (_arEditDataType === 'charges' && !_SPECIAL_CHG_CATS.includes(row.cat)
-        && (type === 'fixed' || type === 'occasional')) row.cat = type;
+    if (_arEditDataType === 'charges') {
+      const choix = _arParseType(type);
+      if (document.getElementById('ar-type').disabled) {
+        // Type imposé : on repose celui affiché (rétablit au passage une ligne abîmée)
+        if (choix.cat) row.cat = choix.cat;
+      } else if (choix.cat === 'livret_in' || choix.cat === 'livret_out') {
+        row.cat = choix.cat;
+        if (choix.livretId && choix.livretId !== 'liv_main') row.livretId = choix.livretId;
+        else delete row.livretId;
+      } else if (choix.cat === 'fixed' || choix.cat === 'occasional') {
+        row.cat = choix.cat;
+        delete row.livretId; // sortie volontaire d'un livret
+      }
+    }
     for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
     Object.assign(row, rowMeta);
     if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
@@ -5592,7 +5643,14 @@ function submitAddRow() {
     if (accountId && accountId !== 'acc_main') newRev.accountId = accountId;
     DATA[year].revenus.push(newRev);
   } else {
-    const newChg = {label, cat: type, v, paid: v.map(x => (parseFloat(x)||0) === 0), ...rowMeta};
+    const choix = _arParseType(type);
+    const newChg = {label, cat: choix.cat, v, paid: v.map(x => (parseFloat(x)||0) === 0), ...rowMeta};
+    if (choix.cat === 'livret_in' || choix.cat === 'livret_out') {
+      // Comme les lignes créées avec un livret : comptées dès la saisie
+      newChg.paid = v.map(() => true);
+      newChg.inCalc = true;
+      if (choix.livretId && choix.livretId !== 'liv_main') newChg.livretId = choix.livretId;
+    }
     if (accountId && accountId !== 'acc_main') newChg.accountId = accountId;
     DATA[year].charges.push(newChg);
   }
@@ -10147,8 +10205,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.33';
-const SW_VERSION = 'v313';
+const APP_VERSION = '13.34';
+const SW_VERSION = 'v314';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12000,6 +12058,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     el.title = t(el.getAttribute('data-i18n-title'));
   });
+  // Oublié ici : ces libellés restaient en anglais tant qu'on ne changeait pas de langue
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = t(el.getAttribute('data-i18n-html'));
+  });
   // Init quick lang/currency bar
   _updateQsBar();
   _updateWizardLang();
@@ -12030,6 +12092,14 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.34': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '📈', text: 'La liste « Type » propose vos livrets et placements (versement vers / retrait de chacun). Une ligne peut ainsi être rangée dans un livret, déplacée d\'un livret à l\'autre, ou créée directement comme mouvement d\'épargne.' },
+      { icon: '🩹', text: 'Une ligne de livret qui avait perdu son type s\'ouvre avec le bon livret déjà sélectionné : il suffit d\'enregistrer pour la remettre en place.' },
+      { icon: '🌐', text: 'Le libellé « Nombre de répétitions » restait en anglais au démarrage.' }
+    ]
+  },
   '13.33': {
     date: 'Septembre 2026',
     items: [
