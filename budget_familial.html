@@ -4170,6 +4170,98 @@ function _lastPaidAmt(row) {
   return 0;
 }
 
+// Projette sur l'année suivante le rythme d'une ligne. La fréquence choisie à la
+// création (mensuel, trimestriel…) n'est pas enregistrée sur la ligne : on la
+// déduit des mois non nuls de l'année précédente.
+//   - écart régulier qui divise 12 et rythme toujours en cours en décembre
+//     → on prolonge ce rythme (mensuelle démarrée en septembre → 12 mois,
+//       annuelle en novembre → novembre, trimestrielle → mêmes trimestres)
+//   - sinon (motif irrégulier, rythme interrompu) → mêmes mois qu'avant
+// Auparavant chaque ligne était recopiée sur les 12 mois : un remboursement
+// annuel de novembre devenait mensuel.
+// `typedAmt` : montant saisi dans la fenêtre (null si rien), `fallbackAmt` :
+// dernier montant connu, utilisé pour un rythme régulier.
+function _projectMonths(prevV, typedAmt, fallbackAmt) {
+  const nz = [];
+  (prevV || []).forEach((x, m) => { if ((parseFloat(x) || 0) !== 0) nz.push(m); });
+  const typed = typedAmt !== null && typedAmt !== undefined;
+  if (!nz.length) return Array(12).fill(typed ? typedAmt : 0);
+  const gaps = nz.slice(1).map((m, i) => m - nz[i]);
+  const g = nz.length === 1 ? 12 : (gaps.every(x => x === gaps[0]) ? gaps[0] : 0);
+  const enCours = g > 0 && 12 % g === 0 && nz[nz.length - 1] + g > 11;
+  const out = Array(12).fill(0);
+  if (enCours) {
+    const val = typed ? typedAmt : (fallbackAmt || 0);
+    const phase = nz[0] % g;
+    for (let m = phase; m < 12; m += g) out[m] = val;
+  } else {
+    nz.forEach(m => { out[m] = typed ? typedAmt : (parseFloat(prevV[m]) || 0); });
+  }
+  return out;
+}
+// Libellé court des mois projetés, vide si la ligne tombe tous les mois
+function _projectedMonthsHint(prevV) {
+  const v = _projectMonths(prevV, 1, 1);
+  const mois = v.map((x, m) => x ? getMonths()[m] : null).filter(Boolean);
+  return (mois.length && mois.length < 12) ? mois.join(', ') : '';
+}
+
+// Réparation d'une année créée avant la 13.29, dont les lignes ont été recopiées
+// uniformément sur 12 mois. On ne touche qu'aux lignes qui portent exactement
+// cette signature — même montant non nul les 12 mois, aucun mois coché payé.
+// Une ligne retouchée à la main, ou une année déjà en cours, est laissée intacte.
+function _yearRowsToRepair(year) {
+  const prev = DATA[String(parseInt(year) - 1)];
+  const cur = DATA[year];
+  const fixes = [];
+  if (!prev || !cur) return fixes;
+  const speciales = ['livret_in','livret_out','boite_in','boite_dep','retrait_banc','depot_banc'];
+  ['revenus', 'charges'].forEach(sec => {
+    const pool = [...(prev[sec] || [])];
+    (cur[sec] || []).forEach((row, ri) => {
+      if (speciales.includes(row.cat)) return;
+      const k = pool.findIndex(p => p.label === row.label && (p.cat || '') === (row.cat || ''));
+      if (k < 0) return;
+      const p = pool.splice(k, 1)[0];
+      const vals = (row.v || []).map(x => parseFloat(x) || 0);
+      if (vals.length !== 12 || !vals[0] || !vals.every(x => x === vals[0])) return;
+      if ((row.paid || []).some((pd, m) => pd && vals[m])) return;
+      const v = _projectMonths(p.v, vals[0], vals[0]);
+      if (!row.noEnd && row.endYear !== undefined && parseInt(row.endYear) === parseInt(year))
+        for (let m = parseInt(row.endMonth) + 1; m < 12; m++) v[m] = 0;
+      if (v.every((x, m) => x === vals[m])) return;
+      fixes.push({ sec, ri, label: row.label, v });
+    });
+  });
+  return fixes;
+}
+function _countYearRepairs() {
+  if (!DATA) return 0;
+  return getYears().slice(1).reduce((n, y) => n + _yearRowsToRepair(y).length, 0);
+}
+function _repairYearMonths() {
+  const plan = getYears().slice(1)
+    .map(y => ({ y, fixes: _yearRowsToRepair(y) }))
+    .filter(x => x.fixes.length);
+  if (!plan.length) { showToast('Rien à rétablir'); return; }
+  const lignes = plan.flatMap(({ y, fixes }) => fixes.map(f => {
+    const mois = f.v.map((x, m) => x ? getMonths()[m] : null).filter(Boolean).join(', ');
+    return `${y} · ${f.label} → ${mois || 'aucun mois'}`;
+  }));
+  const apercu = lignes.slice(0, 15).join('\n') + (lignes.length > 15 ? `\n… et ${lignes.length - 15} autre(s)` : '');
+  if (!confirm(`Ces lignes avaient été recopiées sur les 12 mois.\nRétablir les mois de l'année précédente ?\n\n${apercu}`)) return;
+  plan.forEach(({ y, fixes }) => fixes.forEach(f => {
+    const row = DATA[y][f.sec][f.ri];
+    row.v = f.v;
+    row.paid = f.v.map(x => x === 0);
+  }));
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  renderSummary();
+  renderConfigTab();
+  showToast(`✅ ${lignes.length} ligne(s) rétablie(s)`);
+}
+
 let _pendingNewYear = null;
 function addYear() {
   if (!isLicensed() && getYears().length >= FREE_MAX_YEARS) { showUpgrade('historique multi-années'); return; }
@@ -4190,7 +4282,9 @@ function addYear() {
     const lbl = isProtected ? `<span style="color:#5B6AF0;font-weight:700">${_esc(r.label)}</span>` : `<span style="font-weight:600">${_esc(r.label)}</span>`;
     const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
       ? ` <span style="color:#F5A623;font-size:11px">(fin ${getMonths()[r.endMonth]} ${r.endYear})</span>` : '';
-    return `<tr><td>${lbl}${endInfo}</td>
+    const rythme = _projectedMonthsHint(r.v);
+    const rythmeInfo = rythme ? `<div style="font-size:10px;color:var(--gray);margin-top:1px">📅 ${rythme}</div>` : '';
+    return `<tr><td>${lbl}${endInfo}${rythmeInfo}</td>
       <td style="color:var(--gray)">${last > 0 ? fmt(last) : '—'}</td>
       <td><input class="rev-dialog-input" type="number" step="0.01" id="rev-inp-${i}" placeholder="${last > 0 ? fmtN(last) : '0'}"></td></tr>`;
   }).join('');
@@ -4203,7 +4297,9 @@ function addYear() {
     const lbl = isProtected ? `<span style="color:#5B6AF0;font-weight:700">${_esc(r.label)}</span>` : `<span style="font-weight:600">${_esc(r.label)}</span>`;
     const endInfo = (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === newYearInt)
       ? ` <span style="color:#F5A623;font-size:11px">(fin ${getMonths()[r.endMonth]} ${r.endYear})</span>` : '';
-    return `<tr><td>${lbl}${endInfo}</td>
+    const rythme = isProtected ? '' : _projectedMonthsHint(r.v);
+    const rythmeInfo = rythme ? `<div style="font-size:10px;color:var(--gray);margin-top:1px">📅 ${rythme}</div>` : '';
+    return `<tr><td>${lbl}${endInfo}${rythmeInfo}</td>
       <td style="color:var(--gray)">${last > 0 ? fmt(last) : '—'}</td>
       <td><input class="rev-dialog-input" type="number" step="0.01" id="chg-inp-${i}" placeholder="${last > 0 ? fmtN(last) : '0'}"></td></tr>`;
   }).join('');
@@ -4238,9 +4334,9 @@ function confirmRevDialog() {
       if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
       const inp = document.getElementById(`rev-inp-${i}`);
       const val = parseFloat(inp?.value);
-      // Si valeur saisie → fill 12 mois ; sinon → dernier montant payé
+      // Rythme de l'année précédente ; montant saisi prioritaire, sinon dernier payé
       const lastAmt = _lastPaidAmt(r);
-      let v = (!isNaN(val) && val >= 0) ? Array(12).fill(val) : Array(12).fill(lastAmt || 0);
+      let v = _projectMonths(r.v, (!isNaN(val) && val >= 0) ? val : null, lastAmt);
       // Ligne qui se termine dans la nouvelle année → zéroter après endMonth
       if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === ny) {
         for (let m = parseInt(r.endMonth) + 1; m < 12; m++) v[m] = 0;
@@ -4261,10 +4357,11 @@ function confirmRevDialog() {
       const inp = document.getElementById(`chg-inp-${i}`);
       const val = parseFloat(inp?.value);
       const lastAmt = _lastPaidAmt(r);
-      // Lignes protégées (livret/boite) : reset à 0 chaque année sauf si saisie
+      // Lignes protégées (livret/boite) : reset à 0 chaque année sauf si saisie.
+      // Autres lignes : rythme de l'année précédente (voir _projectMonths).
       let v = isSpecialRow
         ? ((!isNaN(val) && val >= 0) ? Array(12).fill(val) : Array(12).fill(0))
-        : ((!isNaN(val) && val >= 0) ? Array(12).fill(val) : Array(12).fill(lastAmt || 0));
+        : _projectMonths(r.v, (!isNaN(val) && val >= 0) ? val : null, lastAmt);
       // Ligne qui se termine dans la nouvelle année → zéroter après endMonth
       if (!isSpecialRow && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === ny) {
         for (let m = parseInt(r.endMonth) + 1; m < 12; m++) v[m] = 0;
@@ -8868,6 +8965,7 @@ function renderConfigTab() {
           <button class="btn btn-save" onclick="saveData()">${t('cfg.save_now')}</button>
           <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">${t('cfg.see_backups')}</button>
           ${_countBrokenDates() > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_fixBrokenDates(true)">🔧 Réparer ${_countBrokenDates()} date(s) invalide(s)</button>` : ''}
+          ${(() => { const n = _countYearRepairs(); return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_repairYearMonths()">🔧 Rétablir les mois de ${n} ligne(s) recopiée(s) sur 12 mois</button>` : ''; })()}
           ${years.length > 1 ? `
           <div style="border:2px solid #F04F5B;border-radius:10px;padding:12px;background:#FEF0F1">
             <div style="font-size:12px;font-weight:700;color:#c0392b;margin-bottom:8px">${t('cfg.delete_year')}</div>
@@ -9762,8 +9860,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.28';
-const SW_VERSION = 'v308';
+const APP_VERSION = '13.29';
+const SW_VERSION = 'v309';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11645,6 +11743,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.29': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '📅', text: 'Nouvelle année : chaque ligne reprend le rythme de l\'année précédente au lieu d\'être recopiée sur les 12 mois. Un remboursement annuel de novembre reste en novembre, une charge trimestrielle garde ses trimestres, une mensualité démarrée en cours d\'année passe à 12 mois. Les mois repris sont affichés dans la fenêtre de création.' },
+      { icon: '🔧', text: 'Une année déjà créée avec l\'ancien comportement peut être corrigée depuis Configuration → Données : les lignes recopiées sur 12 mois retrouvent les mois de l\'année précédente. Les lignes retouchées à la main ne sont pas modifiées.' }
+    ]
+  },
   '13.28': {
     date: 'Août 2026',
     items: [
