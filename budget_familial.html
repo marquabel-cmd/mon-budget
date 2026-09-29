@@ -345,6 +345,20 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
   transition:box-shadow .2s;
 }
 .section-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.14),0 6px 20px rgba(0,0,0,.08)}
+/* ── WIDGET TRANSACTIONS ── */
+.tx-widget{background:var(--surface);border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.10),0 4px 16px rgba(0,0,0,.06);border:1px solid var(--border);padding:18px 20px;margin-bottom:14px}
+.tx-widget-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.tx-widget-title{font-size:14px;font-weight:700;color:var(--text)}
+.tx-widget-link{font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;text-decoration:none;border:none;background:none;padding:0}
+.tx-widget-link:hover{text-decoration:underline}
+.tx-item{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)}
+.tx-item:last-child{border-bottom:none;padding-bottom:0}
+.tx-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
+.tx-info{flex:1;min-width:0}
+.tx-info-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-info-sub{font-size:11px;color:var(--gray);margin-top:1px}
+.tx-amount{font-size:13px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.tx-amount.pos{color:#27ae60}.tx-amount.neg{color:#e74c3c}
 .section-header{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 20px;cursor:pointer;user-select:none;background:var(--surface-alt);transition:background .15s;border-bottom:1px solid var(--border)}
 .section-header:hover{background:var(--border)}
 .section-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text)}
@@ -1781,6 +1795,7 @@ body.auth-locked #context-banner {
 <div class="container" id="main-container">
   <div id="tab-accueil" class="tab-panel"></div>
   <div id="tab-resume" class="tab-panel active">
+    <div id="tx-widget-container"></div>
     <div class="section-card">
       <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
         <span class="section-title" id="sum-annual-title">📈 Annual overview <span class="badge badge-b" id="sum-badge">–</span></span>
@@ -7329,7 +7344,59 @@ function refreshMonthSummary(year) {
 }
 
 // ── RÉSUMÉ TAB ──
+function renderRecentTx(limit) {
+  const wrap = document.getElementById('tx-widget-container');
+  if (!wrap) return;
+  const years = getYears();
+  if (!years.length) { wrap.innerHTML = ''; return; }
+  const cats = getVarCats();
+  const MONTH_FR = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  const catColors = ['#1a6fc4','#27ae60','#e67e22','#9b59b6','#c0392b','#16a085','#f39c12','#2980b9','#8e44ad','#d35400'];
+  const all = [];
+  years.forEach(year => {
+    cats.forEach((cat, ci) => {
+      (DATA[year].vars[cat.key] || []).forEach(tx => {
+        if (!tx.comment) return;
+        all.push({ year, cat, ci, tx });
+      });
+    });
+  });
+  all.sort((a, b) => {
+    if (b.year !== a.year) return b.year - a.year;
+    if (b.tx.month !== a.tx.month) return b.tx.month - a.tx.month;
+    return (parseInt(b.tx.date) || 0) - (parseInt(a.tx.date) || 0);
+  });
+  const shown = all.slice(0, limit || 5);
+  if (!shown.length) { wrap.innerHTML = ''; return; }
+  const rows = shown.map(({year, cat, ci, tx}) => {
+    const letter = tx.comment.trim()[0] || '?';
+    const color = catColors[ci % catColors.length];
+    const month = tx.month;
+    const day = parseInt(tx.date) || null;
+    const dateLabel = day ? `${day} ${MONTH_FR[month]}` : MONTH_FR[month];
+    const amt = parseFloat(tx.amount) || 0;
+    const amtStr = (amt >= 0 ? '+' : '−') + Math.abs(amt).toLocaleString('fr-BE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
+    return `<div class="tx-item">
+      <div class="tx-avatar" style="background:${color}">${letter}</div>
+      <div class="tx-info">
+        <div class="tx-info-name">${tx.comment}</div>
+        <div class="tx-info-sub">${cat.label} · ${dateLabel} ${year}</div>
+      </div>
+      <div class="tx-amount ${amt >= 0 ? 'pos' : 'neg'}">${amtStr}</div>
+    </div>`;
+  }).join('');
+  const lastYear = years[years.length - 1];
+  wrap.innerHTML = `<div class="tx-widget">
+    <div class="tx-widget-header">
+      <span class="tx-widget-title">Transactions</span>
+      <button class="tx-widget-link" onclick="switchTab('y${lastYear}',document.querySelector('#year-tabs .tab:last-of-type'))">Tout voir</button>
+    </div>
+    ${rows}
+  </div>`;
+}
+
 function renderSummary() {
+  renderRecentTx();
   const table = document.getElementById('summary-table');
   const years = getYears();
   let html = `<thead><tr>
