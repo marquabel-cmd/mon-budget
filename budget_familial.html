@@ -3608,7 +3608,9 @@ function _compteStart(year, accId) {
   const manuel = isMain ? s.compteIngSet === true : s.comptesSet?.[accId] === true;
   if (manuel || stored !== 0) return stored;
   const p = _prevYearOf(year);
-  return p ? computeCompte(p, accId) : stored;
+  // Arrondi : l'addition des montants de l'année produit sinon des valeurs du
+  // type 1225.9199999999998, qui s'affichaient telles quelles dans le champ.
+  return p ? Math.round(computeCompte(p, accId) * 100) / 100 : stored;
 }
 // Marque le solde d'ouverture comme saisi à la main (il cesse alors de suivre
 // l'année précédente, même si l'on saisit exactement 0)
@@ -5716,6 +5718,50 @@ function _arRefreshYearsOption() {
 }
 // Crée dans les années indiquées une copie d'une ligne existante, au même rythme
 // mais reconduit sur l'année entière (voir _projectMonths).
+// Remet les lignes d'une année dans l'ordre de l'année précédente. Les lignes
+// absentes de l'année précédente restent à leur place relative, juste après la
+// ligne connue qui les précède. Sert à rattraper les années où des lignes ont
+// été ajoutées avant la 13.40, qui les empilait en fin de tableau.
+function _ordreAAligner(year, section, appliquer) {
+  const p = _prevYearOf(year);
+  const arr = DATA[year]?.[section];
+  const ref = DATA[p]?.[section];
+  if (!p || !Array.isArray(arr) || !Array.isArray(ref)) return 0;
+  const cle = r => (r.cat || '') + '|' + r.label;
+  const pos = new Map();
+  ref.forEach((r, i) => { if (!pos.has(cle(r))) pos.set(cle(r), i); });
+  let dernier = -1;
+  const avec = arr.map((r, i) => {
+    const k = pos.has(cle(r)) ? pos.get(cle(r)) : null;
+    if (k !== null) dernier = k;
+    return { r, i, k: k !== null ? k : dernier + 0.5 };
+  });
+  const trie = [...avec].sort((a, b) => a.k - b.k || a.i - b.i);
+  if (!trie.some((o, i) => o.i !== i)) return 0;
+  if (appliquer) DATA[year][section] = trie.map(o => o.r);
+  return 1;
+}
+function _countOrderFixes() {
+  if (!DATA) return 0;
+  return getYears().reduce((n, y) =>
+    n + _ordreAAligner(y, 'revenus', false) + _ordreAAligner(y, 'charges', false), 0);
+}
+function _reorderYearsToPrevious() {
+  const plan = [];
+  getYears().forEach(y => ['revenus', 'charges'].forEach(sec => {
+    if (_ordreAAligner(y, sec, false)) plan.push({ y, sec });
+  }));
+  if (!plan.length) { showToast('Rien à réordonner'); return; }
+  const libelle = plan.map(p => `${p.y} · ${p.sec === 'revenus' ? 'revenus' : 'charges'}`).join('\n');
+  if (!confirm(`Remettre les lignes dans l'ordre de l'année précédente ?\n\n${libelle}\n\nSeul l'ordre d'affichage change, aucun montant n'est touché.`)) return;
+  plan.forEach(p => _ordreAAligner(p.y, p.sec, true));
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  renderSummary();
+  renderConfigTab();
+  showToast(`✅ Ordre aligné (${plan.length} tableau(x))`);
+}
+
 // Place une ligne dans l'année cible à la position qu'elle occupe dans l'année
 // d'origine : on se cale sur le voisin le plus proche déjà présent. Sans ça, les
 // lignes reportées s'empilaient en fin de tableau, dans le désordre.
@@ -9606,6 +9652,7 @@ function renderConfigTab() {
           <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">${t('cfg.see_backups')}</button>
           ${_countBrokenDates() > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_fixBrokenDates(true)">🔧 Réparer ${_countBrokenDates()} date(s) invalide(s)</button>` : ''}
           ${(() => { const n = _countYearRepairs(); return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_repairYearMonths()">🔧 Rétablir les mois de ${n} ligne(s) recopiée(s) sur 12 mois</button>` : ''; })()}
+          ${(() => { const n = _countOrderFixes(); return n > 0 ? `<button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue);font-weight:700" onclick="_reorderYearsToPrevious()">↕️ Aligner l'ordre des lignes sur l'année précédente (${n} tableau${n>1?'x':''})</button>` : ''; })()}
           ${(() => { const n = _rowsWithLostCat().length; return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_repairLostCats()">🔧 Rétablir le type de ${n} ligne(s) de livret</button>` : ''; })()}
           ${(() => { const n = _endDatesToInherit().length; return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_inheritEndDates()">🔧 Reporter ${n} date(s) de fin sur l'année suivante</button>` : ''; })()}
           ${years.length > 1 ? `
@@ -10502,8 +10549,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.40';
-const SW_VERSION = 'v320';
+const APP_VERSION = '13.41';
+const SW_VERSION = 'v321';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12389,6 +12436,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.41': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '🔢', text: 'Le solde repris de l\'année précédente est arrondi à deux décimales : il s\'affichait avec la traîne des calculs à virgule flottante (1225,91999…).' },
+      { icon: '↕️', text: 'Configuration → Données propose d\'aligner l\'ordre des lignes sur l\'année précédente, pour les années où des lignes avaient été ajoutées en fin de tableau. Seul l\'ordre d\'affichage change.' }
+    ]
+  },
   '13.40': {
     date: 'Septembre 2026',
     items: [
