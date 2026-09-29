@@ -1287,6 +1287,13 @@ body.auth-locked #context-banner {
           <input id="ar-endyear" type="number" placeholder="2026" oninput="updateAddRowPreview()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px">
         </div>
       </div>
+      <div id="ar-years-wrap" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="ar-propagate-years" onchange="this.dataset.touched='1'">
+          <span id="ar-years-label">📅 Ajouter aussi aux années suivantes</span>
+        </label>
+        <div style="font-size:11px;color:var(--gray);margin-top:5px;line-height:1.45">La ligne sera créée dans ces années avec le même rythme, sur toute l'année.</div>
+      </div>
       <div id="ar-preview" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);border-left:3px solid var(--blue)"></div>
       <div id="ar-edit-warning" data-i18n="modal.edit_warning" style="display:none;background:#2a1f3d;border-left:3px solid #8B5CF6;border-radius:6px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,.7)">✏️ Amounts will be replaced from the chosen start month. Previous months remain unchanged.</div>
       <div id="ar-error" style="color:#ff6b6b;font-size:12px;min-height:16px"></div>
@@ -4269,6 +4276,7 @@ function _repairYearMonths() {
 
 // Repère des valeurs proposées à l'ouverture de la fenêtre de modification
 let _arSnapshot = null;
+let _arEditRow = null;
 
 let _pendingNewYear = null;
 function addYear() {
@@ -5488,7 +5496,7 @@ function _arParseType(val) {
 
 function openAddRowModal(year, type) {
   _arYear = year;
-  _arEditMode = false; _arEditIdx = null; _arEditDataType = null;
+  _arEditMode = false; _arEditIdx = null; _arEditDataType = null; _arEditRow = null;
   document.getElementById('ar-modal-title').textContent = t('modal.new_row');
   document.getElementById('ar-submit-btn').textContent = t('btn.add_row_submit');
   document.getElementById('ar-edit-warning').style.display = 'none';
@@ -5510,6 +5518,9 @@ function openAddRowModal(year, type) {
   document.getElementById('ar-amount').value = '';
   document.getElementById('ar-error').textContent = '';
   document.getElementById('ar-preview').style.display = 'none';
+  const cbAnnees = document.getElementById('ar-propagate-years');
+  if (cbAnnees) delete cbAnnees.dataset.touched;
+  _arRefreshYearsOption();
   // Compte associé
   const _arAccSel = document.getElementById('ar-account');
   const _arAccWrap = document.getElementById('ar-account-wrap');
@@ -5524,7 +5535,7 @@ function openAddRowModal(year, type) {
 }
 function openEditRowModal(year, dataType, ri) {
   const row = DATA[year][dataType][ri];
-  _arYear = year; _arEditMode = true; _arEditIdx = ri; _arEditDataType = dataType;
+  _arYear = year; _arEditMode = true; _arEditIdx = ri; _arEditDataType = dataType; _arEditRow = row;
   document.getElementById('ar-modal-title').textContent = t('modal.edit_row');
   document.getElementById('ar-submit-btn').textContent = t('btn.edit_row_submit');
   document.getElementById('ar-edit-warning').style.display = 'block';
@@ -5567,6 +5578,9 @@ function openEditRowModal(year, dataType, ri) {
   document.getElementById('ar-freq').value = Math.min(Math.max(detectedInterval, 1), 12);
   document.getElementById('ar-amount').value = firstAmt || '';
   document.getElementById('ar-error').textContent = '';
+  const cbAnneesEdit = document.getElementById('ar-propagate-years');
+  if (cbAnneesEdit) delete cbAnneesEdit.dataset.touched;
+  _arRefreshYearsOption(); // masquée en modification : le report y est automatique
   // Valeurs proposées à l'ouverture : si elles ne sont pas touchées, les montants
   // de la ligne ne doivent pas être reconstruits. Sans ce repère, modifier un
   // libellé, un type ou une date de fin remplaçait les montants mensuels saisis
@@ -5614,11 +5628,59 @@ function openEditRowModal(year, dataType, ri) {
   setTimeout(() => { const l = document.getElementById('ar-label'); l.focus(); l.select(); }, 80);
 }
 function updateAddRowModal() {
+  _arRefreshYearsOption();
   updateAddRowPreview();
+}
+// Case « Ajouter aussi aux années suivantes », visible seulement à la création et
+// s'il existe des années postérieures. Cochée par défaut pour une ligne récurrente
+// sans date de fin ; décochée pour une charge occasionnelle, qui ne se répète pas.
+function _arAnneesSansLaLigne() {
+  // En modification : années suivantes où la ligne n'existe pas (créée après elles)
+  if (!_arEditRow) return [];
+  const section = _arEditDataType;
+  return getYears().filter(y => parseInt(y) > parseInt(_arYear))
+    .filter(y => DATA[y] && Array.isArray(DATA[y][section])
+      && !_findRowLike(DATA[y][section], _arEditRow.label, section === 'charges' ? _arEditRow.cat : undefined));
+}
+function _arRefreshYearsOption() {
+  const wrap = document.getElementById('ar-years-wrap');
+  const cb = document.getElementById('ar-propagate-years');
+  if (!wrap || !cb) return;
+  const suivantes = _arEditMode
+    ? _arAnneesSansLaLigne()
+    : getYears().filter(y => parseInt(y) > parseInt(_arYear));
+  wrap.style.display = suivantes.length ? '' : 'none';
+  if (!suivantes.length) return;
+  document.getElementById('ar-years-label').textContent = `📅 Ajouter aussi à ${suivantes.join(', ')}`;
+  if (cb.dataset.touched === '1') return; // choix explicite de l'utilisateur
+  if (_arEditMode) { cb.checked = false; return; } // ligne existante : geste volontaire
+  const { cat } = _arParseType(document.getElementById('ar-type').value);
+  const sansFin = document.getElementById('ar-noend').checked;
+  cb.checked = cat !== 'occasional' && sansFin;
+}
+// Crée dans les années indiquées une copie d'une ligne existante, au même rythme
+// mais reconduit sur l'année entière (voir _projectMonths).
+function _ajouterLigneAuxAnnees(section, row, annees) {
+  let n = 0;
+  annees.forEach(y => {
+    if (!DATA[y] || !Array.isArray(DATA[y][section])) return;
+    const v = _projectMonths(row.v, null, _lastPaidAmt(row));
+    const copie = { ...JSON.parse(JSON.stringify(row)), v, paid: v.map(x => (parseFloat(x) || 0) === 0) };
+    delete copie._adjust;
+    if (copie.cat === 'livret_in' || copie.cat === 'livret_out') _markLivretPaid(copie);
+    if (_endKey(copie) !== '') {
+      if (parseInt(copie.endYear) < parseInt(y)) return; // ligne terminée avant cette année
+      _applyEndToYear(copie, y);
+    }
+    DATA[y][section].push(copie);
+    n++;
+  });
+  return n;
 }
 function updateAddRowEndDate() {
   const hide = document.getElementById('ar-noend').checked;
   document.getElementById('ar-enddate-fields').style.display = hide ? 'none' : 'grid';
+  _arRefreshYearsOption();
   if (hide) {
     // Vider les répétitions si "sans date de fin"
     const repsEl = document.getElementById('ar-reps');
@@ -5735,36 +5797,61 @@ function submitAddRow() {
     if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
     // Ligne d'abord (réaligne libellé et type), puis date de fin : celle-ci
     // retrouve ainsi aussi les lignes qui viennent d'être réalignées
+    const ajoutees = document.getElementById('ar-propagate-years')?.checked
+      ? _ajouterLigneAuxAnnees(_arEditDataType, row, _arAnneesSansLaLigne()) : 0;
     const ligneReportee = _propagateRowForward(year, _arEditDataType, row, avant, montantsTouches ? amount : 0);
     const finReportee = _propagateEndForward(year, _arEditDataType, row, oldLabel, oldCat, oldEndKey);
-    const reportee = Math.max(finReportee, ligneReportee);
+    const reportee = Math.max(finReportee, ligneReportee, ajoutees);
     getYears().forEach(y => { if (y === String(year) || (reportee && parseInt(y) > parseInt(year))) renderYear(y); });
+    renderSummary();
     dSave();
     document.getElementById('add-row-modal').style.display = 'none';
-    showToast(t('toast.row_updated').replace('{0}', label) + (reportee ? ` — reporté sur ${reportee} année(s) suivante(s)` : ''));
-    _arEditMode = false; _arEditIdx = null; _arEditDataType = null;
+    showToast(t('toast.row_updated').replace('{0}', label)
+      + (ajoutees ? ` — ajoutée à ${ajoutees} année(s) suivante(s)` : (reportee ? ` — reporté sur ${reportee} année(s) suivante(s)` : '')));
+    _arEditMode = false; _arEditIdx = null; _arEditDataType = null; _arEditRow = null;
     return;
   }
-  if (type === 'revenu') {
-    const newRev = {label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: true, ...rowMeta};
-    if (accountId && accountId !== 'acc_main') newRev.accountId = accountId;
-    DATA[year].revenus.push(newRev);
-  } else {
-    const choix = _arParseType(type);
-    const newChg = {label, cat: choix.cat, v, paid: v.map(x => (parseFloat(x)||0) === 0), ...rowMeta};
-    if (choix.cat === 'livret_in' || choix.cat === 'livret_out') {
-      // Comme les lignes créées avec un livret : comptées dès la saisie
-      newChg.paid = v.map(() => true);
-      newChg.inCalc = true;
-      if (choix.livretId && choix.livretId !== 'liv_main') newChg.livretId = choix.livretId;
+  const section = type === 'revenu' ? 'revenus' : 'charges';
+  const choix = _arParseType(type);
+  const construire = (valeurs) => {
+    const r = { label, v: valeurs, paid: valeurs.map(x => (parseFloat(x)||0) === 0), inCalc: true, ...rowMeta };
+    if (section === 'charges') {
+      r.cat = choix.cat;
+      if (choix.cat === 'livret_in' || choix.cat === 'livret_out') {
+        // Comme les lignes créées avec un livret : comptées dès la saisie
+        r.paid = valeurs.map(() => true);
+        if (choix.livretId && choix.livretId !== 'liv_main') r.livretId = choix.livretId;
+      }
     }
-    if (accountId && accountId !== 'acc_main') newChg.accountId = accountId;
-    DATA[year].charges.push(newChg);
+    if (accountId && accountId !== 'acc_main') r.accountId = accountId;
+    return r;
+  };
+  DATA[year][section].push(construire(v));
+
+  // Report aux années suivantes : une ligne créée après coup n'existait que dans
+  // son année, alors qu'un revenu ou une charge récurrente concerne aussi les
+  // années déjà créées. Le rythme est reconduit sur l'année entière.
+  let ajoutees = 0;
+  if (document.getElementById('ar-propagate-years')?.checked) {
+    getYears().filter(y => parseInt(y) > parseInt(year)).sort().forEach(y => {
+      if (!DATA[y] || !Array.isArray(DATA[y][section])) return;
+      if (_findRowLike(DATA[y][section], label, section === 'charges' ? choix.cat : undefined)) return; // déjà présente
+      const suivantes = Array(12).fill(0);
+      for (let m = (startMonth % interval); m < 12; m += interval) suivantes[m] = amount;
+      const r = construire(suivantes);
+      if (_endKey(r) !== '') {
+        if (parseInt(r.endYear) < parseInt(y)) return; // terminée avant cette année
+        _applyEndToYear(r, y);
+      }
+      DATA[y][section].push(r);
+      ajoutees++;
+    });
   }
-  renderYear(year);
+  getYears().forEach(y => { if (y === String(year) || (ajoutees && parseInt(y) > parseInt(year))) renderYear(y); });
+  renderSummary();
   dSave();
   document.getElementById('add-row-modal').style.display = 'none';
-  showToast(t('toast.row_added').replace('{0}', label));
+  showToast(t('toast.row_added').replace('{0}', label) + (ajoutees ? ` — ajoutée aussi à ${ajoutees} année(s) suivante(s)` : ''));
 }
 
 // ── NOTES SUR CELLULES MENSUELLES ──
@@ -10336,8 +10423,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.37';
-const SW_VERSION = 'v317';
+const APP_VERSION = '13.38';
+const SW_VERSION = 'v318';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12223,6 +12310,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.38': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '➕', text: 'Une ligne créée dans une année peut désormais être ajoutée d\'un clic aux années suivantes déjà créées, avec le même rythme reconduit sur l\'année entière. Une case à cocher le propose, cochée d\'office pour une ligne récurrente sans date de fin.' },
+      { icon: '🔁', text: 'Pour une ligne déjà existante qui manque dans une année suivante, la même case apparaît dans la fenêtre de modification — utile pour les lignes ajoutées après la création de l\'année.' }
+    ]
+  },
   '13.37': {
     date: 'Septembre 2026',
     items: [
