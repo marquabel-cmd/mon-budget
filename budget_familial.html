@@ -1267,7 +1267,7 @@ body.auth-locked #context-banner {
       </div>
       <div>
         <label data-i18n="modal.amount_occurrence" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Montant par occurrence (€)</label>
-        <input id="ar-amount" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateAddRowPreview()" onkeydown="if(event.key==='Enter')submitAddRow()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+        <input id="ar-amount" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateAddRowPreview();_arRefreshYearsOption()" onkeydown="if(event.key==='Enter')submitAddRow()" style="width:100%;box-sizing:border-box;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
       </div>
       <div id="ar-reps-wrap">
         <label data-i18n-html="modal.repetitions" style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px">Number of repetitions <span style="font-weight:400">(optional — calculates end date)</span></label>
@@ -1289,10 +1289,16 @@ body.auth-locked #context-banner {
       </div>
       <div id="ar-years-wrap" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-          <input type="checkbox" id="ar-propagate-years" onchange="this.dataset.touched='1'">
+          <input type="checkbox" id="ar-propagate-years" onchange="this.dataset.touched='1';_arRefreshYearsOption()">
           <span id="ar-years-label">📅 Ajouter aussi aux années suivantes</span>
         </label>
-        <div style="font-size:11px;color:var(--gray);margin-top:5px;line-height:1.45">La ligne sera créée dans ces années avec le même rythme, sur toute l'année.</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:5px;line-height:1.45">La ligne sera créée dans ces années avec le même rythme, sur toute l'année. Les commentaires ne sont pas recopiés.</div>
+        <div id="ar-years-amount-wrap" style="display:none;margin-top:9px">
+          <label for="ar-years-amount" style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">Montant à partir de <b id="ar-years-first" style="color:var(--text)"></b></label>
+          <input id="ar-years-amount" type="number" min="0" step="0.01" inputmode="decimal" oninput="this.dataset.touched='1'"
+            style="width:100%;box-sizing:border-box;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+          <div style="font-size:11px;color:var(--gray);margin-top:4px;line-height:1.45">Mettez <b>0</b> pour un revenu ou une dépense occasionnels : la ligne est créée vide, prête à être remplie le moment venu.</div>
+        </div>
       </div>
       <div id="ar-preview" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);border-left:3px solid var(--blue)"></div>
       <div id="ar-edit-warning" data-i18n="modal.edit_warning" style="display:none;background:#2a1f3d;border-left:3px solid #8B5CF6;border-radius:6px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,.7)">✏️ Amounts will be replaced from the chosen start month. Previous months remain unchanged.</div>
@@ -5520,6 +5526,8 @@ function openAddRowModal(year, type) {
   document.getElementById('ar-preview').style.display = 'none';
   const cbAnnees = document.getElementById('ar-propagate-years');
   if (cbAnnees) delete cbAnnees.dataset.touched;
+  const mtAnnees = document.getElementById('ar-years-amount');
+  if (mtAnnees) { delete mtAnnees.dataset.touched; mtAnnees.value = ''; }
   _arRefreshYearsOption();
   // Compte associé
   const _arAccSel = document.getElementById('ar-account');
@@ -5580,7 +5588,9 @@ function openEditRowModal(year, dataType, ri) {
   document.getElementById('ar-error').textContent = '';
   const cbAnneesEdit = document.getElementById('ar-propagate-years');
   if (cbAnneesEdit) delete cbAnneesEdit.dataset.touched;
-  _arRefreshYearsOption(); // masquée en modification : le report y est automatique
+  const mtAnneesEdit = document.getElementById('ar-years-amount');
+  if (mtAnneesEdit) { delete mtAnneesEdit.dataset.touched; mtAnneesEdit.value = ''; }
+  _arRefreshYearsOption(); // proposée seulement pour les années où la ligne manque
   // Valeurs proposées à l'ouverture : si elles ne sont pas touchées, les montants
   // de la ligne ne doivent pas être reconstruits. Sans ce repère, modifier un
   // libellé, un type ou une date de fin remplaçait les montants mensuels saisis
@@ -5652,21 +5662,38 @@ function _arRefreshYearsOption() {
   wrap.style.display = suivantes.length ? '' : 'none';
   if (!suivantes.length) return;
   document.getElementById('ar-years-label').textContent = `📅 Ajouter aussi à ${suivantes.join(', ')}`;
-  if (cb.dataset.touched === '1') return; // choix explicite de l'utilisateur
-  if (_arEditMode) { cb.checked = false; return; } // ligne existante : geste volontaire
-  const { cat } = _arParseType(document.getElementById('ar-type').value);
-  const sansFin = document.getElementById('ar-noend').checked;
-  cb.checked = cat !== 'occasional' && sansFin;
+  if (cb.dataset.touched !== '1') {
+    if (_arEditMode) cb.checked = false; // ligne existante : geste volontaire
+    else {
+      const { cat } = _arParseType(document.getElementById('ar-type').value);
+      cb.checked = cat !== 'occasional' && document.getElementById('ar-noend').checked;
+    }
+  }
+  // Montant à reconduire : proposé d'après l'année en cours, modifiable. Un
+  // salaire ou un abonnement change souvent d'une année à l'autre.
+  const wrapMt = document.getElementById('ar-years-amount-wrap');
+  const inpMt = document.getElementById('ar-years-amount');
+  wrapMt.style.display = cb.checked ? '' : 'none';
+  document.getElementById('ar-years-first').textContent = suivantes[0];
+  if (inpMt.dataset.touched !== '1') {
+    const defaut = _arEditMode
+      ? _lastPaidAmt(_arEditRow)
+      : (parseFloat(document.getElementById('ar-amount').value) || 0);
+    inpMt.value = defaut || '';
+    inpMt.placeholder = defaut ? fmtN(defaut) : '0.00';
+  }
 }
 // Crée dans les années indiquées une copie d'une ligne existante, au même rythme
 // mais reconduit sur l'année entière (voir _projectMonths).
-function _ajouterLigneAuxAnnees(section, row, annees) {
+function _ajouterLigneAuxAnnees(section, row, annees, montant) {
   let n = 0;
+  const mt = (montant !== null && montant !== undefined && !isNaN(montant)) ? montant : null;
   annees.forEach(y => {
     if (!DATA[y] || !Array.isArray(DATA[y][section])) return;
-    const v = _projectMonths(row.v, null, _lastPaidAmt(row));
+    const v = _projectMonths(row.v, mt, _lastPaidAmt(row));
     const copie = { ...JSON.parse(JSON.stringify(row)), v, paid: v.map(x => (parseFloat(x) || 0) === 0) };
     delete copie._adjust;
+    delete copie.notes; // les commentaires appartiennent à l'année où ils ont été écrits
     if (copie.cat === 'livret_in' || copie.cat === 'livret_out') _markLivretPaid(copie);
     if (_endKey(copie) !== '') {
       if (parseInt(copie.endYear) < parseInt(y)) return; // ligne terminée avant cette année
@@ -5798,7 +5825,8 @@ function submitAddRow() {
     // Ligne d'abord (réaligne libellé et type), puis date de fin : celle-ci
     // retrouve ainsi aussi les lignes qui viennent d'être réalignées
     const ajoutees = document.getElementById('ar-propagate-years')?.checked
-      ? _ajouterLigneAuxAnnees(_arEditDataType, row, _arAnneesSansLaLigne()) : 0;
+      ? _ajouterLigneAuxAnnees(_arEditDataType, row, _arAnneesSansLaLigne(),
+          parseFloat(document.getElementById('ar-years-amount')?.value)) : 0;
     const ligneReportee = _propagateRowForward(year, _arEditDataType, row, avant, montantsTouches ? amount : 0);
     const finReportee = _propagateEndForward(year, _arEditDataType, row, oldLabel, oldCat, oldEndKey);
     const reportee = Math.max(finReportee, ligneReportee, ajoutees);
@@ -5836,8 +5864,10 @@ function submitAddRow() {
     getYears().filter(y => parseInt(y) > parseInt(year)).sort().forEach(y => {
       if (!DATA[y] || !Array.isArray(DATA[y][section])) return;
       if (_findRowLike(DATA[y][section], label, section === 'charges' ? choix.cat : undefined)) return; // déjà présente
+      const mtAnnees = parseFloat(document.getElementById('ar-years-amount')?.value);
+      const mt = isNaN(mtAnnees) ? amount : mtAnnees;
       const suivantes = Array(12).fill(0);
-      for (let m = (startMonth % interval); m < 12; m += interval) suivantes[m] = amount;
+      for (let m = (startMonth % interval); m < 12; m += interval) suivantes[m] = mt;
       const r = construire(suivantes);
       if (_endKey(r) !== '') {
         if (parseInt(r.endYear) < parseInt(y)) return; // terminée avant cette année
@@ -10423,8 +10453,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.38';
-const SW_VERSION = 'v318';
+const APP_VERSION = '13.39';
+const SW_VERSION = 'v319';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12310,6 +12340,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.39': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '💶', text: 'En ajoutant une ligne aux années suivantes, l\'app demande désormais avec quel montant la poursuivre. Le montant de l\'année en cours est proposé, à corriger si votre salaire ou votre abonnement change.' },
+      { icon: '🗒️', text: 'Les commentaires écrits sur les cellules ne sont plus recopiés dans l\'année suivante : ils se rapportent à l\'année où ils ont été écrits.' }
+    ]
+  },
   '13.38': {
     date: 'Septembre 2026',
     items: [
