@@ -7350,6 +7350,7 @@ function refreshMonthSummary(year) {
 }
 
 // ── RÉSUMÉ TAB ──
+function goToTxWidget(){const t=document.querySelector('.tab[data-tab="resume"]')||document.querySelector('.tab[onclick*="resume"]');switchTab('resume',t);setTimeout(()=>document.getElementById('tx-widget-container')?.scrollIntoView({behavior:'smooth'}),120);}
 let _txFilterMonth = new Date().getMonth(); // mois courant par défaut
 let _txFilterYear  = null; // null = année la plus récente
 function renderRecentTx() {
@@ -17012,7 +17013,7 @@ function closeCompareView() {
 </div>
 
 <!-- ── FAB : Transactions ── -->
-<button class="tx-fab" id="tx-fab" onclick="switchTab('resume',document.querySelector('.tab[onclick*=\"resume\"]'));setTimeout(()=>document.getElementById('tx-widget-container')?.scrollIntoView({behavior:'smooth'}),100)" title="Transactions du mois" style="display:none">🧾</button>
+<button class="tx-fab" id="tx-fab" onclick="goToTxWidget()" title="Transactions du mois" style="display:none">🧾</button>
 
 <!-- ── FAB : Ajout rapide ── -->
 <button class="fab" id="main-fab" onclick="openQuickAdd()" title="Ajout rapide" style="display:none">➕</button>
