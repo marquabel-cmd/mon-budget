@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -7359,54 +7359,74 @@ function renderRecentTx() {
   const years = getYears();
   if (!years.length) { wrap.innerHTML = ''; return; }
   const cats = getVarCats();
-  const MONTH_FR = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
   const MONTH_LONG = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-  const catColors = ['#1a6fc4','#27ae60','#e67e22','#9b59b6','#c0392b','#16a085','#f39c12','#2980b9','#8e44ad','#d35400'];
+  const MONTH_SHORT = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  const METHOD_CFG = {
+    carte:   {label:'Carte',      color:'#2980b9', bg:'rgba(41,128,185,.12)',  icon:'💳'},
+    repas:   {label:'Ch. repas',  color:'#e67e22', bg:'rgba(230,126,34,.12)', icon:'🍽️'},
+    liquide: {label:'Liquide',    color:'#27ae60', bg:'rgba(39,174,96,.12)',   icon:'💵'},
+    cheque:  {label:'Chèque',     color:'#8e44ad', bg:'rgba(142,68,173,.12)', icon:'🧾'},
+  };
+  const DEF_METHOD = {label:'Autre', color:'#7f8c8d', bg:'rgba(127,140,141,.12)', icon:'•'};
+  const getM = k => METHOD_CFG[k] || DEF_METHOD;
+  const CAT_COLORS = ['#1a6fc4','#27ae60','#e67e22','#9b59b6','#c0392b','#16a085','#f39c12','#2980b9','#8e44ad','#d35400'];
   const activeYear = _txFilterYear && DATA[_txFilterYear] ? _txFilterYear : years[years.length - 1];
   const m = _txFilterMonth;
-  // Collect transactions for the selected year+month
-  const all = [];
+  const fmtAmt = v => (v<0?'−':'+')+Math.abs(v).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+  const byCat = [];
+  let grandTotal = 0, txCount = 0;
   cats.forEach((cat, ci) => {
-    (DATA[activeYear].vars[cat.key] || []).forEach(tx => {
-      if (!tx.comment || tx.month !== m) return;
-      all.push({ cat, ci, tx });
-    });
+    const txs = (DATA[activeYear].vars[cat.key] || [])
+      .filter(tx => tx.month === m)
+      .sort((a,b) => (parseInt(b.date)||0)-(parseInt(a.date)||0));
+    if (!txs.length) return;
+    const catTotal = txs.reduce((s,tx)=>s+(parseFloat(tx.amount)||0), 0);
+    grandTotal += catTotal; txCount += txs.length;
+    byCat.push({cat, ci, txs, catTotal});
   });
-  all.sort((a, b) => (parseInt(b.tx.date)||0) - (parseInt(a.tx.date)||0));
-  const totalAmt = all.reduce((s,{tx})=>s+(parseFloat(tx.amount)||0),0);
-  const rows = all.length ? all.map(({cat, ci, tx}) => {
-    const letter = tx.comment.trim()[0] || '?';
-    const color = catColors[ci % catColors.length];
-    const day = parseInt(tx.date) || null;
-    const dateLabel = day ? `${day} ${MONTH_FR[m]}` : MONTH_FR[m];
-    const amt = parseFloat(tx.amount) || 0;
-    const amtStr = (amt >= 0 ? '+' : '−') + Math.abs(amt).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
-    return `<div class="tx-item">
-      <div class="tx-avatar" style="background:${color}">${letter}</div>
-      <div class="tx-info">
-        <div class="tx-info-name">${tx.comment}</div>
-        <div class="tx-info-sub">${cat.label}${day ? ' · ' + dateLabel : ''}</div>
+  const usedM = new Set();
+  byCat.forEach(({txs})=>txs.forEach(tx=>{ if(tx.method) usedM.add(tx.method); }));
+  const legend = [...usedM].map(k=>{const mc=getM(k);return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--gray)"><span style="width:9px;height:9px;border-radius:50%;background:${mc.color};display:inline-block"></span>${mc.label}</span>`;}).join('');
+  const cols = byCat.map(({cat, ci, txs, catTotal}) => {
+    const cc = CAT_COLORS[ci % CAT_COLORS.length];
+    const rows = txs.map(tx => {
+      const mc = getM(tx.method);
+      const amt = parseFloat(tx.amount)||0;
+      const day = parseInt(tx.date)||null;
+      const lbl = tx.comment || '—';
+      return `<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span title="${mc.label}" style="width:26px;height:26px;border-radius:50%;background:${mc.bg};border:1.5px solid ${mc.color};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${mc.icon}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</div>
+          ${day?`<div style="font-size:10px;color:var(--gray)">${day} ${MONTH_SHORT[m]}</div>`:''}
+        </div>
+        <span style="font-size:12px;font-weight:700;white-space:nowrap;color:${amt<0?'#e74c3c':'#27ae60'}">${fmtAmt(amt)}</span>
+      </div>`;
+    }).join('');
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;min-width:170px;flex:1">
+      <div style="background:${cc};padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+        <span style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cat.label}</span>
+        <span style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap">${fmtAmt(catTotal)}</span>
       </div>
-      <div class="tx-amount ${amt>=0?'pos':'neg'}">${amtStr}</div>
+      <div style="padding:0 10px 6px">${rows}</div>
     </div>`;
-  }).join('') : `<div class="tx-empty">Aucune transaction en ${MONTH_LONG[m]} ${activeYear}</div>`;
-  // Month selector options
+  }).join('');
   const monthOpts = MONTH_LONG.map((ml,i)=>`<option value="${i}"${i===m?' selected':''}>${ml}</option>`).join('');
   const yearOpts = [...years].reverse().map(y=>`<option value="${y}"${y===activeYear?' selected':''}>${y}</option>`).join('');
-  const totalStr = (totalAmt>=0?'−':'+') + Math.abs(totalAmt).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
   wrap.innerHTML = `<div class="tx-widget">
     <div class="tx-widget-header">
-      <span class="tx-widget-title">Transactions</span>
+      <span class="tx-widget-title">Transactions — <span style="color:var(--blue)">${MONTH_LONG[m]} ${activeYear}</span></span>
       <div style="display:flex;align-items:center;gap:6px">
-        <select onchange="_txFilterMonth=+this.value;renderRecentTx()" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--surface);color:var(--text);cursor:pointer">${monthOpts}</select>
-        <select onchange="_txFilterYear=this.value;renderRecentTx()" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--surface);color:var(--text);cursor:pointer">${yearOpts}</select>
+        <select onchange="_txFilterMonth=+this.value;renderRecentTx()" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--surface);color:var(--text)">${monthOpts}</select>
+        <select onchange="_txFilterYear=this.value;renderRecentTx()" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--surface);color:var(--text)">${yearOpts}</select>
       </div>
     </div>
+    ${legend?`<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px">${legend}</div>`:''}
     <div style="font-size:11px;color:var(--gray);margin-bottom:10px;display:flex;justify-content:space-between">
-      <span>${all.length} transaction${all.length!==1?'s':''}</span>
-      <span style="font-weight:700;color:${totalAmt<=0?'#e74c3c':'#27ae60'}">${totalStr}</span>
+      <span>${txCount} transaction${txCount!==1?'s':''}</span>
+      <span style="font-weight:700;color:${grandTotal<0?'#e74c3c':'#27ae60'}">${fmtAmt(grandTotal)}</span>
     </div>
-    ${rows}
+    ${byCat.length?`<div style="display:flex;flex-wrap:wrap;gap:10px">${cols}</div>`:`<div style="padding:20px;text-align:center;color:var(--gray);font-size:13px">Aucune transaction en ${MONTH_LONG[m]} ${activeYear}</div>`}
   </div>`;
 }
 
