@@ -1300,9 +1300,10 @@ body.auth-locked #context-banner {
   <div style="background:var(--surface);border-radius:16px;padding:22px 24px;width:min(360px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
     <h3 data-i18n="propagate.title" style="margin:0 0 10px;font-size:15px;color:var(--text)">↘ Apply to following months?</h3>
     <p style="margin:0 0 18px;font-size:13px;color:var(--gray);line-height:1.5">Appliquer <b id="prop-amount" style="color:var(--text)"></b> € à partir de <b id="prop-from" style="color:var(--text)"></b> jusqu'en Décembre ?</p>
-    <div style="display:flex;gap:8px">
-      <button data-i18n="propagate.confirm" onclick="confirmPropagate(true)" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">✅ Yes, apply</button>
-      <button data-i18n="propagate.cancel" onclick="confirmPropagate(false)" style="flex:1;padding:11px;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">No, just this month</button>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button data-i18n="propagate.confirm" onclick="confirmPropagate(true)" style="width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">✅ Yes, apply</button>
+      <button id="prop-years-btn" onclick="confirmPropagate('annees')" style="width:100%;padding:11px;background:var(--surface-alt);color:var(--blue);border:1px solid var(--blue);border-radius:9px;font-weight:700;cursor:pointer;font-size:13px">📅 …et les années suivantes</button>
+      <button data-i18n="propagate.cancel" onclick="confirmPropagate(false)" style="width:100%;padding:11px;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);border-radius:9px;font-weight:700;cursor:pointer;font-size:14px">No, just this month</button>
     </div>
   </div>
 </div>
@@ -5375,9 +5376,14 @@ function _propagateRowForward(year, section, row, avant, nouveauMontant) {
     }
     if (row.label !== avant.label && r2.label === avant.label) { r2.label = row.label; touche = true; }
     if (montantChange) {
+      // Dans une année à venir, « payé » ne reflète aucun paiement réel : c'est
+      // l'état par défaut des lignes projetées (et de tout revenu sans historique).
+      // N'appliquer la protection des mois payés que sur l'année en cours ou passée,
+      // sinon plus aucun report de montant n'aboutit.
+      const anneeAVenir = parseInt(y) > new Date().getFullYear();
       r2.v.forEach((x, m) => {
-        // Un mois payé d'une ligne ordinaire est un fait : on n'y touche pas
-        if (Math.abs((parseFloat(x) || 0) - avant.montant) < 0.005 && (estLivret(r2) || !(r2.paid && r2.paid[m]))) {
+        const protege = !anneeAVenir && !estLivret(r2) && r2.paid && r2.paid[m];
+        if (Math.abs((parseFloat(x) || 0) - avant.montant) < 0.005 && !protege) {
           r2.v[m] = nouveauMontant;
           touche = true;
         }
@@ -5806,19 +5812,43 @@ let _propCtx = null;
 function proposePropagate(el, year, dataType, ri, mi) {
   const newVal = parseFloat(el.value) || 0;
   const prev = parseFloat(el.dataset.prev);
-  if (isNaN(prev) || newVal === prev || mi >= 11) return;
-  _propCtx = {year, dataType, ri, mi, val: newVal};
+  if (isNaN(prev) || newVal === prev) return;
+  // Décembre : plus de mois à remplir dans l'année, mais les années suivantes
+  // restent concernées — la fenêtre n'apparaissait pas du tout dans ce cas.
+  const moisRestants = mi < 11;
+  const anneesSuivantes = getYears().filter(y => parseInt(y) > parseInt(year));
+  if (!moisRestants && !anneesSuivantes.length) return;
+  _propCtx = {year, dataType, ri, mi, val: newVal, prev};
   document.getElementById('prop-amount').textContent = fmtN(newVal);
-  document.getElementById('prop-from').textContent = getMonths()[mi + 1];
+  document.getElementById('prop-from').textContent = getMonths()[Math.min(mi + 1, 11)];
+  const btnMois = document.querySelector('#propagate-modal [data-i18n="propagate.confirm"]');
+  if (btnMois) btnMois.style.display = moisRestants ? '' : 'none';
+  const btnAnnees = document.getElementById('prop-years-btn');
+  if (btnAnnees) {
+    btnAnnees.style.display = anneesSuivantes.length ? '' : 'none';
+    btnAnnees.textContent = moisRestants
+      ? `📅 …et ${anneesSuivantes.join(', ')}`
+      : `📅 Appliquer à ${anneesSuivantes.join(', ')}`;
+  }
   document.getElementById('propagate-modal').style.display = 'flex';
 }
-function confirmPropagate(yes) {
+// mode : true = mois suivants de l'année ; 'annees' = en plus, la même ligne des
+// années suivantes, sur les mois qui portaient encore l'ancien montant.
+function confirmPropagate(mode) {
   document.getElementById('propagate-modal').style.display = 'none';
-  if (yes && _propCtx) {
-    const {year, dataType, ri, mi, val} = _propCtx;
-    for (let m = mi + 1; m < 12; m++) DATA[year][dataType][ri].v[m] = val;
-    renderYear(year);
+  if (mode && _propCtx) {
+    const {year, dataType, ri, mi, val, prev} = _propCtx;
+    const ligne = DATA[year][dataType][ri];
+    for (let m = mi + 1; m < 12; m++) ligne.v[m] = val;
+    let annees = 0;
+    if (mode === 'annees') {
+      const avant = { label: ligne.label, cat: ligne.cat, livretId: ligne.livretId || null, montant: prev };
+      annees = _propagateRowForward(year, dataType, ligne, avant, val);
+    }
+    getYears().forEach(y => { if (y === String(year) || (annees && parseInt(y) > parseInt(year))) renderYear(y); });
+    renderSummary();
     dSave();
+    if (annees) showToast(`✅ Reporté sur ${annees} année(s) suivante(s)`);
   }
   _propCtx = null;
 }
@@ -10275,8 +10305,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.35';
-const SW_VERSION = 'v315';
+const APP_VERSION = '13.36';
+const SW_VERSION = 'v316';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12162,6 +12192,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.36': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '💶', text: 'Le report d\'un changement de montant sur les années suivantes ne fonctionnait pas : les mois des années futures sont marqués « payés » par défaut, et cette protection bloquait tout. Elle ne s\'applique plus qu\'à l\'année en cours et aux années passées.' },
+      { icon: '📅', text: 'En modifiant un montant directement dans le tableau, la fenêtre propose désormais un troisième choix : appliquer aussi aux années suivantes. Elle s\'affiche aussi sur décembre, où il n\'y avait plus rien à proposer dans l\'année.' }
+    ]
+  },
   '13.35': {
     date: 'Septembre 2026',
     items: [
