@@ -6554,6 +6554,7 @@ function submitQuickAdd() {
       }
     }
     _qaOrigCatKey = null; _qaOrigYear = null;
+    if (document.getElementById('tx-widget-container')) { _txFilterYear = String(year); _txFilterMonth = month; renderRecentTx(); }
     document.getElementById('quick-add-overlay').style.display = 'none';
     return;
   }
@@ -7370,9 +7371,14 @@ function renderRecentTx() {
   const DEF_METHOD = {label:'Autre', color:'#7f8c8d', bg:'rgba(127,140,141,.12)', icon:'•'};
   const getM = k => METHOD_CFG[k] || DEF_METHOD;
   const CAT_COLORS = ['#1a6fc4','#27ae60','#e67e22','#9b59b6','#c0392b','#16a085','#f39c12','#2980b9','#8e44ad','#d35400'];
-  const activeYear = _txFilterYear && DATA[_txFilterYear] ? _txFilterYear : years[years.length - 1];
+  // Annee par defaut : annee courante si elle a des donnees, sinon la plus recente
+  if (!_txFilterYear) {
+    const curY = String(new Date().getFullYear());
+    _txFilterYear = DATA[curY] ? curY : years[years.length - 1];
+  }
+  const activeYear = DATA[_txFilterYear] ? _txFilterYear : years[years.length - 1];
   const m = _txFilterMonth;
-  const fmtAmt = v => (v<0?'−':'+')+Math.abs(v).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+  const fmtAmt = v => (v<0?'\u2212':'+')+Math.abs(v).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u00a0\u20ac';
   const byCat = [];
   let grandTotal = 0, txCount = 0;
   cats.forEach((cat, ci) => {
@@ -7398,9 +7404,10 @@ function renderRecentTx() {
         <span title="${mc.label}" style="width:26px;height:26px;border-radius:50%;background:${mc.bg};border:1.5px solid ${mc.color};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${mc.icon}</span>
         <div style="flex:1;min-width:0">
           <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</div>
-          ${day?`<div style="font-size:10px;color:var(--gray)">${day} ${MONTH_SHORT[m]}</div>`:''}
+          ${day?`<div style="font-size:10px;color:var(--gray)">${day} ${MONTH_SHORT[m]}</div>`:''} 
         </div>
         <span style="font-size:12px;font-weight:700;white-space:nowrap;color:${amt<0?'#e74c3c':'#27ae60'}">${fmtAmt(amt)}</span>
+        <button onclick="openEditTx('${activeYear}','${cat.key}','${tx.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 4px;color:var(--gray);flex-shrink:0;opacity:.6" title="Modifier / D&#233;placer">&#9998;</button>
       </div>`;
     }).join('');
     return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;min-width:170px;flex:1">
