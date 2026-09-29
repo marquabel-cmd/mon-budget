@@ -4267,6 +4267,9 @@ function _repairYearMonths() {
   showToast(`✅ ${lignes.length} ligne(s) rétablie(s)`);
 }
 
+// Repère des valeurs proposées à l'ouverture de la fenêtre de modification
+let _arSnapshot = null;
+
 let _pendingNewYear = null;
 function addYear() {
   if (!isLicensed() && getYears().length >= FREE_MAX_YEARS) { showUpgrade('historique multi-années'); return; }
@@ -5319,9 +5322,13 @@ function _applyEndToYear(row, year) {
   if (_endKey(row) === '') return false;
   const ey = parseInt(row.endYear), em = parseInt(row.endMonth), y = parseInt(year);
   if (y < ey) return false;
+  // Dans une année à venir, « payé » est l'état par défaut des lignes projetées :
+  // il ne protège aucun paiement réel et empêchait la fin de s'appliquer.
+  const anneeAVenir = y > new Date().getFullYear();
   let changed = false;
   for (let m = (y === ey ? em + 1 : 0); m < 12; m++) {
-    if ((parseFloat(row.v[m]) || 0) !== 0 && !(row.paid && row.paid[m])) {
+    const protege = !anneeAVenir && row.paid && row.paid[m];
+    if ((parseFloat(row.v[m]) || 0) !== 0 && !protege) {
       row.v[m] = 0;
       if (row.paid) row.paid[m] = true;
       changed = true;
@@ -5375,7 +5382,9 @@ function _propagateRowForward(year, section, row, avant, nouveauMontant) {
       }
     }
     if (row.label !== avant.label && r2.label === avant.label) { r2.label = row.label; touche = true; }
-    if (montantChange) {
+    // Ligne à montants variables dans l'année suivante : saisie manuelle, on la laisse
+    const variable = new Set(r2.v.filter(x => (parseFloat(x) || 0) !== 0).map(Number)).size > 1;
+    if (montantChange && !variable) {
       // Dans une année à venir, « payé » ne reflète aucun paiement réel : c'est
       // l'état par défaut des lignes projetées (et de tout revenu sans historique).
       // N'appliquer la protection des mois payés que sur l'année en cours ou passée,
@@ -5558,6 +5567,21 @@ function openEditRowModal(year, dataType, ri) {
   document.getElementById('ar-freq').value = Math.min(Math.max(detectedInterval, 1), 12);
   document.getElementById('ar-amount').value = firstAmt || '';
   document.getElementById('ar-error').textContent = '';
+  // Valeurs proposées à l'ouverture : si elles ne sont pas touchées, les montants
+  // de la ligne ne doivent pas être reconstruits. Sans ce repère, modifier un
+  // libellé, un type ou une date de fin remplaçait les montants mensuels saisis
+  // à la main par un montant unique.
+  _arSnapshot = {
+    montant: parseFloat(firstAmt) || 0,
+    interval: Math.min(Math.max(detectedInterval, 1), 12),
+    debut: detectedStart
+  };
+  // Une ligne aux montants variables est la plus exposée : le signaler
+  const montantsVariables = new Set(row.v.filter(x => (parseFloat(x) || 0) !== 0).map(Number)).size > 1;
+  const avert = document.getElementById('ar-edit-warning');
+  if (avert) avert.innerHTML = montantsVariables
+    ? '⚠️ Cette ligne a des <b>montants différents selon les mois</b>. Ils ne changeront que si vous modifiez le montant, la fréquence ou le mois de début.'
+    : t('modal.edit_warning');
   // Restaurer date de fin et répétitions depuis la ligne sauvegardée.
   // Une ligne sans date de fin enregistrée (endYear absent) est « sans fin » :
   // la traiter autrement lui inventait une fin à l'enregistrement, même quand on
@@ -5698,13 +5722,20 @@ function submitAddRow() {
         delete row.livretId; // sortie volontaire d'un livret
       }
     }
-    for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
+    // Montants reconstruits uniquement si l'un des trois champs qui les définissent
+    // a changé. Sinon une simple correction de libellé, de type ou de date de fin
+    // écrasait des montants mensuels saisis à la main.
+    const montantsTouches = !_arSnapshot
+      || Math.abs(amount - _arSnapshot.montant) >= 0.005
+      || interval !== _arSnapshot.interval
+      || startMonth !== _arSnapshot.debut;
+    if (montantsTouches) for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
     if (devientLivret) _markLivretPaid(row);
     Object.assign(row, rowMeta);
     if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
     // Ligne d'abord (réaligne libellé et type), puis date de fin : celle-ci
     // retrouve ainsi aussi les lignes qui viennent d'être réalignées
-    const ligneReportee = _propagateRowForward(year, _arEditDataType, row, avant, amount);
+    const ligneReportee = _propagateRowForward(year, _arEditDataType, row, avant, montantsTouches ? amount : 0);
     const finReportee = _propagateEndForward(year, _arEditDataType, row, oldLabel, oldCat, oldEndKey);
     const reportee = Math.max(finReportee, ligneReportee);
     getYears().forEach(y => { if (y === String(year) || (reportee && parseInt(y) > parseInt(year))) renderYear(y); });
@@ -10305,8 +10336,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.36';
-const SW_VERSION = 'v316';
+const APP_VERSION = '13.37';
+const SW_VERSION = 'v317';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12192,6 +12223,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.37': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '🛡️', text: 'La fenêtre de modification ne reconstruit plus les montants quand on ne touche ni au montant, ni à la fréquence, ni au mois de début. Corriger un libellé, un type ou une date de fin remplaçait jusqu\'ici les montants mensuels saisis à la main par un montant unique.' },
+      { icon: '⚠️', text: 'Sur une ligne aux montants variables, la fenêtre le signale explicitement. Et une telle ligne n\'est plus modifiée par le report vers les années suivantes.' }
+    ]
+  },
   '13.36': {
     date: 'Septembre 2026',
     items: [
