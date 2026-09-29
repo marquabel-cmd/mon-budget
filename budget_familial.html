@@ -7407,7 +7407,7 @@ function renderRecentTx() {
           ${day?`<div style="font-size:10px;color:var(--gray)">${day} ${MONTH_SHORT[m]}</div>`:''} 
         </div>
         <span style="font-size:12px;font-weight:700;white-space:nowrap;color:${amt<0?'#e74c3c':'#27ae60'}">${fmtAmt(amt)}</span>
-        <button onclick="openEditTx('${activeYear}','${cat.key}','${tx.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 4px;color:var(--gray);flex-shrink:0;opacity:.6" title="Modifier / D&#233;placer">&#9998;</button>
+        <button onclick="openEditTx('${activeYear}','${cat.key}',${tx.id})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 4px;color:var(--gray);flex-shrink:0;opacity:.6" title="Modifier / D&#233;placer">&#9998;</button>
       </div>`;
     }).join('');
     return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;min-width:170px;flex:1">
