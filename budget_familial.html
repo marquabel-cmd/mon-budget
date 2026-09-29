@@ -347,6 +347,10 @@ header p{font-size:12px;color:rgba(255,255,255,0.5);margin:0}
 .section-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.14),0 6px 20px rgba(0,0,0,.08)}
 /* ── WIDGET TRANSACTIONS ── */
 .tx-widget{background:var(--surface);border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.10),0 4px 16px rgba(0,0,0,.06);border:1px solid var(--border);padding:18px 20px;margin-bottom:14px}
+.tx-row{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border);transition:background .15s}
+.tx-row:hover{background:var(--surface-alt,rgba(0,0,0,.03));border-radius:6px;padding-left:4px;padding-right:4px}
+.tx-row-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:white-space .1s}
+.tx-row:hover .tx-row-name{white-space:normal;overflow:visible;text-overflow:unset}
 .tx-widget-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .tx-widget-title{font-size:14px;font-weight:700;color:var(--text)}
 .tx-widget-link{font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;text-decoration:none;border:none;background:none;padding:0}
@@ -7400,10 +7404,10 @@ function renderRecentTx() {
       const amt = parseFloat(tx.amount)||0;
       const day = parseInt(tx.date)||null;
       const lbl = tx.comment || '—';
-      return `<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border)">
+      return `<div class="tx-row">
         <span title="${mc.label}" style="width:26px;height:26px;border-radius:50%;background:${mc.bg};border:1.5px solid ${mc.color};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${mc.icon}</span>
         <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</div>
+          <div class="tx-row-name">${lbl}</div>
           ${day?`<div style="font-size:10px;color:var(--gray)">${day} ${MONTH_SHORT[m]}</div>`:''} 
         </div>
         <span style="font-size:12px;font-weight:700;white-space:nowrap;color:${amt<0?'#e74c3c':'#27ae60'}">${fmtAmt(amt)}</span>
