@@ -2697,6 +2697,7 @@ function _finishLogin(id) {
         });
         let _localIsNewer = _decision.localIsNewer;
         const _conflict   = _decision.conflict;
+        const _noCounter  = _decision.noCounter === true;
         _syncLog(`décision « ${_decision.reason} » — cloud ${_cloudRev}, vue ${_seenRev}, en attente ${_pending}, ancêtre ${_ancestorForMerge ? 'oui' : 'NON'}`);
         if (_conflict && _ancestorForMerge) {
           // Vrai conflit, avec ancêtre : fusion champ par champ. Une ligne que cet
@@ -2705,6 +2706,17 @@ function _finishLogin(id) {
           DATA = _mergeBudgetData(DATA, cloudData, {
             enabled: true, ancestor: _ancestorForMerge, dirty: false
           });
+        } else if (_conflict && _noCounter) {
+          // Cloud sans compteur ET sans ancêtre : rien ne permet de désigner un
+          // gagnant, et surtout pas les horloges. On garde le local comme base et
+          // on y verse les données cloud manquantes — aucun côté n'est écrasé,
+          // quitte à conserver passagèrement une ligne périmée. L'envoi qui suit
+          // réinstalle un compteur et fait sortir le parc de ce mode dégradé.
+          console.warn('🔄 Cloud sans compteur de version — fusion défensive, aucun côté ne fait autorité');
+          _syncLog('⚠️ cloud SANS compteur — fusion défensive, local conservé puis renvoyé');
+          _backupBeforeCloudReplace();
+          DATA = _mergeBudgetData(cloudData, DATA); // args inversés : local devient base
+          showToast(t('toast.sync_no_counter'));
         } else if (_conflict) {
           // Conflit sans ancêtre (premier démarrage sous ce schéma) : aucune fusion
           // 3 voies n'est possible. On s'en remet alors au seul signal fiable, le
@@ -3254,9 +3266,21 @@ function _mergeBudgetData(local, cloud, opts) {
   ]);
   // Propager la liste noire fusionnée dans le résultat
   if (deletedIds.size > 0) result._deletedIds = [...deletedIds];
-  let rescued = 0;
+  // Même principe au niveau des années entières : sans cette liste, la règle
+  // « toute année présente en local et absente du cloud est une perte à réparer »
+  // ressuscitait les années supprimées exprès depuis un autre appareil.
+  const deletedYears = new Set([
+    ...(local._deletedYears || []),
+    ...(cloud._deletedYears  || [])
+  ].map(String));
+  if (deletedYears.size > 0) result._deletedYears = [...deletedYears];
+  let rescued = 0, resurrectionsEvitees = 0;
   Object.keys(local).forEach(yr => {
     if (!/^\d{4}$/.test(yr) || !local[yr]?.vars) return;
+    // Année supprimée intentionnellement et déjà absente du cloud : ne pas la
+    // réinjecter. Si le cloud la porte encore, c'est qu'elle a été recréée
+    // depuis — on la laisse vivre, la liste noire ne sert jamais à effacer.
+    if (deletedYears.has(yr) && !result[yr]) { resurrectionsEvitees++; return; }
     if (!result[yr]) result[yr] = JSON.parse(JSON.stringify(local[yr]));
     if (!result[yr].vars) result[yr].vars = {};
     // Construire un index de toutes les tx cloud (toutes catégories) pour détecter les déplacements
@@ -3317,6 +3341,7 @@ function _mergeBudgetData(local, cloud, opts) {
       });
     });
   }
+  if (resurrectionsEvitees > 0) { console.warn(`🗑️ Fusion : ${resurrectionsEvitees} année(s) supprimée(s) intentionnellement, non réinjectée(s)`); if (typeof _syncLog === 'function') _syncLog(`${resurrectionsEvitees} année(s) supprimée(s) non réinjectée(s) : ${[...deletedYears].join(', ')}`); }
   if (rescued > 0) { console.warn(`🛡️ Fusion : ${rescued} tx locale(s) réinjectée(s) (absentes du cloud, non supprimées)`); showToast(t('toast.local_tx_preserved').replace('{0}', rescued)); }
   if (edited > 0) console.info(`🛡️ Fusion : ${edited} tx locale(s) préservée(s) (éditées localement, non encore synchronisées)`);
   if (_lastMergeFixedPreserved > 0) console.warn(`🛡️ Fusion : ${_lastMergeFixedPreserved} ligne(s) charges/revenus locale(s) préservée(s)`);
@@ -4176,6 +4201,12 @@ function renderTabs() {
 
 function deleteYear(year) {
   confirmDelete(t('confirm.delete_year_full').replace('{0}', year), () => {
+    // Mémoriser l'année comme supprimée intentionnellement, sur le modèle de
+    // _deletedIds pour les transactions. Sans cette trace, un autre appareil qui
+    // détient encore l'année la voit « manquante » côté cloud et la réinjecte à
+    // la fusion (_mergeBudgetData) : la suppression revenait au démarrage suivant.
+    if (!DATA._deletedYears) DATA._deletedYears = [];
+    if (!DATA._deletedYears.includes(String(year))) DATA._deletedYears.push(String(year));
     delete DATA[year];
     const panel = document.getElementById('tab-y' + year);
     if (panel) panel.remove();
@@ -4413,6 +4444,12 @@ function confirmRevDialog() {
   const newSoldes = { compteIng: 0, comptePro: 0, livretInitial: livretFinal, boite: 0, _openingConfirmed: false };
   if (Object.keys(addAccFinals).length) newSoldes.comptes = Object.fromEntries(Object.entries(addAccFinals).map(([k,v]) => [k, 0]));
   if (Object.keys(addLivFinals).length) newSoldes.livrets_bal = addLivFinals;
+
+  // Une année recréée sort de la liste noire : sinon la fusion refuserait de la
+  // réinjecter sur les autres appareils et elle resterait cantonnée à celui-ci.
+  if (Array.isArray(DATA._deletedYears)) {
+    DATA._deletedYears = DATA._deletedYears.filter(y => String(y) !== String(newYear));
+  }
 
   DATA[newYear] = {
     soldes: newSoldes,
@@ -7937,12 +7974,21 @@ function _getAncestor() {
 //   seenRev < cloudRev → cet appareil est en retard sur le cloud
 //   pending            → cet appareil a des modifications à faire valoir
 // Les deux à la fois = vrai conflit (seul cas qui déclenche une fusion ligne à ligne).
-// Sans compteur côté cloud (données écrites avant la 13.14), repli sur l'ancienne
-// comparaison de dates pour rester compatible avec les appareils pas encore à jour.
+// Sans compteur côté cloud, aucune horloge n'est consultée : on déclare un conflit
+// et on laisse la fusion préserver les deux côtés (voir le commentaire détaillé
+// dans la fonction). L'ancien repli sur les dates a été retiré en 13.49.
 function _decideSync({ cloudRev, seenRev, pending, mustAcceptCloud, localSaveTime, cloudPushTime }) {
   if (mustAcceptCloud) return { localIsNewer: false, conflict: false, reason: 'force-sync' };
   if (!(cloudRev > 0)) {
-    return { localIsNewer: localSaveTime > cloudPushTime + 5000, conflict: false, reason: 'heritage-dates' };
+    // Cloud sans compteur de version : données antérieures à la 13.14, sauvegarde
+    // ancienne restaurée, ou réinitialisation côté Firebase.
+    // Jusqu'en 13.48 on retombait ici sur `localSaveTime > cloudPushTime + 5000`,
+    // c'est-à-dire exactement le mécanisme responsable des pertes de données :
+    // les horloges des appareils dérivent, et une simple sauvegarde à l'ouverture
+    // suffisait à faire croire à un appareil périmé qu'il faisait autorité.
+    // Aucune horloge n'étant digne de confiance ici, on déclare un conflit : la
+    // fusion s'occupe de préserver les deux côtés, personne n'écrase personne.
+    return { localIsNewer: true, conflict: true, noCounter: true, reason: 'sans-compteur' };
   }
   const behind = seenRev < cloudRev;
   if (behind && pending) return { localIsNewer: true,  conflict: true,  reason: 'conflit' };
@@ -10685,8 +10731,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.48';
-const SW_VERSION = 'v322';
+const APP_VERSION = '13.49';
+const SW_VERSION = 'v329';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11318,6 +11364,7 @@ const TRANSLATIONS = {
     'toast.years_imported': '✅ {0} année(s) importée(s)',
     'toast.demo_loaded': '🎭 Données de démo chargées — 2025 + 2026',
     'toast.local_tx_preserved': '🛡️ {0} tx locales préservées',
+    'toast.sync_no_counter': '⚠️ Cloud sans numéro de version — fusion prudente, aucune donnée écrasée',
     'toast.name_required': '⚠️ Entrez un nom',
     'toast.update_received': '🔄 Mise à jour reçue',
     'toast.saved_simple': '✅ Sauvegardé',
@@ -12110,6 +12157,7 @@ const TRANSLATIONS = {
     'toast.years_imported': '✅ {0} year(s) imported',
     'toast.demo_loaded': '🎭 Demo data loaded — 2025 + 2026',
     'toast.local_tx_preserved': '🛡️ {0} local transactions preserved',
+    'toast.sync_no_counter': '⚠️ Cloud has no version number — cautious merge, nothing was overwritten',
     'toast.name_required': '⚠️ Enter a name',
     'toast.update_received': '🔄 Update received',
     'toast.saved_simple': '✅ Saved',
@@ -12572,6 +12620,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.49': {
+    date: 'Septembre 2026',
+    items: [
+      { icon: '🗑️', text: 'Une année supprimée ne revient plus. La synchro considérait toute année absente du cloud comme une perte à réparer : un appareil qui la détenait encore la réinjectait, et elle réapparaissait partout. La suppression est désormais mémorisée et respectée par tous les appareils. Une année recréée ensuite reste bien créée.' },
+      { icon: '🕰️', text: 'La synchro ne compare plus jamais les horloges des appareils. Ce mécanisme, à l’origine des pertes de données, subsistait en dernier recours si le cloud perdait son numéro de version. Dans ce cas l’application fusionne désormais les deux côtés sans en écraser aucun, et le signale.' }
+    ]
+  },
   '13.48': {
     date: 'Septembre 2026',
     items: [
