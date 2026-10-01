@@ -1306,12 +1306,20 @@ body.auth-locked #context-banner {
       <div id="ar-enddate-wrap" style="background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
         <label data-i18n="modal.end_date" style="font-size:12px;color:var(--gray);display:block;margin-bottom:8px">Date de fin</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:8px;cursor:pointer">
-          <input type="checkbox" id="ar-noend" onchange="updateAddRowEndDate()"> <span data-i18n="modal.no_end">Sans date de fin (jusqu'à révocation)</span>
+          <input type="checkbox" id="ar-noend" onchange="updateAddRowEndDate();_majEncartPret()"> <span data-i18n="modal.no_end">Sans date de fin (jusqu'à révocation)</span>
         </label>
         <div id="ar-enddate-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <select id="ar-endmonth" onchange="updateAddRowPreview()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px"></select>
           <input id="ar-endyear" type="number" placeholder="2026" oninput="updateAddRowPreview()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px">
         </div>
+      </div>
+      <div id="ar-pret-wrap" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border);margin-bottom:10px">
+        <label for="ar-taux" style="font-size:12px;font-weight:700;display:block;margin-bottom:5px">💳 Prêt — taux annuel (%)</label>
+        <input id="ar-taux" type="number" step="0.01" min="0" inputmode="decimal" placeholder="ex : 3,25"
+          oninput="_majEncartPret()"
+          style="width:100%;box-sizing:border-box;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
+        <div style="font-size:11px;color:var(--gray);margin-top:4px;line-height:1.45">Facultatif. Sans taux, seul le <b>total restant à payer</b> est affiché ; avec, le <b>capital restant dû</b> et la part d'intérêts.</div>
+        <div id="ar-pret-detail" style="margin-top:9px"></div>
       </div>
       <div id="ar-nocarry-wrap" style="background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border);margin-bottom:10px">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
@@ -5565,7 +5573,71 @@ let _arYear = null, _arEditMode = false, _arEditIdx = null, _arEditDataType = nu
 function _endTag(r) {
   if (!r || r.noEnd === true || r.endYear === undefined || r.endMonth === undefined) return '';
   const mois = String(getMonths()[r.endMonth] || '').toLowerCase();
-  return `<span class="row-end-tag" title="Date de fin enregistrée sur cette ligne">⏹ fin ${mois} ${r.endYear}</span>`;
+  const pret = _pretInfo(r);
+  const tagPret = pret && pret.nb > 0
+    ? `<span class="row-end-tag" title="${pret.taux > 0
+        ? `Capital restant dû : ${fmt(pret.capitalRestant)} — intérêts restants : ${fmt(pret.interets)}`
+        : `Total restant à payer. Saisissez le taux dans ✏️ pour connaître le capital restant dû.`}"
+       >\u{1F4B3} reste ${pret.nb} × ${fmt(pret.mensualite)} = ${fmt(pret.totalRestant)}</span>` : '';
+  return `<span class="row-end-tag" title="Date de fin enregistrée sur cette ligne">⏹ fin ${mois} ${r.endYear}</span>${tagPret}`;
+}
+
+// Encart du prêt dans la fenêtre de modification. Il n'apparaît que sur une
+// ligne qui a une date de fin : sans échéance, il n'y a pas d'engagement à
+// chiffrer. Le calcul se fait sur la ligne telle qu'elle est en train d'être
+// éditée, taux compris, pour que le chiffre bouge pendant la saisie.
+function _majEncartPret() {
+  const wrap = document.getElementById('ar-pret-wrap');
+  const detail = document.getElementById('ar-pret-detail');
+  if (!wrap || !detail) return;
+  const sansFin = document.getElementById('ar-noend')?.checked !== false;
+  if (!_arEditMode || !_arEditRow || sansFin) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const taux = parseFloat(document.getElementById('ar-taux')?.value);
+  const info = _pretInfo({ ..._arEditRow, tauxPret: isNaN(taux) ? 0 : taux });
+  if (!info) { detail.innerHTML = ''; return; }
+  if (info.nb <= 0) {
+    detail.innerHTML = `<div style="font-size:12px;color:var(--gray)">Échéance passée : plus rien à payer sur cette ligne.</div>`;
+    return;
+  }
+  const l = (lbl, val, fort, col) => `<div style="display:flex;justify-content:space-between;padding:2px 0">
+      <span style="font-size:11px;color:var(--gray)">${lbl}</span>
+      <span style="font-size:${fort ? '14px' : '12px'};font-weight:${fort ? '800' : '600'};color:${col || 'var(--text)'}">${val}</span>
+    </div>`;
+  detail.innerHTML = `
+    ${l('Échéances restantes', `${info.nb} × ${fmt(info.mensualite)}`)}
+    ${l('Total restant à payer', fmt(info.totalRestant), true)}
+    ${info.taux > 0 ? l('dont capital restant dû', fmt(info.capitalRestant), true, '#5B6AF0') : ''}
+    ${info.taux > 0 ? l('dont intérêts', fmt(info.interets), false, '#F5A623') : ''}`;
+}
+
+// ── SUIVI D'UN PRÊT ─────────────────────────────────────────────────────
+// Une ligne avec une date de fin est un engagement : un prêt, une assurance
+// emprunteur, un abonnement à durée déterminée. On en tirait seulement la date ;
+// on peut en tirer ce qui reste à payer.
+//
+// Le capital restant dû n'exige PAS de connaître le capital emprunté : il vaut
+// la valeur actualisée des mensualités restantes,
+//     CRD = M × (1 − (1+i)^−n) / i
+// avec M la mensualité, i le taux mensuel et n le nombre d'échéances restantes.
+// Seul le taux est donc à saisir, et s'il manque on s'en tient au total restant
+// à payer — exact, simplement sans la part d'intérêts.
+function _pretInfo(row, refDate) {
+  if (!row || row.noEnd === true || row.endYear === undefined || row.endMonth === undefined) return null;
+  const mensualite = _lastPaidAmt(row) || Math.max(...row.v.map(v => Math.abs(parseFloat(v) || 0)));
+  if (!(mensualite > 0)) return null;
+  const now = refDate || new Date();
+  // Échéances restantes, le mois en cours compris s'il n'est pas encore passé.
+  const nb = (parseInt(row.endYear) - now.getFullYear()) * 12 + (parseInt(row.endMonth) - now.getMonth()) + 1;
+  if (nb <= 0) return { nb: 0, mensualite, totalRestant: 0, capitalRestant: 0, interets: 0, taux: row.tauxPret || 0 };
+  const totalRestant = Math.round(mensualite * nb * 100) / 100;
+  const taux = parseFloat(row.tauxPret) || 0;
+  const i = taux / 100 / 12;
+  const capitalRestant = i > 0
+    ? Math.round(mensualite * (1 - Math.pow(1 + i, -nb)) / i * 100) / 100
+    : totalRestant;
+  return { nb, mensualite, totalRestant, capitalRestant,
+           interets: Math.round((totalRestant - capitalRestant) * 100) / 100, taux };
 }
 // ── LIGNES SPÉCIALES (livret, boîte, retrait bancaire) ───────────────────
 const _SPECIAL_CHG_CATS = ['livret_in', 'livret_out', 'boite_in', 'retrait_banc'];
@@ -5826,6 +5898,8 @@ function openAddRowModal(year, type) {
   // qui vidait ses montants et la faisait disparaître l'année suivante.
   document.getElementById('ar-noend').checked = true;
   document.getElementById('ar-nocarry').checked = false;
+  const _tx = document.getElementById('ar-taux'); if (_tx) _tx.value = '';
+  _majEncartPret();
   document.getElementById('ar-enddate-fields').style.display = 'none';
   document.getElementById('ar-amount').value = '';
   document.getElementById('ar-error').textContent = '';
@@ -5919,6 +5993,8 @@ function openEditRowModal(year, dataType, ri) {
   const hasNoEnd = row.noEnd === true || row.endYear === undefined;
   document.getElementById('ar-noend').checked = hasNoEnd;
   document.getElementById('ar-nocarry').checked = row.noCarry === true;
+  document.getElementById('ar-taux').value = row.tauxPret ?? '';
+  _majEncartPret();
   document.getElementById('ar-enddate-fields').style.display = hasNoEnd ? 'none' : 'grid';
   if (!hasNoEnd) {
     document.getElementById('ar-endmonth').value = row.endMonth ?? 11;
@@ -6341,6 +6417,8 @@ function submitAddRow() {
     // Drapeau « propre à cette année » : stocké seulement s'il est posé, pour ne
     // pas alourdir inutilement les données synchronisées.
     if (document.getElementById('ar-nocarry')?.checked) row.noCarry = true; else delete row.noCarry;
+    const _taux = parseFloat(document.getElementById('ar-taux')?.value);
+    if (!isNaN(_taux) && _taux > 0) row.tauxPret = _taux; else delete row.tauxPret;
     if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
     // Ligne d'abord (réaligne libellé et type), puis date de fin : celle-ci
     // retrouve ainsi aussi les lignes qui viennent d'être réalignées
@@ -8673,10 +8751,89 @@ window.addEventListener('beforeunload', () => { if (_saveTimer) { clearTimeout(_
 // ── SAVE / RESET / EXPORT ──
 let _saveTimer;
 function dSave() { clearTimeout(_saveTimer); _saveTimer = setTimeout(() => saveData(true), 500); }
+
+// ── ANNULER / RÉTABLIR ──────────────────────────────────────────────────
+// Tout passe par saveData(), qui sérialise déjà DATA : il suffit d'y conserver
+// l'état PRÉCÉDENT pour rendre n'importe quelle modification réversible, sans
+// un seul JSON.stringify supplémentaire ni toucher aux 72 appels à dSave().
+//
+// La pile vit en mémoire, jamais dans localStorage : y écrire plusieurs copies
+// du budget est précisément ce qui avait saturé le stockage du téléphone et
+// fait échouer la synchro en 13.22.
+const UNDO_MAX = 12;
+const UNDO_OCTETS_MAX = 6 * 1024 * 1024;   // plafond de sécurité sur mobile
+let _undoPile = [], _redoPile = [], _jsonPrecedent = null, _enCoursUndo = false;
+
+function _undoPousser(json) {
+  if (!json) return;
+  _undoPile.push(json);
+  while (_undoPile.length > UNDO_MAX) _undoPile.shift();
+  let total = _undoPile.reduce((n, s) => n + s.length, 0);
+  while (_undoPile.length > 1 && total > UNDO_OCTETS_MAX) total -= _undoPile.shift().length;
+}
+function _undoAppliquer(json, sens) {
+  _enCoursUndo = true;
+  try {
+    DATA = JSON.parse(json);
+    if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+    _syncIdCounter();
+    _jsonPrecedent = json;
+    saveData(true);
+    renderTabs();
+    getYears().forEach(y => renderYear(y));
+    renderSummary(); renderDashboard();
+    if (document.getElementById('tab-charts')?.classList.contains('active')) renderCharts();
+  } finally { _enCoursUndo = false; }
+  _majBoutonsUndo();
+  showToast(sens === 'undo' ? '↩️ Modification annulée' : '↪️ Modification rétablie');
+}
+function annulerDerniere() {
+  if (!_undoPile.length) { showToast('Rien à annuler'); return; }
+  _redoPile.push(JSON.stringify(DATA));
+  _undoAppliquer(_undoPile.pop(), 'undo');
+}
+function retablirDerniere() {
+  if (!_redoPile.length) { showToast('Rien à rétablir'); return; }
+  _undoPousser(JSON.stringify(DATA));
+  _undoAppliquer(_redoPile.pop(), 'redo');
+}
+// Pastille discrète, visible seulement quand il y a quelque chose à annuler.
+// Elle se place au-dessus des boutons flottants pour ne rien recouvrir.
+function _majBoutonsUndo() {
+  let el = document.getElementById('undo-pill');
+  if (!_undoPile.length) { el?.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'undo-pill';
+    el.style.cssText = 'position:fixed;bottom:90px;right:22px;z-index:2400;display:flex;gap:6px';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<button onclick="annulerDerniere()" title="Annuler la dernière modification (Ctrl+Z)"
+      style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:20px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.25)">↩️ Annuler</button>
+    ${_redoPile.length ? `<button onclick="retablirDerniere()" title="Rétablir (Ctrl+Maj+Z)"
+      style="background:var(--surface);color:var(--gray);border:1px solid var(--border);border-radius:20px;padding:7px 11px;font-size:12px;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.25)">↪️</button>` : ''}`;
+}
+document.addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const k = e.key.toLowerCase();
+  const dansUnChamp = /^(input|textarea|select)$/i.test(e.target?.tagName || '');
+  if (dansUnChamp) return;   // laisser l'annulation native du texte en cours de saisie
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); annulerDerniere(); }
+  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); retablirDerniere(); }
+});
 function saveData(silent = false) {
   if (_compareMode || _isAdminMode) return;
   if (!_hasYearData(DATA)) return; // Ne jamais sauvegarder des données vides
   const json = JSON.stringify(DATA);
+  // Rendre la modification réversible : on empile l'état PRÉCÉDENT, pas celui-ci.
+  // Rien n'est empilé pendant une annulation, sous peine de boucler, ni quand
+  // l'état n'a pas changé (un simple rendu peut déclencher un enregistrement).
+  if (!_enCoursUndo && _jsonPrecedent && _jsonPrecedent !== json) {
+    _undoPousser(_jsonPrecedent);
+    _redoPile = [];              // une nouvelle action invalide le fil du rétablissement
+    setTimeout(_majBoutonsUndo, 0);
+  }
+  _jsonPrecedent = json;
   if (!_safeSetItem(dataKey(), json)) {
     showToast(_lang === 'en' ? '⚠️ Local storage full — data not saved' : '⚠️ Stockage local saturé — données non enregistrées');
     return;
@@ -11286,8 +11443,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.59';
-const SW_VERSION = 'v339';
+const APP_VERSION = '13.60';
+const SW_VERSION = 'v340';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13159,6 +13316,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.60': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '↩️', text: 'Annuler la dernière modification. Une pastille « Annuler » apparaît dès qu’il y a quelque chose à défaire, et Ctrl+Z fonctionne partout. Jusqu’à douze crans en arrière, avec rétablissement par Ctrl+Maj+Z. Toute modification est concernée : saisie, suppression, réparation, report entre années.' },
+      { icon: '💳', text: 'Suivi de prêt. Une ligne qui porte une date de fin affiche désormais ce qu’il reste à payer : « reste 27 × 300,00 € = 8 100,00 € ». En saisissant le taux annuel dans ✏️, l’application calcule aussi le capital restant dû et la part d’intérêts — sans avoir besoin du capital emprunté.' }
+    ]
+  },
   '13.59': {
     date: 'Octobre 2026',
     items: [

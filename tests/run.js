@@ -762,6 +762,96 @@ async function tousLesCas() {
       _tresorerieProjetee('1999', 'acc_main').length === 0);
   }
 
+  // ── Annuler / rétablir ───────────────────────────────────────────────────
+  {
+    const AN = String(new Date().getFullYear());
+    DATA = { [AN]: annee() };
+    DATA[AN].charges = [{ label: 'Loyer', cat: 'fixed', v: Array(12).fill(10), paid: Array(12).fill(false) }];
+    _undoPile = []; _redoPile = []; _jsonPrecedent = null;
+
+    const libelles = () => DATA[AN].charges.map(c => c.label).join('|');
+    saveData(true);                               // amorce : fixe l'état de référence
+    check('annuler · rien à annuler au départ', _undoPile.length === 0, _undoPile.length);
+
+    DATA[AN].charges.push({ label: 'A', cat: 'fixed', v: Array(12).fill(1), paid: Array(12).fill(false) });
+    saveData(true);
+    DATA[AN].charges.push({ label: 'B', cat: 'fixed', v: Array(12).fill(2), paid: Array(12).fill(false) });
+    saveData(true);
+    check('annuler · chaque enregistrement empile l’état précédent',
+      _undoPile.length === 2, _undoPile.length);
+
+    annulerDerniere();
+    check('annuler · revient à l’état d’avant', libelles() === 'Loyer|A', libelles());
+    annulerDerniere();
+    check('annuler · deux fois remonte de deux crans', libelles() === 'Loyer', libelles());
+    retablirDerniere();
+    check('rétablir · revient en avant', libelles() === 'Loyer|A', libelles());
+
+    // Une nouvelle action doit couper le fil du rétablissement
+    DATA[AN].charges.push({ label: 'C', cat: 'fixed', v: Array(12).fill(3), paid: Array(12).fill(false) });
+    saveData(true);
+    check('annuler · une nouvelle action vide la pile de rétablissement',
+      _redoPile.length === 0, _redoPile.length);
+
+    // Une annulation ne doit pas s'empiler elle-même, sinon on boucle
+    const avant = _undoPile.length;
+    annulerDerniere();
+    check('annuler · l’annulation ne s’empile pas elle-même',
+      _undoPile.length === avant - 1, `${_undoPile.length} vs ${avant - 1}`);
+
+    // Un enregistrement sans changement ne doit rien empiler
+    const stable = _undoPile.length;
+    saveData(true); saveData(true);
+    check('annuler · un enregistrement sans modification n’empile rien',
+      _undoPile.length === stable, `${_undoPile.length} vs ${stable}`);
+
+    // Plafond de la pile
+    for (let i = 0; i < UNDO_MAX + 5; i++) {
+      DATA[AN].charges.push({ label: 'X' + i, cat: 'fixed', v: Array(12).fill(1), paid: Array(12).fill(false) });
+      saveData(true);
+    }
+    check('annuler · la pile est plafonnée', _undoPile.length <= UNDO_MAX, _undoPile.length);
+
+    _undoPile = []; _redoPile = []; _jsonPrecedent = null;
+  }
+
+  // ── Suivi d'un prêt ──────────────────────────────────────────────────────
+  {
+    const ref = new Date(2026, 9, 1);              // 1er octobre 2026
+    const pret = { label: 'Prêt voiture', cat: 'fixed', v: Array(12).fill(300),
+      paid: Array(12).fill(true), noEnd: false, endMonth: 11, endYear: 2028 };
+
+    let p = _pretInfo(pret, ref);
+    // (2028−2026)×12 + (11−9) + 1 = 27 échéances
+    check('prêt · nombre d’échéances restantes', p.nb === 27, p.nb);
+    check('prêt · total restant = mensualités × échéances', p.totalRestant === 8100, p.totalRestant);
+    check('prêt · sans taux, capital restant = total restant',
+      p.capitalRestant === 8100 && p.interets === 0, `${p.capitalRestant} / ${p.interets}`);
+
+    pret.tauxPret = 3.25;
+    p = _pretInfo(pret, ref);
+    const i = 3.25 / 100 / 12;
+    const attendu = Math.round(300 * (1 - Math.pow(1 + i, -27)) / i * 100) / 100;
+    check('prêt · capital restant dû conforme à la valeur actualisée',
+      Math.abs(p.capitalRestant - attendu) < 0.01, `${p.capitalRestant} vs ${attendu}`);
+    check('prêt · capital + intérêts = total restant',
+      Math.abs(p.capitalRestant + p.interets - p.totalRestant) < 0.01,
+      `${p.capitalRestant} + ${p.interets} ≠ ${p.totalRestant}`);
+    check('prêt · un taux plus élevé laisse moins de capital',
+      _pretInfo({ ...pret, tauxPret: 8 }, ref).capitalRestant < p.capitalRestant);
+
+    // Échéance passée
+    check('prêt · plus rien à payer après l’échéance',
+      _pretInfo(pret, new Date(2029, 0, 1)).nb === 0,
+      _pretInfo(pret, new Date(2029, 0, 1)).nb);
+
+    // Une ligne sans date de fin n'est pas un engagement
+    check('prêt · aucune information sans date de fin',
+      _pretInfo({ ...pret, noEnd: true }, ref) === null);
+    check('prêt · aucune information sans montant',
+      _pretInfo({ ...pret, v: Array(12).fill(0), paid: Array(12).fill(false) }, ref) === null);
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };
