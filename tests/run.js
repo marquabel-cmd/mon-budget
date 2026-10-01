@@ -923,6 +923,63 @@ async function tousLesCas() {
       'la bascule vers l’année par défaut s’applique avant la restauration');
   }
 
+  // ── Rappel trimestriel des placements : les deux freins ─────────────────
+  {
+    const vraiAsk = window._askPlacementValues;
+    const vraiSuivis = window._placementsSuivis;
+    // Le rappel sort immédiatement sans utilisateur courant : sans cette ligne,
+    // les vérifications « zéro affichage » passeraient sans rien prouver.
+    const vraiUser = CURRENT_USER_ID;
+    CURRENT_USER_ID = 'test_rappel';
+    let affichages = 0;
+    window._askPlacementValues = () => { affichages++; };
+    window._placementsSuivis = () => [{ id: 'liv_x', name: 'Test' }];
+
+    const cleTrim = 'budget_pv_snooze_' + CURRENT_USER_ID;
+    const cleJour = 'budget_pv_jour_' + CURRENT_USER_ID;
+    const nettoyer = () => { try { localStorage.removeItem(cleTrim); localStorage.removeItem(cleJour); } catch {} };
+    const d = new Date();
+    const dansLaFenetre = [3, 6, 9].includes(d.getMonth()) && d.getDate() <= 10;
+
+    nettoyer(); affichages = 0;
+    _maybeRemindPlacements();
+    _maybeRemindPlacements();
+    _maybeRemindPlacements();
+    if (dansLaFenetre) {
+      check('rappel placements · une seule fois par jour, pas à chaque ouverture',
+        affichages === 1, `${affichages} affichage(s) pour 3 lancements`);
+      check('rappel placements · le frein du jour est écrit à l’affichage',
+        localStorage.getItem(cleJour) === d.toISOString().slice(0, 10),
+        localStorage.getItem(cleJour));
+    } else {
+      check('rappel placements · rien hors de la fenêtre de début de trimestre',
+        affichages === 0, affichages);
+    }
+
+    // « Plus de rappel ce trimestre » doit tenir même après un nouveau jour
+    nettoyer(); affichages = 0;
+    _snoozePlacements(true);
+    _maybeRemindPlacements();
+    check('rappel placements · le report trimestriel coupe tout',
+      affichages === 0 && localStorage.getItem(cleTrim) === _trimestreCourant(),
+      `${affichages} affichage(s), frein=${localStorage.getItem(cleTrim)}`);
+
+    // Stockage saturé : ne jamais harceler sans pouvoir s'arrêter
+    nettoyer(); affichages = 0;
+    const vraiSafe = window._safeSetItem;
+    window._safeSetItem = () => false;
+    _maybeRemindPlacements();
+    _maybeRemindPlacements();
+    check('rappel placements · stockage saturé → la fenêtre ne s’affiche pas',
+      affichages === 0, `${affichages} affichage(s) alors que le frein ne peut pas être écrit`);
+    window._safeSetItem = vraiSafe;
+
+    nettoyer();
+    CURRENT_USER_ID = vraiUser;
+    window._askPlacementValues = vraiAsk;
+    window._placementsSuivis = vraiSuivis;
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };

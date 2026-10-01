@@ -11469,8 +11469,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.63';
-const SW_VERSION = 'v343';
+const APP_VERSION = '13.64';
+const SW_VERSION = 'v344';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13346,6 +13346,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.64': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '📊', text: 'La fenêtre « Valeur de vos placements » revenait à chaque ouverture de l’application pendant les dix premiers jours du trimestre. Elle n’avait qu’un frein, posé seulement si vous enregistriez ou refusiez explicitement : la fermer d’un geste ne comptait pas. Elle est désormais proposée au plus une fois par jour, et le bouton dit clairement « Plus tard » ou « Plus de rappel ce trimestre ».' },
+      { icon: '🔒', text: 'Si le stockage du téléphone est saturé, le rappel ne s’affiche plus du tout plutôt que de revenir sans fin : ne pouvant pas mémoriser qu’il a déjà été montré, il s’abstient et l’inscrit au journal de synchro.' }
+    ]
+  },
   '13.63': {
     date: 'Octobre 2026',
     items: [
@@ -17313,12 +17320,12 @@ function _askPlacementValues(trimestriel) {
   o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px';
   o.innerHTML = `<div style="background:var(--surface);border-radius:16px;padding:20px 22px;width:360px;max-width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,.5)">
       <div style="font-size:16px;font-weight:800;margin-bottom:4px">📊 Valeur de vos placements</div>
-      <div style="font-size:12px;color:var(--gray);margin-bottom:14px;line-height:1.5">Reprenez la valeur affichée par votre banque aujourd'hui. Un champ laissé tel quel ne change rien.</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:14px;line-height:1.5">Reprenez la valeur affichée par votre banque aujourd'hui. Un champ laissé tel quel ne change rien.${trimestriel ? '<br>Proposé une fois par jour en début de trimestre, au plus.' : ''}</div>
       <div style="overflow-y:auto;flex:1;padding-right:2px">${champs}</div>
       <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap">
-        ${trimestriel ? `<button onclick="_snoozePlacements()" style="background:none;border:none;padding:6px 0;font-size:11px;cursor:pointer;color:var(--gray);text-decoration:underline">Pas ce trimestre</button>` : '<span></span>'}
+        ${trimestriel ? `<button onclick="_snoozePlacements()" style="background:none;border:none;padding:6px 0;font-size:11px;cursor:pointer;color:var(--gray);text-decoration:underline">Plus de rappel ce trimestre</button>` : '<span></span>'}
         <div style="display:flex;gap:8px">
-          <button onclick="document.getElementById('_pv-overlay').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>
+          <button onclick="document.getElementById('_pv-overlay').remove()" title="${trimestriel ? 'La fenêtre ne reviendra pas aujourd’hui' : ''}" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">${trimestriel ? 'Plus tard' : 'Annuler'}</button>
           <button onclick="_savePlacementValues()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>
         </div>
       </div>
@@ -17351,20 +17358,41 @@ function _trimestreCourant() {
   const d = new Date();
   return `${d.getFullYear()}T${Math.floor(d.getMonth() / 3) + 1}`;
 }
+function _cleTrimestrePv() { return 'budget_pv_snooze_' + CURRENT_USER_ID; }
+function _cleJourPv()      { return 'budget_pv_jour_'   + CURRENT_USER_ID; }
 function _snoozePlacements(silencieux) {
-  try { localStorage.setItem('budget_pv_snooze_' + CURRENT_USER_ID, _trimestreCourant()); } catch {}
+  // `_safeSetItem` et non `localStorage.setItem` : sur un stockage saturé,
+  // l'écriture échouait en silence et le rappel revenait à l'infini. C'est
+  // exactement le défaut qui avait brisé la synchro en 13.22.
+  if (!_safeSetItem(_cleTrimestrePv(), _trimestreCourant())) {
+    _syncLog('report du rappel placements impossible — stockage saturé ?');
+  }
   if (!silencieux) document.getElementById('_pv-overlay')?.remove();
 }
 // Rappel trimestriel : avril, juillet, octobre, dans les dix premiers jours.
 // Janvier est volontairement exclu — le rappel des soldes réels s'en charge déjà
 // et demande la valeur de tous les comptes, placements compris.
+//
+// DEUX freins, et non un seul. Le rappel des soldes d'ouverture en a toujours
+// eu deux ; celui-ci n'en avait qu'un, et se rouvrait donc à CHAQUE lancement
+// pendant dix jours dès lors qu'on le fermait sans répondre :
+//   • frein du jour      — posé à l'affichage, quoi que fasse l'utilisateur ;
+//   • frein du trimestre — posé à l'enregistrement ou sur « Pas ce trimestre ».
 function _maybeRemindPlacements() {
   try {
     if (!DATA || !CURRENT_USER_ID || CURRENT_USER_ID === '_demo' || _compareMode || _isAdminMode) return;
     const d = new Date();
     if (![3, 6, 9].includes(d.getMonth()) || d.getDate() > 10) return;
-    if (localStorage.getItem('budget_pv_snooze_' + CURRENT_USER_ID) === _trimestreCourant()) return;
+    if (localStorage.getItem(_cleTrimestrePv()) === _trimestreCourant()) return;
+    const jour = d.toISOString().slice(0, 10);
+    if (localStorage.getItem(_cleJourPv()) === jour) return;
     if (!_placementsSuivis().length) return;
+    // Marquer le jour AVANT d'afficher : même fermée d'un geste, la fenêtre ne
+    // reviendra pas au prochain lancement.
+    if (!_safeSetItem(_cleJourPv(), jour)) {
+      _syncLog('frein quotidien du rappel placements non écrit — stockage saturé ?');
+      return;   // plutôt ne rien montrer que harceler sans pouvoir s'arrêter
+    }
     _askPlacementValues(true);
   } catch {}
 }
