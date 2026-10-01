@@ -5125,14 +5125,32 @@ function delRevRow(year, ri) {
   const lbl = DATA[year].revenus[ri]?.label || 'ce revenu';
   confirmDelete(t('confirm.delete_row').replace('{0}', lbl), () => { DATA[year].revenus.splice(ri,1); renderYear(year); dSave(); });
 }
+// Après un déplacement de ligne, répercuter le nouvel ordre sur les années
+// suivantes déjà créées. Un déplacement est purement cosmétique — aucun montant,
+// aucune date n'est touchée — et l'ordre est le seul attribut qui ne suivait pas,
+// alors que montants, dates de fin et nouvelles lignes se propagent déjà.
+// En cascade croissante : 2027 s'aligne sur 2026 fraîchement réordonnée, puis
+// 2028 sur 2027. Jamais vers les années passées, comme partout ailleurs ici.
+function _apresDeplacementLigne(year, section) {
+  const touchees = [];
+  getYears()
+    .filter(y => parseInt(y) > parseInt(year))
+    .forEach(y => { if (_ordreAAligner(y, section, true)) touchees.push(y); });
+  dSave();
+  renderYear(year);
+  touchees.forEach(y => renderYear(y));
+  if (touchees.length) {
+    renderSummary();
+    showToast(t('toast.order_propagated').replace('{0}', touchees.join(', ')));
+  }
+}
 function moveRow(year, section, ri, dir) {
   const arr = DATA[year]?.[section];
   if (!arr) return;
   const ni = ri + (dir === 'up' ? -1 : 1);
   if (ni < 0 || ni >= arr.length) return;
   [arr[ri], arr[ni]] = [arr[ni], arr[ri]];
-  dSave();
-  renderYear(year);
+  _apresDeplacementLigne(year, section);
 }
 let _dragRow = null;
 function _onSpanDragStart(e, year, section, ri) {
@@ -5158,8 +5176,7 @@ function _onDrop(e, year, section, ri) {
   _dragRow = null;
   const [moved] = arr.splice(src, 1);
   arr.splice(dst > src ? dst - 1 : dst, 0, moved);
-  dSave();
-  renderYear(year);
+  _apresDeplacementLigne(year, section);
 }
 function _onDragEnd(e) {
   const tr = e.currentTarget.closest('tr');
@@ -10731,8 +10748,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.49';
-const SW_VERSION = 'v329';
+const APP_VERSION = '13.50';
+const SW_VERSION = 'v330';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11364,6 +11381,7 @@ const TRANSLATIONS = {
     'toast.years_imported': '✅ {0} année(s) importée(s)',
     'toast.demo_loaded': '🎭 Données de démo chargées — 2025 + 2026',
     'toast.local_tx_preserved': '🛡️ {0} tx locales préservées',
+    'toast.order_propagated': '↕️ Ordre repris en {0}',
     'toast.sync_no_counter': '⚠️ Cloud sans numéro de version — fusion prudente, aucune donnée écrasée',
     'toast.name_required': '⚠️ Entrez un nom',
     'toast.update_received': '🔄 Mise à jour reçue',
@@ -12157,6 +12175,7 @@ const TRANSLATIONS = {
     'toast.years_imported': '✅ {0} year(s) imported',
     'toast.demo_loaded': '🎭 Demo data loaded — 2025 + 2026',
     'toast.local_tx_preserved': '🛡️ {0} local transactions preserved',
+    'toast.order_propagated': '↕️ Order applied to {0}',
     'toast.sync_no_counter': '⚠️ Cloud has no version number — cautious merge, nothing was overwritten',
     'toast.name_required': '⚠️ Enter a name',
     'toast.update_received': '🔄 Update received',
@@ -12620,6 +12639,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.50': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '↕️', text: 'Déplacer une ligne dans un tableau replace la même ligne au même endroit dans les années suivantes déjà créées. L’ordre était le dernier attribut à ne pas suivre, alors que montants, dates de fin et nouvelles lignes se propagent déjà : une charge ajoutée en bas de tableau puis remontée restait en bas l’année suivante. Seul l’ordre d’affichage change, aucun montant n’est touché, et les années passées ne sont jamais modifiées.' }
+    ]
+  },
   '13.49': {
     date: 'Septembre 2026',
     items: [
