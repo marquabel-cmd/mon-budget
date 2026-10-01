@@ -4059,6 +4059,12 @@ function switchTab(id, el) {
   else if (id==='resume') renderSummary();
   else if (id==='charts') renderCharts();
   else if (id==='config') renderConfigTab();
+  // Un onglet d'année doit être redessiné en arrivant dessus : son solde
+  // d'ouverture est calculé depuis l'année précédente (_livretStart /
+  // _compteStart), donc toute saisie faite dans une année antérieure le périme.
+  // Sans ce rendu, le panneau gardait le DOM construit au démarrage et affichait
+  // un solde obsolète jusqu'au prochain rechargement de l'application.
+  else if (/^y\d{4}$/.test(id) && DATA && DATA[id.slice(1)]) renderYear(id.slice(1));
   updateContextBanner(id);
   // Mémoriser l'onglet actif pour le restaurer après une MAJ
   if (CURRENT_USER_ID) localStorage.setItem('budget_last_tab_' + CURRENT_USER_ID, id);
@@ -10748,8 +10754,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.50';
-const SW_VERSION = 'v330';
+const APP_VERSION = '13.51';
+const SW_VERSION = 'v331';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12639,6 +12645,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.51': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '🔄', text: 'Le solde d’ouverture d’une année se met à jour immédiatement. Les onglets d’année n’étaient pas redessinés en arrivant dessus : après une saisie dans une année précédente (versement, plus ou moins-value, correction de montant), l’année suivante continuait d’afficher l’ancien solde au 1er janvier jusqu’au rechargement de l’application. Le chiffre enregistré était correct, seul l’affichage était en retard.' }
+    ]
+  },
   '13.50': {
     date: 'Octobre 2026',
     items: [
