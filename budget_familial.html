@@ -8257,6 +8257,7 @@ async function cloudPush() {
       _setSyncedSnapshot(DATA);
       _syncLog(`ENVOI réussi — cloud passé en ${_newRev}`);
       setCloudStatus('ok'); _lastSyncError = '';
+      verifierMiseAJour();   // en ligne à coup sûr : autant en profiter
       // Cliché quotidien, détaché : l'envoi est terminé, un échec ici ne peut
       // donc plus rien compromettre (leçon de l'incident de la 13.22).
       cloudSnapshotMaybe();
@@ -8757,6 +8758,10 @@ function applyRealtimeData(d) {
   _restaurerDefilement(_pos);
   setCloudStatus('ok');
   showToast(t('toast.update_received'));
+  // Une synchro est le bon moment pour regarder si l'application elle-même a
+  // changé : l'appareil est en ligne, et c'est souvent la même session de
+  // travail qui a publié une nouvelle version.
+  verifierMiseAJour();
 }
 
 // Reconnecter quand la page redevient visible (retour onglet / déverrouillage mobile)
@@ -11506,18 +11511,21 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.65';
-const SW_VERSION = 'v345';
+const APP_VERSION = '13.66';
+const SW_VERSION = 'v346';
 
 // ── AUTO-UPDATE CHECK ──
-(function() {
-  let _updateBannerShown = false;
-  function checkVersion() {
+// `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
+// version ne doit pas empêcher d'annoncer la SUIVANTE. Avec un drapeau à usage
+// unique, un refus faisait taire l'application jusqu'au prochain démarrage.
+let _versionAnnoncee = null;
+function verifierMiseAJour() {
     fetch('./version.json?t=' + Date.now(), { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
-        if (data.v && data.v !== APP_VERSION && !_updateBannerShown) {
-          _updateBannerShown = true;
+        if (data.v && data.v !== APP_VERSION && data.v !== _versionAnnoncee) {
+          _versionAnnoncee = data.v;
+          document.getElementById('update-banner')?.remove();
           // Ne pas recharger automatiquement — afficher une bannière non-intrusive
           const banner = document.createElement('div');
           banner.id = 'update-banner';
@@ -11528,10 +11536,11 @@ const SW_VERSION = 'v345';
       })
       .catch(() => {});
   }
-  checkVersion(); // vérifier au démarrage
-  setInterval(checkVersion, 5 * 60 * 1000); // toutes les 5 min
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
-})();
+verifierMiseAJour();                           // au démarrage
+setInterval(verifierMiseAJour, 5 * 60 * 1000); // puis toutes les 5 min
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') verifierMiseAJour();
+});
 
 // ── INTERNATIONALISATION ──
 const TRANSLATIONS = {
@@ -13383,6 +13392,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.66': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '✨', text: 'La disponibilité d’une mise à jour est maintenant vérifiée <b>après chaque synchro</b>, entrante comme sortante. Elle ne l’était qu’au démarrage, toutes les cinq minutes et au retour d’arrière-plan — jamais au moment où l’appareil est en ligne à coup sûr.' },
+      { icon: '🔔', text: 'Fermer la bannière d’une version ne fait plus taire l’application pour les suivantes. Un simple drapeau à usage unique la réduisait au silence jusqu’au prochain démarrage ; c’est désormais le numéro déjà annoncé qui est retenu.' }
+    ]
+  },
   '13.65': {
     date: 'Octobre 2026',
     items: [

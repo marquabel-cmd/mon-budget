@@ -1018,6 +1018,57 @@ async function tousLesCas() {
     window.scrollTo = vraiScrollTo;
   }
 
+  // ── Détection d'une mise à jour ──────────────────────────────────────────
+  {
+    check('mise à jour · la vérification est appelable de partout',
+      typeof verifierMiseAJour === 'function',
+      'elle est restée enfermée dans sa fonction anonyme');
+
+    // Elle doit se déclencher quand l'appareil est en ligne à coup sûr :
+    // juste après un échange avec le cloud.
+    check('mise à jour · déclenchée après une synchro entrante',
+      String(window.applyRealtimeData || '').includes('verifierMiseAJour()'),
+      'applyRealtimeData ne la rappelle pas');
+    check('mise à jour · déclenchée après un envoi réussi',
+      String(window.cloudPush || '').includes('verifierMiseAJour()'),
+      'cloudPush ne la rappelle pas');
+
+    const vraiFetch = window.fetch;
+    const annonceeInitiale = _versionAnnoncee;
+    const banniere = () => !!document.getElementById('update-banner');
+    const servir = v => { window.fetch = (u, o) => String(u).includes('version.json')
+      ? Promise.resolve({ json: async () => ({ v }) }) : vraiFetch(u, o); };
+
+    document.getElementById('update-banner')?.remove();
+    _versionAnnoncee = null;
+
+    // Même version que l'app : aucune bannière
+    servir(APP_VERSION);
+    await verifierMiseAJour(); await new Promise(r => setTimeout(r, 120));
+    check('mise à jour · rien à signaler quand les versions concordent', !banniere());
+
+    // Version plus récente : bannière
+    servir('99.01');
+    await verifierMiseAJour(); await new Promise(r => setTimeout(r, 120));
+    check('mise à jour · une version plus récente est annoncée',
+      banniere() && _versionAnnoncee === '99.01', _versionAnnoncee);
+
+    // L'utilisateur ferme : ne pas harceler pour la MÊME version
+    document.getElementById('update-banner')?.remove();
+    await verifierMiseAJour(); await new Promise(r => setTimeout(r, 120));
+    check('mise à jour · refusée, la même version ne revient pas', !banniere());
+
+    // Mais une version ENCORE plus récente doit réapparaître
+    servir('99.02');
+    await verifierMiseAJour(); await new Promise(r => setTimeout(r, 120));
+    check('mise à jour · une version suivante est bien annoncée malgré le refus',
+      banniere() && _versionAnnoncee === '99.02', _versionAnnoncee);
+
+    document.getElementById('update-banner')?.remove();
+    window.fetch = vraiFetch;
+    _versionAnnoncee = annonceeInitiale;
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };
