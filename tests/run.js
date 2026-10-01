@@ -189,6 +189,107 @@ function tousLesCas() {
       `${computeCompte('2026', 'acc_main')} vs ${sansVariation + 10}`);
   }
 
+  // ── Performance d'un placement : _livretPerformance ─────────────────────
+  {
+    const LIV = 'liv_perf';
+    DATA = { '2026': annee(), '2027': annee() };
+    ['2026', '2027'].forEach(y => { DATA[y].soldes.livrets_bal[LIV] = 0; });
+    const l = (label, cat, fromBank) => ({ label, cat, livretId: LIV, fromBank: fromBank || undefined,
+      v: Array(12).fill(0), paid: Array(12).fill(false), inCalc: true });
+
+    const vers = l('Ordre permanent', 'livret_in');
+    vers.v[8] = 50; vers.paid[8] = true;
+    const moins = l('Moins-value', 'livret_out', true);
+    moins.v[9] = 0.88; moins.paid[9] = true;
+    DATA['2026'].charges = [vers, moins];
+
+    let p = _livretPerformance(LIV);
+    check('performance · total investi = versements, hors variations', p.base === 50, p.base);
+    check('performance · valeur = investi + variations', p.valeur === 49.12, p.valeur);
+    check('performance · le gain est la variation seule', p.gain === -0.88, p.gain);
+    check('performance · pourcentage calcule sur l’investi', p.pct === -1.76, p.pct);
+    check('performance · concorde avec computeLivret',
+      p.valeur === computeLivret('2026', LIV), `${p.valeur} vs ${computeLivret('2026', LIV)}`);
+
+    // Un retrait reduit l'investi, pas le gain.
+    const ret = l('Retrait', 'livret_out');
+    ret.v[10] = 20; ret.paid[10] = true;
+    DATA['2026'].charges.push(ret);
+    p = _livretPerformance(LIV);
+    check('performance · un retrait diminue l’investi', p.base === 30, p.base);
+    check('performance · un retrait ne touche pas le gain', p.gain === -0.88, p.gain);
+
+    // Une plus-value l'annee suivante s'ajoute au gain cumule.
+    const plus = l('Plus-value', 'livret_in', true);
+    plus.v[5] = 3.5; plus.paid[5] = true;
+    DATA['2027'].charges = [plus];
+    p = _livretPerformance(LIV);
+    check('performance · les variations se cumulent entre annees',
+      p.gain === 2.62, p.gain);
+
+    // Une ligne exclue du calcul ne compte pas.
+    plus.inCalc = false;
+    check('performance · une ligne exclue est ignoree',
+      _livretPerformance(LIV).gain === -0.88, _livretPerformance(LIV).gain);
+    plus.inCalc = true;
+
+    // Un mois non paye ne compte pas.
+    plus.paid[5] = false;
+    check('performance · un mois non paye est ignore',
+      _livretPerformance(LIV).gain === -0.88, _livretPerformance(LIV).gain);
+  }
+
+  // ── Mise à jour de la valeur d'un placement en cours d'année ────────────
+  {
+    const LIV = 'liv_maj';
+    const AN = String(new Date().getFullYear());
+    DATA = { [AN]: annee() };
+    DATA[AN].soldes.livrets_bal[LIV] = 0;
+    const l = (label, cat, fromBank) => ({ label, cat, livretId: LIV, fromBank: fromBank || undefined,
+      v: Array(12).fill(0), paid: Array(12).fill(false), inCalc: true });
+
+    const vers = l('Ordre permanent', 'livret_in');
+    vers.v[0] = 100; vers.paid[0] = true;
+    const plus  = { ...l('📈 Plus-value – test', 'livret_in', true),  paid: Array(12).fill(true) };
+    const moins = { ...l('📉 Moins-value – test', 'livret_out', true), paid: Array(12).fill(true) };
+    DATA[AN].charges = [vers, plus, moins];
+
+    const valo = _lignesValorisation(AN, LIV);
+    check('placement · les deux lignes de valorisation sont reconnues',
+      valo.plus === plus && valo.moins === moins,
+      `plus=${!!valo.plus} moins=${!!valo.moins}`);
+
+    // Valeur réelle plus basse → moins-value
+    let e = _majValeurPlacement(LIV, 95, AN, 5);
+    check('placement · une valeur plus basse crée une moins-value', e === -5, e);
+    check('placement · elle est inscrite au bon mois', moins.v[5] === 5, moins.v[5]);
+    check('placement · la valeur calculée rejoint la valeur réelle',
+      computeLivret(AN, LIV) === 95, computeLivret(AN, LIV));
+
+    // Hausse ensuite → plus-value, sur un autre mois
+    e = _majValeurPlacement(LIV, 103, AN, 6);
+    check('placement · une valeur plus haute crée une plus-value', e === 8, e);
+    check('placement · la valeur suit de nouveau le réel',
+      computeLivret(AN, LIV) === 103, computeLivret(AN, LIV));
+    check('placement · la moins-value précédente est conservée', moins.v[5] === 5, moins.v[5]);
+
+    // Deux recalages dans le MÊME mois : les écarts s'additionnent
+    _majValeurPlacement(LIV, 100, AN, 6);
+    check('placement · deux recalages le même mois s’additionnent',
+      computeLivret(AN, LIV) === 100, computeLivret(AN, LIV));
+
+    // Aucun écart → rien n'est écrit
+    const avant = JSON.stringify([plus.v, moins.v]);
+    check('placement · sans écart, rien n’est inscrit',
+      _majValeurPlacement(LIV, 100, AN, 7) === 0 && JSON.stringify([plus.v, moins.v]) === avant);
+
+    // Les recalages sont du rendement, jamais de l'argent investi
+    const perf = _livretPerformance(LIV);
+    check('placement · l’investi reste le seul versement', perf.base === 100, perf.base);
+    check('placement · valeur et gain concordent',
+      perf.gain === 0 && perf.valeur === 100, `gain ${perf.gain}, valeur ${perf.valeur}`);
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };

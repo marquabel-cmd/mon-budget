@@ -2773,6 +2773,7 @@ function _finishLogin(id) {
         if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
         startRealtimeSync();
         setTimeout(_maybeRemindOpeningBalances, 1200); // après adoption des données cloud
+        setTimeout(_maybeRemindPlacements, 2000);      // puis, hors janvier, la valeur des placements
       }).catch(err => {
         // Ce catch a masqué pendant des jours une exception qui avortait tout le
         // démarrage de la synchro. Plus jamais muet.
@@ -2791,6 +2792,7 @@ function _finishLogin(id) {
       }
       // Pas de Premium mais connecté : démarrer quand même si licence activée plus tard
       setTimeout(_maybeRemindOpeningBalances, 1200); // pas de cloud : données locales seulement
+      setTimeout(_maybeRemindPlacements, 2000);
     }
   });
   loadData();
@@ -4544,6 +4546,92 @@ function _livretStart(year, livId) {
   if (p) return computeLivret(p, livId);
   const s = DATA[year].soldes;
   return livId === 'liv_main' ? (parseFloat(s.livretInitial) || 0) : (parseFloat(s.livrets_bal?.[livId]) || 0);
+}
+// Performance d'un livret ou d'un placement, toutes années confondues.
+// La valeur se décompose en deux natures de mouvements, que `fromBank` sépare :
+//   • les versements et retraits, qui ont une contrepartie sur le compte courant
+//     — c'est l'argent que vous avez réellement mis ou repris ;
+//   • les variations de valeur (intérêts, plus/moins-values, et les lignes
+//     d'ajustement du 1er janvier), qui n'en ont pas — c'est le rendement.
+// Le gain est donc exactement la somme des secondes. Mêmes règles de filtrage
+// que computeLivret : lignes exclues du calcul ignorées, mois non payés ignorés.
+function _livretPerformance(livId) {
+  const annees = getYears().sort();
+  if (!annees.length) return null;
+  const premiere = DATA[annees[0]];
+  const isMain = !livId || livId === 'liv_main';
+  let investi = isMain
+    ? (parseFloat(premiere?.soldes?.livretInitial) || 0)
+    : (parseFloat(premiere?.soldes?.livrets_bal?.[livId]) || 0);
+  const depart = investi;
+  let verse = 0, retire = 0, variations = 0;
+
+  annees.forEach(y => {
+    (DATA[y]?.charges || []).forEach(row => {
+      if (row.inCalc === false) return;
+      if (!isMain && row.livretId !== livId) return;
+      if (isMain && row.livretId && row.livretId !== 'liv_main') return;
+      if (row.cat !== 'livret_in' && row.cat !== 'livret_out') return;
+      row.v.forEach((v, i) => {
+        if (!row.paid[i]) return;
+        const amt = Math.abs(parseFloat(v) || 0);
+        if (!amt) return;
+        const signe = row.cat === 'livret_in' ? 1 : -1;
+        if (row.fromBank) variations += signe * amt;
+        else if (signe > 0) verse += amt;
+        else retire += amt;
+      });
+    });
+  });
+
+  const base = Math.round((depart + verse - retire) * 100) / 100;   // argent réellement engagé
+  const gain = Math.round(variations * 100) / 100;
+  return {
+    depart, verse, retire, base, gain,
+    valeur: Math.round((base + gain) * 100) / 100,
+    pct: base > 0 ? Math.round((gain / base) * 10000) / 100 : null
+  };
+}
+// ── VALEUR D'UN PLACEMENT, EN COURS D'ANNÉE ─────────────────────────────
+// Le rappel des soldes réels n'a lieu qu'au 1er janvier. Pour un placement dont
+// la valeur suit le marché, attendre douze mois laisse le solde affiché dériver
+// toute l'année. Ces fonctions permettent de recaler la valeur quand on veut,
+// en inscrivant l'écart dans la ligne de plus ou moins-value du mois courant.
+//
+// Un livret est considéré comme un PLACEMENT s'il porte une ligne de perte de
+// valeur (livret_out + fromBank, hors ajustement du 1er janvier) : seul un
+// placement peut perdre de la valeur, un livret à intérêts ne fait que monter.
+function _lignesValorisation(year, livId) {
+  const isMain = !livId || livId === 'liv_main';
+  const aCeLivret = r => isMain ? (!r.livretId || r.livretId === 'liv_main') : r.livretId === livId;
+  const valo = (DATA[year]?.charges || []).filter(r =>
+    r.fromBank && !r._adjust && aCeLivret(r) && (r.cat === 'livret_in' || r.cat === 'livret_out'));
+  return {
+    plus:  valo.find(r => r.cat === 'livret_in'  && /plus-value/i.test(r.label)),
+    moins: valo.find(r => r.cat === 'livret_out' && /moins-value/i.test(r.label))
+  };
+}
+function _placementsSuivis() {
+  const annee = String(new Date().getFullYear());
+  if (!DATA?.[annee]) return [];
+  return getLivrets().filter(l => {
+    const { plus, moins } = _lignesValorisation(annee, l.id);
+    return !!plus && !!moins;
+  });
+}
+// Inscrit l'écart entre la valeur réelle et la valeur calculée dans la ligne de
+// plus ou moins-value du mois demandé. On ADDITIONNE à ce qui s'y trouve déjà :
+// une variation saisie plus tôt dans le même mois reste valable, et l'écart
+// calculé en tient déjà compte. Retourne l'écart appliqué.
+function _majValeurPlacement(livId, reel, year, mois) {
+  const { plus, moins } = _lignesValorisation(year, livId);
+  if (!plus || !moins) return null;
+  const ecart = Math.round((reel - computeLivret(year, livId)) * 100) / 100;
+  if (Math.abs(ecart) < 0.005) return 0;
+  const cible = ecart > 0 ? plus : moins;
+  cible.v[mois] = Math.round((Math.abs(parseFloat(cible.v[mois]) || 0) + Math.abs(ecart)) * 100) / 100;
+  cible.paid[mois] = true;
+  return ecart;
 }
 function _applyLivretOpening(year, liv, reel) {
   const isMain = liv.id === 'liv_main';
@@ -10754,8 +10842,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.51';
-const SW_VERSION = 'v331';
+const APP_VERSION = '13.52';
+const SW_VERSION = 'v332';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12645,6 +12733,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.52': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '📊', text: 'Performance de vos placements. La fiche d’un livret ou d’un placement (⚙️ Configuration → Comptes & Livrets, puis son engrenage) affiche désormais le total investi, la valeur actuelle, et le gain ou la perte en euros comme en pourcentage. Versements et retraits sont mis à part : seuls les intérêts et les plus ou moins-values comptent dans le rendement.' },
+      { icon: '🔄', text: 'Recaler la valeur d’un placement quand vous voulez. Un bouton « Mettre à jour la valeur » permet de recopier le montant affiché par votre banque : l’écart part tout seul en plus ou moins-value sur le mois en cours. L’application le propose aussi d’elle-même en début de trimestre — avril, juillet et octobre — le 1er janvier étant déjà couvert par le rappel des soldes réels.' }
+    ]
+  },
   '13.51': {
     date: 'Octobre 2026',
     items: [
@@ -16507,6 +16602,107 @@ function _saveAccountConfig(accId, useYear) {
   showToast('✅ Compte configuré');
 }
 
+// Fenêtre de mise à jour de la valeur des placements. Un champ par placement,
+// prérempli avec la valeur calculée : il suffit de recopier le chiffre de la
+// banque. L'écart part en plus ou moins-value sur le mois en cours.
+function _askPlacementValues(trimestriel) {
+  if (document.getElementById('_pv-overlay')) return;
+  const placements = _placementsSuivis();
+  if (!placements.length) { if (!trimestriel) showToast('Aucun placement à mettre à jour'); return; }
+  const annee = String(new Date().getFullYear());
+  const mois = new Date().getMonth();
+  const champs = placements.map(l => {
+    const calc = Math.round(computeLivret(annee, l.id) * 100) / 100;
+    return `<div style="margin-bottom:11px">
+        <label for="_pv_${l.id}" style="font-size:11px;font-weight:700;color:#27ae60;text-transform:uppercase;display:block;margin-bottom:4px">📈 ${_esc(l.name)}</label>
+        <input id="_pv_${l.id}" type="number" step="0.01" inputmode="decimal" value="${calc}" data-liv="${l.id}"
+               style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:700;background:var(--surface-alt);color:var(--text)">
+        <div style="font-size:10px;color:var(--gray);margin-top:3px">Valeur calculée. L'écart sera inscrit en ${getMonths()[mois].toLowerCase()} ${annee}.</div>
+      </div>`;
+  }).join('');
+  const o = document.createElement('div');
+  o.id = '_pv-overlay';
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px';
+  o.innerHTML = `<div style="background:var(--surface);border-radius:16px;padding:20px 22px;width:360px;max-width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,.5)">
+      <div style="font-size:16px;font-weight:800;margin-bottom:4px">📊 Valeur de vos placements</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:14px;line-height:1.5">Reprenez la valeur affichée par votre banque aujourd'hui. Un champ laissé tel quel ne change rien.</div>
+      <div style="overflow-y:auto;flex:1;padding-right:2px">${champs}</div>
+      <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap">
+        ${trimestriel ? `<button onclick="_snoozePlacements()" style="background:none;border:none;padding:6px 0;font-size:11px;cursor:pointer;color:var(--gray);text-decoration:underline">Pas ce trimestre</button>` : '<span></span>'}
+        <div style="display:flex;gap:8px">
+          <button onclick="document.getElementById('_pv-overlay').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>
+          <button onclick="_savePlacementValues()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(o);
+}
+function _savePlacementValues() {
+  const annee = String(new Date().getFullYear());
+  const mois = new Date().getMonth();
+  const faits = [];
+  document.querySelectorAll('#_pv-overlay input[data-liv]').forEach(inp => {
+    const val = parseFloat(inp.value);
+    if (isNaN(val)) return;
+    const ecart = _majValeurPlacement(inp.dataset.liv, val, annee, mois);
+    if (ecart) faits.push(ecart);
+  });
+  _snoozePlacements(true);
+  document.getElementById('_pv-overlay')?.remove();
+  if (faits.length) {
+    dSave();
+    getYears().forEach(y => renderYear(y));
+    renderSummary();
+    const total = Math.round(faits.reduce((a, b) => a + b, 0) * 100) / 100;
+    showToast(`📊 Valeur mise à jour (${total > 0 ? '+' : ''}${fmt(total)})`);
+  } else {
+    showToast('Aucun écart à enregistrer');
+  }
+}
+function _trimestreCourant() {
+  const d = new Date();
+  return `${d.getFullYear()}T${Math.floor(d.getMonth() / 3) + 1}`;
+}
+function _snoozePlacements(silencieux) {
+  try { localStorage.setItem('budget_pv_snooze_' + CURRENT_USER_ID, _trimestreCourant()); } catch {}
+  if (!silencieux) document.getElementById('_pv-overlay')?.remove();
+}
+// Rappel trimestriel : avril, juillet, octobre, dans les dix premiers jours.
+// Janvier est volontairement exclu — le rappel des soldes réels s'en charge déjà
+// et demande la valeur de tous les comptes, placements compris.
+function _maybeRemindPlacements() {
+  try {
+    if (!DATA || !CURRENT_USER_ID || CURRENT_USER_ID === '_demo' || _compareMode || _isAdminMode) return;
+    const d = new Date();
+    if (![3, 6, 9].includes(d.getMonth()) || d.getDate() > 10) return;
+    if (localStorage.getItem('budget_pv_snooze_' + CURRENT_USER_ID) === _trimestreCourant()) return;
+    if (!_placementsSuivis().length) return;
+    _askPlacementValues(true);
+  } catch {}
+}
+// Encart de performance affiché en tête de la fiche d'un livret ou placement.
+// Masqué tant qu'aucun argent n'est engagé : un livret vide n'a pas de rendement.
+function _livretPerformanceHtml(livId) {
+  const p = _livretPerformance(livId);
+  if (!p || p.base <= 0) return '';
+  const positif = p.gain >= 0;
+  const couleur = p.gain === 0 ? 'var(--gray)' : (positif ? '#27ae60' : '#E74C3C');
+  const signe = p.gain > 0 ? '+' : '';
+  const pct = p.pct === null ? '' :
+    ` <span style="font-size:12px;opacity:.85">(${signe}${fmtN(p.pct)} %)</span>`;
+  const ligne = (lbl, val, gras, col) =>
+    `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0">
+       <span style="font-size:11px;color:var(--gray)">${lbl}</span>
+       <span style="font-size:${gras ? '15px' : '13px'};font-weight:${gras ? '800' : '600'};color:${col || 'var(--text)'}">${val}</span>
+     </div>`;
+  return `<div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;background:var(--surface-alt)">
+      <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">📊 Performance</div>
+      ${ligne('Total investi', fmt(p.base))}
+      ${ligne('Valeur actuelle', fmt(p.valeur), true)}
+      ${ligne('Gain / perte', `<span style="color:${couleur}">${signe}${fmt(p.gain)}${pct}</span>`, true, couleur)}
+      <div style="font-size:10px;color:var(--gray);margin-top:5px;line-height:1.45">Versements et retraits mis à part : seuls les intérêts et les plus ou moins-values comptent dans le gain.</div>
+    </div>`;
+}
 function openLivretConfig(livId, ctxYear) {
   const isMain = !livId || livId === 'liv_main';
   const liv = getLivrets().find(l => l.id === livId);
@@ -16538,6 +16734,7 @@ function openLivretConfig(livId, ctxYear) {
   let html = '<div style="background:var(--surface);border-radius:14px;padding:20px 22px;width:360px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.45)">';
   html += '<div style="font-weight:700;font-size:15px;margin-bottom:3px">⚙️ ' + _esc(livName) + '</div>';
   html += '<div style="font-size:12px;color:var(--gray);margin-bottom:12px">Lignes incluses dans le calcul du livret</div>';
+  html += _livretPerformanceHtml(livId);
   html += '<div style="overflow-y:auto;flex:1">';
   html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📈 Mouvements (coché = inclus)</div>';
   html += rowsHtml;
@@ -16546,6 +16743,12 @@ function openLivretConfig(livId, ctxYear) {
   html += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
   html += '<button onclick="_addLivretInterestRow(\'' + livId + '\',\'' + useYear + '\')" style="background:none;border:1px solid #27ae60;border-radius:8px;padding:7px 11px;font-size:12px;cursor:pointer;color:#27ae60" title="Ajoute une ligne intérêts dans Charges fixes">💰 + Intérêts</button>';
   html += '<button onclick="_addLivretGainLossRows(\'' + livId + '\',\'' + useYear + '\')" style="background:none;border:1px solid #8B5CF6;border-radius:8px;padding:7px 11px;font-size:12px;cursor:pointer;color:#8B5CF6" title="Pour un compte de placement : ajoute une ligne plus-value et une ligne moins-value">📊 + Plus/moins-value</button>';
+  // Visible seulement si les deux lignes de valorisation existent : sans elles,
+  // il n'y a nulle part où inscrire l'écart.
+  const _valo = _lignesValorisation(useYear, livId);
+  if (_valo.plus && _valo.moins) {
+    html += '<button onclick="document.getElementById(\'_liv-cfg-overlay\').remove();_askPlacementValues(false)" style="background:none;border:1px solid var(--blue);border-radius:8px;padding:7px 11px;font-size:12px;cursor:pointer;color:var(--blue)" title="Recaler la valeur sur le montant affiché par votre banque">🔄 Mettre à jour la valeur</button>';
+  }
   html += '</div>';
   html += '<div style="display:flex;gap:8px">';
   html += '<button onclick="document.getElementById(\'_liv-cfg-overlay\').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">Annuler</button>';
