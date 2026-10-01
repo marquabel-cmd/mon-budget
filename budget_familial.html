@@ -1309,6 +1309,13 @@ body.auth-locked #context-banner {
           <input id="ar-endyear" type="number" placeholder="2026" oninput="updateAddRowPreview()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px">
         </div>
       </div>
+      <div id="ar-nocarry-wrap" style="background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border);margin-bottom:10px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="ar-nocarry" onchange="_arRefreshYearsOption()">
+          <span>📌 Propre à cette année — ne pas reporter</span>
+        </label>
+        <div style="font-size:11px;color:var(--gray);margin-top:5px;line-height:1.45">Pour une vente, une prime ou une dépense exceptionnelle. La ligne ne sera pas reprise dans les années suivantes, et « Vérifier mes données » cessera de la signaler comme manquante.</div>
+      </div>
       <div id="ar-years-wrap" style="display:none;background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
           <input type="checkbox" id="ar-propagate-years" onchange="this.dataset.touched='1';_arRefreshYearsOption()">
@@ -4391,6 +4398,7 @@ function addYear() {
 
   // ── Revenus ──
   document.getElementById('rev-dialog-tbody').innerHTML = prev.revenus.map((r, i) => {
+    if (r.noCarry === true) return '';
     if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < newYearInt) return '';
     const last = _lastPaidAmt(r);
     const isProtected = r.cat === 'boite_dep' || r.cat === 'depot_banc';
@@ -4407,6 +4415,7 @@ function addYear() {
   // ── Charges ──
   document.getElementById('chg-dialog-tbody').innerHTML = prev.charges.map((r, i) => {
     if (r._adjust) return ''; // ajustement de solde réel : propre à son 31 décembre
+    if (r.noCarry === true) return '';
     if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < newYearInt) return '';
     const last = _lastPaidAmt(r);
     const isProtected = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in';
@@ -4464,6 +4473,7 @@ function confirmRevDialog() {
     excludeCalcMethods: [...(prev.excludeCalcMethods || [])],
     revenus: prev.revenus.map((r, i) => {
       const ny = parseInt(newYear);
+      if (r.noCarry === true) return null;  // « propre à cette année » : jamais reprise
       // Ligne terminée avant la nouvelle année → ne pas reprendre
       if (!r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
       const inp = document.getElementById(`rev-inp-${i}`);
@@ -4486,6 +4496,7 @@ function confirmRevDialog() {
     charges: prev.charges.map((r, i) => {
       const ny = parseInt(newYear);
       if (r._adjust) return null; // ajustement de solde réel : propre à son 31 décembre
+      if (r.noCarry === true) return null;  // « propre à cette année » : jamais reprise
       const isSpecialRow = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in' || r.cat === 'retrait_banc';
       // Ligne terminée avant la nouvelle année → ne pas reprendre (sauf lignes protégées)
       if (!isSpecialRow && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
@@ -5729,6 +5740,7 @@ function openAddRowModal(year, type) {
   // d'office, elle donnait à toute nouvelle ligne une fin en janvier de l'année,
   // qui vidait ses montants et la faisait disparaître l'année suivante.
   document.getElementById('ar-noend').checked = true;
+  document.getElementById('ar-nocarry').checked = false;
   document.getElementById('ar-enddate-fields').style.display = 'none';
   document.getElementById('ar-amount').value = '';
   document.getElementById('ar-error').textContent = '';
@@ -5821,6 +5833,7 @@ function openEditRowModal(year, dataType, ri) {
   // ne modifiait que son libellé ou son type.
   const hasNoEnd = row.noEnd === true || row.endYear === undefined;
   document.getElementById('ar-noend').checked = hasNoEnd;
+  document.getElementById('ar-nocarry').checked = row.noCarry === true;
   document.getElementById('ar-enddate-fields').style.display = hasNoEnd ? 'none' : 'grid';
   if (!hasNoEnd) {
     document.getElementById('ar-endmonth').value = row.endMonth ?? 11;
@@ -5865,6 +5878,13 @@ function _arRefreshYearsOption() {
   const wrap = document.getElementById('ar-years-wrap');
   const cb = document.getElementById('ar-propagate-years');
   if (!wrap || !cb) return;
+  // « Ne pas reporter » et « Ajouter aux années suivantes » se contredisent :
+  // la seconde disparaît quand la première est cochée.
+  if (document.getElementById('ar-nocarry')?.checked) {
+    wrap.style.display = 'none';
+    cb.checked = false;
+    return;
+  }
   const suivantes = _arEditMode
     ? _arAnneesSansLaLigne()
     : getYears().filter(y => parseInt(y) > parseInt(_arYear));
@@ -5936,6 +5956,7 @@ function _lignesAbsentesDesSuivantes() {
     ['revenus', 'charges'].forEach(section => {
       (DATA[y]?.[section] || []).forEach(row => {
         if (row._adjust || row.fromBank) return;
+        if (row.noCarry === true) return;   // marquée « propre à cette année »
         suivantes.forEach(ys => {
           if (!Array.isArray(DATA[ys]?.[section])) return;
           // Ligne terminée avant cette année-là : son absence est normale.
@@ -6232,6 +6253,9 @@ function submitAddRow() {
     if (montantsTouches) for (let m = startMonth; m < 12; m++) row.v[m] = v[m];
     if (devientLivret) _markLivretPaid(row);
     Object.assign(row, rowMeta);
+    // Drapeau « propre à cette année » : stocké seulement s'il est posé, pour ne
+    // pas alourdir inutilement les données synchronisées.
+    if (document.getElementById('ar-nocarry')?.checked) row.noCarry = true; else delete row.noCarry;
     if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
     // Ligne d'abord (réaligne libellé et type), puis date de fin : celle-ci
     // retrouve ainsi aussi les lignes qui viennent d'être réalignées
@@ -10988,8 +11012,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.55';
-const SW_VERSION = 'v335';
+const APP_VERSION = '13.56';
+const SW_VERSION = 'v336';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12879,6 +12903,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.56': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '📌', text: 'Nouvelle case « Propre à cette année — ne pas reporter » dans la fenêtre de modification. Pour une vente, une prime ou une dépense exceptionnelle : la ligne n’est pas reprise à la création d’une nouvelle année, et « Vérifier mes données » cesse de la signaler comme manquante. Le montant de l’année où elle vit n’est pas touché.' }
+    ]
+  },
   '13.55': {
     date: 'Octobre 2026',
     items: [

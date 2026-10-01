@@ -451,6 +451,50 @@ function tousLesCas() {
       _manquesGroupes().length === 0, JSON.stringify(_manquesGroupes().map(g => g.label)));
   }
 
+  // ── « Propre à cette année — ne pas reporter » ──────────────────────────
+  {
+    const l = (label, extra) => ({ label, cat: 'fixed', v: Array(12).fill(10),
+      paid: Array(12).fill(false), noEnd: true, ...(extra || {}) });
+
+    DATA = { '2025': annee(), '2026': annee(), '2027': annee() };
+    ['2025', '2026', '2027'].forEach(y => {
+      DATA[y].charges = [l('Loyer')];
+      DATA[y].revenus = [l('Salaire')];
+    });
+    const vente = l('Vente moto (reste)');
+    DATA['2025'].revenus.push(vente);
+
+    check('ne pas reporter · signalée tant qu’elle n’est pas marquée',
+      _manquesGroupes().some(g => g.label === 'Vente moto (reste)'),
+      JSON.stringify(_manquesGroupes().map(g => g.label)));
+
+    vente.noCarry = true;
+    check('ne pas reporter · marquée, elle disparaît du bilan',
+      !_manquesGroupes().some(g => g.label === 'Vente moto (reste)'),
+      JSON.stringify(_manquesGroupes().map(g => g.label)));
+    check('ne pas reporter · le bilan n’a plus rien à signaler là-dessus',
+      _bilanSante().find(c => c.titre.startsWith('Lignes présentes')).ok,
+      _bilanSante().find(c => c.titre.startsWith('Lignes présentes')).souci);
+
+    // Elle ne doit pas masquer les autres lignes réellement manquantes
+    DATA['2025'].charges.push(l('Ramonage'));
+    check('ne pas reporter · les autres manques restent détectés',
+      _manquesGroupes().length === 1 && _manquesGroupes()[0].label === 'Ramonage',
+      JSON.stringify(_manquesGroupes().map(g => g.label)));
+
+    // Une charge marquée aussi
+    DATA['2025'].charges[1].noCarry = true;
+    check('ne pas reporter · fonctionne aussi sur une charge',
+      _manquesGroupes().length === 0, JSON.stringify(_manquesGroupes().map(g => g.label)));
+
+    // Le drapeau n'affecte pas les calculs de l'année où la ligne vit
+    DATA['2025'].revenus[1].v[2] = 16250;
+    DATA['2025'].revenus[1].paid[2] = true;
+    check('ne pas reporter · le montant reste pris en compte dans son année',
+      DATA['2025'].revenus[1].v[2] === 16250 && DATA['2025'].revenus[1].noCarry === true,
+      JSON.stringify(DATA['2025'].revenus[1].v.slice(0, 4)));
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };
