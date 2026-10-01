@@ -220,8 +220,8 @@ a:hover{text-decoration:underline}
       <a href="#assistant-ia">🤖 AI Assistant</a>
       <a href="#feedback">💬 Feedback &amp; Suggestions</a>
       <div style="margin-top:14px;padding:8px 10px;border-top:1px solid #e8eaf6;font-size:10px;color:#9BA3C9;line-height:1.6">
-        📱 App <b>13.56</b><br>
-        🔧 SW <b>v336</b>
+        📱 App <b>13.57</b><br>
+        🔧 SW <b>v337</b>
       </div>
     </nav>
   </aside>
@@ -1387,6 +1387,21 @@ a:hover{text-decoration:underline}
       <h3>The sync log</h3>
       <p>The same page holds a <b>log</b>: every startup and every exchange with the cloud leaves a dated trace there, and a button copies the whole thing. This is what to provide if you report a sync problem — it says precisely why a device did not update.</p>
       <p>The reason for each decision is readable there: <code>a-jour</code>, <code>en-avance</code>, <code>en-retard</code> and <code>conflit</code> are normal. <code>sans-compteur</code> flags an unusual situation on the cloud side.</p>
+
+      <h3>🗄️ Cloud backups</h3>
+      <p>Every day, on the first send to the cloud, a full copy of your data is kept server-side. The <b>last ten days</b> are retained, and the list is available under <b>⚙️ Configuration → Cloud → Cloud backups</b>.</p>
+      <p>This is a safety net the browser backups never provided: those vanish with the device's storage, and the cloud only ever held the <b>current</b> state. If bad data spread there, it was everywhere, with nothing to go back to.</p>
+      <ul>
+        <li>Snapshots sit <b>beside</b> the synchronised data, never inside it: sync never sees them.</li>
+        <li>They are reachable from <b>any</b> of your devices.</li>
+        <li>A restore first creates a local backup, then propagates to your other devices.</li>
+      </ul>
+      <div class="warn">
+        <b>⚠️ Restoring replaces everything</b> — Anything entered since the chosen date will be lost, on every device. The app asks you to type the date to confirm.
+      </div>
+      <div class="tip">
+        <b>💡 The daily snapshot is taken at the first send</b> — So it reflects your data before the day's entries, which is exactly what you want when going back.
+      </div>
 
       <h3>Your registered devices</h3>
       <p>The list of your devices sits in the same place, with the date each was last used, and you can remove one. This matters because <b>clearing a device's storage gives it a new identity</b>: the old entry would otherwise stay in the list forever.</p>

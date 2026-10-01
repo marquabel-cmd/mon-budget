@@ -8052,6 +8052,9 @@ async function cloudPush() {
       _setSyncedSnapshot(DATA);
       _syncLog(`ENVOI réussi — cloud passé en ${_newRev}`);
       setCloudStatus('ok'); _lastSyncError = '';
+      // Cliché quotidien, détaché : l'envoi est terminé, un échec ici ne peut
+      // donc plus rien compromettre (leçon de l'incident de la 13.22).
+      cloudSnapshotMaybe();
     }
     else if (r.status === 401) {
       _lastPushTime = 0; // reset pour permettre un vrai sync entrant
@@ -9984,6 +9987,9 @@ function renderConfigTab() {
               <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin:12px 0 6px">🔎 Journal de synchro</div>
               <pre style="font-size:10px;line-height:1.5;color:var(--gray);background:var(--surface-alt);border:1px solid var(--border);border-radius:7px;padding:8px;margin:0 0 6px;max-height:190px;overflow:auto;white-space:pre-wrap;word-break:break-word">${_esc(_syncLogText())}</pre>
               <button onclick="copySyncLog()" style="width:100%;font-size:11px;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:6px;cursor:pointer;margin-bottom:12px">📋 Copier le journal</button>
+              <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin:12px 0 6px">🗄️ Sauvegardes cloud</div>
+              <div id="cloudsnap-box" style="margin-bottom:10px"><button onclick="renderCloudSnapshots()" style="font-size:11px;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:5px 10px;cursor:pointer">Afficher les sauvegardes</button></div>
+              <div style="font-size:10px;color:var(--gray);margin:-4px 0 10px;line-height:1.5">Un cliché par jour, conservé ${CLOUD_SNAPSHOTS_MAX} jours, accessible depuis n'importe lequel de vos appareils. Indépendant des sauvegardes du navigateur.</div>
               <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin:12px 0 6px">📱 Mes appareils</div>
               <div id="devices-box" style="margin-bottom:10px"><button onclick="renderDevicesList()" style="font-size:11px;background:none;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:5px 11px;cursor:pointer">Afficher mes appareils</button></div>`;
             })()}
@@ -10842,6 +10848,136 @@ async function removeDevice(deviceId) {
     renderConfigTab();
   } catch (e) { showToast('❌ ' + (e.message || 'Erreur réseau')); }
 }
+// ── SAUVEGARDES CLOUD (CLICHÉS QUOTIDIENS) ──────────────────────────────
+// Jusqu'ici l'historique n'existait qu'en local : dix copies quotidiennes dans
+// le navigateur, plus l'export JSON manuel. Le cloud, lui, ne porte que l'état
+// COURANT — si une mauvaise donnée s'y propage, elle est partout et il n'y a
+// rien à quoi revenir depuis un autre appareil.
+//
+// Les clichés vivent dans un nœud FRÈRE de `budget` : la fusion ne les voit
+// jamais, et leur présence ne peut pas peser sur la synchro.
+//   /userdata/<uid>/budget      ← l'état courant, synchronisé
+//   /userdata/<uid>/snapshots/  ← l'historique, en lecture seule au quotidien
+//
+// Règle absolue, héritée de l'incident de la 13.22 : une sauvegarde de confort
+// ne doit JAMAIS interrompre ce qui compte. Tout est encapsulé, rien ne remonte,
+// un échec se contente d'une ligne dans le journal.
+const CLOUD_SNAPSHOTS_MAX = 10;
+// Construction d'URL isolée : `_fbUser` est une variable lexicale, donc
+// impossible à simuler. En passant l'identifiant en argument, le chemin se teste.
+function _snapshotsBaseFor(uid) {
+  return uid ? LICENSE_DB.replace(/\/+$/, '') + '/userdata/' + uid + '/snapshots' : null;
+}
+function cloudSnapshotsBase() {
+  if (!isLicensed() || !_fbUser?.uid) return null;
+  return _snapshotsBaseFor(_fbUser.uid);
+}
+// `shallow=true` ne ramène que les clés, pas les clichés eux-mêmes : lister
+// l'historique coûte quelques octets au lieu de plusieurs méga-octets.
+async function _cloudSnapshotKeys(base, token) {
+  const r = await _fbFetch(base + '.json?shallow=true', {}, token);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const o = await r.json();
+  return o ? Object.keys(o).sort() : [];
+}
+async function _cloudSnapshotPrune(base, token) {
+  const cles = await _cloudSnapshotKeys(base, token);
+  const trop = cles.slice(0, Math.max(0, cles.length - CLOUD_SNAPSHOTS_MAX));
+  for (const k of trop) {
+    try { await _fbFetch(`${base}/${k}.json`, { method: 'DELETE' }, token); } catch {}
+  }
+  return trop.length;
+}
+// Un cliché par jour, après un envoi réussi. Jamais dans le chemin critique.
+async function cloudSnapshotMaybe() {
+  try {
+    const base = cloudSnapshotsBase();
+    if (!base || !DATA || !_hasYearData(DATA)) return;
+    const jour = new Date().toISOString().slice(0, 10);
+    const cle = 'budget_cloudsnap_' + CURRENT_USER_ID;
+    if (localStorage.getItem(cle) === jour) return;   // déjà fait aujourd'hui
+    const token = await fbGetToken();
+    if (!token) return;
+    const corps = JSON.stringify({ at: Date.now(), app: APP_VERSION, data: DATA });
+    const r = await _fbFetch(`${base}/${jour}.json`,
+      { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: corps }, token);
+    if (!r.ok) { _syncLog(`cliché cloud refusé (HTTP ${r.status}) — règles Firebase ?`); return; }
+    _safeSetItem(cle, jour);
+    const retires = await _cloudSnapshotPrune(base, token);
+    _syncLog(`cliché cloud du ${jour} enregistré${retires ? ` (${retires} ancien(s) retiré(s))` : ''}`);
+  } catch (e) {
+    _syncLog('cliché cloud impossible : ' + (e?.message || e));
+  }
+}
+async function renderCloudSnapshots() {
+  const box = document.getElementById('cloudsnap-box');
+  if (!box) return;
+  box.innerHTML = `<div style="font-size:11px;color:var(--gray)">Chargement…</div>`;
+  const base = cloudSnapshotsBase();
+  if (!base) { box.innerHTML = `<div style="font-size:11px;color:var(--gray)">Disponible avec la licence, une fois connecté.</div>`; return; }
+  try {
+    const token = await fbGetToken();
+    if (!token) throw new Error('session indisponible');
+    const cles = await _cloudSnapshotKeys(base, token);
+    if (!cles.length) {
+      box.innerHTML = `<div style="font-size:11px;color:var(--gray);line-height:1.5">Aucune sauvegarde pour l'instant. La première est créée au prochain envoi vers le cloud.</div>`;
+      return;
+    }
+    const jour = s => { const [a, m, j] = s.split('-'); return `${j}/${m}/${a}`; };
+    box.innerHTML = `
+      <div style="font-size:11px;color:var(--gray);margin-bottom:8px">${cles.length} sauvegarde(s) · ${CLOUD_SNAPSHOTS_MAX} jours conservés</div>
+      ${[...cles].reverse().map(k => `
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface-alt);border:1px solid var(--border);border-radius:7px;margin-bottom:5px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600">${jour(k)}</div>
+          </div>
+          <button onclick="cloudSnapshotRestore('${k}')" style="font-size:11px;color:var(--blue);background:none;border:1px solid var(--blue);border-radius:6px;padding:4px 9px;cursor:pointer">Restaurer</button>
+        </div>`).join('')}`;
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:11px;color:#f0c040;line-height:1.5">Liste indisponible (${_esc(e?.message || 'erreur')}).</div>`;
+  }
+}
+async function cloudSnapshotRestore(jour) {
+  const base = cloudSnapshotsBase();
+  if (!base) return;
+  const [a, m, j] = jour.split('-');
+  _showDangerConfirm({
+    title: `Restaurer la sauvegarde du ${j}/${m}/${a}`,
+    subtitle: 'Vos données actuelles seront remplacées sur cet appareil, puis envoyées au cloud — donc sur tous vos appareils.',
+    items: [
+      'Tout ce qui a été saisi depuis cette date sera perdu',
+      'Une sauvegarde locale est créée avant le remplacement',
+      'Les autres appareils recevront cette version'
+    ],
+    confirmWord: jour.replace(/-/g, ''),
+    buttonLabel: 'Restaurer',
+    onConfirm: async () => {
+      try {
+        const token = await fbGetToken();
+        if (!token) { showToast('⚠️ Session indisponible'); return; }
+        const r = await _fbFetch(`${base}/${jour}.json`, {}, token);
+        if (!r.ok) { showToast(`⚠️ Lecture impossible (HTTP ${r.status})`); return; }
+        const snap = await r.json();
+        const restaure = snap?.data;
+        if (!restaure || !_hasYearData(restaure)) { showToast('⚠️ Sauvegarde vide ou illisible'); return; }
+        _backupBeforeCloudReplace();              // filet local avant remplacement
+        DATA = restaure;
+        if (!DATA.methods) DATA.methods = [...DEFAULT_METHODS];
+        _syncIdCounter(); _fixDuplicateIds();
+        _setPendingLocal(true);                   // à faire valoir auprès du cloud
+        dSave();
+        renderTabs(); getYears().forEach(y => renderYear(y));
+        renderSummary(); renderDashboard();
+        _syncLog(`RESTAURATION du cliché du ${jour}`);
+        showToast(`✅ Sauvegarde du ${j}/${m}/${a} restaurée`);
+        cloudPush();
+      } catch (e) {
+        showToast('⚠️ Restauration impossible');
+        _syncLog('restauration impossible : ' + (e?.message || e));
+      }
+    }
+  });
+}
 async function renderDevicesList() {
   const box = document.getElementById('devices-box');
   if (!box) return;
@@ -11012,8 +11148,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.56';
-const SW_VERSION = 'v336';
+const APP_VERSION = '13.57';
+const SW_VERSION = 'v337';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12903,6 +13039,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.57': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '🗄️', text: 'Sauvegardes cloud : un cliché de vos données est conservé chaque jour côté serveur, dix jours d’affilée, et se restaure depuis n’importe lequel de vos appareils (Configuration → Cloud). Jusqu’ici l’historique n’existait que dans le navigateur : vider le stockage d’un appareil l’emportait, et le cloud ne gardait que l’état courant.' },
+      { icon: '🔒', text: 'Les clichés vivent à côté des données synchronisées, jamais dedans : la fusion ne les voit pas et leur écriture ne peut rien interrompre. Une restauration crée d’abord une sauvegarde locale, puis se propage aux autres appareils.' }
+    ]
+  },
   '13.56': {
     date: 'Octobre 2026',
     items: [

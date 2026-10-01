@@ -43,7 +43,7 @@ function serveur() {
  * Les cas. Tout ce qui suit s'exécute DANS la page : pas de fermeture sur des
  * variables Node, uniquement sur les globales de l'application.
  * ──────────────────────────────────────────────────────────────────────────── */
-function tousLesCas() {
+async function tousLesCas() {
   const res = [];
   const check = (nom, ok, detail) => res.push({ nom, ok: !!ok, detail: ok ? '' : String(detail ?? '') });
 
@@ -493,6 +493,97 @@ function tousLesCas() {
     check('ne pas reporter · le montant reste pris en compte dans son année',
       DATA['2025'].revenus[1].v[2] === 16250 && DATA['2025'].revenus[1].noCarry === true,
       JSON.stringify(DATA['2025'].revenus[1].v.slice(0, 4)));
+  }
+
+  // ── Sauvegardes cloud (clichés quotidiens) ──────────────────────────────
+  {
+    const vraiFetch = window._fbFetch;
+    const vraiToken = window.fbGetToken;
+    const vraieBase = window.cloudSnapshotsBase;
+    const BASE = 'https://exemple.test/userdata/u1/snapshots';
+    const cleJour = 'budget_cloudsnap_' + CURRENT_USER_ID;
+
+    let appels = [];
+    let clesDistantes = {};
+    let refuser = false;
+    const reponse = (ok, corps) => ({ ok, status: ok ? 200 : 401, json: async () => corps });
+
+    window.cloudSnapshotsBase = () => BASE;
+    window.fbGetToken = async () => 'jeton';
+    window._fbFetch = async (url, opt = {}) => {
+      appels.push({ url, methode: opt.method || 'GET', corps: opt.body });
+      if (refuser) return reponse(false, null);
+      if (url.includes('shallow=true')) return reponse(true, clesDistantes);
+      if ((opt.method || 'GET') === 'PUT') { clesDistantes[url.split('/').pop().replace('.json', '')] = true; return reponse(true, {}); }
+      if (opt.method === 'DELETE') { delete clesDistantes[url.split('/').pop().replace('.json', '')]; return reponse(true, {}); }
+      return reponse(true, {});
+    };
+    const reset = () => { appels = []; try { localStorage.removeItem(cleJour); } catch {} };
+
+    // Chemin : nœud frère de budget, jamais vu par la fusion
+    check('clichés · le chemin est un nœud frère de budget',
+      _snapshotsBaseFor('abc').endsWith('/userdata/abc/snapshots') &&
+      !_snapshotsBaseFor('abc').includes('/budget'),
+      _snapshotsBaseFor('abc'));
+    check('clichés · sans identifiant, aucun chemin', _snapshotsBaseFor(null) === null);
+
+    DATA = { '2026': annee() };
+    DATA['2026'].charges = [{ label: 'Loyer', cat: 'fixed', v: Array(12).fill(5), paid: Array(12).fill(false) }];
+
+    // Écriture du jour
+    reset(); clesDistantes = {};
+    await cloudSnapshotMaybe();
+    const jour = new Date().toISOString().slice(0, 10);
+    const put = appels.find(a => a.methode === 'PUT');
+    check('clichés · un PUT est envoyé pour la date du jour',
+      !!put && put.url === `${BASE}/${jour}.json`, put && put.url);
+    check('clichés · le cliché contient les données et la version',
+      !!put && (() => { const o = JSON.parse(put.corps); return !!o.data && !!o.app && !!o.at; })(),
+      put && put.corps?.slice(0, 60));
+    check('clichés · la liste est demandée en shallow, pas en entier',
+      appels.some(a => a.url.includes('shallow=true')),
+      appels.map(a => a.url).join(' | '));
+
+    // Pas deux fois le même jour
+    appels = [];
+    await cloudSnapshotMaybe();
+    check('clichés · pas de second cliché le même jour',
+      appels.length === 0, appels.map(a => a.methode).join());
+
+    // Élagage au-delà du maximum
+    reset(); appels = [];
+    clesDistantes = {};
+    for (let i = 1; i <= 14; i++) clesDistantes[`2026-01-${String(i).padStart(2, '0')}`] = true;
+    await cloudSnapshotMaybe();
+    const supprimes = appels.filter(a => a.methode === 'DELETE');
+    check('clichés · les plus anciens sont retirés au-delà du maximum',
+      supprimes.length === 15 - CLOUD_SNAPSHOTS_MAX,
+      `${supprimes.length} suppression(s) pour ${Object.keys(clesDistantes).length} clé(s)`);
+    check('clichés · ce sont bien les plus anciens qui partent',
+      supprimes.every(a => a.url.includes('2026-01-0')),
+      supprimes.map(a => a.url.split('/').pop()).join());
+
+    // Un refus du serveur ne doit rien casser ni marquer le jour comme fait
+    reset(); appels = []; refuser = true;
+    let aLeve = false;
+    try { await cloudSnapshotMaybe(); } catch { aLeve = true; }
+    check('clichés · un refus serveur ne lève jamais', !aLeve);
+    check('clichés · le jour n’est pas marqué comme fait après un refus',
+      localStorage.getItem(cleJour) !== jour, localStorage.getItem(cleJour));
+    refuser = false;
+
+    // Données vides : rien ne part, le cloud ne doit pas recevoir un budget vide
+    reset(); appels = [];
+    const sauveD = DATA; DATA = {};
+    await cloudSnapshotMaybe();
+    check('clichés · aucun cliché pour des données vides',
+      appels.length === 0, appels.map(a => a.methode).join());
+    DATA = sauveD;
+
+    window._fbFetch = vraiFetch;
+    window.fbGetToken = vraiToken;
+    window.cloudSnapshotsBase = vraieBase;
+    reset();
   }
 
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
