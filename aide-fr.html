@@ -203,7 +203,8 @@ a:hover{text-decoration:underline}
       <a href="#charges">🏠 Charges</a>
       <a href="#variables">🛒 Dépenses variables</a>
       <a href="#budget-cible">🎯 Budgets par catégorie</a>
-      <a href="#livret">💰 Livret d'épargne</a>
+      <a href="#livret">💰 Livrets &amp; placements</a>
+      <a href="#comptes">🏦 Comptes &amp; soldes</a>
       <a href="#indicateurs">📈 Indicateurs financiers</a>
       <a href="#resume">📊 Résumé mensuel</a>
       <a href="#graphiques">📉 Graphiques</a>
@@ -211,13 +212,16 @@ a:hover{text-decoration:underline}
       <a href="#github-gist" style="background:#e8f8f0;color:#27ae60;border-color:#27ae60">🐙 GitHub Gist gratuit</a>
       <a href="#dark">🌙 Mode nuit</a>
       <a href="#annee">📅 Nouvelle année</a>
+      <a href="#propagation">⏭️ Reports entre années</a>
+      <a href="#reparation">🔧 Outils de réparation</a>
       <a href="#connexion">🔐 Connexion &amp; Compte</a>
+      <a href="#synchro">🔄 Synchro multi-appareils</a>
       <a href="#ajout-rapide">➕ Ajout rapide</a>
       <a href="#assistant-ia">🤖 Assistant IA</a>
       <a href="#feedback">💬 Feedback & Suggestions</a>
       <div style="margin-top:14px;padding:8px 10px;border-top:1px solid #e8eaf6;font-size:10px;color:#9BA3C9;line-height:1.6">
-        📱 App <b>11.35</b><br>
-        🔧 SW <b>v162</b>
+        📱 App <b>13.50</b><br>
+        🔧 SW <b>v330</b>
       </div>
     </nav>
   </aside>
@@ -590,7 +594,7 @@ a:hover{text-decoration:underline}
         <li><b>📥 Export CSV</b> — Exporte les données du mois actuel en CSV</li>
         <li><b>🖨️ PDF</b> — Génère un rapport PDF structuré : KPIs annuels, tableau mensuel complet et répartition des dépenses par catégorie pour chaque année</li>
         <li><b>📂 Import CSV</b> — Importe des transactions depuis un relevé bancaire CSV (détection automatique des colonnes, choix de catégorie, méthode de paiement, total sélectionné et <b>détection automatique des doublons</b> ⚠️)</li>
-        <li><b>📦 Backups</b> — Affiche la liste des sauvegardes automatiques (une par jour, 20 max)</li>
+        <li><b>📦 Backups</b> — Affiche la liste des sauvegardes automatiques (une par jour, 10 max)</li>
         <li><b>🔐 Connexion</b> — Connexion avec Google pour la synchronisation cloud Premium</li>
         <li><b>❓ Aide</b> — Relance le tour guidé ou ouvre ce guide</li>
         <li><b>🌙 / ☀️</b> — Bascule entre mode jour et mode nuit</li>
@@ -600,6 +604,8 @@ a:hover{text-decoration:underline}
       <ul>
         <li><b>➕ Vert</b> — <a href="#ajout-rapide">Ajout rapide</a> d'une dépense variable</li>
         <li><b>🤖 Violet</b> — <a href="#assistant-ia">Assistant IA</a> Groq (chat)</li>
+        <li><b>💳 Transactions</b> — Ouvre le widget des dernières dépenses, avec le <a href="#accueil">détail par moyen de paiement</a></li>
+        <li><b>💬 Suggestion</b> — <a href="#feedback">Envoyer un message</a> ou signaler un problème</li>
       </ul>
 
       <h3>Onglets d'années</h3>
@@ -657,6 +663,13 @@ a:hover{text-decoration:underline}
 
       <h3>🛒 Dernières dépenses</h3>
       <p>La liste des dépenses variables du mois est affichée, triées par montant décroissant (jusqu'à 8 entrées + compteur des autres).</p>
+
+      <h3>💳 Widget Transactions — détail par moyen de paiement</h3>
+      <p>Le bouton flottant <b>💳 Transactions</b> ouvre un récapitulatif des dernières dépenses, regroupées par catégorie.</p>
+      <p>Sous chaque catégorie, une rangée de pastilles donne la <b>répartition par moyen de paiement</b> — carte, liquide, chèques repas… — et la même rangée figure en haut du widget pour l'ensemble des transactions.</p>
+      <div class="tip">
+        <b>💡 Les totaux ne changent pas</b> — Le total d'une catégorie comme le total général restent la somme de tous les moyens de paiement. Le détail s'ajoute, il ne remplace rien. Les pastilles n'apparaissent que si plusieurs moyens de paiement sont effectivement utilisés.
+      </div>
 
       <h3>📅 Bouton "Aller à l'année en cours"</h3>
       <p>Un bouton rapide permet de naviguer directement vers l'onglet de l'année actuelle (ex: 2026) depuis le tableau de bord.</p>
@@ -760,9 +773,21 @@ a:hover{text-decoration:underline}
       <ul>
         <li><b>Fixe</b> — Montant identique chaque mois</li>
         <li><b>Occasionnelle</b> — Montant variable selon le mois</li>
-        <li><b>Livret ↑</b> — Virement vers le livret d'épargne</li>
-        <li><b>Livret ↓</b> — Retrait du livret vers le compte courant</li>
+        <li><b>Versement vers « nom du livret »</b> — La liste propose <b>chacun de vos livrets et placements nommément</b>, et non plus un livret unique. Voir <a href="#livret">Livrets &amp; placements</a>.</li>
+        <li><b>Retrait de « nom du livret »</b> — Idem dans l'autre sens.</li>
+        <li><b>Gain / Perte de valeur</b> — Intérêts, plus-value ou moins-value : le livret bouge, le compte courant non.</li>
       </ul>
+      <p>Chaque livret a son propre bloc dans le tableau, titré à son nom : les mouvements d'épargne ne se mélangent plus aux charges occasionnelles.</p>
+
+      <h3>Date de fin d'une ligne</h3>
+      <p>Une charge qui s'arrête — un prêt, une assurance emprunteur, un abonnement résilié — peut porter une <b>date de fin</b>, définie dans sa fenêtre de modification (✏️). Elle s'affiche alors sous le libellé, par exemple « fin mars 2028 », et la ligne n'est plus reportée au-delà.</p>
+      <p>Le report de cette date vers les années déjà créées est décrit dans <a href="#propagation">Reports vers les années suivantes</a>.</p>
+
+      <h3>Commentaires sur une cellule</h3>
+      <p>Chaque cellule de montant, en charges comme en revenus, peut porter un <b>commentaire</b>. Un petit badge violet signale les cellules qui en ont un : survolez-le pour lire la note, cliquez pour l'écrire, la modifier ou la supprimer.</p>
+      <div class="tip">
+        <b>💡 Les commentaires ne suivent pas l'année suivante</b> — Ils se rapportent à l'année où vous les avez écrits (« régularisation 2026 », « mois double ») et ne sont donc jamais recopiés lors d'un report.
+      </div>
 
       <h3>Reste à payer</h3>
       <p>En bas de chaque tableau de résumé, une ligne <b>« Reste à payer »</b> affiche le total des charges non encore payées pour le mois.</p>
@@ -865,25 +890,70 @@ a:hover{text-decoration:underline}
 
     <!-- Livret -->
     <div class="section" id="livret">
-      <h2><span>💰</span> Livret d'épargne</h2>
-      <p class="lead">Le livret d'épargne est géré automatiquement à partir des lignes de charge spéciales.</p>
+      <h2><span>💰</span> Livrets &amp; placements</h2>
+      <p class="lead">Chaque livret d'épargne et chaque compte de placement a son propre bloc dans le tableau des charges, titré à son nom. Les mouvements d'épargne ne sont plus mélangés aux charges occasionnelles.</p>
 
-      <h3>Lignes dédiées au livret</h3>
+      <h3>Créer un livret ou un placement</h3>
+      <p>Allez dans <b>⚙️ Configuration → Comptes &amp; Livrets</b>, saisissez un nom et validez avec <b>＋</b> ou la touche <b>Entrée</b>. Vous pouvez en créer autant que nécessaire : livret A, épargne travaux, compte-titres, placement boursier…</p>
+      <p>Chaque livret dispose ensuite de son propre <b>engrenage ⚙️</b> dans cette même page, qui donne accès à ses options sans passer par la vue annuelle.</p>
+
+      <h3>Lignes dédiées à un livret</h3>
       <ul>
-        <li><b>📈 Ordre permanent Livret</b> (cat: <code>livret_in</code>) — Virement mensuel automatique depuis le compte courant vers le livret. Augmente le solde livret, diminue le compte courant.</li>
-        <li><b>💰 Compte → Livret</b> (cat: <code>livret_in</code>) — Dépôt manuel. Même effet.</li>
-        <li><b>📉 Retrait Livret → compte</b> (cat: <code>livret_out</code>) — Retrait du livret vers le compte courant. Diminue le livret, augmente le compte courant.</li>
+        <li><b>📈 Ordre permanent</b> (<code>livret_in</code>) — Virement mensuel automatique depuis le compte courant vers le livret. Augmente le livret, diminue le compte courant.</li>
+        <li><b>💰 Compte → Livret</b> (<code>livret_in</code>) — Dépôt ponctuel. Même effet.</li>
+        <li><b>📉 Retrait Livret → compte</b> (<code>livret_out</code>) — Retrait vers le compte courant. Diminue le livret, augmente le compte courant.</li>
       </ul>
+      <p>Dans la fenêtre de modification d'une ligne, la liste <b>Type</b> propose <b>chacun de vos livrets nommément</b>, en versement comme en retrait. Une ligne peut donc être rangée dans un livret, déplacée d'un livret à l'autre, ou créée directement comme mouvement d'épargne.</p>
 
-      <h3>Solde livret initial</h3>
-      <p>Pour la première année, saisissez le solde du livret au 1er janvier dans le champ <b>Livret initial (01/01)</b>.</p>
-      <p>Pour les années suivantes, ce champ est calculé <b>automatiquement</b> à partir du solde de fin de l'année précédente — vous n'avez rien à saisir.</p>
+      <h3>Intérêts, plus-values et moins-values</h3>
+      <p>Un gain ou une perte de valeur n'a <b>aucune contrepartie sur le compte courant</b> : l'argent n'y transite pas. Il faut donc une ligne particulière, sans quoi votre compte courant serait faussé.</p>
+      <p>Dans la configuration d'un livret, le bouton <b>« Plus/moins-value »</b> crée les deux lignes nécessaires :</p>
+      <ul>
+        <li>une ligne de <b>gain</b>, qui augmente le livret sans toucher au compte courant — intérêts annuels, plus-value d'un placement ;</li>
+        <li>une ligne de <b>perte</b>, qui diminue le livret sans toucher au compte courant — moins-value, frais de garde.</li>
+      </ul>
+      <div class="tip">
+        <b>💡 Comment encoder une variation de marché</b> — Saisissez l'écart du mois, pas la valeur totale du placement. Si votre placement passe de 5 000 € à 5 120 €, inscrivez <b>120</b> dans la ligne de gain du mois concerné. Comme partout dans l'application, saisissez une valeur <b>positive</b> : c'est le type de ligne qui donne le sens.
+      </div>
+
+      <h3>Solde d'ouverture</h3>
+      <p>Pour la première année, saisissez le solde au 1er janvier dans le champ prévu. Pour les années suivantes, il est repris <b>automatiquement</b> du solde calculé au 31 décembre précédent — vous n'avez rien à faire. Un montant saisi à la main reste toujours prioritaire.</p>
+      <p>Le détail du mécanisme, commun aux comptes et aux livrets, est décrit dans <a href="#comptes">Comptes &amp; soldes</a>.</p>
 
       <h3>Saisie des montants</h3>
-      <p>Saisissez toujours des valeurs <b>positives</b>. L'application gère automatiquement le sens (ajout ou retrait) selon le type de ligne.</p>
+      <p>Saisissez toujours des valeurs <b>positives</b>. L'application gère le sens (ajout ou retrait) selon le type de ligne.</p>
 
       <div class="tip">
-        <b>Statut payé automatique</b> — Dès qu'une valeur non nulle est saisie dans une ligne livret, le statut est automatiquement marqué comme payé.
+        <b>Statut payé automatique</b> — Dès qu'une valeur non nulle est saisie dans une ligne de livret, le statut passe automatiquement à « payé ».
+      </div>
+      <div class="warn">
+        <b>⚠️ Une ligne de livret qui aurait perdu son type</b> — Avant la version 13.33, modifier une ligne de livret la faisait basculer en charge récurrente : elle n'était alors plus comptée dans le solde du livret. Son type est désormais affiché et verrouillé dans la fenêtre de modification, et les lignes déjà touchées se réparent depuis les <a href="#reparation">outils de réparation</a>.
+      </div>
+    </div>
+
+
+    <!-- Comptes & soldes -->
+    <div class="section" id="comptes">
+      <h2><span>🏦</span> Comptes &amp; soldes</h2>
+      <p class="lead">Vous pouvez suivre plusieurs comptes en parallèle — compte courant, compte professionnel, carte de titres-repas — en plus de vos livrets et placements.</p>
+
+      <h3>Ajouter un compte</h3>
+      <p><b>⚙️ Configuration → Comptes &amp; Livrets</b> : saisissez un nom et validez avec <b>＋</b> ou la touche <b>Entrée</b>. Chaque compte obtient sa propre ligne de solde dans le résumé mensuel.</p>
+
+      <h3>Le solde du 1er janvier se reprend tout seul</h3>
+      <p>Le solde d'ouverture d'un compte est, par défaut, <b>le solde calculé au 31 décembre de l'année précédente</b>. Les livrets fonctionnaient déjà ainsi ; les comptes les ont rejoints en version 13.40. Avant cela, ils repartaient de zéro, ce qui faussait toute l'année tant qu'aucun solde n'avait été saisi.</p>
+      <div class="tip">
+        <b>💡 Un montant saisi à la main reste prioritaire</b> — Dès que vous inscrivez vous-même un solde au 1er janvier, c'est lui qui s'applique, et l'application ne le remplacera jamais par son calcul.
+      </div>
+
+      <h3>Rappel des soldes réels au 1er janvier</h3>
+      <p>À partir du 1er janvier, l'application vous demande <b>une fois par jour</b> de saisir le solde réel de chaque compte, livret et placement, jusqu'à ce que ce soit fait. Une année créée à l'avance ne déclenche pas ce rappel prématurément.</p>
+      <p>Pourquoi c'est utile : un livret produit des <b>intérêts</b> et un placement <b>varie avec le marché</b>. Ces mouvements n'existent nulle part dans vos saisies, donc le solde calculé par l'application finit toujours par s'écarter du solde réel de votre banque.</p>
+
+      <h3>L'écart est enregistré automatiquement</h3>
+      <p>Si la valeur réelle que vous saisissez au 1er janvier diffère du calcul, l'écart n'est pas effacé en silence : il est inscrit en <b>décembre de l'année précédente</b>, dans une ligne nommée <b>« Ajustement solde réel »</b>. L'année passée reste ainsi cohérente, et la nouvelle démarre sur le bon chiffre.</p>
+      <div class="tip">
+        <b>💡 Deux décimales</b> — Les soldes repris sont arrondis au centime. Ils traînaient auparavant la précision des calculs à virgule flottante, du genre 1&nbsp;225,91999…
       </div>
     </div>
 
@@ -997,11 +1067,15 @@ a:hover{text-decoration:underline}
       <h2><span>💾</span> Sauvegarde et backups</h2>
       <p class="lead">Toutes les données sont stockées localement dans votre navigateur (localStorage). Pensez à sauvegarder régulièrement.</p>
 
+      <h3>Mise à jour de l'application</h3>
+      <p>Quand une nouvelle version est disponible, l'application ne se recharge plus toute seule en pleine saisie : une <b>bannière « Mettre à jour »</b> apparaît discrètement en bas de l'écran. Vous choisissez le moment du rechargement.</p>
+
       <h3>Sauvegarde manuelle</h3>
       <p>Cliquez sur <b>💾 Sauvegarder</b> dans le header. Une notification verte confirme l'enregistrement. La date/heure de la dernière sauvegarde s'affiche à droite.</p>
 
       <h3>Sauvegarde automatique quotidienne</h3>
-      <p>À chaque sauvegarde, une copie datée est créée automatiquement. L'application conserve les <b>20 derniers backups</b> (un par jour).</p>
+      <p>À chaque sauvegarde, une copie datée est créée automatiquement. L'application conserve les <b>10 derniers backups</b> (un par jour).</p>
+      <p>C'était 30 jusqu'à la version 13.21 : trente copies du budget saturaient le stockage des téléphones, au point d'empêcher l'enregistrement des données elles-mêmes.</p>
 
       <h3>Restaurer un backup</h3>
       <p>Cliquez sur <b>📦 Backups</b> dans le header. La liste des sauvegardes apparaît avec leur date. Cliquez sur <b>Restaurer</b> pour revenir à un état antérieur.</p>
@@ -1126,7 +1200,7 @@ a:hover{text-decoration:underline}
       <h3>Procédure</h3>
       <ol>
         <li>Cliquez sur <b>＋ Année</b> à droite des onglets d'années</li>
-        <li>Une fenêtre s'affiche avec vos revenus habituels (basés sur la moyenne de l'année précédente)</li>
+        <li>Une fenêtre s'affiche avec vos revenus et charges habituels, chacun accompagné du <b>montant de la dernière échéance payée</b> et du <b>rythme repris</b> (« tous les mois », « novembre seulement », « trimestriel »…)</li>
         <li>Ajustez les montants si nécessaire</li>
         <li>Cliquez sur <b>✅ Créer l'année</b></li>
       </ol>
@@ -1134,13 +1208,73 @@ a:hover{text-decoration:underline}
       <p>L'année est créée avec :</p>
       <ul>
         <li>Les revenus que vous avez confirmés</li>
-        <li>Les mêmes charges que l'année précédente</li>
-        <li>Le solde livret initial calculé automatiquement depuis la fin de l'année précédente</li>
+        <li>Les charges de l'année précédente, <b>chacune à son rythme</b> (voir ci-dessous)</li>
+        <li>Les soldes d'ouverture des comptes et livrets, repris du 31/12 précédent (voir <a href="#comptes">Comptes &amp; soldes</a>)</li>
         <li>Aucune dépense variable (à saisir au fil de l'année)</li>
       </ul>
 
+      <h3>Chaque ligne garde son rythme</h3>
+      <p>Depuis la version 13.29, une ligne n'est plus recopiée sur les douze mois : elle reprend <b>les mois qu'elle occupait l'année précédente</b>. Un remboursement annuel payé en novembre reste en novembre, une charge trimestrielle garde ses trimestres, et une mensualité démarrée en cours d'année passe à douze mois pleins.</p>
+      <div class="tip">
+        <b>💡 Une année créée avant la 13.29</b> peut être corrigée après coup : voir <a href="#reparation">Outils de réparation</a>. Les lignes que vous avez retouchées à la main ne sont jamais modifiées.
+      </div>
+
+      <h3>Les lignes terminées ne sont pas reprises</h3>
+      <p>Une ligne dont la <a href="#propagation">date de fin</a> est dépassée n'est pas reportée sur la nouvelle année. La fenêtre de création les <b>liste explicitement</b> en bas, sous la mention « Non reprises (date de fin dépassée) » — une date posée par erreur ne fait donc plus disparaître une charge en silence.</p>
+
       <h3>Supprimer une année</h3>
       <p>Survolez l'onglet de l'année → cliquez sur le <b>✕</b> qui apparaît. Une confirmation est demandée avec option de backup automatique.</p>
+    </div>
+
+
+    <!-- Reports vers les annees suivantes -->
+    <div class="section" id="propagation">
+      <h2><span>⏭️</span> Reports vers les années suivantes</h2>
+      <p class="lead">Quand vous modifiez une ligne dans l'année en cours, l'application met à jour la même ligne dans les années déjà créées. Sans cela, il fallait tout ressaisir année par année.</p>
+
+      <h3>Ce qui se reporte</h3>
+      <ul>
+        <li><b>Le montant</b> — En modifiant un montant dans le tableau, une fenêtre propose d'appliquer le changement au seul mois, à tous les mois restants de l'année, ou <b>aussi aux années suivantes</b>.</li>
+        <li><b>La date de fin</b> — Un prêt arrêté en 2026 s'arrête désormais aussi en 2027 et au-delà. Avant la version 13.32, la date ne valait que pour l'année ouverte.</li>
+        <li><b>Le libellé, le type et le livret de rattachement</b> — Renommer ou reclasser une ligne la met à jour partout.</li>
+        <li><b>L'ordre d'affichage</b> — Déplacer une ligne la replace au même endroit dans les années suivantes (version 13.50). Une charge ajoutée en bas de tableau puis remontée restait sinon en bas l'année d'après.</li>
+        <li><b>Une ligne entièrement nouvelle</b> — Voir ci-dessous.</li>
+      </ul>
+
+      <h3>Ajouter une ligne aux années déjà créées</h3>
+      <p>Une ligne créée dans une année peut être ajoutée d'un clic aux années suivantes : une case à cocher le propose, déjà cochée pour une ligne récurrente sans date de fin. Le rythme est reconduit sur l'année entière.</p>
+      <p>L'application vous demande alors <b>avec quel montant poursuivre</b>. Celui de l'année en cours est proposé : corrigez-le si votre salaire ou votre abonnement change l'année suivante.</p>
+      <p>Pour une ligne qui existe déjà mais manque dans une année suivante — typiquement une ligne ajoutée après la création de cette année — la même case apparaît dans la fenêtre de modification (✏️).</p>
+
+      <h3>Ce qui ne se reporte jamais</h3>
+      <ul>
+        <li><b>Les mois déjà payés</b> de l'année en cours et des années passées : un montant réellement payé n'est jamais réécrit.</li>
+        <li><b>Les années antérieures</b> : le report ne va que vers l'avant.</li>
+        <li><b>Les commentaires de cellule</b> : ils se rapportent à l'année où ils ont été écrits.</li>
+        <li><b>Les montants saisis à la main mois par mois</b> : une ligne à montants variables est signalée comme telle dans sa fenêtre de modification, et le report ne la touche pas.</li>
+      </ul>
+      <div class="tip">
+        <b>💡 Modifier un libellé ne recalcule rien</b> — Tant que vous ne touchez ni au montant, ni à la fréquence, ni au mois de début, vos montants mensuels sont laissés intacts. Corriger une faute dans un intitulé remplaçait auparavant toute la ligne par un montant unique.
+      </div>
+    </div>
+
+
+    <!-- Outils de reparation -->
+    <div class="section" id="reparation">
+      <h2><span>🔧</span> Outils de réparation</h2>
+      <p class="lead">⚙️ <b>Configuration → Données</b> rassemble quelques boutons de remise en ordre. Chacun n'apparaît que s'il a réellement quelque chose à corriger, et annonce combien de lignes ou de tableaux sont concernés.</p>
+
+      <h3>Les outils disponibles</h3>
+      <ul>
+        <li><b>Corriger les mois d'une année</b> — Pour une année créée avant la version 13.29, dont les lignes avaient été recopiées sur les douze mois. Elles retrouvent le rythme de l'année précédente. Les lignes retouchées à la main ne sont pas modifiées.</li>
+        <li><b>Reporter les dates de fin</b> — Applique aux années suivantes les dates de fin déjà saisies, pour les années créées avant que le report n'existe.</li>
+        <li><b>Rétablir les lignes de livret</b> — Remet dans leur livret les lignes qui avaient basculé en charge récurrente avant la version 13.33.</li>
+        <li><b>Aligner l'ordre des lignes sur l'année précédente</b> — Pour les années où des lignes s'étaient accumulées en fin de tableau. <b>Seul l'ordre d'affichage change, aucun montant n'est touché.</b></li>
+      </ul>
+
+      <div class="tip">
+        <b>💡 Chaque outil demande confirmation</b> et énumère ce qu'il s'apprête à modifier avant d'agir. Si aucun bouton n'apparaît, c'est qu'il n'y a rien à réparer.
+      </div>
     </div>
 
     <!-- Connexion -->
@@ -1167,7 +1301,7 @@ a:hover{text-decoration:underline}
       </ol>
 
       <div class="tip">
-        <b>💡 Connexion persistante</b> — Vous restez connecté sur cet appareil. Le token de session est effacé automatiquement à la fermeture du navigateur pour plus de sécurité.
+        <b>💡 Plus de connexion à chaque ouverture</b> — Depuis la version 13.10, la session est renouvelée en silence à l'ouverture de l'application : vous n'avez plus à vous reconnecter. Si vous voulez conserver un verrou, définissez un <b>code PIN</b> dans les paramètres — il est facultatif et indépendant de la synchronisation.
       </div>
 
       <div class="warn">
@@ -1176,6 +1310,51 @@ a:hover{text-decoration:underline}
     </div>
 
     <!-- Ajout rapide -->
+
+    <!-- Synchro multi-appareils -->
+    <div class="section" id="synchro">
+      <h2><span>🔄</span> Synchro multi-appareils</h2>
+      <p class="lead">Avec une licence Premium, vos données circulent entre vos appareils — PC, téléphone, tablette. Cette page explique comment vérifier que tout va bien, et quoi faire si deux appareils divergent.</p>
+
+      <h3>Vérifier l'état d'un appareil</h3>
+      <p><b>⚙️ Configuration → Cloud</b> affiche une ligne <b>État</b> qui dit où en est l'appareil :</p>
+      <ul>
+        <li><b>À jour avec le cloud</b> — Rien à faire.</li>
+        <li><b>En retard</b> — D'autres saisies existent ailleurs et ne sont pas encore arrivées ici.</li>
+        <li><b>Saisies en attente d'envoi</b> — Cet appareil a des modifications que le cloud n'a pas encore reçues.</li>
+      </ul>
+      <p>Un <b>numéro de version</b> accompagne cet état, sous la forme « version vue 22 / cloud 22 ». Deux appareils sains affichent le même numéro.</p>
+
+      <h3>Remettre deux appareils d'accord</h3>
+      <p>Toujours dans cet ordre, en partant de <b>l'appareil qui porte les bonnes données</b> :</p>
+      <ol>
+        <li>Sur l'appareil de référence : <b>Configuration → Cloud → Envoyer vers le cloud</b></li>
+        <li>Sur l'appareil en écart : <b>Configuration → Cloud → Récupérer depuis le cloud</b></li>
+        <li>Vérifier que les deux affichent « À jour avec le cloud » et <b>le même numéro de version</b></li>
+      </ol>
+      <div class="warn">
+        <b>⚠️ Ne cliquez pas l'indicateur de synchro de l'en-tête sur un appareil en retard</b> — Il déclenche un envoi vers le cloud, donc il écraserait les données saisies ailleurs avec l'état périmé de cet appareil. Utilisez « Récupérer depuis le cloud ». L'application prévient désormais quand un envoi risque d'écraser des saisies plus récentes.
+      </div>
+
+      <h3>Le journal de synchro</h3>
+      <p>La même page contient un <b>journal</b> : chaque démarrage et chaque échange avec le cloud y laisse une trace datée, et un bouton le copie en entier. C'est l'élément à fournir si vous signalez un problème de synchro — il dit précisément pourquoi un appareil ne s'est pas mis à jour.</p>
+      <p>Le motif de chaque décision y est lisible : <code>a-jour</code>, <code>en-avance</code>, <code>en-retard</code> et <code>conflit</code> sont normaux. <code>sans-compteur</code> signale une situation inhabituelle côté cloud.</p>
+
+      <h3>Vos appareils enregistrés</h3>
+      <p>La liste de vos appareils figure au même endroit, avec la date de dernière utilisation, et vous pouvez en retirer un. C'est utile car <b>vider le stockage d'un appareil lui donne une nouvelle identité</b> : l'ancienne entrée resterait sinon dans la liste.</p>
+      <p>Quand la limite d'appareils est atteinte, le <b>plus anciennement utilisé cède sa place</b> au nouveau, au lieu de bloquer ce dernier.</p>
+
+      <h3>Si un appareil reste bloqué en retard</h3>
+      <p>La cause la plus fréquente est un <b>stockage local saturé</b> : les données arrivent bien, mais ne peuvent plus être enregistrées. L'occupation du stockage est affichée dans Configuration → Cloud. L'application sacrifie désormais d'elle-même les vieilles sauvegardes pour laisser passer les données, et signale l'incident au lieu d'échouer en silence.</p>
+      <p>Pour un appareil resté longtemps hors ligne, videz <b>l'espace de stockage</b> depuis les réglages du système — pas seulement le cache — <b>sans ouvrir l'application avant</b>, sinon le code périmé encore en cache s'exécute en premier. Une reconnexion vous sera demandée, c'est normal.</p>
+
+      <h3>Supprimer une année</h3>
+      <p>Une année supprimée sur un appareil l'est définitivement sur tous. Jusqu'à la version 13.49, un appareil qui la détenait encore la remettait en circulation et elle réapparaissait partout.</p>
+      <div class="tip">
+        <b>💡 Une correction ne vaut que sur les appareils à jour</b> — Mettez vos appareils à la même version avant de tester un comportement de synchro.
+      </div>
+    </div>
+
     <div class="section" id="ajout-rapide">
       <h2><span>➕</span> Bouton Ajout Rapide</h2>
       <p class="lead">Le bouton vert ➕ en bas à droite permet d'ajouter une dépense variable rapidement, depuis n'importe quelle vue.</p>
@@ -1204,6 +1383,20 @@ a:hover{text-decoration:underline}
         <li><b>Mode de paiement</b> — Carte, liquide, chèque repas…</li>
         <li><b>Jour</b> — Le jour du mois (optionnel)</li>
       </ul>
+
+      <h3>📷 Scanner un ticket de caisse</h3>
+      <p>Plutôt que de saisir le montant à la main, vous pouvez photographier le ticket : l'application en extrait le total et le reporte dans le formulaire.</p>
+      <ol>
+        <li>Dans le formulaire d'ajout rapide, choisissez <b>📷 Photo</b> pour ouvrir l'appareil photo, ou <b>🖼️ Galerie</b> pour reprendre une image déjà enregistrée</li>
+        <li>Cadrez le ticket, en veillant à ce que le total soit lisible</li>
+        <li>Le montant détecté remplit le champ — vérifiez-le et corrigez-le si besoin avant de valider</li>
+      </ol>
+      <div class="tip">
+        <b>💡 La caméra s'ouvre dans l'application</b> — Elle ne vous fait plus sortir de l'app installée, et votre session reste active pendant la prise de vue. Si l'analyse échoue, le message d'erreur est affiché à l'écran et vous explique pourquoi, au lieu de vous ramener à l'accueil.
+      </div>
+      <div class="warn">
+        <b>⚠️ Vérifiez toujours le montant proposé</b> — La lecture automatique se trompe sur un ticket froissé, mal éclairé ou comportant plusieurs totaux (sous-total, remise, TVA).
+      </div>
     </div>
 
     <!-- Assistant IA -->

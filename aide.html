@@ -203,7 +203,8 @@ a:hover{text-decoration:underline}
       <a href="#charges">🏠 Fixed costs</a>
       <a href="#variables">🛒 Variable expenses</a>
       <a href="#budget-cible">🎯 Category budgets</a>
-      <a href="#livret">💰 Savings account</a>
+      <a href="#livret">💰 Savings &amp; investments</a>
+      <a href="#comptes">🏦 Accounts &amp; balances</a>
       <a href="#indicateurs">📈 Financial indicators</a>
       <a href="#resume">📊 Monthly summary</a>
       <a href="#graphiques">📉 Charts</a>
@@ -211,13 +212,16 @@ a:hover{text-decoration:underline}
       <a href="#github-gist" style="background:#e8f8f0;color:#27ae60;border-color:#27ae60">🐙 GitHub Gist (free)</a>
       <a href="#dark">🌙 Dark mode</a>
       <a href="#annee">📅 New year</a>
+      <a href="#propagation">⏭️ Carrying over years</a>
+      <a href="#reparation">🔧 Repair tools</a>
       <a href="#connexion">🔐 Login &amp; Account</a>
+      <a href="#synchro">🔄 Multi-device sync</a>
       <a href="#ajout-rapide">➕ Quick add</a>
       <a href="#assistant-ia">🤖 AI Assistant</a>
       <a href="#feedback">💬 Feedback &amp; Suggestions</a>
       <div style="margin-top:14px;padding:8px 10px;border-top:1px solid #e8eaf6;font-size:10px;color:#9BA3C9;line-height:1.6">
-        📱 App <b>11.35</b><br>
-        🔧 SW <b>v162</b>
+        📱 App <b>13.50</b><br>
+        🔧 SW <b>v330</b>
       </div>
     </nav>
   </aside>
@@ -590,7 +594,7 @@ a:hover{text-decoration:underline}
         <li><b>📥 Export CSV</b> — Exports the current month's data as CSV</li>
         <li><b>🖨️ PDF</b> — Generates a structured PDF report: annual KPIs, full monthly table and expense breakdown by category for each year</li>
         <li><b>📂 Import CSV</b> — Imports transactions from a bank statement CSV (automatic column detection, category choice, payment method, selected total and <b>automatic duplicate detection</b> ⚠️)</li>
-        <li><b>📦 Backups</b> — Shows the list of automatic backups (one per day, 20 max)</li>
+        <li><b>📦 Backups</b> — Shows the list of automatic backups (one per day, 10 max)</li>
         <li><b>🔐 Login</b> — Sign in with Google for Premium cloud sync</li>
         <li><b>❓ Help</b> — Restart the guided tour or open this guide</li>
         <li><b>🌙 / ☀️</b> — Switch between light and dark mode</li>
@@ -600,6 +604,8 @@ a:hover{text-decoration:underline}
       <ul>
         <li><b>➕ Green</b> — <a href="#ajout-rapide">Quick add</a> a variable expense</li>
         <li><b>🤖 Purple</b> — <a href="#assistant-ia">AI Assistant</a> (chat)</li>
+        <li><b>💳 Transactions</b> — Opens the recent expenses widget, with the <a href="#accueil">breakdown by payment method</a></li>
+        <li><b>💬 Feedback</b> — <a href="#feedback">Send a message</a> or report a problem</li>
       </ul>
 
       <h3>Year tabs</h3>
@@ -657,6 +663,13 @@ a:hover{text-decoration:underline}
 
       <h3>🛒 Latest expenses</h3>
       <p>The list of variable expenses for the month is displayed, sorted by descending amount (up to 8 entries + a counter for the rest).</p>
+
+      <h3>💳 Transactions widget — breakdown by payment method</h3>
+      <p>The floating <b>💳 Transactions</b> button opens a summary of recent expenses, grouped by category.</p>
+      <p>Under each category, a row of chips gives the <b>breakdown by payment method</b> — card, cash, meal vouchers… — and the same row appears at the top of the widget for all transactions together.</p>
+      <div class="tip">
+        <b>💡 Totals do not change</b> — A category total, like the grand total, remains the sum of all payment methods. The breakdown is added, it replaces nothing. The chips only appear when more than one payment method is actually used.
+      </div>
 
       <h3>📅 "Go to current year" button</h3>
       <p>A quick button lets you navigate directly to the current year's tab (e.g. 2026) from the dashboard.</p>
@@ -760,9 +773,21 @@ a:hover{text-decoration:underline}
       <ul>
         <li><b>Fixed</b> — Same amount every month</li>
         <li><b>Occasional</b> — Variable amount depending on the month</li>
-        <li><b>Savings ↑</b> — Transfer to the savings account</li>
-        <li><b>Savings ↓</b> — Withdrawal from savings to checking account</li>
+        <li><b>Transfer to "savings name"</b> — The list offers <b>each of your savings and investment accounts by name</b>, no longer a single savings account. See <a href="#livret">Savings &amp; investments</a>.</li>
+        <li><b>Withdrawal from "savings name"</b> — Same, the other way round.</li>
+        <li><b>Gain / Loss in value</b> — Interest, capital gain or loss: the savings account moves, the checking account does not.</li>
       </ul>
+      <p>Each savings account has its own block in the table, titled with its name: savings movements are no longer mixed in with occasional costs.</p>
+
+      <h3>End date of a row</h3>
+      <p>A cost that comes to an end — a loan, mortgage insurance, a cancelled subscription — can carry an <b>end date</b>, set in its edit window (✏️). It then appears under the label, for example "ends March 2028", and the row is no longer carried beyond that.</p>
+      <p>How that date propagates to years already created is described in <a href="#propagation">Carrying over to later years</a>.</p>
+
+      <h3>Comments on a cell</h3>
+      <p>Every amount cell, in costs as well as revenues, can carry a <b>comment</b>. A small purple badge marks the cells that have one: hover to read the note, click to write, edit or delete it.</p>
+      <div class="tip">
+        <b>💡 Comments do not follow into the next year</b> — They refer to the year in which you wrote them ("2026 adjustment", "double month") and are therefore never copied when a row is carried over.
+      </div>
 
       <h3>Remaining to pay</h3>
       <p>At the bottom of each summary table, a <b>"Remaining to pay"</b> row shows the total of costs not yet paid for the month.</p>
@@ -865,25 +890,70 @@ a:hover{text-decoration:underline}
 
     <!-- Savings Account -->
     <div class="section" id="livret">
-      <h2><span>💰</span> Savings account</h2>
-      <p class="lead">The savings account is managed automatically from special cost rows.</p>
+      <h2><span>💰</span> Savings &amp; investments</h2>
+      <p class="lead">Every savings account and every investment account has its own block in the costs table, titled with its name. Savings movements are no longer mixed in with occasional costs.</p>
 
-      <h3>Dedicated savings rows</h3>
+      <h3>Create a savings or investment account</h3>
+      <p>Go to <b>⚙️ Configuration → Accounts &amp; Savings</b>, type a name and confirm with <b>＋</b> or the <b>Enter</b> key. You can create as many as you need: savings account, home-works fund, securities account, market investment…</p>
+      <p>Each one then gets its own <b>gear ⚙️</b> on that same page, giving access to its options without going through the yearly view.</p>
+
+      <h3>Rows dedicated to an account</h3>
       <ul>
-        <li><b>📈 Standing order — Savings</b> (cat: <code>livret_in</code>) — Automatic monthly transfer from checking to savings. Increases savings balance, decreases checking balance.</li>
-        <li><b>💰 Account → Savings</b> (cat: <code>livret_in</code>) — Manual deposit. Same effect.</li>
-        <li><b>📉 Savings withdrawal → account</b> (cat: <code>livret_out</code>) — Withdrawal from savings to checking. Decreases savings, increases checking.</li>
+        <li><b>📈 Standing order</b> (<code>livret_in</code>) — Automatic monthly transfer from checking to savings. Increases savings, decreases checking.</li>
+        <li><b>💰 Account → Savings</b> (<code>livret_in</code>) — One-off deposit. Same effect.</li>
+        <li><b>📉 Savings withdrawal → account</b> (<code>livret_out</code>) — Withdrawal to the checking account. Decreases savings, increases checking.</li>
       </ul>
+      <p>In a row's edit window, the <b>Type</b> list offers <b>each of your accounts by name</b>, for deposits as well as withdrawals. A row can therefore be filed under one account, moved from one to another, or created directly as a savings movement.</p>
 
-      <h3>Initial savings balance</h3>
-      <p>For the first year, enter the savings balance on January 1st in the <b>Initial savings (01/01)</b> field.</p>
-      <p>For subsequent years, this field is calculated <b>automatically</b> from the ending balance of the previous year — nothing to enter.</p>
+      <h3>Interest, gains and losses</h3>
+      <p>A gain or loss in value has <b>no counterpart on the checking account</b>: the money never passes through it. A special row is therefore needed, otherwise your checking account would be wrong.</p>
+      <p>In an account's configuration, the <b>"Gain/loss"</b> button creates the two rows you need:</p>
+      <ul>
+        <li>a <b>gain</b> row, which increases the account without touching checking — yearly interest, capital gain on an investment;</li>
+        <li>a <b>loss</b> row, which decreases the account without touching checking — capital loss, custody fees.</li>
+      </ul>
+      <div class="tip">
+        <b>💡 How to record a market movement</b> — Enter the change for the month, not the total value of the investment. If your investment goes from €5,000 to €5,120, enter <b>120</b> in the gain row for that month. As everywhere in the app, enter a <b>positive</b> value: the row type gives the direction.
+      </div>
+
+      <h3>Opening balance</h3>
+      <p>For the first year, enter the balance on 1 January in the field provided. For later years it is carried over <b>automatically</b> from the balance calculated on the previous 31 December — nothing to do. An amount you enter by hand always takes priority.</p>
+      <p>The mechanism, shared by accounts and savings, is described in <a href="#comptes">Accounts &amp; balances</a>.</p>
 
       <h3>Entering amounts</h3>
-      <p>Always enter <b>positive</b> values. The app automatically handles the direction (deposit or withdrawal) based on the row type.</p>
+      <p>Always enter <b>positive</b> values. The app handles the direction (deposit or withdrawal) based on the row type.</p>
 
       <div class="tip">
         <b>Automatic paid status</b> — As soon as a non-zero value is entered in a savings row, the status is automatically marked as paid.
+      </div>
+      <div class="warn">
+        <b>⚠️ A savings row that lost its type</b> — Before version 13.33, editing a savings row switched it to a recurring cost: it was then no longer counted in the account balance. Its type is now shown and locked in the edit window, and rows already affected can be repaired from the <a href="#reparation">repair tools</a>.
+      </div>
+    </div>
+
+
+    <!-- Accounts & balances -->
+    <div class="section" id="comptes">
+      <h2><span>🏦</span> Accounts &amp; balances</h2>
+      <p class="lead">You can track several accounts side by side — checking account, business account, meal-voucher card — in addition to your savings and investment accounts.</p>
+
+      <h3>Add an account</h3>
+      <p><b>⚙️ Configuration → Accounts &amp; Savings</b>: type a name and confirm with <b>＋</b> or the <b>Enter</b> key. Each account gets its own balance row in the monthly summary.</p>
+
+      <h3>The 1 January balance carries over by itself</h3>
+      <p>An account's opening balance is, by default, <b>the balance calculated on 31 December of the previous year</b>. Savings accounts already worked that way; accounts joined them in version 13.40. Before that they started from zero, which threw off the whole year until a balance was entered.</p>
+      <div class="tip">
+        <b>💡 An amount entered by hand takes priority</b> — As soon as you type a balance for 1 January yourself, that is what applies, and the app will never replace it with its own calculation.
+      </div>
+
+      <h3>Reminder of real balances on 1 January</h3>
+      <p>From 1 January, the app asks you <b>once a day</b> to enter the real balance of each account, savings and investment, until it is done. A year created in advance does not trigger this reminder early.</p>
+      <p>Why it matters: a savings account earns <b>interest</b> and an investment <b>moves with the market</b>. Those movements appear nowhere in your entries, so the balance calculated by the app always ends up drifting from your bank's real balance.</p>
+
+      <h3>The difference is recorded automatically</h3>
+      <p>If the real value you enter on 1 January differs from the calculation, the gap is not silently discarded: it is recorded in <b>December of the previous year</b>, in a row named <b>"Real balance adjustment"</b>. The past year stays consistent, and the new one starts on the right figure.</p>
+      <div class="tip">
+        <b>💡 Two decimals</b> — Carried-over balances are rounded to the cent. They used to drag the precision of floating-point maths behind them, along the lines of 1,225.91999…
       </div>
     </div>
 
@@ -997,11 +1067,15 @@ a:hover{text-decoration:underline}
       <h2><span>💾</span> Backup and backups</h2>
       <p class="lead">All data is stored locally in your browser (localStorage). Remember to save regularly.</p>
 
+      <h3>Updating the app</h3>
+      <p>When a new version is available, the app no longer reloads by itself while you are typing: an <b>"Update" banner</b> appears discreetly at the bottom of the screen. You choose when to reload.</p>
+
       <h3>Manual save</h3>
       <p>Click <b>💾 Save</b> in the header. A green notification confirms the save. The date/time of the last save is displayed on the right.</p>
 
       <h3>Automatic daily backup</h3>
-      <p>With each save, a dated copy is created automatically. The app keeps the <b>last 20 backups</b> (one per day).</p>
+      <p>With each save, a dated copy is created automatically. The app keeps the <b>last 10 backups</b> (one per day).</p>
+      <p>It was 30 until version 13.21: thirty copies of the budget filled up phone storage, to the point of blocking the saving of the data itself.</p>
 
       <h3>Restore a backup</h3>
       <p>Click <b>📦 Backups</b> in the header. The list of backups appears with their dates. Click <b>Restore</b> to go back to a previous state.</p>
@@ -1126,7 +1200,7 @@ a:hover{text-decoration:underline}
       <h3>Procedure</h3>
       <ol>
         <li>Click <b>＋ Year</b> to the right of the year tabs</li>
-        <li>A window appears with your usual revenues (based on the average of the previous year)</li>
+        <li>A window appears with your usual revenues and costs, each shown with the <b>last amount actually paid</b> and the <b>rhythm carried over</b> ("every month", "November only", "quarterly"…)</li>
         <li>Adjust the amounts if needed</li>
         <li>Click <b>✅ Create year</b></li>
       </ol>
@@ -1134,16 +1208,76 @@ a:hover{text-decoration:underline}
       <p>The year is created with:</p>
       <ul>
         <li>The revenues you confirmed</li>
-        <li>The same fixed costs as the previous year</li>
-        <li>The initial savings balance calculated automatically from the end of the previous year</li>
+        <li>The previous year's costs, <b>each at its own rhythm</b> (see below)</li>
+        <li>Opening balances for accounts and savings, carried over from the previous 31 December (see <a href="#comptes">Accounts &amp; balances</a>)</li>
         <li>No variable expenses (to be entered throughout the year)</li>
       </ul>
+
+      <h3>Each row keeps its rhythm</h3>
+      <p>Since version 13.29, a row is no longer copied across all twelve months: it takes back <b>the months it occupied in the previous year</b>. A yearly repayment paid in November stays in November, a quarterly charge keeps its quarters, and a monthly payment started mid-year moves to twelve full months.</p>
+      <div class="tip">
+        <b>💡 A year created before 13.29</b> can be fixed afterwards: see <a href="#reparation">Repair tools</a>. Rows you edited by hand are never modified.
+      </div>
+
+      <h3>Finished rows are not carried over</h3>
+      <p>A row whose <a href="#propagation">end date</a> has passed is not carried into the new year. The creation window <b>lists them explicitly</b> at the bottom, under "Not carried over (end date passed)" — so an end date set by mistake no longer makes a cost disappear silently.</p>
 
       <h3>Delete a year</h3>
       <p>Hover over the year tab → click the <b>✕</b> that appears. Confirmation is requested with an option for automatic backup.</p>
     </div>
 
     <!-- Login -->
+
+    <!-- Carrying over to later years -->
+    <div class="section" id="propagation">
+      <h2><span>⏭️</span> Carrying over to later years</h2>
+      <p class="lead">When you change a row in the current year, the app updates the same row in the years already created. Without this, everything had to be re-entered year by year.</p>
+
+      <h3>What is carried over</h3>
+      <ul>
+        <li><b>The amount</b> — When you change an amount in the table, a window offers to apply it to that month only, to all remaining months of the year, or <b>to later years as well</b>.</li>
+        <li><b>The end date</b> — A loan ending in 2026 now also ends in 2027 and beyond. Before version 13.32, the date only applied to the year you had open.</li>
+        <li><b>The label, the type and the linked account</b> — Renaming or reclassifying a row updates it everywhere.</li>
+        <li><b>The display order</b> — Moving a row puts it in the same place in later years (version 13.50). A cost added at the bottom of the table and then moved up would otherwise stay at the bottom the following year.</li>
+        <li><b>A brand-new row</b> — See below.</li>
+      </ul>
+
+      <h3>Adding a row to years already created</h3>
+      <p>A row created in one year can be added to later years in one click: a checkbox offers it, already ticked for a recurring row with no end date. The rhythm is carried across the whole year.</p>
+      <p>The app then asks you <b>which amount to continue with</b>. The current year's amount is suggested: correct it if your salary or your subscription changes the following year.</p>
+      <p>For a row that already exists but is missing from a later year — typically a row added after that year was created — the same checkbox appears in the edit window (✏️).</p>
+
+      <h3>What is never carried over</h3>
+      <ul>
+        <li><b>Months already paid</b> in the current year and past years: an amount actually paid is never rewritten.</li>
+        <li><b>Earlier years</b>: carrying over only goes forward.</li>
+        <li><b>Cell comments</b>: they refer to the year in which they were written.</li>
+        <li><b>Amounts entered by hand month by month</b>: a row with variable amounts is flagged as such in its edit window, and carrying over leaves it alone.</li>
+      </ul>
+      <div class="tip">
+        <b>💡 Editing a label recalculates nothing</b> — As long as you touch neither the amount, nor the frequency, nor the starting month, your monthly amounts are left intact. Fixing a typo in a label used to replace the whole row with a single amount.
+      </div>
+    </div>
+
+
+    <!-- Repair tools -->
+    <div class="section" id="reparation">
+      <h2><span>🔧</span> Repair tools</h2>
+      <p class="lead">⚙️ <b>Configuration → Data</b> gathers a few tidy-up buttons. Each one only appears if it actually has something to fix, and says how many rows or tables are affected.</p>
+
+      <h3>Available tools</h3>
+      <ul>
+        <li><b>Fix the months of a year</b> — For a year created before version 13.29, whose rows had been copied across all twelve months. They recover the previous year's rhythm. Rows you edited by hand are not modified.</li>
+        <li><b>Carry end dates forward</b> — Applies end dates you have already entered to later years, for years created before carrying over existed.</li>
+        <li><b>Restore savings rows</b> — Puts back into their account the rows that had switched to recurring costs before version 13.33.</li>
+        <li><b>Align row order with the previous year</b> — For years where rows had piled up at the bottom of the table. <b>Only the display order changes, no amount is touched.</b></li>
+      </ul>
+
+      <div class="tip">
+        <b>💡 Every tool asks for confirmation</b> and lists what it is about to change before acting. If no button appears, there is nothing to repair.
+      </div>
+    </div>
+
     <div class="section" id="connexion">
       <h2><span>🔐</span> Login &amp; Cloud Account</h2>
       <p class="lead">Create an account with your email address to access cloud sync and activate Premium.</p>
@@ -1167,7 +1301,7 @@ a:hover{text-decoration:underline}
       </ol>
 
       <div class="tip">
-        <b>💡 Persistent login</b> — You stay logged in on this device. The session token is automatically cleared when the browser is closed for added security.
+        <b>💡 No more signing in at every launch</b> — Since version 13.10, the session is renewed silently when the app opens: you no longer have to sign in again. If you want to keep a lock, set a <b>PIN code</b> in the settings — it is optional and independent from cloud sync.
       </div>
 
       <div class="warn">
@@ -1176,6 +1310,51 @@ a:hover{text-decoration:underline}
     </div>
 
     <!-- Quick add -->
+
+    <!-- Multi-device sync -->
+    <div class="section" id="synchro">
+      <h2><span>🔄</span> Multi-device sync</h2>
+      <p class="lead">With a Premium licence, your data moves between your devices — PC, phone, tablet. This page explains how to check that all is well, and what to do if two devices drift apart.</p>
+
+      <h3>Check a device's status</h3>
+      <p><b>⚙️ Configuration → Cloud</b> shows a <b>Status</b> line telling you where the device stands:</p>
+      <ul>
+        <li><b>Up to date with the cloud</b> — Nothing to do.</li>
+        <li><b>Behind</b> — Other entries exist elsewhere and have not arrived here yet.</li>
+        <li><b>Entries waiting to be sent</b> — This device has changes the cloud has not received yet.</li>
+      </ul>
+      <p>A <b>version number</b> comes with that status, in the form "seen 22 / cloud 22". Two healthy devices show the same number.</p>
+
+      <h3>Bringing two devices back in line</h3>
+      <p>Always in this order, starting from <b>the device that holds the correct data</b>:</p>
+      <ol>
+        <li>On the reference device: <b>Configuration → Cloud → Send to cloud</b></li>
+        <li>On the device that is out of step: <b>Configuration → Cloud → Fetch from cloud</b></li>
+        <li>Check that both show "Up to date with the cloud" and <b>the same version number</b></li>
+      </ol>
+      <div class="warn">
+        <b>⚠️ Do not click the sync indicator in the header on a device that is behind</b> — It triggers a send to the cloud, so it would overwrite data entered elsewhere with this device's stale state. Use "Fetch from cloud" instead. The app now warns you when a send risks overwriting more recent entries.
+      </div>
+
+      <h3>The sync log</h3>
+      <p>The same page holds a <b>log</b>: every startup and every exchange with the cloud leaves a dated trace there, and a button copies the whole thing. This is what to provide if you report a sync problem — it says precisely why a device did not update.</p>
+      <p>The reason for each decision is readable there: <code>a-jour</code>, <code>en-avance</code>, <code>en-retard</code> and <code>conflit</code> are normal. <code>sans-compteur</code> flags an unusual situation on the cloud side.</p>
+
+      <h3>Your registered devices</h3>
+      <p>The list of your devices sits in the same place, with the date each was last used, and you can remove one. This matters because <b>clearing a device's storage gives it a new identity</b>: the old entry would otherwise stay in the list forever.</p>
+      <p>When the device limit is reached, the <b>least recently used one gives up its slot</b> to the new device, instead of blocking it.</p>
+
+      <h3>If a device stays stuck behind</h3>
+      <p>The most common cause is <b>full local storage</b>: the data does arrive, but can no longer be saved. Storage usage is shown in Configuration → Cloud. The app now sacrifices old backups by itself to let the data through, and reports the incident instead of failing silently.</p>
+      <p>For a device left offline for a long time, clear its <b>storage</b> from the system settings — not just the cache — <b>without opening the app first</b>, otherwise the stale cached code runs before anything else. You will be asked to sign in again, which is normal.</p>
+
+      <h3>Deleting a year</h3>
+      <p>A year deleted on one device is deleted for good on all of them. Until version 13.49, a device that still held it would put it back into circulation and it reappeared everywhere.</p>
+      <div class="tip">
+        <b>💡 A fix only applies to devices that are up to date</b> — Bring your devices to the same version before testing any sync behaviour.
+      </div>
+    </div>
+
     <div class="section" id="ajout-rapide">
       <h2><span>➕</span> Quick Add button</h2>
       <p class="lead">The green ➕ button at the bottom right lets you add a variable expense quickly, from any view.</p>
@@ -1204,6 +1383,20 @@ a:hover{text-decoration:underline}
         <li><b>Payment method</b> — Card, cash, meal voucher…</li>
         <li><b>Day</b> — The day of the month (optional)</li>
       </ul>
+
+      <h3>📷 Scanning a receipt</h3>
+      <p>Rather than typing the amount by hand, you can photograph the receipt: the app extracts the total and fills it into the form.</p>
+      <ol>
+        <li>In the quick-add form, choose <b>📷 Photo</b> to open the camera, or <b>🖼️ Gallery</b> to pick an image you already have</li>
+        <li>Frame the receipt, making sure the total is legible</li>
+        <li>The detected amount fills the field — check it and correct it if needed before confirming</li>
+      </ol>
+      <div class="tip">
+        <b>💡 The camera opens inside the app</b> — It no longer takes you out of the installed app, and your session stays active while you take the picture. If the analysis fails, the error message is shown on screen and explains why, instead of sending you back to the home screen.
+      </div>
+      <div class="warn">
+        <b>⚠️ Always check the suggested amount</b> — Automatic reading gets it wrong on a crumpled or badly lit receipt, or one with several totals (subtotal, discount, VAT).
+      </div>
     </div>
 
     <!-- AI Assistant -->
