@@ -980,6 +980,44 @@ async function tousLesCas() {
     window._placementsSuivis = vraiSuivis;
   }
 
+  // ── La position de lecture survit à une synchro entrante ─────────────────
+  {
+    // Ordre d'appel : c'est lui qui avait d'abord échoué. Tant qu'aucun panneau
+    // n'est affiché, la page est courte et le navigateur rabote la position
+    // demandée — la restauration doit donc venir APRÈS la remise de l'onglet.
+    const src = String(window.applyRealtimeData || '');
+    check('défilement · la position est relevée avant les rendus',
+      src.indexOf('_positionsDefilement()') > 0 &&
+      src.indexOf('_positionsDefilement()') < src.indexOf('renderTabs()'),
+      'la position est relevée trop tard');
+    check('défilement · elle est reposée APRÈS la remise de l’onglet actif',
+      src.indexOf('_restaurerDefilement(_pos)') > src.indexOf("switchTab('y'+yr, t)"),
+      'repose avant la remise de l’onglet : la page est encore courte, la position sera rabotée');
+
+    // Mécanisme lui-même. Le défilement réel de la fenêtre n'est pas exerçable
+    // dans un navigateur sans interface : on observe donc ce qui est DEMANDÉ au
+    // navigateur, ce qui est indépendant de l'environnement.
+    check('défilement · la position relevée a la forme attendue', (() => {
+      const p = _positionsDefilement();
+      return p && typeof p.page === 'number' && Array.isArray(p.h);
+    })(), JSON.stringify(_positionsDefilement()));
+
+    const vraiScrollTo = window.scrollTo;
+    let demande = null;
+    window.scrollTo = (x, y) => { demande = y; };
+    _restaurerDefilement({ page: 777, h: [] });
+    await new Promise(r => setTimeout(r, 140));
+    check('défilement · la position mémorisée est redemandée au navigateur',
+      demande === 777, demande);
+
+    demande = null;
+    _restaurerDefilement(null);
+    await new Promise(r => setTimeout(r, 60));
+    check('défilement · une restauration vide ne demande rien',
+      demande === null, demande);
+    window.scrollTo = vraiScrollTo;
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };

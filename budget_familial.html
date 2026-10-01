@@ -8623,6 +8623,39 @@ function stopRealtimeSync() {
   if (_realtimeReconnectTimer) { clearTimeout(_realtimeReconnectTimer); _realtimeReconnectTimer = null; }
 }
 
+// Préserver la position de lecture pendant un re-rendu.
+//
+// Une synchro entrante supprime puis reconstruit TOUS les panneaux d'année. La
+// page s'effondre le temps d'un instant, le navigateur ramène le défilement à
+// ce qu'il peut, et l'utilisateur se retrouve ailleurs — au milieu d'une
+// lecture, c'est déroutant. On relève donc la position avant, et on la repose
+// une fois le DOM reconstruit.
+//
+// Le défilement HORIZONTAL des tableaux de mois compte autant que le vertical :
+// qui consulte décembre ne veut pas être ramené à janvier. Chaque conteneur est
+// repéré par l'identifiant de son panneau et son rang, stables d'un rendu à
+// l'autre.
+function _positionsDefilement() {
+  const pos = { page: window.scrollY || document.documentElement.scrollTop || 0, h: [] };
+  document.querySelectorAll('.section-body, .summary-wrap, .vdetrow-wrap').forEach((el, i) => {
+    if (el.scrollLeft > 0) pos.h.push([el.closest('[id]')?.id || '', i, el.scrollLeft]);
+  });
+  return pos;
+}
+function _restaurerDefilement(pos) {
+  if (!pos) return;
+  // Deux temps : le premier remet la page dès que le DOM existe, le second
+  // rattrape les hauteurs qui changent encore (graphiques, images).
+  const appliquer = () => {
+    window.scrollTo(0, pos.page);
+    const conteneurs = [...document.querySelectorAll('.section-body, .summary-wrap, .vdetrow-wrap')];
+    pos.h.forEach(([pid, i, left]) => {
+      const el = conteneurs[i];
+      if (el && (el.closest('[id]')?.id || '') === pid) el.scrollLeft = left;
+    });
+  };
+  requestAnimationFrame(() => { appliquer(); requestAnimationFrame(appliquer); });
+}
 function applyRealtimeData(d) {
   // Ne pas interrompre une saisie en cours — mettre en attente
   const activeEl = document.activeElement;
@@ -8702,7 +8735,8 @@ function applyRealtimeData(d) {
   } else {
     _syncLog(`entrant appliqué mais NON aligné (rev ${_incomingRev}, envoi en attente ${_cloudDirty})`);
   }
-  // Re-rendu complet
+  // Re-rendu complet — en conservant la position de lecture
+  const _pos = _positionsDefilement();
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
   const activeNavEl = document.querySelector('.nav-btn.active');
   const activeNavId = activeNavEl?.dataset?.tabid || '';
@@ -8718,6 +8752,9 @@ function applyRealtimeData(d) {
     const yr = activeTabEl.textContent.match(/\d{4}/)?.[0];
     if (yr) { const t = [...document.querySelectorAll('#year-tabs .tab')].find(t => t.textContent.includes(yr)); if(t) switchTab('y'+yr, t); }
   }
+  // Après la remise de l'onglet, et pas avant : tant qu'aucun panneau n'est
+  // affiché, la page est courte et le navigateur rabote la position demandée.
+  _restaurerDefilement(_pos);
   setCloudStatus('ok');
   showToast(t('toast.update_received'));
 }
@@ -11469,8 +11506,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.64';
-const SW_VERSION = 'v344';
+const APP_VERSION = '13.65';
+const SW_VERSION = 'v345';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13346,6 +13383,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.65': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '📍', text: 'Une synchro entrante ne vous déplace plus dans la page. Elle reconstruit tous les tableaux, la page s’effondre un instant et le navigateur perdait votre position : vous vous retrouviez ailleurs en pleine lecture. La position verticale est désormais relevée avant le rendu et reposée après.' },
+      { icon: '↔️', text: 'Le défilement horizontal des tableaux de mois est préservé lui aussi : qui consulte décembre n’est plus ramené à janvier.' }
+    ]
+  },
   '13.64': {
     date: 'Octobre 2026',
     items: [
