@@ -400,6 +400,57 @@ function tousLesCas() {
       _bilanSante().length === 6, _bilanSante().length);
   }
 
+  // ── Regroupement des lignes manquantes dans le bilan ────────────────────
+  {
+    const l = (label, extra) => ({ label, cat: 'fixed', v: Array(12).fill(10),
+      paid: Array(12).fill(false), noEnd: true, ...(extra || {}) });
+
+    DATA = { '2025': annee(), '2026': annee(), '2027': annee() };
+    ['2025', '2026', '2027'].forEach(y => {
+      DATA[y].charges = [l('Loyer'), l('Internet')];
+      DATA[y].revenus = [l('Salaire')];
+    });
+    // Deux lignes de 2025 manquent dans 2026 ET 2027, une de 2026 manque dans 2027
+    DATA['2025'].revenus.push(l('Vente moto (reste)'));
+    DATA['2025'].charges.push(l('Remboursement Christine'));
+    DATA['2026'].charges.push(l('Abonnement train'));
+
+    const brut = _lignesAbsentesDesSuivantes();
+    const groupes = _manquesGroupes();
+    check('bilan · le brut compte une entrée par année cible',
+      brut.length === 5, brut.length);
+    check('bilan · le regroupement ramène à une entrée par ligne',
+      groupes.length === 3, groupes.length);
+
+    const moto = groupes.find(g => g.label === 'Vente moto (reste)');
+    check('bilan · les années cibles sont rassemblées',
+      moto && moto.cibles.join() === '2026,2027', moto && moto.cibles.join());
+    check('bilan · la section d’origine est conservée',
+      moto && moto.section === 'revenus', moto && moto.section);
+    check('bilan · l’indice de la ligne permet de l’ouvrir',
+      moto && DATA['2025'].revenus[moto.ri] &&
+      DATA['2025'].revenus[moto.ri].label === 'Vente moto (reste)',
+      moto && moto.ri);
+
+    const train = groupes.find(g => g.label === 'Abonnement train');
+    check('bilan · une ligne de 2026 ne vise que 2027',
+      train && train.annee === '2026' && train.cibles.join() === '2027',
+      train && `${train.annee} → ${train.cibles.join()}`);
+
+    check('bilan · toutes les lignes sont retournées, sans plafond',
+      groupes.length === new Set(brut.map(m => `${m.section}|${m.annee}|${m.label}`)).size,
+      `${groupes.length} vs ${new Set(brut.map(m => `${m.section}|${m.annee}|${m.label}`)).size}`);
+
+    // Données saines : aucun groupe
+    DATA['2026'].charges.push(l('Remboursement Christine'));
+    DATA['2027'].charges.push(l('Remboursement Christine'));
+    DATA['2026'].revenus.push(l('Vente moto (reste)'));
+    DATA['2027'].revenus.push(l('Vente moto (reste)'));
+    DATA['2027'].charges.push(l('Abonnement train'));
+    check('bilan · plus aucun groupe une fois les lignes reportées',
+      _manquesGroupes().length === 0, JSON.stringify(_manquesGroupes().map(g => g.label)));
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };

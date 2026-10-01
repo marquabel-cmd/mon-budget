@@ -4872,7 +4872,7 @@ function renderSoldes(year) {
   // Construit une ligne compacte : [icône+nom | solde init → solde calculé + delta ⚙️🔍]
   const _now = new Date();
   const _todayLbl = String(_now.getDate()).padStart(2,'0') + '/' + String(_now.getMonth()+1).padStart(2,'0');
-  function makeRow({ icon, name, color, prevNote, initHtml, initNum, calcId, metaId, calcNum, gearFn, loupeFn }) {
+  function makeRow({ icon, name, color, prevNote, initHtml, initNum, calcId, metaId, calcNum, gearFn, loupeFn, perfFn }) {
     const bc = color || '#1a6fc4';
     const prevNoteHtml = prevNote ? `<span class="sr-prevnote">${_esc(prevNote)}</span>` : '';
     const calcVal = fmt(calcNum);
@@ -4892,6 +4892,7 @@ function renderSoldes(year) {
         <span class="sr-calc-meta" ${metaId?`id="${metaId}"`:''}>${_todayLbl} · ${_deltaHtml(initNum, calcNum)}</span>
       </span>
       <span class="sr-actions">
+        ${perfFn ? `<button onclick="${perfFn}" title="Performance : investi, valeur, gain">📊</button>` : ''}
         ${gearFn ? `<button onclick="${gearFn}" title="Configurer">⚙️</button>` : ''}
         ${loupeFn ? `<button onclick="${loupeFn}" title="Détail du calcul">🔍</button>` : ''}
       </span>
@@ -4929,7 +4930,8 @@ function renderSoldes(year) {
     metaId: `livret-meta-${year}`,
     calcNum: lv,
     gearFn: `openLivretConfig('liv_main','${year}')`,
-    loupeFn: null
+    loupeFn: null,
+    perfFn: _livretPerformance('liv_main')?.base > 0 ? `ouvrirPerformanceLivret('liv_main')` : null
   });
 
   // ── Comptes & livrets supplémentaires (Premium) ──
@@ -4967,7 +4969,8 @@ function renderSoldes(year) {
         metaId: `livret-meta-${year}-${livId}`,
         calcNum: _livCalc,
         gearFn: `openLivretConfig('${livId}','${year}')`,
-        loupeFn: null
+        loupeFn: null,
+        perfFn: _livretPerformance(livId)?.base > 0 ? `ouvrirPerformanceLivret('${livId}')` : null
       });
     });
   }
@@ -5950,6 +5953,27 @@ function _lignesAbsentesDesSuivantes() {
   return manques;
 }
 
+// Une même ligne manquante dans trois années suivantes produisait trois entrées.
+// On regroupe par ligne d'origine, avec la liste des années concernées, et on
+// retient l'indice de la ligne pour pouvoir l'ouvrir directement depuis le bilan.
+function _manquesGroupes() {
+  const par = new Map();
+  _lignesAbsentesDesSuivantes().forEach(m => {
+    const cle = `${m.section}|${m.annee}|${m.label}`;
+    if (!par.has(cle)) {
+      const arr = DATA[m.annee]?.[m.section] || [];
+      par.set(cle, { ...m, cibles: [], ri: arr.findIndex(r => !r._adjust && r.label === m.label) });
+    }
+    par.get(cle).cibles.push(m.cible);
+  });
+  return [...par.values()];
+}
+function _ouvrirLigneDepuisBilan(annee, section, ri) {
+  const row = DATA[annee]?.[section]?.[ri];
+  if (!row) { showToast('⚠️ Ligne introuvable'); return; }
+  document.getElementById('_sante-overlay')?.remove();
+  openEditRowModal(annee, section, ri);
+}
 function _bilanSante() {
   const n = f => { try { return f(); } catch { return 0; } };
   const controles = [
@@ -5979,7 +6003,7 @@ function _bilanSante() {
       // Pas de réparation en un clic : reporter une ligne demande de choisir un
       // montant, ce que seule la fenêtre de modification peut faire.
       action: null, bouton: null,
-      aide: 'Ouvrez la ligne concernée (✏️) et cochez « Ajouter aux années suivantes ».' }
+      aide: 'Cliquez le ✏️ d’une ligne ci-dessous, puis cochez « Ajouter aux années suivantes ».' }
   ];
   return controles.map(c => ({ ...c, ok: !c.souci }));
 }
@@ -5988,8 +6012,7 @@ function ouvrirBilanSante() {
   if (document.getElementById('_sante-overlay')) return;
   const bilan = _bilanSante();
   const soucis = bilan.filter(c => !c.ok);
-  const detailManques = soucis.some(c => c.titre.startsWith('Lignes présentes'))
-    ? _lignesAbsentesDesSuivantes().slice(0, 6) : [];
+  const detailManques = soucis.some(c => c.titre.startsWith('Lignes présentes')) ? _manquesGroupes() : [];
   const ligne = c => `<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
       <span style="font-size:13px;line-height:1.3">${c.ok ? '✅' : '⚠️'}</span>
       <div style="flex:1;min-width:0">
@@ -6015,9 +6038,19 @@ function ouvrirBilanSante() {
       <div style="overflow-y:auto;flex:1">
         ${entete}
         ${bilan.map(ligne).join('')}
-        ${detailManques.length ? `<div style="font-size:10px;color:var(--gray);margin-top:9px;line-height:1.6">
-            ${detailManques.map(m => `· <b>${_esc(m.label)}</b> — présente en ${m.annee}, absente en ${m.cible}`).join('<br>')}
-          </div>` : ''}
+        ${detailManques.length ? `
+          <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 2px">
+            ✏️ ${detailManques.length} ligne(s) à reporter
+          </div>
+          ${detailManques.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(m.label)}</div>
+                <div style="font-size:10px;color:var(--gray)">${m.section === 'revenus' ? 'Revenu' : 'Charge'} de ${m.annee} · absente en ${m.cibles.join(', ')}</div>
+              </div>
+              ${m.ri >= 0 ? `<button onclick="_ouvrirLigneDepuisBilan('${m.annee}','${m.section}',${m.ri})" title="Ouvrir cette ligne"
+                style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--text)">✏️</button>` : ''}
+            </div>`).join('')}` : ''}
       </div>
       <div style="display:flex;justify-content:flex-end;margin-top:12px">
         <button onclick="document.getElementById('_sante-overlay').remove()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">Fermer</button>
@@ -9795,6 +9828,7 @@ function renderConfigTab() {
             <input type="text" value="${l.name}" style="flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;background:var(--surface);color:var(--text)"
               onchange="renameLivret('${l.id}',this.value)" placeholder="Nom du livret">
             <button onclick="openLivretConfig('${l.id}','${_cfgYear}')" title="Lignes incluses, intérêts, plus/moins-value" style="background:none;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:13px;cursor:pointer;color:var(--text)">⚙️</button>
+            ${_livretPerformance(l.id)?.base > 0 ? `<button onclick="ouvrirPerformanceLivret('${l.id}')" title="Performance : investi, valeur, gain" style="background:none;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:13px;cursor:pointer;color:var(--text)">📊</button>` : ''}
             ${i === 0 ? '' : isLicensed() ? `<button class="del-btn" onclick="removeLivret('${l.id}')" title="Supprimer">✕</button>` : ''}
           </div>`).join('');
         const addAccForm = isLicensed() ? `
@@ -10954,8 +10988,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.54';
-const SW_VERSION = 'v334';
+const APP_VERSION = '13.55';
+const SW_VERSION = 'v335';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12845,6 +12879,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.55': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '📊', text: 'Bouton Performance distinct de l’engrenage, sur la ligne de chaque livret ou placement — dans la vue d’une année comme dans Configuration → Comptes & Livrets. L’engrenage sert à modifier, la performance ne fait que lire : elle méritait son propre bouton.' },
+      { icon: '✏️', text: 'Dans le bilan de santé, les lignes manquantes sont désormais toutes listées, regroupées par ligne plutôt qu’une entrée par année, et chacune porte un crayon qui l’ouvre directement. Le texte promettait un crayon qui n’existait pas, et seules six lignes étaient affichées.' }
+    ]
+  },
   '13.54': {
     date: 'Octobre 2026',
     items: [
@@ -16933,6 +16974,26 @@ function _livretPerformanceHtml(livId) {
       ${_livretCourbeSvg(serie)}
       ${_livretTableauHtml(serie)}
     </div>`;
+}
+// Fenêtre Performance autonome. L'engrenage évoque la modification : la
+// performance, qui ne fait que lire, méritait son propre bouton 📊.
+function ouvrirPerformanceLivret(livId) {
+  if (document.getElementById('_perf-overlay')) return;
+  const liv = getLivrets().find(l => l.id === livId);
+  const nom = liv ? liv.name : getLivretName();
+  const corps = _livretPerformanceHtml(livId);
+  const o = document.createElement('div');
+  o.id = '_perf-overlay';
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px';
+  o.innerHTML = `<div style="background:var(--surface);border-radius:16px;padding:20px 22px;width:380px;max-width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,.5)">
+      <div style="font-size:16px;font-weight:800;margin-bottom:12px">📊 ${_esc(nom)}</div>
+      <div style="overflow-y:auto;flex:1">${corps ||
+        '<div style="font-size:12px;color:var(--gray);line-height:1.6">Rien à afficher pour l\'instant : aucun montant n\'a encore été versé sur ce livret.</div>'}</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:12px">
+        <button onclick="document.getElementById('_perf-overlay').remove()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">Fermer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(o);
 }
 function openLivretConfig(livId, ctxYear) {
   const isMain = !livId || livId === 'liv_main';
