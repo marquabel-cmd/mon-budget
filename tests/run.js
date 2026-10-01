@@ -101,6 +101,19 @@ function verificationsSource() {
     nonSubstituees.length === 0,
     nonSubstituees.map(k => `${k} lu sans .replace('{0}', …)`).join(' · '));
 
+
+  // L'application ne doit JAMAIS se recharger d'elle-même : elle refermerait les
+  // sections et renverrait l'utilisateur en haut de page au milieu d'une lecture
+  // ou d'une saisie. La bannière « Mise à jour disponible » est là pour proposer ;
+  // le rechargement n'appartient qu'à l'utilisateur.
+  const ctrl = src.match(/addEventListener\('controllerchange'[\s\S]{0,500}?\n\s*\}\);/);
+  check('mise à jour · le changement de service worker ne recharge pas la page',
+    !!ctrl && !/location\.reload/.test(ctrl[0]),
+    ctrl ? 'le gestionnaire appelle encore location.reload' : 'gestionnaire controllerchange introuvable');
+  check('mise à jour · il propose la mise à jour au lieu de l’imposer',
+    !!ctrl && ctrl[0].includes('verifierMiseAJour()'),
+    ctrl ? ctrl[0].slice(0, 140) : 'gestionnaire introuvable');
+
   return res;
 }
 

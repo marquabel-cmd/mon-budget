@@ -8384,7 +8384,7 @@ async function cloudPullNow() {
   // sinon _localIsNewer serait vrai au prochain démarrage et cet appareil
   // se croirait à nouveau prioritaire sur le cloud qu'il vient d'adopter.
   if (cloudData._lastPush) localStorage.setItem('budget_lastsave_' + CURRENT_USER_ID, new Date(cloudData._lastPush).toISOString());
-  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  _purgerPanneauxObsoletes();
   renderTabs();
   getYears().forEach(y => renderYear(y));
   renderSummary();
@@ -8636,6 +8636,18 @@ function stopRealtimeSync() {
 // qui consulte décembre ne veut pas être ramené à janvier. Chaque conteneur est
 // repéré par l'identifiant de son panneau et son rang, stables d'un rendu à
 // l'autre.
+// Ne retirer que les panneaux d'années qui n'existent plus, au lieu de tous les
+// supprimer pour les reconstruire. renderYear() sait déjà conserver, à chaque
+// rendu, l'état ouvert/fermé des sections, les mois dépliés, le défilement
+// horizontal et la position de lecture — mais il les lit DANS le panneau
+// existant. Supprimer celui-ci d'abord lui retirait toute matière : sections
+// refermées, page ramenée en haut à chaque synchro.
+function _purgerPanneauxObsoletes() {
+  const vivantes = new Set(getYears().map(y => 'tab-y' + y));
+  document.querySelectorAll('[id^="tab-y"]').forEach(el => {
+    if (!vivantes.has(el.id)) el.remove();
+  });
+}
 function _positionsDefilement() {
   const pos = { page: window.scrollY || document.documentElement.scrollTop || 0, h: [] };
   document.querySelectorAll('.section-body, .summary-wrap, .vdetrow-wrap').forEach((el, i) => {
@@ -8741,7 +8753,7 @@ function applyRealtimeData(d) {
   const activeTabEl = document.querySelector('#year-tabs .tab.active');
   const activeNavEl = document.querySelector('.nav-btn.active');
   const activeNavId = activeNavEl?.dataset?.tabid || '';
-  document.querySelectorAll('[id^="tab-y"]').forEach(el => el.remove());
+  _purgerPanneauxObsoletes();
   renderTabs();
   getYears().forEach(y => renderYear(y));
   renderSummary();
@@ -11511,8 +11523,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.66';
-const SW_VERSION = 'v346';
+const APP_VERSION = '13.67';
+const SW_VERSION = 'v347';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -13392,6 +13404,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.67': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '🛑', text: 'L’application ne se recharge plus d’elle-même. À chaque publication, la prise de contrôle par le nouveau service worker déclenchait un rechargement automatique : vos sections se refermaient et vous étiez renvoyé en haut de la page, en pleine lecture ou saisie. La bannière « Mise à jour disponible » existait pourtant depuis la 12.79 pour vous en laisser le choix — les deux coexistaient, et c’est le rechargement qui gagnait.' },
+      { icon: '📂', text: 'Une synchro entrante ne referme plus les sections dépliées : seuls les onglets d’années disparues sont retirés, au lieu de tous les reconstruire. L’état ouvert/fermé, les mois dépliés et le défilement sont ainsi conservés.' }
+    ]
+  },
   '13.66': {
     date: 'Octobre 2026',
     items: [
@@ -15700,10 +15719,20 @@ if ('serviceWorker' in navigator) {
       });
     }).catch(() => {});
 
-    // Rechargement automatique quand le nouveau SW prend le contrôle
+    // Quand le nouveau service worker prend le contrôle, NE PAS recharger.
+    //
+    // Ce rechargement automatique survivait depuis avant la 12.79, qui avait
+    // pourtant introduit la bannière « Mise à jour disponible » pour laisser le
+    // choix du moment. Les deux coexistaient, et c'est le rechargement qui
+    // gagnait : à chaque publication, l'application se rechargeait sous les
+    // doigts de l'utilisateur, refermant ses sections et le renvoyant en haut
+    // de la page, au milieu d'une lecture ou d'une saisie.
+    //
+    // On se contente désormais de proposer : la bannière apparaît, et le
+    // rechargement n'a lieu que si l'utilisateur le demande.
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       sessionStorage.setItem('app-updated', '1');
-      window.location.reload();
+      verifierMiseAJour();
     });
   });
 }
