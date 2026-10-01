@@ -4579,11 +4579,9 @@ function confirmRevDialog() {
     }).filter(r => r !== null),
     charges: prev.charges.map((r, i) => {
       const ny = parseInt(newYear);
-      if (r._adjust) return null; // ajustement de solde réel : propre à son 31 décembre
-      if (r.noCarry === true) return null;  // « propre à cette année » : jamais reprise
-      const isSpecialRow = r.cat === 'livret_in' || r.cat === 'livret_out' || r.cat === 'boite_in' || r.cat === 'retrait_banc';
-      // Ligne terminée avant la nouvelle année → ne pas reprendre (sauf lignes protégées)
-      if (!isSpecialRow && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) < ny) return null;
+      const reprise = _repriseAnnee(r, ny);
+      if (!reprise) return null;   // ajustement, « propre à cette année », ou échéance passée
+      const isSpecialRow = _SPECIAL_CHG_CATS.includes(r.cat);
       const inp = document.getElementById(`chg-inp-${i}`);
       const val = parseFloat(inp?.value);
       const lastAmt = _lastPaidAmt(r);
@@ -4592,10 +4590,8 @@ function confirmRevDialog() {
       let v = isSpecialRow
         ? ((!isNaN(val) && val >= 0) ? Array(12).fill(val) : Array(12).fill(0))
         : _projectMonths(r.v, (!isNaN(val) && val >= 0) ? val : null, lastAmt);
-      // Ligne qui se termine dans la nouvelle année → zéroter après endMonth
-      if (!isSpecialRow && !r.noEnd && r.endYear !== undefined && parseInt(r.endYear) === ny) {
-        for (let m = parseInt(r.endMonth) + 1; m < 12; m++) v[m] = 0;
-      }
+      // Année de la dernière échéance : rien après le mois de fin
+      for (let m = reprise.dernierMois + 1; m < 12; m++) v[m] = 0;
       const meta = {};
       if (r.noEnd !== undefined) meta.noEnd = r.noEnd;
       if (r.endMonth !== undefined) meta.endMonth = r.endMonth;
@@ -4640,6 +4636,19 @@ function _anneeParDefaut() {
   const ys = getYears();
   const cur = String(new Date().getFullYear());
   return ys.includes(cur) ? cur : (ys[ys.length - 1] || '');
+}
+// Reprise d'une ligne de charge dans une nouvelle année : reprise ou non, et
+// jusqu'à quel mois. La règle vivait au milieu de la création d'année, qui lit
+// des champs du formulaire et n'est donc pas appelable depuis les tests — or
+// c'est elle qui décide du sort d'un prêt sur plusieurs années.
+// La date de fin suffit : une ligne est reprise tant que son année de fin n'est
+// pas dépassée, et l'année de la dernière échéance est tronquée après ce mois.
+function _repriseAnnee(row, ny) {
+  if (!row || row._adjust || row.noCarry === true) return null;
+  const speciale = _SPECIAL_CHG_CATS.includes(row.cat);
+  const aUneFin = !speciale && row.noEnd !== true && row.endYear !== undefined;
+  if (aUneFin && parseInt(row.endYear) < ny) return null;
+  return { dernierMois: (aUneFin && parseInt(row.endYear) === ny) ? parseInt(row.endMonth) : 11 };
 }
 function _prevYearOf(year) {
   const ys = getYears().sort();
@@ -11451,8 +11460,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.61';
-const SW_VERSION = 'v341';
+const APP_VERSION = '13.62';
+const SW_VERSION = 'v342';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13324,6 +13333,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.62': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '🛡️', text: 'La règle de reprise d’une ligne dans une nouvelle année est désormais protégée par des tests. Une ligne à date de fin — un prêt, une assurance emprunteur — est reconduite tant que son échéance n’est pas passée, l’année de la dernière mensualité s’arrête au bon mois, et l’année suivante ne la reprend plus. Le type de ligne, récurrente ou occasionnelle, n’y change rien.' }
+    ]
+  },
   '13.61': {
     date: 'Octobre 2026',
     items: [

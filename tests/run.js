@@ -874,6 +874,41 @@ async function tousLesCas() {
       _pretInfo({ ...pret, v: Array(12).fill(0), paid: Array(12).fill(false) }, ref) === null);
   }
 
+  // ── Reprise d'une ligne à date de fin dans les années créées ensuite ─────
+  // Le cas d'un prêt : la date de fin doit suffire à le reconduire jusqu'à sa
+  // dernière échéance, puis l'arrêter — sans rien cocher d'autre.
+  {
+    const pret = { label: 'Prêt voiture', cat: 'occasional', v: Array(12).fill(208.39),
+      paid: Array(12).fill(true), noEnd: false, endMonth: 8, endYear: 2028 };
+
+    check('reprise · une année avant la fin reprend la ligne entière',
+      _repriseAnnee(pret, 2027)?.dernierMois === 11, JSON.stringify(_repriseAnnee(pret, 2027)));
+    check('reprise · l’année de la dernière échéance s’arrête à ce mois',
+      _repriseAnnee(pret, 2028)?.dernierMois === 8, JSON.stringify(_repriseAnnee(pret, 2028)));
+    check('reprise · l’année suivante ne reprend plus la ligne',
+      _repriseAnnee(pret, 2029) === null, JSON.stringify(_repriseAnnee(pret, 2029)));
+
+    // Le type de ligne ne change rien : occasionnelle ou récurrente, même sort
+    check('reprise · le type de ligne n’influe pas',
+      JSON.stringify(_repriseAnnee({ ...pret, cat: 'fixed' }, 2028)) ===
+      JSON.stringify(_repriseAnnee(pret, 2028)));
+
+    // Sans date de fin, la ligne est reprise indéfiniment
+    check('reprise · une ligne sans fin est toujours reprise',
+      _repriseAnnee({ ...pret, noEnd: true }, 2035)?.dernierMois === 11);
+
+    // « Propre à cette année » et ajustements de solde ne sont jamais repris
+    check('reprise · une ligne marquée « ne pas reporter » est exclue',
+      _repriseAnnee({ ...pret, noCarry: true }, 2027) === null);
+    check('reprise · un ajustement de solde réel est exclu',
+      _repriseAnnee({ ...pret, _adjust: true }, 2027) === null);
+
+    // Les lignes de livret échappent à la date de fin (elles sont protégées)
+    check('reprise · un mouvement de livret est repris malgré une fin passée',
+      _repriseAnnee({ ...pret, cat: 'livret_in' }, 2030)?.dernierMois === 11,
+      JSON.stringify(_repriseAnnee({ ...pret, cat: 'livret_in' }, 2030)));
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };
