@@ -290,6 +290,60 @@ function tousLesCas() {
       perf.gain === 0 && perf.valeur === 100, `gain ${perf.gain}, valeur ${perf.valeur}`);
   }
 
+  // ── Évolution d'un placement : _livretSerie ─────────────────────────────
+  {
+    const LIV = 'liv_serie';
+    const AN = new Date().getFullYear();
+    const moisNow = new Date().getMonth();
+    DATA = { [String(AN)]: annee() };
+    DATA[String(AN)].soldes.livrets_bal[LIV] = 0;
+    const l = (label, cat, fromBank) => ({ label, cat, livretId: LIV, fromBank: fromBank || undefined,
+      v: Array(12).fill(0), paid: Array(12).fill(false), inCalc: true });
+
+    // Premier mouvement en mars seulement
+    const vers = l('Ordre permanent', 'livret_in');
+    vers.v[2] = 100; vers.paid[2] = true;
+    const plus = { ...l('📈 Plus-value', 'livret_in', true), paid: Array(12).fill(true) };
+    plus.v[3] = 10;
+    DATA[String(AN)].charges = [vers, plus];
+
+    let s = _livretSerie(LIV);
+    check('évolution · les mois plats avant le 1er mouvement sont rognés',
+      s.length > 0 && s[0].mois === 1, s.length ? `commence en mois ${s[0].mois}` : 'série vide');
+    check('évolution · un point est gardé juste avant le départ',
+      s[0].investi === 0 && s[0].valeur === 0 && s[0].bouge === false, JSON.stringify(s[0]));
+    check('évolution · seuls les mois qui bougent sont marqués',
+      s.filter(p => p.bouge).map(p => p.mois).join() === '2,3',
+      s.filter(p => p.bouge).map(p => p.mois).join());
+    check('évolution · le dernier point porte la valeur courante',
+      s[s.length - 1].valeur === 110 && s[s.length - 1].investi === 100,
+      JSON.stringify(s[s.length - 1]));
+    check('évolution · elle concorde avec _livretPerformance',
+      s[s.length - 1].valeur === _livretPerformance(LIV).valeur,
+      `${s[s.length - 1].valeur} vs ${_livretPerformance(LIV).valeur}`);
+    check('évolution · elle s’arrête au mois en cours',
+      s[s.length - 1].mois === moisNow && s[s.length - 1].annee === String(AN),
+      `mois ${s[s.length - 1].mois} / ${moisNow}`);
+
+    // Les montants prévus pour les mois à venir ne doivent rien changer
+    if (moisNow < 11) {
+      const avant = JSON.stringify(_livretSerie(LIV));
+      vers.v[11] = 999; vers.paid[11] = true;
+      check('évolution · un montant futur n’apparaît pas dans la courbe',
+        JSON.stringify(_livretSerie(LIV)) === avant, 'la série a changé');
+      vers.v[11] = 0; vers.paid[11] = false;
+    }
+
+    // Une série trop courte ne doit pas produire de SVG bancal
+    check('évolution · pas de courbe sous deux points',
+      _livretCourbeSvg([{ annee: String(AN), mois: 0, investi: 0, valeur: 0 }]) === '');
+    check('évolution · la courbe est produite au-delà',
+      _livretCourbeSvg(s).includes('<polyline'), 'aucune polyligne');
+    check('évolution · le tableau ne liste que les mois qui bougent',
+      (_livretTableauHtml(s).match(/<tr style="border-top/g) || []).length === 2,
+      (_livretTableauHtml(s).match(/<tr style="border-top/g) || []).length);
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };

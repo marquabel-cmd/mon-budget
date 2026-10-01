@@ -10842,8 +10842,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.52';
-const SW_VERSION = 'v332';
+const APP_VERSION = '13.53';
+const SW_VERSION = 'v333';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12733,6 +12733,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.53': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '📈', text: 'Courbe d’évolution et tableau détaillé sous la performance d’un placement. Deux lignes y sont tracées : l’argent investi et la valeur. L’écart entre elles est le rendement, visible d’un coup d’œil. Le tableau reprend les seuls mois où quelque chose a bougé, avec l’écart de chacun. Les mois à venir sont exclus, leurs montants n’étant que prévisionnels, et les mois plats précédant le premier versement ne sont pas tracés.' }
+    ]
+  },
   '13.52': {
     date: 'Octobre 2026',
     items: [
@@ -16680,11 +16686,115 @@ function _maybeRemindPlacements() {
     _askPlacementValues(true);
   } catch {}
 }
+// Évolution mois par mois d'un livret ou placement, depuis la première année
+// jusqu'au mois en cours. Deux séries : l'argent engagé et la valeur. L'écart
+// entre les deux courbes EST le rendement — c'est tout l'intérêt de les tracer
+// ensemble. Les mois à venir sont exclus : leurs montants sont prévisionnels.
+function _livretSerie(livId) {
+  const annees = getYears().sort();
+  if (!annees.length) return [];
+  const isMain = !livId || livId === 'liv_main';
+  const premiere = DATA[annees[0]];
+  let investi = isMain
+    ? (parseFloat(premiere?.soldes?.livretInitial) || 0)
+    : (parseFloat(premiere?.soldes?.livrets_bal?.[livId]) || 0);
+  let valeur = investi;
+  const now = new Date(), anNow = now.getFullYear(), moisNow = now.getMonth();
+  const serie = [];
+  for (const y of annees) {
+    if (parseInt(y) > anNow) break;
+    const lignes = (DATA[y]?.charges || []).filter(r => {
+      if (r.inCalc === false) return false;
+      if (!isMain && r.livretId !== livId) return false;
+      if (isMain && r.livretId && r.livretId !== 'liv_main') return false;
+      return r.cat === 'livret_in' || r.cat === 'livret_out';
+    });
+    const dernierMois = parseInt(y) === anNow ? moisNow : 11;
+    for (let m = 0; m <= dernierMois; m++) {
+      let dInv = 0, dVal = 0;
+      lignes.forEach(r => {
+        if (!r.paid[m]) return;
+        const amt = Math.abs(parseFloat(r.v[m]) || 0);
+        if (!amt) return;
+        const signe = r.cat === 'livret_in' ? 1 : -1;
+        dVal += signe * amt;
+        if (!r.fromBank) dInv += signe * amt;
+      });
+      investi = Math.round((investi + dInv) * 100) / 100;
+      valeur = Math.round((valeur + dVal) * 100) / 100;
+      serie.push({ annee: y, mois: m, investi, valeur, bouge: dInv !== 0 || dVal !== 0 });
+    }
+  }
+  // Rogner les mois à zéro qui précèdent le premier mouvement : un placement
+  // ouvert en septembre n'a rien à raconter de janvier à août, et ces huit
+  // points plats écrasent le reste de la courbe. On garde le point juste avant
+  // le premier mouvement, pour que le départ reste visible.
+  const premier = serie.findIndex(p => p.bouge);
+  return premier > 0 ? serie.slice(premier - 1) : serie;
+}
+// Petit graphique sans bibliothèque : deux polylignes dans un SVG. Les couleurs
+// passent par les variables CSS du thème, pour rester lisible en clair comme en
+// sombre. Rien à tracer en dessous de deux points.
+function _livretCourbeSvg(serie) {
+  if (serie.length < 2) return '';
+  const L = 312, H = 92, hg = 6, bd = 4;
+  const vals = serie.flatMap(p => [p.investi, p.valeur]);
+  let min = Math.min(...vals), max = Math.max(...vals);
+  if (max - min < 0.01) { max += 1; min -= 1; }
+  const marge = (max - min) * 0.12;
+  min -= marge; max += marge;
+  const x = i => bd + (i * (L - 2 * bd)) / (serie.length - 1);
+  const y = v => hg + (H - 2 * hg) * (1 - (v - min) / (max - min));
+  const trace = cle => serie.map((p, i) => `${x(i).toFixed(1)},${y(p[cle]).toFixed(1)}`).join(' ');
+  const fin = serie[serie.length - 1];
+  const gain = Math.round((fin.valeur - fin.investi) * 100) / 100;
+  const couleur = gain > 0 ? '#27ae60' : (gain < 0 ? '#E74C3C' : 'var(--gray)');
+  return `<svg viewBox="0 0 ${L} ${H}" width="100%" height="${H}" style="display:block;margin:8px 0 4px" role="img"
+       aria-label="Évolution de la valeur comparée à l'argent investi">
+      <polyline points="${trace('investi')}" fill="none" stroke="var(--gray)" stroke-width="1.5"
+                stroke-dasharray="4 3" opacity=".75"/>
+      <polyline points="${trace('valeur')}" fill="none" stroke="${couleur}" stroke-width="2"
+                stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${x(serie.length - 1).toFixed(1)}" cy="${y(fin.valeur).toFixed(1)}" r="3" fill="${couleur}"/>
+    </svg>
+    <div style="display:flex;gap:12px;font-size:10px;color:var(--gray);margin-bottom:2px">
+      <span><span style="display:inline-block;width:14px;border-top:1.5px dashed var(--gray);vertical-align:middle;margin-right:4px"></span>Investi</span>
+      <span><span style="display:inline-block;width:14px;border-top:2px solid ${couleur};vertical-align:middle;margin-right:4px"></span>Valeur</span>
+    </div>`;
+}
+// Tableau des seuls mois où quelque chose a bougé : sur plusieurs années, lister
+// les douze mois de chacune noierait l'information.
+function _livretTableauHtml(serie) {
+  const mois = getMonths();
+  const lignes = serie.filter(p => p.bouge);
+  if (!lignes.length) return '';
+  const visibles = lignes.slice(-14);
+  const cache = lignes.length - visibles.length;
+  const cell = (t, al, st) => `<td style="padding:3px 4px;text-align:${al};${st || ''}">${t}</td>`;
+  return `<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px">📋 Détail</div>
+    ${cache > 0 ? `<div style="font-size:10px;color:var(--gray);margin-bottom:3px">${cache} mois plus anciens non affichés</div>` : ''}
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr style="color:var(--gray);font-size:10px;text-transform:uppercase">
+        ${cell('Mois', 'left')}${cell('Investi', 'right')}${cell('Valeur', 'right')}${cell('Écart', 'right')}
+      </tr></thead>
+      <tbody>${visibles.map(p => {
+        const ecart = Math.round((p.valeur - p.investi) * 100) / 100;
+        const col = ecart > 0 ? '#27ae60' : (ecart < 0 ? '#E74C3C' : 'var(--gray)');
+        return `<tr style="border-top:1px solid var(--border)">
+          ${cell(`${String(mois[p.mois]).slice(0, 3).toLowerCase()} ${String(p.annee).slice(2)}`, 'left')}
+          ${cell(fmt(p.investi), 'right', 'color:var(--gray)')}
+          ${cell(fmt(p.valeur), 'right', 'font-weight:700')}
+          ${cell(`${ecart > 0 ? '+' : ''}${fmt(ecart)}`, 'right', `color:${col};font-weight:700`)}
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
 // Encart de performance affiché en tête de la fiche d'un livret ou placement.
 // Masqué tant qu'aucun argent n'est engagé : un livret vide n'a pas de rendement.
 function _livretPerformanceHtml(livId) {
   const p = _livretPerformance(livId);
   if (!p || p.base <= 0) return '';
+  const serie = _livretSerie(livId);
   const positif = p.gain >= 0;
   const couleur = p.gain === 0 ? 'var(--gray)' : (positif ? '#27ae60' : '#E74C3C');
   const signe = p.gain > 0 ? '+' : '';
@@ -16701,6 +16811,8 @@ function _livretPerformanceHtml(livId) {
       ${ligne('Valeur actuelle', fmt(p.valeur), true)}
       ${ligne('Gain / perte', `<span style="color:${couleur}">${signe}${fmt(p.gain)}${pct}</span>`, true, couleur)}
       <div style="font-size:10px;color:var(--gray);margin-top:5px;line-height:1.45">Versements et retraits mis à part : seuls les intérêts et les plus ou moins-values comptent dans le gain.</div>
+      ${_livretCourbeSvg(serie)}
+      ${_livretTableauHtml(serie)}
     </div>`;
 }
 function openLivretConfig(livId, ctxYear) {
@@ -16734,8 +16846,8 @@ function openLivretConfig(livId, ctxYear) {
   let html = '<div style="background:var(--surface);border-radius:14px;padding:20px 22px;width:360px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.45)">';
   html += '<div style="font-weight:700;font-size:15px;margin-bottom:3px">⚙️ ' + _esc(livName) + '</div>';
   html += '<div style="font-size:12px;color:var(--gray);margin-bottom:12px">Lignes incluses dans le calcul du livret</div>';
-  html += _livretPerformanceHtml(livId);
   html += '<div style="overflow-y:auto;flex:1">';
+  html += _livretPerformanceHtml(livId);
   html += '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📈 Mouvements (coché = inclus)</div>';
   html += rowsHtml;
   html += '</div>';
