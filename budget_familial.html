@@ -11523,8 +11523,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.67';
-const SW_VERSION = 'v347';
+const APP_VERSION = '13.68';
+const SW_VERSION = 'v348';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -12156,7 +12156,8 @@ const TRANSLATIONS = {
     'toast.order_propagated': '↕️ Ordre repris en {0}',
     'toast.sync_no_counter': '⚠️ Cloud sans numéro de version — fusion prudente, aucune donnée écrasée',
     'toast.name_required': '⚠️ Entrez un nom',
-    'toast.update_received': '🔄 Mise à jour reçue',
+    'toast.update_received': '🔄 Données synchronisées',
+    'toast.loading_data': '⏳ Récupération des données…',
     'toast.saved_simple': '✅ Sauvegardé',
     'toast.installed': '✅ Application installée avec succès !',
     'toast.install_browser': 'Utilisez le bouton ⊕ dans la barre d\'adresse de votre navigateur',
@@ -12943,7 +12944,8 @@ const TRANSLATIONS = {
     'toast.order_propagated': '↕️ Order applied to {0}',
     'toast.sync_no_counter': '⚠️ Cloud has no version number — cautious merge, nothing was overwritten',
     'toast.name_required': '⚠️ Enter a name',
-    'toast.update_received': '🔄 Update received',
+    'toast.update_received': '🔄 Data synchronised',
+    'toast.loading_data': '⏳ Fetching data…',
     'toast.saved_simple': '✅ Saved',
     'toast.installed': '✅ App installed successfully!',
     'toast.install_browser': 'Use the ⊕ button in your browser address bar',
@@ -13404,6 +13406,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.68': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '🔄', text: 'Le message « Mise à jour reçue » devient « Données synchronisées » : il annonçait l’arrivée de données modifiées sur un autre appareil, et non une mise à jour de l’application — de quoi laisser croire que l’app venait de changer de version.' },
+      { icon: '⏳', text: 'Le mode administrateur affichait ce même message en guise d’indicateur de chargement. Il dit désormais « Récupération des données… ».' }
+    ]
+  },
   '13.67': {
     date: 'Octobre 2026',
     items: [
@@ -16140,7 +16149,7 @@ async function enterAdminMode() {
   if (!_isFbAdmin()) { showToast(t('toast.admin_only')); return; }
   const key = document.getElementById('admin-license-input').value.trim().replace(/[^A-Za-z0-9_-]/g,'');
   if (!key) { showToast(t('toast.label_required')); return; }
-  showToast(t('toast.update_received'));
+  showToast(t('toast.loading_data'));
   try {
     // Try UID-based path first, then legacy key path
     const token = await fbGetToken();
