@@ -2841,6 +2841,12 @@ function _finishLogin(id) {
   const txFab = document.getElementById('tx-fab');
   if (txFab) txFab.style.display = 'flex';
   setTimeout(() => {
+    // Revenir là où l'utilisateur était. _restoreLastTab() existait depuis
+    // longtemps mais n'était appelée NULLE PART : l'onglet était enregistré à
+    // chaque changement et jamais relu. Résultat, le moindre rechargement — une
+    // mise à jour du service worker, un retour d'arrière-plan — ramenait à
+    // l'année par défaut, quelle que soit la page consultée.
+    if (_restoreLastTab()) return;
     const targetY = _anneeParDefaut();
     if (targetY) {
       const tabs = document.querySelectorAll('#year-tabs .tab');
@@ -7797,9 +7803,12 @@ function renderMonthSummary(year) {
   const bal=rv.map((v,i)=>v-dep[i]);
   const rap=resteAPayer(year);
 
-  const row=(lbl,vec,cls,bg='var(--row-neutral)')=>
+  // `aide` : infobulle au survol. Deux lignes voisines du résumé n'ont pas le
+  // même périmètre — les charges excluent les mouvements d'épargne, le reste à
+  // payer les inclut — et rien à l'écran ne le disait.
+  const row=(lbl,vec,cls,bg='var(--row-neutral)',aide='')=>
     `<tr style="font-weight:700;background:${bg}">
-      <td class="lbl-col">${lbl}</td>
+      <td class="lbl-col">${aide ? `<span title="${_esc(aide)}" style="border-bottom:1px dotted var(--gray);cursor:help">${lbl}</span>` : lbl}</td>
       ${vec.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-${cls}-${i}">${fmtN(v)}</td>`).join('')}
       <td class="tot-col ${sum(vec)<0?'neg':'pos'}" id="sm-${year}-${cls}-tot">${fmtN(sum(vec))}</td>
       <td></td>
@@ -7819,10 +7828,10 @@ function renderMonthSummary(year) {
       <th class="tot-col">${t('th.total')}</th><th style="width:28px"></th>
     </tr></thead><tbody>
       ${row(t('summary.total_revenues'),rv,'rev')}
-      ${row(t('summary.recurring_charges'),ch,'chg')}
+      ${row(t('summary.recurring_charges'),ch,'chg','var(--row-neutral)',t('tip.recurring_charges'))}
       ${row(t('summary.variable_expenses'),vr,'var')}
       ${row(t('summary.total_expenses'),dep,'dep')}
-      ${row(t('row.remaining_to_pay'),rap,'rap','var(--row-warn)')}
+      ${row(t('row.remaining_to_pay'),rap,'rap','var(--row-warn)',t('tip.remaining_to_pay'))}
       ${(()=>{const bud=rv.map((v,i)=>v-ch[i]);const bt=sum(bud);return`<tr style="background:var(--row-info);font-weight:800;font-size:13px"><td class="lbl-col">${t('row.available_before_var')}</td>${bud.map((v,i)=>`<td class="${v<0?'neg':'pos'}" id="sm-${year}-bud-${i}">${fmtN(v)}</td>`).join('')}<td class="tot-col ${bt<0?'neg':'pos'}" id="sm-${year}-bud-tot">${fmtN(bt)}</td><td></td></tr>`;})()}
       <tr style="background:var(--row-success);font-weight:800;font-size:13px">
         <td class="lbl-col">${t('row.real_balance')}</td>
@@ -11460,8 +11469,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.62';
-const SW_VERSION = 'v342';
+const APP_VERSION = '13.63';
+const SW_VERSION = 'v343';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11551,6 +11560,8 @@ const TRANSLATIONS = {
     'row.total_charges_sep': 'TOTAL CHARGES',
     'row.total_revenus_sep': 'TOTAL REVENUS',
     'row.remaining_to_pay': '🔴 Reste à payer (charges non payées)',
+    'tip.recurring_charges': 'Hors mouvements d’épargne : un virement vers un livret ou un placement n’est pas une dépense, l’argent change simplement de poche.',
+    'tip.remaining_to_pay': 'Charges pas encore cochées payées, versements vers vos livrets et placements COMPRIS — cet argent doit bien sortir du compte ce mois-ci. Retraits de livret, intérêts et plus-values en sont exclus. C’est ce qui explique l’écart avec la ligne des charges.',
     'row.available_before_var': '💰 Disponible avant dépenses',
     'row.real_balance': '✅ SOLDE RÉEL DU MOIS',
     // Months abbreviations
@@ -12336,6 +12347,8 @@ const TRANSLATIONS = {
     'row.total_charges_sep': 'TOTAL COSTS',
     'row.total_revenus_sep': 'TOTAL REVENUES',
     'row.remaining_to_pay': '🔴 Remaining to pay (unpaid costs)',
+    'tip.recurring_charges': 'Savings movements excluded: a transfer to a savings or investment account is not an expense, the money simply changes pocket.',
+    'tip.remaining_to_pay': 'Costs not yet ticked as paid, INCLUDING transfers to your savings and investment accounts — that money still has to leave the account this month. Withdrawals, interest and capital gains are excluded. This is what explains the gap with the costs row.',
     'row.available_before_var': '💰 Available before variable expenses',
     'row.real_balance': '✅ ACTUAL MONTHLY BALANCE',
     // Months abbreviations
@@ -13333,6 +13346,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.63': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '📍', text: 'L’application vous laisse là où vous étiez. Un rechargement automatique — mise à jour, retour d’arrière-plan — ramenait toujours à l’année par défaut, même si vous consultiez le Résumé ou les Graphiques. La fonction de restauration existait depuis longtemps mais n’était appelée nulle part.' },
+      { icon: '💡', text: 'Infobulles sur le résumé mensuel. « Charges » et « Reste à payer » n’ont pas le même périmètre : les versements vers vos livrets et placements comptent dans le second, pas dans le premier — ils doivent sortir du compte sans être pour autant une dépense. Survolez les intitulés, c’est maintenant expliqué.' }
+    ]
+  },
   '13.62': {
     date: 'Octobre 2026',
     items: [

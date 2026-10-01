@@ -909,6 +909,20 @@ async function tousLesCas() {
       JSON.stringify(_repriseAnnee({ ...pret, cat: 'livret_in' }, 2030)));
   }
 
+  // ── L'onglet consulté est restauré après un rechargement ─────────────
+  {
+    const src = String(window._finishLogin || '');
+    check('onglet · la restauration est bien appelée au démarrage',
+      src.includes('_restoreLastTab()'),
+      '_restoreLastTab n’est appelée nulle part — le code était mort jusqu’à la 13.63');
+    // `_anneeParDefaut()` apparaît plus tôt dans la fonction pour un autre usage :
+    // c'est la bascule finale, `const targetY = ...`, qui doit céder le pas.
+    check('onglet · elle a priorité sur la bascule vers l’année par défaut',
+      src.includes('if (_restoreLastTab()) return;') &&
+      src.indexOf('if (_restoreLastTab()) return;') < src.indexOf('const targetY = _anneeParDefaut()'),
+      'la bascule vers l’année par défaut s’applique avant la restauration');
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };
