@@ -5914,6 +5914,117 @@ function _ordreAAligner(year, section, appliquer) {
   if (appliquer) DATA[year][section] = trie.map(o => o.r);
   return 1;
 }
+// ── BILAN DE SANTÉ DES DONNÉES ──────────────────────────────────────────
+// Les outils de réparation n'apparaissent que s'ils ont quelque chose à faire :
+// quand tout va bien, rien ne s'affiche et on ne sait pas si l'application a
+// seulement regardé. Ce bilan rassemble tous les contrôles en un seul endroit,
+// et répond aussi quand il n'y a rien à signaler.
+
+// Lignes présentes dans une année mais absentes d'une année suivante. Cas
+// courant : une ligne ajoutée après la création de l'année suivante, qui ne
+// s'y retrouve donc jamais. On ignore les lignes arrivées à échéance, dont
+// l'absence est voulue.
+function _lignesAbsentesDesSuivantes() {
+  const annees = getYears().sort();
+  const manques = [];
+  annees.forEach((y, i) => {
+    const suivantes = annees.slice(i + 1);
+    if (!suivantes.length) return;
+    ['revenus', 'charges'].forEach(section => {
+      (DATA[y]?.[section] || []).forEach(row => {
+        if (row._adjust || row.fromBank) return;
+        suivantes.forEach(ys => {
+          if (!Array.isArray(DATA[ys]?.[section])) return;
+          // Ligne terminée avant cette année-là : son absence est normale.
+          if (row.noEnd !== true && row.endYear !== undefined && parseInt(row.endYear) < parseInt(ys)) return;
+          // Comparer sur la catégorie de la ligne elle-même, et non sur celle
+          // qu'on suppose à la section : un revenu peut porter une catégorie
+          // (dépôt banque, boîte), auquel cas forcer `undefined` ne retrouvait
+          // jamais la ligne et toutes les années semblaient incomplètes.
+          if (_findRowLike(DATA[ys][section], row.label, row.cat)) return;
+          manques.push({ annee: y, cible: ys, section, label: row.label });
+        });
+      });
+    });
+  });
+  return manques;
+}
+
+function _bilanSante() {
+  const n = f => { try { return f(); } catch { return 0; } };
+  const controles = [
+    { titre: 'Dates de transaction',
+      souci: n(() => _countBrokenDates()),
+      texte: k => `${k} date(s) invalide(s)`,
+      action: '_fixBrokenDates(true)', bouton: '🔧 Réparer' },
+    { titre: 'Rythme des lignes dans les années créées',
+      souci: n(() => _countYearRepairs()),
+      texte: k => `${k} ligne(s) recopiée(s) sur les 12 mois`,
+      action: '_repairYearMonths()', bouton: '🔧 Rétablir' },
+    { titre: 'Type des lignes de livret',
+      souci: n(() => _rowsWithLostCat().length),
+      texte: k => `${k} ligne(s) ont perdu leur livret`,
+      action: '_repairLostCats()', bouton: '🔧 Rétablir' },
+    { titre: 'Dates de fin reportées',
+      souci: n(() => _endDatesToInherit().length),
+      texte: k => `${k} date(s) de fin non reportée(s)`,
+      action: '_inheritEndDates()', bouton: '🔧 Reporter' },
+    { titre: 'Ordre des lignes entre années',
+      souci: n(() => _countOrderFixes()),
+      texte: k => `${k} tableau(x) dans un ordre différent de l'année précédente`,
+      action: '_reorderYearsToPrevious()', bouton: '↕️ Aligner' },
+    { titre: 'Lignes présentes dans toutes les années',
+      souci: n(() => _lignesAbsentesDesSuivantes().length),
+      texte: k => `${k} ligne(s) manquante(s) dans une année suivante`,
+      // Pas de réparation en un clic : reporter une ligne demande de choisir un
+      // montant, ce que seule la fenêtre de modification peut faire.
+      action: null, bouton: null,
+      aide: 'Ouvrez la ligne concernée (✏️) et cochez « Ajouter aux années suivantes ».' }
+  ];
+  return controles.map(c => ({ ...c, ok: !c.souci }));
+}
+
+function ouvrirBilanSante() {
+  if (document.getElementById('_sante-overlay')) return;
+  const bilan = _bilanSante();
+  const soucis = bilan.filter(c => !c.ok);
+  const detailManques = soucis.some(c => c.titre.startsWith('Lignes présentes'))
+    ? _lignesAbsentesDesSuivantes().slice(0, 6) : [];
+  const ligne = c => `<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px;line-height:1.3">${c.ok ? '✅' : '⚠️'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600">${c.titre}</div>
+        <div style="font-size:11px;color:${c.ok ? 'var(--gray)' : '#856404'};margin-top:1px">${c.ok ? 'Rien à signaler' : c.texte(c.souci)}</div>
+        ${!c.ok && c.aide ? `<div style="font-size:10px;color:var(--gray);margin-top:3px;line-height:1.45">${c.aide}</div>` : ''}
+      </div>
+      ${!c.ok && c.action ? `<button onclick="document.getElementById('_sante-overlay').remove();${c.action}" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:7px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">${c.bouton}</button>` : ''}
+    </div>`;
+  const entete = soucis.length
+    ? `<div style="font-size:12px;color:#856404;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.5">
+         <b>${soucis.length} point(s) à regarder.</b> Rien n'est urgent : ces corrections ne touchent jamais un montant que vous avez saisi à la main.
+       </div>`
+    : `<div style="font-size:12px;color:#1e6b3a;background:#e8f8f0;border:1px solid #27ae60;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.5">
+         <b>Tout est en ordre.</b> Les ${bilan.length} contrôles sont passés sans rien signaler.
+       </div>`;
+  const o = document.createElement('div');
+  o.id = '_sante-overlay';
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px';
+  o.innerHTML = `<div style="background:var(--surface);border-radius:16px;padding:20px 22px;width:400px;max-width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,.5)">
+      <div style="font-size:16px;font-weight:800;margin-bottom:4px">🩺 Bilan de vos données</div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:12px">${getYears().length} année(s) vérifiée(s)</div>
+      <div style="overflow-y:auto;flex:1">
+        ${entete}
+        ${bilan.map(ligne).join('')}
+        ${detailManques.length ? `<div style="font-size:10px;color:var(--gray);margin-top:9px;line-height:1.6">
+            ${detailManques.map(m => `· <b>${_esc(m.label)}</b> — présente en ${m.annee}, absente en ${m.cible}`).join('<br>')}
+          </div>` : ''}
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:12px">
+        <button onclick="document.getElementById('_sante-overlay').remove()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">Fermer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(o);
+}
 function _countOrderFixes() {
   if (!DATA) return 0;
   return getYears().reduce((n, y) =>
@@ -9941,6 +10052,7 @@ function renderConfigTab() {
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-save" onclick="saveData()">${t('cfg.save_now')}</button>
           <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue)" onclick="openBackups()">${t('cfg.see_backups')}</button>
+          <button class="btn" style="background:transparent;color:var(--text);border:1px solid var(--border)" onclick="ouvrirBilanSante()">🩺 Vérifier mes données</button>
           ${_countBrokenDates() > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_fixBrokenDates(true)">🔧 Réparer ${_countBrokenDates()} date(s) invalide(s)</button>` : ''}
           ${(() => { const n = _countYearRepairs(); return n > 0 ? `<button class="btn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700" onclick="_repairYearMonths()">🔧 Rétablir les mois de ${n} ligne(s) recopiée(s) sur 12 mois</button>` : ''; })()}
           ${(() => { const n = _countOrderFixes(); return n > 0 ? `<button class="btn" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue);font-weight:700" onclick="_reorderYearsToPrevious()">↕️ Aligner l'ordre des lignes sur l'année précédente (${n} tableau${n>1?'x':''})</button>` : ''; })()}
@@ -10842,8 +10954,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.53';
-const SW_VERSION = 'v333';
+const APP_VERSION = '13.54';
+const SW_VERSION = 'v334';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -12733,6 +12845,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.54': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '🩺', text: 'Nouveau bouton « Vérifier mes données » dans Configuration → Données. Il passe six contrôles d’un coup et répond aussi quand tout va bien — jusqu’ici les outils de réparation n’apparaissaient que s’ils avaient quelque chose à corriger, et rien ne disait si l’application avait seulement regardé. Chaque anomalie est expliquée et réparable depuis le bilan.' },
+      { icon: '🔎', text: 'Nouveau contrôle : les lignes présentes dans une année mais absentes d’une année suivante sont désormais détectées et nommées. C’est le cas d’une ligne ajoutée après la création de l’année suivante, qui ne s’y retrouvait jamais. Les lignes arrivées à échéance ne sont pas signalées, leur absence étant voulue.' }
+    ]
+  },
   '13.53': {
     date: 'Octobre 2026',
     items: [

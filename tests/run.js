@@ -344,6 +344,62 @@ function tousLesCas() {
       (_livretTableauHtml(s).match(/<tr style="border-top/g) || []).length);
   }
 
+  // ── Bilan de santé des données ──────────────────────────────────────────
+  {
+    const l = (label, extra) => ({ label, cat: 'fixed', v: Array(12).fill(10),
+      paid: Array(12).fill(false), noEnd: true, ...(extra || {}) });
+
+    // Données saines : les deux années portent les mêmes lignes
+    DATA = { '2026': annee(), '2027': annee() };
+    ['2026', '2027'].forEach(y => {
+      DATA[y].charges = [l('Loyer'), l('Internet')];
+      DATA[y].revenus = [l('Salaire')];
+    });
+    check('bilan · aucune ligne manquante quand les années concordent',
+      _lignesAbsentesDesSuivantes().length === 0,
+      JSON.stringify(_lignesAbsentesDesSuivantes()));
+
+    // Une ligne ajoutée en 2026 après la création de 2027
+    DATA['2026'].charges.push(l('Assurance vélo'));
+    let manques = _lignesAbsentesDesSuivantes();
+    check('bilan · une ligne absente de l’année suivante est détectée',
+      manques.length === 1 && manques[0].label === 'Assurance vélo' && manques[0].cible === '2027',
+      JSON.stringify(manques));
+
+    // Une ligne terminée avant 2027 : son absence est normale
+    DATA['2026'].charges.push(l('Prêt voiture', { noEnd: false, endYear: 2026, endMonth: 11 }));
+    check('bilan · une ligne échue n’est pas signalée comme manquante',
+      _lignesAbsentesDesSuivantes().length === 1,
+      JSON.stringify(_lignesAbsentesDesSuivantes().map(m => m.label)));
+
+    // Les lignes d'ajustement et de valorisation sont hors sujet
+    DATA['2026'].charges.push(l('🔧 Ajustement solde réel', { _adjust: true }));
+    DATA['2026'].charges.push(l('📈 Plus-value', { fromBank: true }));
+    check('bilan · ajustements et valorisations sont ignorés',
+      _lignesAbsentesDesSuivantes().length === 1,
+      JSON.stringify(_lignesAbsentesDesSuivantes().map(m => m.label)));
+
+    // Le bilan lui-même
+    const rapport = _bilanSante();
+    check('bilan · tous les contrôles sont rendus',
+      Array.isArray(rapport) && rapport.length === 6, rapport.length);
+    check('bilan · chaque contrôle porte un verdict',
+      rapport.every(c => typeof c.ok === 'boolean' && c.titre),
+      JSON.stringify(rapport.map(c => [c.titre, c.ok])));
+    check('bilan · le contrôle des lignes manquantes a vu le problème',
+      rapport.find(c => c.titre.startsWith('Lignes présentes')).ok === false,
+      'non détecté');
+
+    // Une seule année : rien à comparer
+    DATA = { '2026': annee() };
+    DATA['2026'].charges = [l('Loyer')];
+    check('bilan · une seule année ne produit aucun manque',
+      _lignesAbsentesDesSuivantes().length === 0,
+      JSON.stringify(_lignesAbsentesDesSuivantes()));
+    check('bilan · il reste consultable avec une seule année',
+      _bilanSante().length === 6, _bilanSante().length);
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };
