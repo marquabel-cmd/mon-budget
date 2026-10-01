@@ -830,10 +830,32 @@ async function tousLesCas() {
 
     pret.tauxPret = 3.25;
     p = _pretInfo(pret, ref);
-    const i = 3.25 / 100 / 12;
+    // Convention ACTUARIELLE : i = (1+t)^(1/12) − 1, et non t/12.
+    const i = Math.pow(1 + 3.25 / 100, 1 / 12) - 1;
     const attendu = Math.round(300 * (1 - Math.pow(1 + i, -27)) / i * 100) / 100;
     check('prêt · capital restant dû conforme à la valeur actualisée',
       Math.abs(p.capitalRestant - attendu) < 0.01, `${p.capitalRestant} vs ${attendu}`);
+    check('prêt · le taux mensuel suit la convention actuarielle, pas t/12',
+      Math.abs(p.capitalRestant - 300 * (1 - Math.pow(1 + 3.25 / 100 / 12, -27)) / (3.25 / 100 / 12)) > 0.5,
+      'le calcul semble encore diviser le taux par 12');
+
+    // Contrôle sur un contrat réel : prêt à tempérament ING, 7 000 € à 4,65 %
+    // actuariel, 36 mensualités de 208,39 €, intérêts totaux annoncés 502,04 €.
+    // Reconstituer le capital emprunté à partir des seules mensualités est le
+    // meilleur test possible de la formule.
+    {
+      const reel = { label: 'Prêt ING', cat: 'fixed', v: Array(12).fill(208.39),
+        paid: Array(12).fill(true), noEnd: false,
+        endMonth: 8, endYear: 2028, tauxPret: 4.65 };
+      // 36 échéances restantes = situation à l'origine (1re échéance 10/2025)
+      const origine = _pretInfo(reel, new Date(2025, 9, 1));
+      check('prêt · 36 échéances reconstituent le capital du contrat',
+        origine.nb === 36 && Math.abs(origine.capitalRestant - 7000) < 1,
+        `${origine.nb} échéances, ${origine.capitalRestant} € (attendu ~7000)`);
+      check('prêt · intérêts totaux conformes au contrat',
+        Math.abs(origine.interets - 502.04) < 1,
+        `${origine.interets} € (attendu ~502,04)`);
+    }
     check('prêt · capital + intérêts = total restant',
       Math.abs(p.capitalRestant + p.interets - p.totalRestant) < 0.01,
       `${p.capitalRestant} + ${p.interets} ≠ ${p.totalRestant}`);

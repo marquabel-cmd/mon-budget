@@ -1318,7 +1318,7 @@ body.auth-locked #context-banner {
         <input id="ar-taux" type="number" step="0.01" min="0" inputmode="decimal" placeholder="ex : 3,25"
           oninput="_majEncartPret()"
           style="width:100%;box-sizing:border-box;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px">
-        <div style="font-size:11px;color:var(--gray);margin-top:4px;line-height:1.45">Facultatif. Sans taux, seul le <b>total restant à payer</b> est affiché ; avec, le <b>capital restant dû</b> et la part d'intérêts.</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px;line-height:1.45">Facultatif. Sans taux, seul le <b>total restant à payer</b> est affiché ; avec, le <b>capital restant dû</b> et la part d'intérêts.<br>Reprenez le <b>taux débiteur actuariel</b> de votre contrat (identique au TAEG s'il n'y a pas de frais).</div>
         <div id="ar-pret-detail" style="margin-top:9px"></div>
       </div>
       <div id="ar-nocarry-wrap" style="background:var(--surface-alt);border-radius:8px;padding:10px 12px;border:1px solid var(--border);margin-bottom:10px">
@@ -5619,9 +5619,17 @@ function _majEncartPret() {
 // Le capital restant dû n'exige PAS de connaître le capital emprunté : il vaut
 // la valeur actualisée des mensualités restantes,
 //     CRD = M × (1 − (1+i)^−n) / i
-// avec M la mensualité, i le taux mensuel et n le nombre d'échéances restantes.
+// avec M la mensualité, i le taux MENSUEL et n le nombre d'échéances restantes.
 // Seul le taux est donc à saisir, et s'il manque on s'en tient au total restant
 // à payer — exact, simplement sans la part d'intérêts.
+//
+// Le taux mensuel se déduit du taux annuel par la convention ACTUARIELLE,
+//     i = (1 + t)^(1/12) − 1
+// et non par t/12. C'est la convention des crédits à la consommation belges et
+// du TAEG européen : un contrat ING porte la mention « taux d'intérêt débiteur
+// ACTUARIEL fixe ». Vérifié sur un contrat réel — 36 × 208,39 € à 4,65 % donne
+// 6 999,78 € en actuariel, pour 7 000,00 € empruntés ; la division par 12
+// donnait 6 989,67 €, soit 10 € d'écart dès la première année.
 function _pretInfo(row, refDate) {
   if (!row || row.noEnd === true || row.endYear === undefined || row.endMonth === undefined) return null;
   const mensualite = _lastPaidAmt(row) || Math.max(...row.v.map(v => Math.abs(parseFloat(v) || 0)));
@@ -5632,7 +5640,7 @@ function _pretInfo(row, refDate) {
   if (nb <= 0) return { nb: 0, mensualite, totalRestant: 0, capitalRestant: 0, interets: 0, taux: row.tauxPret || 0 };
   const totalRestant = Math.round(mensualite * nb * 100) / 100;
   const taux = parseFloat(row.tauxPret) || 0;
-  const i = taux / 100 / 12;
+  const i = taux > 0 ? Math.pow(1 + taux / 100, 1 / 12) - 1 : 0;
   const capitalRestant = i > 0
     ? Math.round(mensualite * (1 - Math.pow(1 + i, -nb)) / i * 100) / 100
     : totalRestant;
@@ -11443,8 +11451,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.60';
-const SW_VERSION = 'v340';
+const APP_VERSION = '13.61';
+const SW_VERSION = 'v341';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13316,6 +13324,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.61': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '💳', text: 'Correction du calcul de prêt : le taux mensuel se déduit désormais du taux annuel par la convention actuarielle, (1+t)^(1/12)‑1, et non par une division par 12. C’est la convention des crédits à la consommation belges — un contrat ING porte la mention « taux débiteur actuariel fixe ». Vérifié sur un contrat réel : 36 mensualités de 208,39 € à 4,65 % reconstituent bien les 7 000 € empruntés et les 502 € d’intérêts, là où la division par 12 se trompait de 10 € dès la première année.' }
+    ]
+  },
   '13.60': {
     date: 'Octobre 2026',
     items: [
