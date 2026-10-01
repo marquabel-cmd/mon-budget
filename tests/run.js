@@ -40,6 +40,71 @@ function serveur() {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
+ * Contrôles sur le SOURCE, pas sur la page.
+ *
+ * Une clé de traduction définie deux fois est invisible à l'exécution : dans un
+ * objet JavaScript, la dernière l'emporte en silence et l'objet n'en garde
+ * qu'une. Impossible, donc, de détecter le problème depuis le navigateur — il
+ * faut relire le fichier. C'est exactement ce qui avait produit l'étiquette
+ * « Projection {0} » sur le tableau de bord et le mauvais texte dans
+ * l'assistant de démarrage : deux écrans différents partageaient une clé.
+ * ──────────────────────────────────────────────────────────────────────────── */
+function verificationsSource() {
+  const res = [];
+  const check = (nom, ok, detail) => res.push({ nom, ok: !!ok, detail: ok ? '' : String(detail ?? '') });
+  const src = fs.readFileSync(path.join(RACINE, 'budget_familial.html'), 'utf8');
+  const lignes = src.split('\n');
+
+  const pos = new Map();
+  lignes.forEach((l, i) => {
+    const m = l.match(/^ {4}'([a-z0-9_.]+)'\s*:/);
+    if (m) {
+      if (!pos.has(m[1])) pos.set(m[1], []);
+      pos.get(m[1]).push(i + 1);
+    }
+  });
+
+  // Deux tables (fr, en) : une clé saine apparaît au plus deux fois.
+  const doublons = [...pos.entries()].filter(([, v]) => v.length > 2);
+  check('i18n · aucune clé définie deux fois dans une même langue',
+    doublons.length === 0,
+    doublons.map(([k, v]) => `${k} (lignes ${v.join(', ')})`).join(' · '));
+
+  // Une clé qui ne sert qu'une fois trahit une faute de frappe dans l'autre langue.
+  const orphelines = [...pos.entries()].filter(([, v]) => v.length === 1).map(([k]) => k);
+  check('i18n · chaque clé existe dans les deux langues',
+    orphelines.length === 0, orphelines.join(', '));
+
+  // Une étiquette qui porte {0} doit être substituée partout où elle est lue,
+  // sinon l'utilisateur voit le gabarit brut.
+  const gabarits = [...pos.entries()]
+    .filter(([k]) => new RegExp(`'${k.replace(/\./g, '\\.')}':\\s*'[^']*\\{0\\}`).test(src))
+    .map(([k]) => k);
+  // La substitution peut être immédiate — t('x').replace('{0}', …) — ou différée
+  // d'une ligne ou deux en passant par une variable. On regarde donc dans la
+  // fenêtre qui suit l'appel, au lieu d'exiger un enchaînement direct.
+  // `t(cle, valeur)` substitue déjà {0} lui-même : seuls les appels SANS argument
+  // posent question. La substitution peut alors être immédiate —
+  // t('x').replace('{0}', …) — ou différée d'une ligne en passant par une
+  // variable : on regarde donc dans la fenêtre qui suit l'appel.
+  const FENETRE = 260;
+  const nonSubstituees = gabarits.filter(k => {
+    const re = new RegExp(`t\\('${k.replace(/\./g, '\\.')}'\\)`, 'g');
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      const suite = src.slice(m.index, m.index + FENETRE);
+      if (!suite.includes(".replace('{0}'")) return true;
+    }
+    return false;
+  });
+  check('i18n · toute étiquette contenant {0} est bien substituée',
+    nonSubstituees.length === 0,
+    nonSubstituees.map(k => `${k} lu sans .replace('{0}', …)`).join(' · '));
+
+  return res;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
  * Les cas. Tout ce qui suit s'exécute DANS la page : pas de fermeture sur des
  * variables Node, uniquement sur les globales de l'application.
  * ──────────────────────────────────────────────────────────────────────────── */
@@ -630,11 +695,17 @@ async function tousLesCas() {
     page.on('pageerror', e => erreurs.push(e.message));
     await page.goto(`http://127.0.0.1:${port}/budget_familial.html`, { waitUntil: 'load' });
     await page.waitForFunction(() => typeof window._decideSync === 'function', { timeout: 15000 });
+    // Laisser la chaîne de démarrage se terminer avant d'évaluer quoi que ce soit.
+    // Les cas sont asynchrones depuis l'ajout des clichés cloud : sans ce délai,
+    // les minuteries de l'application (rappels, restauration d'onglet) s'intercalent
+    // entre deux `await` et peuvent provoquer une navigation, qui détruit le
+    // contexte d'exécution en plein milieu des tests.
+    await new Promise(r => setTimeout(r, 2500));
 
     const version = await page.evaluate(() => `${APP_VERSION} / SW ${SW_VERSION}`);
     console.log(`\nMon Budget ${version}\n`);
 
-    const resultats = await page.evaluate(tousLesCas);
+    const resultats = [...verificationsSource(), ...await page.evaluate(tousLesCas)];
     let ok = 0, ko = 0;
     resultats.forEach(r => {
       if (r.ok) { ok++; console.log(`  ✓ ${r.nom}`); }

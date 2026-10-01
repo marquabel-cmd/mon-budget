@@ -7120,7 +7120,7 @@ function renderKpiCards(year) {
       ${resAction}
     </div>
     <div class="kpi-card" style="border-top-color:${proj>=0?'#5B6AF0':'#F04F5B'}">
-      <div class="kpi-label">${t('dash.projection')}</div>
+      <div class="kpi-label">${t('dash.projection').replace('{0}', year)}</div>
       <div class="kpi-value" style="color:${proj>=0?'#5B6AF0':'#F04F5B'};font-size:20px">${fmt(proj, true)}</div>
       <div class="kpi-sub">${proj>=0?t('kpi.on_track'):t('kpi.deficit')}</div>
       <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">${t('kpi.proj_desc', pastMonths)}</div>
@@ -7642,7 +7642,7 @@ function renderMonthSummary(year) {
       const proj = Math.round(avgBal * 12);
       const color = proj >= 0 ? '#5B6AF0' : '#F04F5B';
       return `<div style="margin:10px 0 4px;padding:8px 14px;background:var(--surface-alt);border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--gray)">
-        <strong style="color:var(--text)">${t('dash.projection').replace('{0}', year)}</strong> : ${t('dash.projection_desc')}
+        <strong style="color:var(--text)">🔮 ${t('dash.projection').replace('{0}', year)}</strong> : ${t('dash.projection_desc')}
         <strong style="color:${color}">${fmt(proj, true)}</strong>
         <span style="font-size:11px">${t('dash.avg_balance').replace('{0}', fmtN(avgBal)).replace('{1}', completedM)}</span>
       </div>`;
@@ -11148,8 +11148,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.57';
-const SW_VERSION = 'v337';
+const APP_VERSION = '13.58';
+const SW_VERSION = 'v338';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -11198,8 +11198,6 @@ const TRANSLATIONS = {
     'wiz.s1.sub': 'Salaire net, allocations, tout ce qui rentre chaque mois',
     'wiz.s1.hint': 'Vous pourrez ajuster ça à tout moment',
     'wiz.s1.placeholder': 'ex: 2500',
-    'wiz.s2.title': 'Vos charges fixes principales',
-    'wiz.s2.sub': 'Loyer, électricité, abonnements… (ajoutez-en jusqu\'à 3)',
     'wiz.s2.placeholder1': '🏠 Loyer / Prêt',
     'wiz.s2.placeholder2': '⚡ Énergie',
     'wiz.s2.placeholder3': '📱 Téléphone / Internet',
@@ -11208,8 +11206,7 @@ const TRANSLATIONS = {
     'wiz.s3.revenues': 'Revenus estimés',
     'wiz.s3.charges': 'Charges fixes',
     'wiz.s3.balance': 'Solde disponible / mois',
-    'wiz.s3.hint': 'Ces données ont été ajoutées à votre budget. Complétez-les dans l\'app !',
-    'wiz.s3.cta': '🚀 Découvrir mon budget',
+    'wiz.s3.done': 'Ces données ont été ajoutées à votre budget. Complétez-les dans l\'app !',
     'wiz.next': 'Suivant →',
     'wiz.skip': 'Passer cette étape',
     // Sections
@@ -11278,7 +11275,6 @@ const TRANSLATIONS = {
     'summary.total_expenses': '📉 Dépenses totales',
     'summary.balance': '💰 Solde',
     'summary.savings_rate': 'Taux d\'épargne',
-    'summary.avg_savings': 'Épargne moy./mois',
     'summary.best_month': '🏆 Meilleur mois',
     'summary.worst_month': '📉 Mois difficile',
     'summary.biggest_spending': '🛒 + dépensier',
@@ -11346,10 +11342,6 @@ const TRANSLATIONS = {
     'ai.err_empty': 'Réponse vide de Groq',
     'ai.placeholder': 'Posez votre question…',
     // Toast messages
-    'toast.saved': '✅ Sauvegardé',
-    'toast.deleted': '🗑 Supprimé',
-    'toast.copied': '✅ Copié',
-    'toast.error': '❌ Erreur',
     'toast.demo_mode': '🎮 Mode démo activé — explorez librement !',
     // Empty states
     'empty.no_expenses': 'Aucune dépense en {0}',
@@ -11438,7 +11430,6 @@ const TRANSLATIONS = {
     'dash.charges_ratio': 'Charges / Revenus',
     'dash.savings_rate': 'Taux d\'épargne',
     'dash.reserve_months': 'Mois de réserve',
-    'dash.projection': 'Projection épargne',
     'dash.budget_remaining': 'Budget restant',
     'dash.expenses_month': 'Dépenses du mois',
     'dash.top_cat': 'Top catégorie',
@@ -11968,7 +11959,7 @@ const TRANSLATIONS = {
     // Summary annual view
     'summary.annual_overview': '📈 Vue d\'ensemble annuelle',
     // Dashboard projection
-    'dash.projection': '🔮 Projection {0}',
+    'dash.projection': 'Projection {0}',
     'dash.projection_desc': 'à ce rythme, épargne annuelle estimée à',
   },
   en: {
@@ -11992,8 +11983,6 @@ const TRANSLATIONS = {
     'wiz.s1.sub': 'Net salary, benefits, anything that comes in each month',
     'wiz.s1.hint': 'You can adjust this at any time',
     'wiz.s1.placeholder': 'e.g. 2500',
-    'wiz.s2.title': 'Your main fixed costs',
-    'wiz.s2.sub': 'Rent, electricity, subscriptions… (add up to 3)',
     'wiz.s2.placeholder1': '🏠 Rent / Mortgage',
     'wiz.s2.placeholder2': '⚡ Energy',
     'wiz.s2.placeholder3': '📱 Phone / Internet',
@@ -12002,8 +11991,7 @@ const TRANSLATIONS = {
     'wiz.s3.revenues': 'Estimated revenues',
     'wiz.s3.charges': 'Fixed costs',
     'wiz.s3.balance': 'Available balance / month',
-    'wiz.s3.hint': 'This data has been added to your budget. Complete it in the app!',
-    'wiz.s3.cta': '🚀 Discover my budget',
+    'wiz.s3.done': 'This data has been added to your budget. Complete it in the app!',
     'wiz.next': 'Next →',
     'wiz.skip': 'Skip this step',
     // Sections
@@ -12072,7 +12060,6 @@ const TRANSLATIONS = {
     'summary.total_expenses': '📉 Total expenses',
     'summary.balance': '💰 Balance',
     'summary.savings_rate': 'Savings rate',
-    'summary.avg_savings': 'Avg. savings/month',
     'summary.best_month': '🏆 Best month',
     'summary.worst_month': '📉 Toughest month',
     'summary.biggest_spending': '🛒 Highest spend',
@@ -12140,10 +12127,6 @@ const TRANSLATIONS = {
     'ai.err_empty': 'Empty response from Groq',
     'ai.placeholder': 'Ask a question…',
     // Toast messages
-    'toast.saved': '✅ Saved',
-    'toast.deleted': '🗑 Deleted',
-    'toast.copied': '✅ Copied',
-    'toast.error': '❌ Error',
     'toast.demo_mode': '🎮 Demo mode activated — explore freely!',
     // Empty states
     'empty.no_expenses': 'No expenses in {0}',
@@ -12232,7 +12215,6 @@ const TRANSLATIONS = {
     'dash.charges_ratio': 'Fixed costs / Revenues',
     'dash.savings_rate': 'Savings rate',
     'dash.reserve_months': 'Reserve months',
-    'dash.projection': 'Savings projection',
     'dash.budget_remaining': 'Remaining budget',
     'dash.expenses_month': 'Monthly expenses',
     'dash.top_cat': 'Top category',
@@ -12762,7 +12744,7 @@ const TRANSLATIONS = {
     // Summary annual view
     'summary.annual_overview': '📈 Annual overview',
     // Dashboard projection
-    'dash.projection': '🔮 Projection {0}',
+    'dash.projection': 'Projection {0}',
     'dash.projection_desc': 'at this rate, estimated annual savings of',
   }
 };
@@ -12949,7 +12931,7 @@ function _updateWizardLang() {
   _upd('wiz-s3-rev-lbl', 'wiz.s3.revenues');
   _upd('wiz-s3-chg-lbl', 'wiz.s3.charges');
   _upd('wiz-s3-bal-lbl', 'wiz.s3.balance');
-  _upd('wiz-s3-hint', 'wiz.s3.hint');
+  _upd('wiz-s3-hint', 'wiz.s3.done');
   _upd('wiz-s3-cta', 'wiz.s3.cta');
   // Placeholders
   const p1 = document.getElementById('wiz-chg-lbl-1'); if (p1) p1.placeholder = t('wiz.s2.placeholder1');
@@ -13039,6 +13021,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.58': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '🔮', text: 'Le quatrième indicateur du tableau de bord affichait « Projection {0} » au lieu de « Projection 2026 » : l’année n’était jamais insérée. C’était visible sur chaque tableau de bord, dans les deux langues.' },
+      { icon: '🔑', text: 'Dix étiquettes de texte étaient définies deux fois, la seconde écrasant la première en silence. Deux écrans différents de l’assistant de démarrage se partageaient ainsi une même étiquette, et le récapitulatif final affichait le texte de l’étape précédente. Chacun a retrouvé le sien.' }
+    ]
+  },
   '13.57': {
     date: 'Octobre 2026',
     items: [
