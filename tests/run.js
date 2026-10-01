@@ -651,6 +651,117 @@ async function tousLesCas() {
     reset();
   }
 
+  // ── Année ouverte par défaut ─────────────────────────────────────────────
+  {
+    const AN = String(new Date().getFullYear());
+    const SUIV = String(new Date().getFullYear() + 1);
+    const PREC = String(new Date().getFullYear() - 1);
+
+    DATA = { [PREC]: annee(), [AN]: annee(), [SUIV]: annee() };
+    check('année par défaut · l’année en cours prime sur la dernière créée',
+      _anneeParDefaut() === AN, _anneeParDefaut());
+
+    DATA = { [PREC]: annee(), [AN]: annee() };
+    check('année par défaut · l’année en cours quand c’est la plus récente',
+      _anneeParDefaut() === AN, _anneeParDefaut());
+
+    // Année en cours absente : repli sur la plus récente disponible
+    DATA = { [PREC]: annee(), [SUIV]: annee() };
+    check('année par défaut · repli sur la plus récente si l’année en cours manque',
+      _anneeParDefaut() === SUIV, _anneeParDefaut());
+
+    DATA = {};
+    check('année par défaut · chaîne vide si aucune année',
+      _anneeParDefaut() === '', JSON.stringify(_anneeParDefaut()));
+
+    // L’onglet Graphiques suit la même règle
+    DATA = { [PREC]: annee(), [AN]: annee(), [SUIV]: annee() };
+    _chartYear = '';
+    const srcCharts = String(window.renderCharts);
+    check('année par défaut · les graphiques passent par la même règle',
+      srcCharts.includes('_anneeParDefaut()'), 'renderCharts n’utilise pas _anneeParDefaut');
+  }
+
+  // ── Trésorerie prévisionnelle ────────────────────────────────────────────
+  {
+    const AN = String(new Date().getFullYear());
+    const moisNow = new Date().getMonth();
+    const PREC = String(new Date().getFullYear() - 1);
+
+    const ligne = (label, v, paid, extra) => ({ label, cat: 'fixed', v, paid, ...(extra || {}) });
+    const douze = x => Array(12).fill(x);
+
+    DATA = { [AN]: annee() };
+    DATA[AN].soldes.compteIng = 1000;
+    DATA[AN].soldes.compteIngSet = true;
+    // Un revenu de 500 tous les mois, payé jusqu'au mois en cours seulement
+    const rev = ligne('Salaire', douze(500), douze(false).map((_, i) => i <= moisNow));
+    DATA[AN].revenus = [rev];
+    DATA[AN].charges = [];
+
+    let s = _tresorerieProjetee(AN, 'acc_main');
+    check('trésorerie · douze points, un par mois', s.length === 12, s.length);
+    check('trésorerie · les mois révolus sont marqués réels',
+      s.filter(p => p.reel).length === moisNow + 1, s.filter(p => p.reel).length);
+
+    // LA propriété essentielle : au mois en cours, la courbe vaut le solde affiché
+    const auMoisCourant = s[moisNow].solde;
+    check('trésorerie · elle rejoint exactement le solde calculé',
+      Math.abs(auMoisCourant - computeCompte(AN, 'acc_main')) < 0.005,
+      `${auMoisCourant} vs ${computeCompte(AN, 'acc_main')}`);
+
+    // Les mois à venir comptent même ce qui n'est pas coché payé
+    if (moisNow < 11) {
+      check('trésorerie · un revenu futur non coché est quand même projeté',
+        s[11].solde > s[moisNow].solde, `${s[11].solde} vs ${s[moisNow].solde}`);
+    }
+
+    // Une charge future creuse le solde au bon mois
+    if (moisNow < 11) {
+      const creux = douze(0); creux[11] = 3000;
+      DATA[AN].charges = [ligne('Travaux', creux, douze(false), { noEnd: true })];
+      s = _tresorerieProjetee(AN, 'acc_main');
+      const bas = _pointBasTresorerie(AN, 'acc_main');
+      check('trésorerie · une charge future est bien retranchée',
+        Math.abs(s[11].solde - (s[10].solde + 500 - 3000)) < 0.005,
+        `${s[11].solde} attendu ${s[10].solde + 500 - 3000}`);
+      check('trésorerie · le point bas est le minimum des mois à venir',
+        bas && bas.solde === Math.min(...s.filter(p => !p.reel).map(p => p.solde)),
+        bas && bas.solde);
+    }
+
+    // Une charge PASSÉE non cochée ne doit pas peser : le passé, c'est le constaté
+    const passe = douze(0); passe[0] = 9999;
+    DATA[AN].charges = [ligne('Jamais payée', passe, douze(false), { noEnd: true })];
+    const avecNonPayee = _tresorerieProjetee(AN, 'acc_main')[moisNow].solde;
+    DATA[AN].charges = [];
+    const sansRien = _tresorerieProjetee(AN, 'acc_main')[moisNow].solde;
+    check('trésorerie · une charge passée non cochée n’est pas comptée',
+      Math.abs(avecNonPayee - sansRien) < 0.005, `${avecNonPayee} vs ${sansRien}`);
+
+    // fromBank : une variation de valeur ne touche pas le compte courant
+    const vers = douze(0); vers[11] = 200;
+    DATA[AN].charges = [ligne('Vers livret', vers, douze(true), { cat: 'livret_in' })];
+    const avecVersement = _tresorerieProjetee(AN, 'acc_main')[11].solde;
+    DATA[AN].charges = [ligne('Plus-value', vers, douze(true), { cat: 'livret_in', fromBank: true })];
+    const avecPlusValue = _tresorerieProjetee(AN, 'acc_main')[11].solde;
+    check('trésorerie · un versement vers livret sort du compte',
+      Math.abs(avecVersement - (avecPlusValue - 200)) < 0.005,
+      `${avecVersement} vs ${avecPlusValue - 200}`);
+    check('trésorerie · une plus-value ne touche pas le compte',
+      Math.abs(avecPlusValue - sansRien - 500 * (11 - moisNow)) < 0.005,
+      `${avecPlusValue}`);
+
+    // Une année entièrement passée n'a pas de point bas à venir
+    DATA = { [PREC]: annee() };
+    DATA[PREC].revenus = [ligne('Salaire', douze(500), douze(true))];
+    check('trésorerie · aucun point bas pour une année révolue',
+      _pointBasTresorerie(PREC, 'acc_main') === null,
+      JSON.stringify(_pointBasTresorerie(PREC, 'acc_main')));
+    check('trésorerie · pas de série pour une année inexistante',
+      _tresorerieProjetee('1999', 'acc_main').length === 0);
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };

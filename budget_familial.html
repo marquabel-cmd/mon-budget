@@ -752,7 +752,11 @@ body.auth-locked #context-banner {
   .solde-card{min-width:calc(50% - 3px);padding:10px 12px}
   .solde-card input{font-size:15px}
   .solde-card .computed-val{font-size:15px}
-  .solde-row .sr-icon-name{min-width:70px;max-width:100px}
+  /* Sur mobile, le nom était coupé à 100 px : « Compte pri… ». Il passe
+     désormais à la ligne, au plus deux, plutôt que d'être tronqué. */
+  .solde-row{align-items:flex-start}
+  .solde-row .sr-icon-name{min-width:84px;max-width:124px;align-items:flex-start}
+  .solde-row .sr-name{white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
   .solde-row .sr-init input{width:70px;font-size:12px}
   .solde-row .sr-init-static{font-size:12px}
   .solde-row .sr-calc{font-size:14px}
@@ -2772,7 +2776,7 @@ function _finishLogin(id) {
         renderTabs();
         getYears().forEach(y => renderYear(y));
         renderSummary();
-        const ly = (() => { const curY = String(new Date().getFullYear()); const ys = getYears(); return ys.includes(curY) ? curY : ys[ys.length-1]; })();
+        const ly = _anneeParDefaut();
         if (ly) { const tabs = document.querySelectorAll('#year-tabs .tab'); const t = [...tabs].find(t=>t.dataset.year===ly)||tabs[tabs.length-1]; if(t) switchTab('y'+ly, t); }
         setCloudStatus('ok');
         // Utilisateur existant avec données cloud — ne pas relancer le tour guidé
@@ -2828,12 +2832,8 @@ function _finishLogin(id) {
   if (feedbackFab) feedbackFab.style.display = 'flex';
   const txFab = document.getElementById('tx-fab');
   if (txFab) txFab.style.display = 'flex';
-  const years = getYears();
-  const lastYear = years[years.length - 1];
   setTimeout(() => {
-    const curY = String(new Date().getFullYear());
-    const years = getYears();
-    const targetY = years.includes(curY) ? curY : (years[years.length - 1] || '');
+    const targetY = _anneeParDefaut();
     if (targetY) {
       const tabs = document.querySelectorAll('#year-tabs .tab');
       const tab = [...tabs].find(t => t.dataset.year === targetY) || tabs[tabs.length - 1];
@@ -3420,11 +3420,11 @@ function switchUser(userId) {
   updateLastSaveDisplay();
   document.getElementById('user-menu')?.classList.remove('open');
   const years = getYears();
-  const lastYear = years[years.length - 1];
-  if (lastYear) {
-    const yearTabs = document.querySelectorAll('#year-tabs .tab');
-    const tabEl = yearTabs[yearTabs.length - 1];
-    if (tabEl) switchTab('y' + lastYear, tabEl);
+  const cible = _anneeParDefaut();
+  if (cible) {
+    const yearTabs = [...document.querySelectorAll('#year-tabs .tab')];
+    const tabEl = yearTabs.find(t => t.dataset.year === cible) || yearTabs[yearTabs.length - 1];
+    if (tabEl) switchTab('y' + cible, tabEl);
   }
   showToast('👤 ' + USERS[userId].name);
 }
@@ -3742,6 +3742,83 @@ function computeCompte(year, accId) {
   return bal;
 }
 
+// ── TRÉSORERIE PRÉVISIONNELLE ───────────────────────────────────────────
+// computeCompte() ne compte que les mois cochés payés : il répond à « où en
+// suis-je », jamais à « où vais-je ». Or le calendrier de l'année entière est
+// déjà saisi — le syndicat de novembre, les charges trimestrielles, les fins de
+// prêt. L'indicateur « Projection » du tableau de bord se contentait pourtant
+// d'extrapoler une moyenne mensuelle, en ignorant tout ce détail.
+//
+// Cette fonction reconstitue le solde mois par mois :
+//   • jusqu'au mois en cours, on s'en tient aux montants cochés payés, afin que
+//     la courbe rejoigne EXACTEMENT le solde affiché partout ailleurs ;
+//   • au-delà, tout ce qui est encodé est pris en compte, payé ou non.
+// Chaque point porte `reel` pour que l'affichage distingue les deux régimes.
+function _tresorerieProjetee(year, accId) {
+  const d = DATA[year];
+  if (!d) return [];
+  const isMain = !accId || accId === 'acc_main';
+  const now = new Date();
+  const anNow = now.getFullYear(), moisNow = now.getMonth();
+  const an = parseInt(year);
+  const estReel = m => an < anNow || (an === anNow && m <= moisNow);
+
+  const concerne = r => isMain
+    ? (r.inCalc !== false && (!r.accountId || r.accountId === 'acc_main'))
+    : (r.accountId === accId);
+
+  const secClaimed = getAccounts().slice(1).flatMap(a => a.linkedMethods || []);
+  const excMeth = [...new Set([...(d.excludeCalcMethods || []), ...secClaimed])];
+  const myLinked = getAccounts().find(a => a.id === accId)?.linkedMethods || [];
+
+  let bal = _compteStart(year, isMain ? 'acc_main' : accId);
+  const serie = [];
+  for (let m = 0; m < 12; m++) {
+    const reel = estReel(m);
+
+    d.revenus.forEach(r => {
+      if (!concerne(r)) return;
+      if (reel && r.paid && !r.paid[m]) return;
+      bal += parseFloat(r.v[m]) || 0;
+    });
+
+    d.charges.forEach(r => {
+      if (!concerne(r)) return;
+      if (reel && !r.paid?.[m]) return;
+      const amt = Math.abs(parseFloat(r.v[m]) || 0);
+      // `fromBank` : la valeur bouge sans contrepartie sur le compte courant.
+      if (r.cat === 'livret_out') { if (!r.fromBank) bal += amt; }
+      else if (r.cat === 'livret_in') { if (!r.fromBank) bal -= amt; }
+      else bal -= parseFloat(r.v[m]) || 0;
+    });
+
+    // Les dépenses variables n'existent que pour les mois déjà vécus : rien à
+    // projeter, on les additionne telles quelles.
+    Object.values(d.vars || {}).forEach(txs => (txs || []).forEach(tx => {
+      if (tx.month !== m) return;
+      const montant = parseFloat(tx.amount) || 0;
+      if (isMain) {
+        if (tx.accountId && tx.accountId !== 'acc_main') return;
+        if (excMeth.includes(tx.method)) return;
+        bal -= montant;
+      } else {
+        if (tx.accountId === accId) { bal -= montant; return; }
+        if (!tx.accountId && myLinked.includes(tx.method)) bal -= montant;
+      }
+    }));
+
+    serie.push({ mois: m, solde: Math.round(bal * 100) / 100, reel });
+  }
+  return serie;
+}
+// Le mois le plus bas de la période encore à venir : c'est l'information qui
+// décide d'une action, bien plus que le solde de fin d'année.
+function _pointBasTresorerie(year, accId) {
+  const serie = _tresorerieProjetee(year, accId);
+  const futur = serie.filter(p => !p.reel);
+  if (!futur.length) return null;
+  return futur.reduce((min, p) => (p.solde < min.solde ? p : min), futur[0]);
+}
 function showCompteDetail(year, accId) {
   const d = DATA[year];
   const isMain = !accId || accId === 'acc_main';
@@ -4191,9 +4268,8 @@ function renderTabs() {
   if (mob) {
     if (!years.length) { mob.innerHTML = ''; }
     else {
-      const curYTab = String(new Date().getFullYear());
       const activeTabEl = document.querySelector('#year-tabs .tab.active');
-      const activeY = activeTabEl?.dataset?.year || (years.includes(curYTab) ? curYTab : years[years.length-1]);
+      const activeY = activeTabEl?.dataset?.year || _anneeParDefaut();
       const desc = [...years].reverse();
       mob.innerHTML = `<div style="display:flex;gap:3px;align-items:center">
   ${desc.map(y => `<button data-yr="${y}" onclick="_switchYearMobile('${y}')" style="background:${y==activeY?'rgba(91,106,240,.3)':'rgba(91,106,240,.1)'};border:1.5px solid ${y==activeY?'rgba(91,106,240,.8)':'rgba(91,106,240,.4)'};border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;color:${y==activeY?'#e0e4ff':'#8892B0'};cursor:pointer">📅 ${y}</button>`).join('')}
@@ -4548,6 +4624,15 @@ function confirmRevDialog() {
 // réelle diffère (intérêts du 1er janvier, variation d'un placement), l'écart
 // est comptabilisé en décembre de l'année précédente, comme des intérêts ou une
 // plus/moins-value — le 01/01 devient exact sans casser la chaîne des années.
+// Année à ouvrir par défaut : celle en cours si elle existe, sinon la plus
+// récente disponible. Ouvrir systématiquement la dernière année créée amenait
+// sur 2027 alors qu'on travaille dans 2026. La règle vit ici et nulle part
+// ailleurs : elle était recopiée à quatre endroits, et oubliée à deux autres.
+function _anneeParDefaut() {
+  const ys = getYears();
+  const cur = String(new Date().getFullYear());
+  return ys.includes(cur) ? cur : (ys[ys.length - 1] || '');
+}
 function _prevYearOf(year) {
   const ys = getYears().sort();
   return ys[ys.indexOf(String(year)) - 1] || null;
@@ -7066,6 +7151,21 @@ function _jumpToFixedRow(year, section) {
     secEl.scrollIntoView({behavior:'smooth', block:'start'});
   }, 150);
 }
+// Le creux de trésorerie à venir, remonté sur le tableau de bord. La
+// projection voisine donne une épargne annuelle estimée — un résultat de fin de
+// parcours. Le point bas, lui, dit QUAND ça va être juste, ce qui se décide
+// bien plus tôt. Il est construit sur le calendrier déjà saisi, pas sur une
+// moyenne.
+function _pointBasHtml(year) {
+  const bas = _pointBasTresorerie(year, 'acc_main');
+  if (!bas) return '';
+  const alerte = bas.solde < 0;
+  return `<div style="font-size:11px;margin-top:6px;padding:6px 8px;border-radius:6px;line-height:1.45;
+      background:${alerte ? '#FEF0F1' : 'var(--surface-alt)'};color:${alerte ? '#c0392b' : 'var(--gray)'}">
+      ${alerte ? '⚠️' : '📉'} Point bas prévu : <b>${getMonths()[bas.mois]}</b>,
+      <b style="color:${alerte ? '#c0392b' : 'var(--text)'}">${fmt(bas.solde)}</b>
+    </div>`;
+}
 function renderKpiCards(year) {
   const rv = revTotal(year), dep = depTotal(year), ch = chgTotal(year), bal = balance(year);
   const pastMonths = rv.filter(v => v > 0).length || 1;
@@ -7124,6 +7224,7 @@ function renderKpiCards(year) {
       <div class="kpi-value" style="color:${proj>=0?'#5B6AF0':'#F04F5B'};font-size:20px">${fmt(proj, true)}</div>
       <div class="kpi-sub">${proj>=0?t('kpi.on_track'):t('kpi.deficit')}</div>
       <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4">${t('kpi.proj_desc', pastMonths)}</div>
+      ${_pointBasHtml(year)}
       ${projAction}
     </div>
   </div>`;
@@ -7694,9 +7795,9 @@ function renderRecentTx() {
   // Annee par defaut : annee courante si elle a des donnees, sinon la plus recente
   if (!_txFilterYear) {
     const curY = String(new Date().getFullYear());
-    _txFilterYear = DATA[curY] ? curY : years[years.length - 1];
+    _txFilterYear = DATA[curY] ? curY : _anneeParDefaut();
   }
-  const activeYear = DATA[_txFilterYear] ? _txFilterYear : years[years.length - 1];
+  const activeYear = DATA[_txFilterYear] ? _txFilterYear : _anneeParDefaut();
   const m = _txFilterMonth;
   const fmtAmt = v => (v<0?'\u2212':'+')+Math.abs(v).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u00a0\u20ac';
   const byCat = [];
@@ -8865,7 +8966,7 @@ const PALETTE = ['#1a6fc4','#27ae60','#e67e22','#9b59b6','#c0392b','#16a085','#f
 let _charts = {}, _chartYear = '';
 function renderCharts() {
   const years = getYears();
-  _chartYear = _chartYear && DATA[_chartYear] ? _chartYear : years[years.length-1];
+  _chartYear = _chartYear && DATA[_chartYear] ? _chartYear : _anneeParDefaut();
   const wrap = document.getElementById('tab-charts');
   const yearSelHtml = years.length <= 5
     ? years.map(y=>`<button class="chart-year-btn${y===_chartYear?' active':''}" onclick="selectChartYear('${y}',this)">${y}</button>`).join('')
@@ -8878,6 +8979,9 @@ function renderCharts() {
     <div class="chart-year-sel" id="chart-year-sel">${yearSelHtml}</div>
     ${chartGoBtn}
     <div class="charts-grid">
+      <div class="chart-card" style="grid-column:1/-1"><h4>💶 Trésorerie prévisionnelle — <span id="chart-treso-yr">${_chartYear}</span></h4>
+        <div id="chart-treso-note" style="font-size:11px;color:var(--gray);margin:-4px 0 8px;line-height:1.45"></div>
+        <canvas id="chart-treso" height="80"></canvas></div>
       ${years.length > 1 ? `<div class="chart-card" style="grid-column:1/-1"><h4>📅 Bilan annuel — tendances multi-années</h4><canvas id="chart-annual" height="70"></canvas></div>` : ''}
       <div class="chart-card" style="grid-column:1/-1"><h4>💰 Solde mensuel — comparaison des années</h4><canvas id="chart-balance" height="80"></canvas></div>
       <div class="chart-card" style="grid-column:1/-1"><h4>${t('chart.savings_title')}</h4><canvas id="chart-savings" height="80"></canvas></div>
@@ -8888,6 +8992,7 @@ function renderCharts() {
     </div></div>`;
   Object.values(_charts).forEach(c=>c.destroy());
   _charts = {};
+  buildTresorerieChart();
   if (years.length > 1) buildAnnualTrendChart();
   buildBalanceChart();
   buildSavingsChart();
@@ -8897,8 +9002,9 @@ function selectChartYear(y, btn) {
   _chartYear = y;
   document.querySelectorAll('.chart-year-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  ['rd','cat','wealth','top'].forEach(id=>{const el=document.getElementById(`chart-${id}-yr`);if(el)el.textContent=y;});
-  ['revdep','cat','wealth','top'].forEach(id=>{if(_charts[id]){_charts[id].destroy();delete _charts[id];}});
+  ['rd','cat','wealth','top','treso'].forEach(id=>{const el=document.getElementById(`chart-${id}-yr`);if(el)el.textContent=y;});
+  ['revdep','cat','wealth','top','treso'].forEach(id=>{if(_charts[id]){_charts[id].destroy();delete _charts[id];}});
+  buildTresorerieChart();
   buildPerYearCharts();
 }
 function buildAnnualTrendChart() {
@@ -8943,6 +9049,41 @@ function buildSavingsChart() {
   _charts.savings = new Chart(document.getElementById('chart-savings'),{
     type:'line',data:{labels:getMonths(),datasets},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+'%'}}}}
+  });
+}
+// Trésorerie prévisionnelle : solde du compte mois par mois, construit sur le
+// calendrier réellement saisi. Deux séries plutôt qu'une, pour que l'œil ne
+// confonde jamais ce qui est constaté avec ce qui est prévu : trait plein
+// jusqu'au mois en cours, pointillés au-delà.
+function buildTresorerieChart() {
+  const canvas = document.getElementById('chart-treso');
+  if (!canvas || !DATA[_chartYear]) return;
+  const serie = _tresorerieProjetee(_chartYear, 'acc_main');
+  const dernierReel = serie.filter(p => p.reel).length - 1;
+  const constate = serie.map((p, i) => i <= dernierReel ? p.solde : null);
+  // Le premier point projeté reprend le dernier constaté, sinon les deux traits
+  // se touchent sans se rejoindre et la courbe paraît coupée.
+  const prevu = serie.map((p, i) => i >= dernierReel ? p.solde : null);
+  const bas = _pointBasTresorerie(_chartYear, 'acc_main');
+  const note = document.getElementById('chart-treso-note');
+  if (note) {
+    note.innerHTML = bas
+      ? `Point bas prévu : <b>${getMonths()[bas.mois]}</b>, <b style="color:${bas.solde < 0 ? '#F04F5B' : 'var(--text)'}">${fmt(bas.solde)}</b>. Trait plein = constaté, pointillés = prévu d'après vos montants déjà saisis.`
+      : `Année entièrement écoulée : la courbe ne montre que du constaté.`;
+  }
+  _charts.treso = new Chart(canvas, {
+    type: 'line',
+    data: { labels: getMonths(), datasets: [
+      { label: 'Constaté', data: constate, borderColor: '#5B6AF0', backgroundColor: '#5B6AF022',
+        tension: .3, fill: true, pointRadius: 3, spanGaps: false },
+      { label: 'Prévu', data: prevu, borderColor: '#8B5CF6', borderDash: [6, 4],
+        backgroundColor: '#8B5CF611', tension: .3, fill: true, pointRadius: 3, spanGaps: false },
+      { label: 'Zéro', data: Array(12).fill(0), borderColor: '#F04F5B55', borderDash: [3, 3],
+        pointRadius: 0, borderWidth: 1.5, fill: false }
+    ]},
+    options: { responsive: true, plugins: { legend: { position: 'top' },
+      tooltip: { callbacks: { label: c => `${c.dataset.label} : ${fmt(c.parsed.y)}` } } },
+      scales: { y: { ticks: { callback: v => fmt(v) } } } }
   });
 }
 function buildWealthChart(year) {
@@ -9845,10 +9986,7 @@ function renderConfigTab() {
         // Année de contexte pour la configuration d'un livret : l'année courante si
         // elle existe, sinon la plus récente. Sans ça le réglage porterait sur la
         // première année du budget, rarement celle que l'on a sous les yeux.
-        const _cfgYear = (() => {
-          const ys = getYears(); const cur = String(new Date().getFullYear());
-          return ys.includes(cur) ? cur : (ys[ys.length - 1] || '');
-        })();
+        const _cfgYear = _anneeParDefaut();
         const livRows = livs.map((l,i) => `
           <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
             <span style="font-size:13px">📈</span>
@@ -11148,8 +11286,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.58';
-const SW_VERSION = 'v338';
+const APP_VERSION = '13.59';
+const SW_VERSION = 'v339';
 
 // ── AUTO-UPDATE CHECK ──
 (function() {
@@ -13021,6 +13159,15 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.59': {
+    date: 'Octobre 2026',
+    items: [
+      { icon: '💶', text: 'Trésorerie prévisionnelle : nouveau graphique dans l’onglet Graphiques, qui trace le solde de votre compte mois par mois d’après le calendrier que vous avez déjà saisi — trait plein pour ce qui est constaté, pointillés pour ce qui est prévu. Jusqu’ici l’application extrapolait une moyenne mensuelle et ignorait tout ce détail : le syndicat de novembre, les charges trimestrielles, les fins de prêt.' },
+      { icon: '📉', text: 'Point bas prévu, affiché sous l’indicateur Projection : le mois où votre compte descendra le plus bas, et son montant. L’encart passe en rouge si le solde devient négatif. C’est l’information qui permet d’agir à temps, bien avant le solde de fin d’année.' },
+      { icon: '📅', text: 'L’année en cours s’ouvre par défaut, et non la dernière année créée. Cela valait déjà au démarrage mais pas partout : l’onglet Graphiques et le changement de profil ouvraient 2027 alors qu’on travaille dans 2026. La règle est désormais unique.' },
+      { icon: '📱', text: 'Sur mobile, le nom d’un compte passe à la ligne au lieu d’être tronqué (« Compte pri… »).' }
+    ]
+  },
   '13.58': {
     date: 'Octobre 2026',
     items: [
