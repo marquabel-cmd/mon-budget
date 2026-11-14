@@ -3041,11 +3041,18 @@ function renderWizard() {
     </div>`;
   } else if (_wiz.step === 6) {
     body = `<div style="text-align:center;padding:4px 0 8px">
-      <div style="font-size:36px;margin-bottom:6px">🐙</div>
+      <div style="font-size:36px;margin-bottom:6px">☁️</div>
       <div style="display:inline-block;background:#27ae60;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px;margin-bottom:8px">${t('wiz.step6.free_badge')}</div>
       <div style="font-size:14px;color:#fff;font-weight:700;margin-bottom:4px">${t('wiz.step6.title')}</div>
       <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:14px;line-height:1.6">${t('wiz.step6.desc')}</div>
     </div>
+    <button onclick="wizardGoogle()" style="width:100%;background:#fff;color:#3c4043;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:8px">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      ${t('wiz.step6.google')}
+    </button>
+    <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:14px;text-align:center">${t('wiz.step6.google_hint')}</div>
+    <div onclick="wizardToggleGist()" style="font-size:11px;color:rgba(255,255,255,.45);text-align:center;cursor:pointer;text-decoration:underline;margin-bottom:10px">${t('wiz.step6.advanced')}</div>
+    <div id="wiz-gist-bloc" style="display:none">
     <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:12px;font-size:11px;color:rgba(255,255,255,.85);line-height:1.9">
       <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:12px">${t('wiz.step6.how')}</div>
       <div>${t('wiz.step6.s1')}</div>
@@ -3063,10 +3070,10 @@ function renderWizard() {
         style="padding:8px 12px;background:#27ae60;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">${t('wiz.validate_connect')}</button>
     </div>
     <div id="wiz-gist-err" style="color:#ff8f8f;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    </div>
     <div style="display:flex;gap:8px;margin-top:4px">
       <button onclick="wizardBack()" style="padding:10px 0;flex:1;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.step6.back')}</button>
-      <button onclick="wizardFinish()" style="padding:10px 0;flex:2;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:600">${t('wiz.step6.skip')}</button>
-      <button onclick="wizardGistSave()" class="welcome-create-btn" style="flex:2">${t('wiz.step6.create')}</button>
+      <button onclick="wizardFinish()" class="welcome-create-btn" style="flex:2">${t('wiz.step6.create')}</button>
     </div>`;
   }
   c.innerHTML = indicator + body;
@@ -3108,6 +3115,18 @@ function wizardConfirmPin() {
   const pin = [0,1,2,3].map(i=>document.getElementById('wpin'+i)?.value||'').join('');
   if (pin.length < 4) { document.getElementById('wiz-pin-err').textContent = t('wiz.pin_error'); return; }
   _wiz.pin = pin; _wiz.step = 6; renderWizard();
+}
+// Depuis l'assistant : on se connecte, puis on termine la création du profil
+// local. L'essai de 30 jours et la synchro démarrent seuls dans la foulée.
+function wizardGoogle() {
+  signInWithGoogle(() => {
+    showToast(t('toast.trial_started'));
+    wizardFinish();
+  });
+}
+function wizardToggleGist() {
+  const b = document.getElementById('wiz-gist-bloc');
+  if (b) b.style.display = b.style.display === 'none' ? '' : 'none';
 }
 async function wizardGistSave() {
   const val = document.getElementById('wiz-gist-inp')?.value.trim();
@@ -11398,7 +11417,11 @@ async function _fbSignInWithIdp(idToken) {
   _fbSave(u); return u;
 }
 
-function signInWithGoogle() {
+// `apresConnexion` : appelé à la place du comportement habituel quand la
+// connexion vient de l'assistant de démarrage. Sans lui, signInWithGoogle
+// déclenche _autoRestoreFromFirebase() quand l'écran d'accueil est visible, ce
+// qui écraserait le profil que l'utilisateur est en train de créer.
+function signInWithGoogle(apresConnexion) {
   if (!GOOGLE_CLIENT_ID) { showToast('❌ Client ID Google non configuré'); return; }
   const nonce = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   sessionStorage.setItem('google_nonce', nonce);
@@ -11431,6 +11454,7 @@ function signInWithGoogle() {
           await fbInitTrial(u.uid, u.idToken);
           closeAuthModal();
           renderTrialBanner();
+          if (typeof apresConnexion === 'function') { apresConnexion(u); return; }
           const onboarding = document.getElementById('onboarding-screen');
           if (onboarding && onboarding.style.display !== 'none') {
             _autoRestoreFromFirebase();
@@ -11530,8 +11554,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.70';
-const SW_VERSION = 'v350';
+const APP_VERSION = '13.71';
+const SW_VERSION = 'v351';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -12275,16 +12299,20 @@ const TRANSLATIONS = {
     'dash.no_data': 'Aucune donnée pour l\'instant.',
     'dash.add_year_btn': '＋ Ajouter une année',
     'pdf.generated': 'Généré le {0}',
-    'wiz.step6.title': 'Sauvegarde cloud avec GitHub',
+    'toast.trial_started': '✅ Connecté — 30 jours offerts, votre budget est sauvegardé en ligne',
+    'wiz.step6.title': 'Ne perdez jamais votre budget',
+    'wiz.step6.google': 'Se connecter avec Google',
+    'wiz.step6.google_hint': 'Un clic, aucune carte bancaire. Votre budget est sauvegardé en ligne et vous suit sur tous vos appareils. <b style="color:#fff">30 jours offerts.</b>',
+    'wiz.step6.advanced': 'Autre option : sauvegarde GitHub (avancé)',
     'wiz.step6.free': '100% GRATUIT',
-    'wiz.step6.desc': 'Vos données seront automatiquement<br>sauvegardées en ligne à chaque enregistrement.<br><b style="color:#fff">Aucun abonnement. Aucune carte bancaire.</b>',
+    'wiz.step6.desc': 'Sans sauvegarde en ligne, votre budget n’existe que sur cet appareil :<br>un navigateur vidé et tout est perdu.',
     'wiz.step6.how': 'Comment faire ? (5 minutes)',
     'wiz.step6.s1': '1️⃣ Crée un compte sur <b>github.com</b> (gratuit)',
     'wiz.step6.s2': '2️⃣ Va dans <b>Settings → Developer settings → Personal access tokens → Tokens (classic)</b>',
     'wiz.step6.s3': '3️⃣ Clique <b>Generate new token (classic)</b>',
     'wiz.step6.s4': '4️⃣ Coche seulement <b>gist</b> ✅',
     'wiz.step6.s5': '5️⃣ Copie le token <b>ghp_…</b> et colle-le ci-dessous',
-    'wiz.step6.guide': '📖 Guide détaillé disponible dans <b>Aide → Sauvegarde</b>',
+    'wiz.step6.guide': '📖 Guide détaillé dans <b>Aide → Sauvegarde</b> · Gratuit sans limite de durée, mais demande un compte GitHub.',
     'wiz.step6.skip': '⏭ Passer pour l\'instant',
     'wiz.step6.back': '← Retour',
     'wiz.step6.create': '✅ Créer mon budget',
@@ -12325,7 +12353,7 @@ const TRANSLATIONS = {
     // Wizard back button
     'wiz.back': '← Retour',
     // Wizard free badge
-    'wiz.step6.free_badge': '100% GRATUIT',
+    'wiz.step6.free_badge': '30 JOURS OFFERTS',
     // Summary / print report
     'summary.initial_balance': 'Solde initial 01/01',
     'summary.current_balance': '= Compte actuel calculé',
@@ -13063,16 +13091,20 @@ const TRANSLATIONS = {
     'dash.no_data': 'No data yet.',
     'dash.add_year_btn': '＋ Add a year',
     'pdf.generated': 'Generated on {0}',
-    'wiz.step6.title': 'Cloud backup with GitHub',
+    'toast.trial_started': '✅ Signed in — 30 days free, your budget is saved online',
+    'wiz.step6.title': 'Never lose your budget',
+    'wiz.step6.google': 'Sign in with Google',
+    'wiz.step6.google_hint': 'One click, no card needed. Your budget is saved online and follows you across your devices. <b style="color:#fff">30 days free.</b>',
+    'wiz.step6.advanced': 'Other option: GitHub backup (advanced)',
     'wiz.step6.free': '100% FREE',
-    'wiz.step6.desc': 'Your data will be automatically<br>saved online with every save.<br><b style="color:#fff">No subscription. No credit card.</b>',
+    'wiz.step6.desc': 'Without online backup, your budget lives on this device only:<br>clear the browser and everything is gone.',
     'wiz.step6.how': 'How to do it? (5 minutes)',
     'wiz.step6.s1': '1️⃣ Create an account on <b>github.com</b> (free)',
     'wiz.step6.s2': '2️⃣ Go to <b>Settings → Developer settings → Personal access tokens → Tokens (classic)</b>',
     'wiz.step6.s3': '3️⃣ Click <b>Generate new token (classic)</b>',
     'wiz.step6.s4': '4️⃣ Check only <b>gist</b> ✅',
     'wiz.step6.s5': '5️⃣ Copy the <b>ghp_…</b> token and paste it below',
-    'wiz.step6.guide': '📖 Detailed guide available in <b>Help → Backup</b>',
+    'wiz.step6.guide': '📖 Detailed guide in <b>Help → Backup</b> · Free with no time limit, but requires a GitHub account.',
     'wiz.step6.skip': '⏭ Skip for now',
     'wiz.step6.back': '← Back',
     'wiz.step6.create': '✅ Create my budget',
@@ -13113,7 +13145,7 @@ const TRANSLATIONS = {
     // Wizard back button
     'wiz.back': '← Back',
     // Wizard free badge
-    'wiz.step6.free_badge': '100% FREE',
+    'wiz.step6.free_badge': '30 DAYS FREE',
     // Summary / print report
     'summary.initial_balance': 'Starting balance Jan 1',
     'summary.current_balance': '= Calculated current balance',
@@ -13413,6 +13445,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.71': {
+    date: 'Novembre 2026',
+    items: [
+      { icon: '☁️', text: 'La dernière étape de l’inscription proposait un jeton GitHub — il fallait créer un compte sur github.com et générer une clé d’accès, cinq minutes annoncées. La connexion Google, qui tient en un clic et ouvre 30 jours de synchronisation, n’y figurait nulle part. Elle est désormais proposée en premier, et GitHub devient une option repliée pour les utilisateurs avertis.' },
+      { icon: '📝', text: 'Le texte de cette étape promettait « aucun abonnement, aucune carte bancaire » : vrai pour GitHub, trompeur pour l’essai qui devient payant au bout de 30 jours. Il explique maintenant le vrai enjeu — sans sauvegarde en ligne, un navigateur vidé emporte tout.' }
+    ]
+  },
   '13.70': {
     date: 'Novembre 2026',
     items: [
