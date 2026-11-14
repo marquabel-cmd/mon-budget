@@ -11028,6 +11028,7 @@ async function _autoRestoreFromFirebase() {
     if (!stored.idToken || Date.now() > stored.expiresAt - 120000) _fbUser = await _fbRefreshToken();
     if (!_fbUser) { _fbSave(null); showOnboardingScreen(); return; }
   }
+  await fbInitTrial(_fbUser.uid, _fbUser.idToken);   // avant : isPremium en dépend
   const isPremium = await fbCheckPremium(_fbUser.uid, _fbUser.idToken);
   const email = _fbUser.email || '';
   const displayName = _fbUser.displayName || localStorage.getItem('mbudget-fb-name') || '';
@@ -11090,7 +11091,12 @@ async function fbInitAuth() {
   _fbUser = stored;
   if (!stored.idToken || Date.now() > stored.expiresAt - 120000) _fbUser = await _fbRefreshToken();
   if (_fbUser) {
-    fbCheckPremium(_fbUser.uid, _fbUser.idToken).then(() => { renderConfigTab(); if (isLicensed() && !_realtimeSource) startRealtimeSync(); });
+    // L'essai AVANT la vérification du premium : `isLicensed()` lit `trialStart`,
+    // et c'est lui qui décide juste en dessous si la synchro temps réel démarre.
+    // Enchaîné plutôt qu'attendu, pour ne pas retarder le démarrage de l'app.
+    fbInitTrial(_fbUser.uid, _fbUser.idToken)
+      .then(() => fbCheckPremium(_fbUser.uid, _fbUser.idToken))
+      .then(() => { renderConfigTab(); if (isLicensed() && !_realtimeSource) startRealtimeSync(); });
   }
 }
 
@@ -11503,6 +11509,7 @@ async function authDoRegister() {
       localStorage.setItem('mbudget-license', key.replace(/[^A-Za-z0-9_-]/g,''));
     }
     await fbCheckPremium(u.uid, u.idToken);
+    await fbInitTrial(u.uid, u.idToken);
     closeAuthModal();
     renderConfigTab();
     showToast(t('toast.account_created'));
@@ -11523,8 +11530,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.68';
-const SW_VERSION = 'v348';
+const APP_VERSION = '13.69';
+const SW_VERSION = 'v349';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -13406,6 +13413,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.69': {
+    date: 'Novembre 2026',
+    items: [
+      { icon: '🎁', text: 'L’essai gratuit de 30 jours ne démarrait que dans deux des six chemins de connexion. Créer un compte n’en déclenchait aucun, et la restauration silencieuse de session — le chemin emprunté par tous ceux qui reviennent depuis la 13.10 — ne rattrapait rien. Des utilisateurs inscrits depuis des semaines n’avaient donc jamais reçu leurs 30 jours, ni découvert la synchronisation cloud. Tous les chemins l’initialisent désormais.' },
+      { icon: '🔒', text: 'L’initialisation est sans effet sur un essai déjà commencé ou terminé : elle lit d’abord la date enregistrée et ne l’écrit que si elle manque. Personne ne voit son essai redémarrer.' }
+    ]
+  },
   '13.68': {
     date: 'Octobre 2026',
     items: [
@@ -15668,6 +15682,7 @@ window.addEventListener('message', async (e) => {
     const u = await _fbSignInWithIdp(googleToken);
     showToast(t('toast.google_connected').replace('{0}', u.email));
     await fbCheckPremium(u.uid, u.idToken);
+    await fbInitTrial(u.uid, u.idToken);
     closeAuthModal();
     document.getElementById('onboarding-screen').style.display = 'none';
     // Si aucun utilisateur actif (ex: après déconnexion totale), restaurer tout depuis Firebase

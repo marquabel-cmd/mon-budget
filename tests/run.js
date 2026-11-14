@@ -114,6 +114,36 @@ function verificationsSource() {
     !!ctrl && ctrl[0].includes('verifierMiseAJour()'),
     ctrl ? ctrl[0].slice(0, 140) : 'gestionnaire introuvable');
 
+
+  // L'essai gratuit de 30 jours ne démarrait que dans 2 des 5 chemins
+  // d'authentification. La création de compte en était exclue, et la
+  // restauration silencieuse — le chemin de TOUS ceux qui reviennent depuis la
+  // 13.10 — ne rattrapait rien. Six utilisateurs sur neuf n'ont jamais reçu
+  // leurs 30 jours. Ce contrôle interdit que la situation revienne.
+  const cheminsAuth = ['fbInitAuth', 'signInWithGoogle', 'authDoLogin', 'authDoRegister'];
+  const sansEssai = cheminsAuth.filter(nom => {
+    const i = src.indexOf('function ' + nom + '(');
+    return i < 0 || !src.slice(i, i + 2500).includes('fbInitTrial(');
+  });
+  check('essai · tout chemin d’authentification démarre l’essai',
+    sansEssai.length === 0,
+    sansEssai.length ? sansEssai.join(', ') + ' n’appelle(nt) pas fbInitTrial' : '');
+
+  // Même garde, vue autrement : partout où l'on vérifie le premium d'un compte
+  // qui vient de s'authentifier, l'essai doit être initialisé dans la foulée.
+  const premiumSansEssai = [];
+  const reP = /await fbCheckPremium\(/g;
+  let mp;
+  while ((mp = reP.exec(src)) !== null) {
+    // Fenêtre AVANT et APRÈS : l'essai se place parfois avant la vérification,
+    // quand le résultat de celle-ci dépend de `isLicensed()`.
+    if (!src.slice(Math.max(0, mp.index - 400), mp.index + 400).includes('fbInitTrial(')) {
+      premiumSansEssai.push('ligne ' + (src.slice(0, mp.index).split('\n').length));
+    }
+  }
+  check('essai · aucune vérification de premium sans initialisation d’essai',
+    premiumSansEssai.length === 0, premiumSansEssai.join(' · '));
+
   return res;
 }
 
