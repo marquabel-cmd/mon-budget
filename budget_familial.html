@@ -2793,6 +2793,7 @@ function _finishLogin(id) {
         startRealtimeSync();
         setTimeout(_maybeRemindOpeningBalances, 1200); // après adoption des données cloud
         setTimeout(_maybeRemindPlacements, 2000);      // puis, hors janvier, la valeur des placements
+        setTimeout(_maybeRemindSauvegardeCloud, 4000); // enfin, la sauvegarde en ligne si elle manque
       }).catch(err => {
         // Ce catch a masqué pendant des jours une exception qui avortait tout le
         // démarrage de la synchro. Plus jamais muet.
@@ -2812,6 +2813,7 @@ function _finishLogin(id) {
       // Pas de Premium mais connecté : démarrer quand même si licence activée plus tard
       setTimeout(_maybeRemindOpeningBalances, 1200); // pas de cloud : données locales seulement
       setTimeout(_maybeRemindPlacements, 2000);
+      setTimeout(_maybeRemindSauvegardeCloud, 4000);
     }
   });
   loadData();
@@ -3060,6 +3062,8 @@ function renderWizard() {
       <div>${t('wiz.step6.s3')}</div>
       <div>${t('wiz.step6.s4')}</div>
       <div>${t('wiz.step6.s5')}</div>
+      <a href="https://github.com/settings/tokens/new?scopes=gist&description=Mon%20Budget" target="_blank" rel="noopener noreferrer"
+        style="display:inline-block;margin-top:8px;background:#24292f;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:7px;padding:7px 11px;font-size:11px;font-weight:700;text-decoration:none">${t('wiz.step6.github_lien')}</a>
       <div style="margin-top:6px;font-size:10px;color:rgba(255,255,255,.5)">${t('wiz.step6.guide')}</div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
@@ -11554,8 +11558,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.71';
-const SW_VERSION = 'v351';
+const APP_VERSION = '13.72';
+const SW_VERSION = 'v352';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -12300,10 +12304,16 @@ const TRANSLATIONS = {
     'dash.add_year_btn': '＋ Ajouter une année',
     'pdf.generated': 'Généré le {0}',
     'toast.trial_started': '✅ Connecté — 30 jours offerts, votre budget est sauvegardé en ligne',
+    'rappel.cloud_titre': 'Votre budget n’existe que sur cet appareil',
+    'rappel.cloud_texte': 'Un navigateur vidé, un téléphone changé, et tout est perdu. Deux façons de vous protéger, un clic chacune.',
+    'rappel.cloud_connexion': '☁️ Se connecter — 30 jours offerts',
+    'rappel.cloud_export': '⬇️ Télécharger une sauvegarde',
+    'rappel.cloud_github': 'Ou configurer la sauvegarde GitHub (gratuite, pour utilisateurs avertis)',
     'wiz.step6.title': 'Ne perdez jamais votre budget',
     'wiz.step6.google': 'Se connecter avec Google',
-    'wiz.step6.google_hint': 'Un clic, aucune carte bancaire. Votre budget est sauvegardé en ligne et vous suit sur tous vos appareils. <b style="color:#fff">30 jours offerts.</b>',
+    'wiz.step6.google_hint': 'Un clic, aucune carte bancaire demandée. Votre budget est sauvegardé en ligne et vous suit sur tous vos appareils.<br><span style="opacity:.75">Gratuit 30 jours, puis 2,99 €/mois pour garder la synchronisation. Rien n’est jamais supprimé.</span>',
     'wiz.step6.advanced': 'Autre option : sauvegarde GitHub (avancé)',
+    'wiz.step6.github_lien': '🔗 Ouvrir la page du jeton GitHub (déjà pré-remplie)',
     'wiz.step6.free': '100% GRATUIT',
     'wiz.step6.desc': 'Sans sauvegarde en ligne, votre budget n’existe que sur cet appareil :<br>un navigateur vidé et tout est perdu.',
     'wiz.step6.how': 'Comment faire ? (5 minutes)',
@@ -13092,10 +13102,16 @@ const TRANSLATIONS = {
     'dash.add_year_btn': '＋ Add a year',
     'pdf.generated': 'Generated on {0}',
     'toast.trial_started': '✅ Signed in — 30 days free, your budget is saved online',
+    'rappel.cloud_titre': 'Your budget exists only on this device',
+    'rappel.cloud_texte': 'Clear the browser or change phone and it is all gone. Two ways to protect yourself, one click each.',
+    'rappel.cloud_connexion': '☁️ Sign in — 30 days free',
+    'rappel.cloud_export': '⬇️ Download a backup',
+    'rappel.cloud_github': 'Or set up GitHub backup (free, for advanced users)',
     'wiz.step6.title': 'Never lose your budget',
     'wiz.step6.google': 'Sign in with Google',
-    'wiz.step6.google_hint': 'One click, no card needed. Your budget is saved online and follows you across your devices. <b style="color:#fff">30 days free.</b>',
+    'wiz.step6.google_hint': 'One click, no card required. Your budget is saved online and follows you across your devices.<br><span style="opacity:.75">Free for 30 days, then €2.99/month to keep syncing. Nothing is ever deleted.</span>',
     'wiz.step6.advanced': 'Other option: GitHub backup (advanced)',
+    'wiz.step6.github_lien': '🔗 Open the GitHub token page (pre-filled)',
     'wiz.step6.free': '100% FREE',
     'wiz.step6.desc': 'Without online backup, your budget lives on this device only:<br>clear the browser and everything is gone.',
     'wiz.step6.how': 'How to do it? (5 minutes)',
@@ -13445,6 +13461,14 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.72': {
+    date: 'Novembre 2026',
+    items: [
+      { icon: '⚠️', text: 'Rappel mensuel pour les comptes sans sauvegarde en ligne : « votre budget n’existe que sur cet appareil », avec deux gestes d’un clic — se connecter, ou télécharger une sauvegarde. Silencieux la première semaine d’usage, puis une fois par mois au plus, et jamais pour un compte déjà synchronisé.' },
+      { icon: '🔗', text: 'La configuration de la sauvegarde GitHub est accessible depuis ce rappel, et l’assistant propose désormais un lien direct vers la page de création du jeton, portée et nom déjà pré-remplis : quatre des cinq étapes manuelles disparaîssent.' },
+      { icon: '💶', text: 'Le texte de l’inscription annonçait « aucune carte bancaire » sans préciser la suite. Il dit maintenant ce qu’il en est : gratuit 30 jours, puis 2,99 €/mois pour garder la synchronisation, et rien n’est jamais supprimé.' }
+    ]
+  },
   '13.71': {
     date: 'Novembre 2026',
     items: [
@@ -17536,6 +17560,66 @@ function _snoozePlacements(silencieux) {
 // pendant dix jours dès lors qu'on le fermait sans répondre :
 //   • frein du jour      — posé à l'affichage, quoi que fasse l'utilisateur ;
 //   • frein du trimestre — posé à l'enregistrement ou sur « Pas ce trimestre ».
+// Rappel mensuel aux comptes sans sauvegarde en ligne.
+//
+// Il dit le PROBLÈME — vos données ne sont que sur cet appareil — et propose
+// deux gestes d'un clic : se connecter, ou télécharger une sauvegarde. Le
+// second marche pour tout le monde, sans compte nulle part.
+//
+// Volontairement, il ne détaille pas GitHub : créer un compte, générer un
+// jeton d'accès et le recopier était jusqu'ici l'unique option proposée, et
+// personne ne l'a fait. Répéter cette démarche chaque mois ne ferait que gêner.
+// Ouvre la configuration et amène à la section GitHub, plutôt que de lâcher
+// l'utilisateur sur github.com sans lui dire où revenir coller son jeton.
+function ouvrirConfigGist() {
+  const onglet = document.querySelector('.nav-btn.tab[data-tabid="config"]');
+  if (onglet) switchTab('config', onglet);
+  setTimeout(() => {
+    const cible = document.getElementById('gistSection') || document.getElementById('gist-section');
+    cible?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 350);
+}
+function _maybeRemindSauvegardeCloud() {
+  try {
+    if (!DATA || !CURRENT_USER_ID || CURRENT_USER_ID === '_demo' || _compareMode || _isAdminMode) return;
+    if (isLicensed()) return;                 // déjà synchronisé, rien à rappeler
+    if (!_hasYearData(DATA)) return;          // rien à perdre pour l'instant
+    if (document.getElementById('rappel-cloud')) return;
+    // Ne pas empiler avec le rappel d'export, qui occupe la même place.
+    const expo = document.getElementById('export-reminder-banner');
+    if (expo && getComputedStyle(expo).display !== 'none') return;
+
+    const cleDebut = 'budget_rappel_cloud_debut_' + CURRENT_USER_ID;
+    const cleVu    = 'budget_rappel_cloud_vu_' + CURRENT_USER_ID;
+    const now = Date.now();
+    // Laisser une semaine pour s'installer avant le premier rappel.
+    const debut = parseInt(localStorage.getItem(cleDebut) || '0');
+    if (!debut) { _safeSetItem(cleDebut, String(now)); return; }
+    if (now - debut < 7 * 86400000) return;
+    const vu = parseInt(localStorage.getItem(cleVu) || '0');
+    if (vu && now - vu < 30 * 86400000) return;
+    // Mémoriser AVANT d'afficher : si l'écriture échoue, on s'abstient plutôt
+    // que de revenir à chaque lancement sans pouvoir s'arrêter.
+    if (!_safeSetItem(cleVu, String(now))) return;
+
+    const b = document.createElement('div');
+    b.id = 'rappel-cloud';
+    b.style.cssText = 'position:fixed;bottom:72px;left:50%;transform:translateX(-50%);max-width:min(460px,calc(100vw - 24px));background:#1a1a2e;color:#fff;border:1px solid #F5A623;border-radius:12px;padding:12px 16px;font-size:13px;z-index:9998;box-shadow:0 4px 20px rgba(0,0,0,.45);line-height:1.5';
+    b.innerHTML = `<div style="font-weight:700;margin-bottom:3px">⚠️ ${t('rappel.cloud_titre')}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.75);margin-bottom:10px">${t('rappel.cloud_texte')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="document.getElementById('rappel-cloud').remove();openAuthModal('login')"
+          style="flex:1;min-width:150px;background:#8B5CF6;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer">${t('rappel.cloud_connexion')}</button>
+        <button onclick="document.getElementById('rappel-cloud').remove();exportDataJSON()"
+          style="flex:1;min-width:150px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer">${t('rappel.cloud_export')}</button>
+        <button onclick="document.getElementById('rappel-cloud').remove()" aria-label="Fermer"
+          style="background:none;color:rgba(255,255,255,.5);border:none;font-size:16px;cursor:pointer;padding:0 6px">✕</button>
+      </div>
+      <div onclick="document.getElementById('rappel-cloud').remove();ouvrirConfigGist()"
+        style="font-size:11px;color:rgba(255,255,255,.45);text-decoration:underline;cursor:pointer;margin-top:9px">${t('rappel.cloud_github')}</div>`;
+    document.body.appendChild(b);
+  } catch {}
+}
 function _maybeRemindPlacements() {
   try {
     if (!DATA || !CURRENT_USER_ID || CURRENT_USER_ID === '_demo' || _compareMode || _isAdminMode) return;

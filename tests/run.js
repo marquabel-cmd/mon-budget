@@ -1112,6 +1112,77 @@ async function tousLesCas() {
     _versionAnnoncee = annonceeInitiale;
   }
 
+  // ── Rappel mensuel de sauvegarde en ligne ───────────────────────────────
+  {
+    const vraiLic = window.isLicensed;
+    const vraiUser = CURRENT_USER_ID;
+    CURRENT_USER_ID = 'u_test_cloud';
+    const J = 86400000;
+    const cd = 'budget_rappel_cloud_debut_' + CURRENT_USER_ID;
+    const cv = 'budget_rappel_cloud_vu_' + CURRENT_USER_ID;
+    const net = () => { try { localStorage.removeItem(cd); localStorage.removeItem(cv); } catch {}
+                        document.getElementById('rappel-cloud')?.remove(); };
+    const affiche = () => !!document.getElementById('rappel-cloud');
+
+    DATA = { '2026': annee() };
+    DATA['2026'].charges = [{ label: 'Loyer', cat: 'fixed', v: Array(12).fill(10), paid: Array(12).fill(false) }];
+
+    // Un compte déjà synchronisé n'a rien à se faire rappeler
+    window.isLicensed = () => true;
+    net(); _maybeRemindSauvegardeCloud();
+    check('rappel cloud · rien pour un compte sous licence', !affiche());
+
+    window.isLicensed = () => false;
+
+    // Sans données, rien à perdre encore
+    const sauveD = DATA; DATA = {};
+    net(); _maybeRemindSauvegardeCloud();
+    check('rappel cloud · rien tant qu’il n’y a pas de données', !affiche());
+    DATA = sauveD;
+
+    // Première semaine : on laisse tranquille
+    net();
+    _maybeRemindSauvegardeCloud();
+    const apresPremier = affiche();
+    _maybeRemindSauvegardeCloud();
+    check('rappel cloud · silencieux la première semaine',
+      !apresPremier && !affiche(), 'affiché trop tôt');
+    check('rappel cloud · la date de début est mémorisée',
+      !!localStorage.getItem(cd), 'aucune date posée');
+
+    // Au-delà de sept jours, il se montre
+    try { localStorage.setItem(cd, String(Date.now() - 8 * J)); } catch {}
+    _maybeRemindSauvegardeCloud();
+    check('rappel cloud · affiché après une semaine d’usage', affiche());
+    check('rappel cloud · il propose la connexion ET l’export',
+      (document.getElementById('rappel-cloud')?.innerText || '').includes('30 jours') &&
+      (document.getElementById('rappel-cloud')?.innerText || '').includes('sauvegarde'),
+      document.getElementById('rappel-cloud')?.innerText?.slice(0, 80));
+
+    // Pas deux fois dans le mois
+    document.getElementById('rappel-cloud')?.remove();
+    _maybeRemindSauvegardeCloud();
+    check('rappel cloud · pas deux fois dans le mois', !affiche());
+
+    // Le mois suivant, oui
+    try { localStorage.setItem(cv, String(Date.now() - 31 * J)); } catch {}
+    _maybeRemindSauvegardeCloud();
+    check('rappel cloud · revient le mois suivant', affiche());
+    document.getElementById('rappel-cloud')?.remove();
+
+    // Stockage saturé : s’abstenir plutôt que de revenir sans fin
+    const vraiSafe = window._safeSetItem;
+    window._safeSetItem = () => false;
+    try { localStorage.setItem(cd, String(Date.now() - 40 * J)); localStorage.removeItem(cv); } catch {}
+    _maybeRemindSauvegardeCloud();
+    check('rappel cloud · stockage saturé → rien ne s’affiche', !affiche());
+    window._safeSetItem = vraiSafe;
+
+    net();
+    window.isLicensed = vraiLic;
+    CURRENT_USER_ID = vraiUser;
+  }
+
   // ── Les onglets d'année sont redessinés en arrivant dessus (13.51) ──────
   {
     DATA = { '2026': annee(), '2027': annee() };
