@@ -11530,8 +11530,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.69';
-const SW_VERSION = 'v349';
+const APP_VERSION = '13.70';
+const SW_VERSION = 'v350';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -11874,7 +11874,7 @@ const TRANSLATIONS = {
     'cfg.cloud_last_sync': '⏱ Dernière sync',
     'cfg.cloud_push': '⬆️ Envoyer vers cloud',
     'cfg.cloud_pull': '⬇️ Récupérer depuis cloud',
-    'cfg.cloud_new_device': '💡 <b>Sur un nouvel appareil :</b> connectez-vous avec le même compte Google, activez la licence, puis cliquez <b>⬇️ Récupérer depuis cloud</b>.',
+    'cfg.cloud_new_device': '💡 <b>Sur un nouvel appareil :</b> connectez-vous avec le même compte Google — la licence et la synchro s’activent toutes seules, vos données arrivent en quelques secondes. Si elles n’apparaissent pas, cliquez <b>⬇️ Récupérer depuis cloud</b>.',
     'cfg.data_protection': '🛡 Protection des données',
     'cfg.backup_browser': '💾 Copie de sécurité dans votre navigateur',
     'cfg.backup_active': 'Active — vos données sont doublement protégées',
@@ -12662,7 +12662,7 @@ const TRANSLATIONS = {
     'cfg.cloud_last_sync': '⏱ Last sync',
     'cfg.cloud_push': '⬆️ Push to cloud',
     'cfg.cloud_pull': '⬇️ Pull from cloud',
-    'cfg.cloud_new_device': '💡 <b>On a new device:</b> sign in with the same Google account, activate the license, then click <b>⬇️ Pull from cloud</b>.',
+    'cfg.cloud_new_device': '💡 <b>On a new device:</b> sign in with the same Google account — the licence and sync switch on by themselves, your data arrives within seconds. If it does not appear, click <b>⬇️ Pull from cloud</b>.',
     'cfg.data_protection': '🛡 Data protection',
     'cfg.backup_browser': '💾 Browser backup copy',
     'cfg.backup_active': 'Active — your data is doubly protected',
@@ -13413,6 +13413,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.70': {
+    date: 'Novembre 2026',
+    items: [
+      { icon: '💡', text: 'L’astuce « sur un nouvel appareil » demandait d’activer la licence à la main. Cette étape n’existe plus depuis longtemps : la licence et la synchro s’activent seules à la connexion. Le texte annonçait donc une manipulation introuvable.' }
+    ]
+  },
   '13.69': {
     date: 'Novembre 2026',
     items: [
