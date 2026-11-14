@@ -311,12 +311,13 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
             <th>Début abonnement</th>
             <th>Fin abonnement</th>
             <th>Appareils</th>
+            <th title="Date du dernier budget envoyé dans le cloud">Cloud</th>
             <th>Dernière connexion</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="users-tbody">
-          <tr class="empty-row"><td colspan="7">🔄 Chargement…</td></tr>
+          <tr class="empty-row"><td colspan="8">🔄 Chargement…</td></tr>
         </tbody>
       </table>
     </div>
@@ -1080,10 +1081,12 @@ function renderStats() {
 }
 
 function _fmtDate(ts) { return ts ? new Date(ts).toLocaleDateString('fr-FR') : '—'; }
+// Doit rester aligné sur TRIAL_DAYS de budget_familial.html.
+const TRIAL_DAYS = 30;
 function renderUsers(entries) {
   const tbody = document.getElementById('users-tbody');
   document.getElementById('user-count').textContent = entries.length;
-  if (!entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Aucun client trouvé</td></tr>'; return; }
+  if (!entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Aucun client trouvé</td></tr>'; return; }
   const now = Date.now();
   tbody.innerHTML = entries.map(([uid, info]) => {
     const email    = _esc(info?.email || '—');
@@ -1098,15 +1101,30 @@ function renderUsers(entries) {
     const until    = p === true ? '<span style="color:#00C896;font-weight:700">♾️ À vie</span>'
                    : typeof p === 'number' ? `<span style="color:${expired?'#F04F5B':expiring?'#F5A623':'#E2E4F0'}">${_fmtDate(p)}${expiring?' ⚠️':''}</span>`
                    : '<span style="color:#555">—</span>';
-    const badge    = active
+    // L'essai gratuit de 30 jours vit dans `trialStart`, pas dans `premium` :
+    // sans cette distinction, « Gratuit » couvrait aussi bien un essai en cours
+    // qu'un compte qui n'a jamais rien eu. Or pendant l'essai, la synchro cloud
+    // fonctionne — c'est donc la seule fenêtre où un compte gratuit peut avoir
+    // envoyé des données.
+    const ts       = typeof info?.trialStart === 'number' ? info.trialStart : 0;
+    const finEssai = ts ? ts + TRIAL_DAYS * 86400000 : 0;
+    const essaiEnCours = finEssai > now;
+    const joursRestants = essaiEnCours ? Math.ceil((finEssai - now) / 86400000) : 0;
+    const essai = !active && ts
+      ? (essaiEnCours
+          ? `<div style="font-size:11px;color:#F5A623;margin-top:3px">🎁 Essai — ${joursRestants} j restant${joursRestants > 1 ? 's' : ''}</div>`
+          : `<div style="font-size:11px;color:#6B7394;margin-top:3px">🎁 Essai fini le ${_fmtDate(finEssai)}</div>`)
+      : (!active && !ts ? `<div style="font-size:11px;color:#6B7394;margin-top:3px">Aucun essai</div>` : '');
+    const badge    = (active
       ? `<span class="badge badge-premium">⭐ Premium${expiring ? ' ⚠️' : ''}</span>`
-      : `<span class="badge badge-free">Gratuit</span>`;
+      : `<span class="badge badge-free">Gratuit</span>`) + essai;
     return `<tr>
       <td style="font-weight:500">${email}${lbl}</td>
       <td>${badge}</td>
       <td style="color:#8892B0;font-size:12px">${since}</td>
       <td style="font-size:12px">${until}</td>
       <td>📱 ${devCount}/3</td>
+      <td class="cloud-cell" data-uid="${_esc(uid)}" style="color:#6B7394;font-size:12px">…</td>
       <td style="color:#8892B0">${_esc(last)}</td>
       <td class="actions">
         <button class="btn btn-ghost btn-sm" data-uid="${_esc(uid)}" onclick="selectUser(this.dataset.uid)">Gérer</button>
@@ -1114,6 +1132,35 @@ function renderUsers(entries) {
       </td>
     </tr>`;
   }).join('');
+  _remplirColonneCloud();
+}
+
+// Date du dernier budget envoyé dans le cloud, par client.
+//
+// On ne lit QUE le champ `_lastPush` de chaque budget, jamais le budget entier :
+// `/userdata/<uid>/budget/_lastPush.json` ne ramène qu'un nombre, là où lire le
+// nœud complet transférerait des méga-octets de données personnelles pour
+// afficher une date. Les requêtes partent en parallèle et remplissent les
+// cellules au fur et à mesure : le tableau reste utilisable pendant ce temps.
+async function _remplirColonneCloud() {
+  const cellules = [...document.querySelectorAll('.cloud-cell')];
+  if (!cellules.length) return;
+  const token = await getToken().catch(() => null);
+  if (!token) { cellules.forEach(c => { c.textContent = '?'; }); return; }
+  await Promise.all(cellules.map(async c => {
+    try {
+      const r = await _fbFetch(`${LICENSE_DB}/userdata/${c.dataset.uid}/budget/_lastPush.json`, {}, token);
+      if (!r.ok) { c.textContent = '?'; c.title = `HTTP ${r.status}`; return; }
+      const ts = await r.json();
+      if (typeof ts === 'number' && ts > 0) {
+        c.innerHTML = `<span style="color:#00C896">☁️ ${_fmtDate(ts)}</span>`;
+        c.title = 'Dernier envoi du budget dans le cloud';
+      } else {
+        c.innerHTML = '<span style="color:#6B7394">jamais</span>';
+        c.title = 'Aucun budget n’a jamais été envoyé dans le cloud';
+      }
+    } catch { c.textContent = '?'; }
+  }));
 }
 
 let _activeFilter = null;
