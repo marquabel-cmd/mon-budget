@@ -5,34 +5,38 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: false
 
-# Les versions d'actions ci-dessous ont été relevées le 26/11/2026 après trois
-# échecs sur quatre à l'étape de déploiement : « No artifacts named github-pages
-# were found for this workflow run », alors que l'artefact existait bel et bien
-# (2 Mo, nom correct, non expiré). actions/deploy-pages@v4 datait de mars 2024 et
-# ne lisait plus les métadonnées produites par la génération actuelle de
-# actions/upload-artifact ; GitHub forçait par ailleurs ces actions, écrites pour
-# Node.js 20, à tourner sur Node.js 24. Toutes celles retenues ici déclarent
-# node24.
+# Historique de ce fichier, pour ne pas refaire le chemin deux fois.
 #
-# Au passage, upload-pages-artifact exclut les fichiers cachés depuis sa v4.
-# C'est voulu : .agents/ et .gitignore étaient jusqu'ici servis publiquement.
-# .nojekyll devient inutile — avec la source « GitHub Actions », le contenu est
+# Les 25 et 26/11/2026, l'étape « Deploy to GitHub Pages » a échoué quatre fois
+# sur six : « No artifacts named github-pages were found for this workflow run »,
+# alors que l'artefact existait (2 Mo, nom correct, non expiré) et que l'étape
+# d'envoi était en succès. Le message complet le dit à demi-mot : « Fetching
+# artifact metadata failed. Please re-run the deployment at a later time. »
+#
+# Première tentative : relever les versions des actions, toutes écrites pour
+# Node.js 20 et forcées sur Node.js 24 par GitHub (checkout v4→v5,
+# configure-pages v5→v6, upload-pages-artifact v3→v5, deploy-pages v4→v5).
+# Un run est passé, le suivant a échoué de la même façon : ce n'était pas ça.
+#
+# Cause réelle : dans un job unique, deploy-pages interroge l'API des artefacts
+# dans la seconde qui suit l'envoi, avant que celui-ci y soit visible. L'action
+# n'offre aucun réessai sur cette lecture. Le découpage en deux jobs — celui du
+# modèle officiel de GitHub — règle la course : l'artefact est finalisé et le
+# job terminé avant que le déploiement ne le cherche.
+#
+# À noter aussi : upload-pages-artifact exclut les fichiers cachés depuis sa v4.
+# C'est voulu — .agents/ et .gitignore étaient jusqu'ici servis publiquement.
+# .nojekyll devient inutile : avec la source « GitHub Actions », le contenu est
 # servi tel quel, sans passage par Jekyll.
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -45,6 +49,16 @@ jobs:
         with:
           path: '.'
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
