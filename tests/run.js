@@ -1405,6 +1405,65 @@ async function tousLesCas() {
     CURRENT_USER_ID = vraiUser;
   }
 
+  // ── Le taux du prêt suit la ligne d'une année à l'autre (13.75) ──────
+  {
+    const ligne = (taux) => {
+      const r = { label: '01 Logement', cat: 'fixed', v: Array(12).fill(972.63),
+                  paid: Array(12).fill(true), noEnd: false, endMonth: 11, endYear: 2042 };
+      if (taux !== undefined) r.tauxPret = taux;
+      return r;
+    };
+    const monter = (t25, t26, t27) => {
+      DATA = { '2025': annee(), '2026': annee(), '2027': annee() };
+      DATA['2025'].charges = [ligne(t25)];
+      DATA['2026'].charges = [ligne(t26)];
+      DATA['2027'].charges = [ligne(t27)];
+    };
+
+    // Le cas vivant : taux saisi en 2026, absent en 2027
+    monter(undefined, 2, undefined);
+    let n = _propagateTauxForward(2026, 'charges', DATA['2026'].charges[0], undefined, '01 Logement', 'fixed');
+    check('taux \u00b7 report\u00e9 sur une ann\u00e9e qui n\u2019en avait pas',
+      DATA['2027'].charges[0].tauxPret === 2 && n === 1, `${DATA['2027'].charges[0].tauxPret} / ${n}`);
+    check('taux \u00b7 l\u2019ann\u00e9e ANT\u00c9RIEURE n\u2019est jamais touch\u00e9e',
+      DATA['2025'].charges[0].tauxPret === undefined, String(DATA['2025'].charges[0].tauxPret));
+    check('taux \u00b7 le capital restant d\u00fb devient calculable en 2027',
+      _pretInfo(DATA['2027'].charges[0]).capitalRestant < _pretInfo(DATA['2027'].charges[0]).totalRestant,
+      'capital toujours \u00e9gal au total');
+
+    // Un taux d\u00e9lib\u00e9r\u00e9ment diff\u00e9rent n'est pas \u00e9cras\u00e9 : un cr\u00e9dit \u00e0 taux
+    // r\u00e9visable change de taux en cours de route.
+    monter(undefined, 2.4, 2.9);
+    n = _propagateTauxForward(2026, 'charges', DATA['2026'].charges[0], 2, '01 Logement', 'fixed');
+    check('taux \u00b7 un taux diff\u00e9rent d\u00e9j\u00e0 en place est pr\u00e9serv\u00e9',
+      DATA['2027'].charges[0].tauxPret === 2.9 && n === 0, `${DATA['2027'].charges[0].tauxPret} / ${n}`);
+
+    // En revanche une ann\u00e9e rest\u00e9e sur l'ancien taux suit la correction
+    monter(undefined, 2.4, 2);
+    n = _propagateTauxForward(2026, 'charges', DATA['2026'].charges[0], 2, '01 Logement', 'fixed');
+    check('taux \u00b7 une ann\u00e9e rest\u00e9e sur l\u2019ancien taux est corrig\u00e9e',
+      DATA['2027'].charges[0].tauxPret === 2.4 && n === 1, `${DATA['2027'].charges[0].tauxPret} / ${n}`);
+
+    // Retirer le taux le retire aussi en aval
+    monter(undefined, undefined, 2);
+    n = _propagateTauxForward(2026, 'charges', DATA['2026'].charges[0], 2, '01 Logement', 'fixed');
+    check('taux \u00b7 retir\u00e9 en amont, il est retir\u00e9 en aval',
+      DATA['2027'].charges[0].tauxPret === undefined && n === 1,
+      `${DATA['2027'].charges[0].tauxPret} / ${n}`);
+
+    // Rien \u00e0 faire quand le taux n'a pas chang\u00e9
+    monter(undefined, 2, 2);
+    n = _propagateTauxForward(2026, 'charges', DATA['2026'].charges[0], 2, '01 Logement', 'fixed');
+    check('taux \u00b7 aucun report quand le taux n\u2019a pas boug\u00e9', n === 0, String(n));
+
+    // Une nouvelle ann\u00e9e doit emporter le taux : addYear exige le DOM, on
+    // v\u00e9rifie donc que la recopie le pr\u00e9voit, pour les revenus ET les charges.
+    const srcAddYear = String(window.confirmRevDialog);
+    check('taux \u00b7 la cr\u00e9ation d\u2019une ann\u00e9e recopie le taux (2 sections)',
+      (srcAddYear.match(/meta\.tauxPret = r\.tauxPret/g) || []).length === 2,
+      String((srcAddYear.match(/meta\.tauxPret = r\.tauxPret/g) || []).length) + ' occurrence(s)');
+  }
+
   DATA = sauve;
   return res;
 }

@@ -4789,6 +4789,11 @@ function confirmRevDialog() {
       if (r.endMonth !== undefined) meta.endMonth = r.endMonth;
       if (r.endYear !== undefined) meta.endYear = r.endYear;
       if (r.reps !== undefined) meta.reps = r.reps;
+      // Le taux décrit l'engagement au même titre que sa date de fin. Oublié ici,
+      // il disparaissait à chaque nouvelle année : la ligne gardait sa date de fin
+      // mais perdait son taux, et le capital restant dû cessait d'être calculé
+      // sans que rien ne le signale.
+      if (r.tauxPret !== undefined) meta.tauxPret = r.tauxPret;
       return { label: r.label, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false,
         ...(r.cat ? {cat: r.cat} : {}), ...(r.accountId ? {accountId: r.accountId} : {}), ...meta };
     }).filter(r => r !== null),
@@ -4812,6 +4817,11 @@ function confirmRevDialog() {
       if (r.endMonth !== undefined) meta.endMonth = r.endMonth;
       if (r.endYear !== undefined) meta.endYear = r.endYear;
       if (r.reps !== undefined) meta.reps = r.reps;
+      // Le taux décrit l'engagement au même titre que sa date de fin. Oublié ici,
+      // il disparaissait à chaque nouvelle année : la ligne gardait sa date de fin
+      // mais perdait son taux, et le capital restant dû cessait d'être calculé
+      // sans que rien ne le signale.
+      if (r.tauxPret !== undefined) meta.tauxPret = r.tauxPret;
       return { label: r.label, cat: r.cat, v, paid: v.map(x => (parseFloat(x)||0) === 0), inCalc: r.inCalc !== false,
         ...(r.accountId ? {accountId: r.accountId} : {}), ...(r.livretId ? {livretId: r.livretId} : {}), ...meta };
     }).filter(r => r !== null),
@@ -5962,6 +5972,25 @@ function _applyEndToYear(row, year) {
 // Après modification d'une ligne : reporte un ajout ou un changement de date de
 // fin sur les années suivantes. Une suppression de date n'est reportée que là où
 // la même date avait été reprise, pour ne pas effacer une fin posée ailleurs.
+// Report du taux vers les années suivantes. Contrairement à la date de fin, le
+// taux n'est PAS recopié de force : une ligne qui porte déjà un taux différent
+// est laissée intacte. Un crédit hypothécaire à taux révisable change de taux
+// en cours de route, et chaque année porte alors légitimement le sien.
+function _propagateTauxForward(year, section, row, ancienTaux, oldLabel, oldCat) {
+  const taux = row.tauxPret;
+  if (taux === ancienTaux) return 0;
+  let n = 0;
+  getYears().filter(y => parseInt(y) > parseInt(year)).sort().forEach(y => {
+    const arr = DATA[y]?.[section];
+    const r2 = _findRowLike(arr, oldLabel, oldCat) || _findRowLike(arr, row.label, row.cat);
+    if (!r2 || r2 === row) return;
+    // On ne touche qu'à une ligne sans taux, ou restée sur l'ancien
+    if (r2.tauxPret !== undefined && r2.tauxPret !== ancienTaux) return;
+    if (taux === undefined) delete r2.tauxPret; else r2.tauxPret = taux;
+    n++;
+  });
+  return n;
+}
 function _propagateEndForward(year, section, row, oldLabel, oldCat, oldEndKey) {
   const newKey = _endKey(row);
   if (newKey === oldEndKey) return 0;
@@ -6612,11 +6641,16 @@ function submitAddRow() {
     else if (savedEndYear < parseInt(year)) { v.fill(0); }
   }
   // Métadonnées à sauvegarder pour restauration en édition
-  const rowMeta = { noEnd, reps: reps || undefined, endMonth: noEnd ? undefined : savedEndMonth, endYear: noEnd ? undefined : savedEndYear };
+  const _tauxSaisi = parseFloat(document.getElementById('ar-taux')?.value);
+  const rowMeta = { noEnd, reps: reps || undefined, endMonth: noEnd ? undefined : savedEndMonth, endYear: noEnd ? undefined : savedEndYear,
+    // Dans rowMeta pour qu'une ligne créée puis propagée aux autres années
+    // emporte son taux ; la branche d'édition le repose explicitement plus bas.
+    tauxPret: (!isNaN(_tauxSaisi) && _tauxSaisi > 0) ? _tauxSaisi : undefined };
   const accountId = document.getElementById('ar-account')?.value || 'acc_main';
   if (_arEditMode && _arEditIdx !== null) {
     const row = DATA[year][_arEditDataType][_arEditIdx];
     const oldLabel = row.label, oldCat = row.cat, oldEndKey = _endKey(row);
+    const oldTaux = row.tauxPret;
     const avant = { label: row.label, cat: row.cat, livretId: row.livretId || null,
       montant: parseFloat(row.v.find(x => (parseFloat(x) || 0) > 0)) || 0 };
     row.label = label;
@@ -6649,8 +6683,7 @@ function submitAddRow() {
     // Drapeau « propre à cette année » : stocké seulement s'il est posé, pour ne
     // pas alourdir inutilement les données synchronisées.
     if (document.getElementById('ar-nocarry')?.checked) row.noCarry = true; else delete row.noCarry;
-    const _taux = parseFloat(document.getElementById('ar-taux')?.value);
-    if (!isNaN(_taux) && _taux > 0) row.tauxPret = _taux; else delete row.tauxPret;
+    if (!isNaN(_tauxSaisi) && _tauxSaisi > 0) row.tauxPret = _tauxSaisi; else delete row.tauxPret;
     if (accountId && accountId !== 'acc_main') row.accountId = accountId; else delete row.accountId;
     // Ligne d'abord (réaligne libellé et type), puis date de fin : celle-ci
     // retrouve ainsi aussi les lignes qui viennent d'être réalignées
@@ -6659,7 +6692,8 @@ function submitAddRow() {
           parseFloat(document.getElementById('ar-years-amount')?.value)) : 0;
     const ligneReportee = _propagateRowForward(year, _arEditDataType, row, avant, montantsTouches ? amount : 0);
     const finReportee = _propagateEndForward(year, _arEditDataType, row, oldLabel, oldCat, oldEndKey);
-    const reportee = Math.max(finReportee, ligneReportee, ajoutees);
+    const tauxReporte = _propagateTauxForward(year, _arEditDataType, row, oldTaux, oldLabel, oldCat);
+    const reportee = Math.max(finReportee, ligneReportee, ajoutees, tauxReporte);
     getYears().forEach(y => { if (y === String(year) || (reportee && parseInt(y) > parseInt(year))) renderYear(y); });
     renderSummary();
     dSave();
@@ -11787,8 +11821,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.74';
-const SW_VERSION = 'v354';
+const APP_VERSION = '13.75';
+const SW_VERSION = 'v355';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -13691,6 +13725,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.75': {
+    date: 'Novembre 2026',
+    items: [
+      { icon: '💳', text: 'Le taux d’un prêt disparaissait à chaque nouvelle année. La ligne gardait bien sa date de fin, mais perdait son taux : le capital restant dû cessait d’être calculé et seul le total restant à payer — intérêts compris — restait affiché, sans que rien ne le signale. Sur un crédit logement de 194 échéances à 2 %, l’écart entre les deux chiffres atteint 27 000 €. Le taux suit désormais la ligne.' },
+      { icon: '➡️', text: 'Modifier le taux le reporte aussi sur les années déjà créées, comme le fait déjà la date de fin. Une année qui porte un taux différent est laissée intacte : un crédit à taux révisable change de taux en cours de route, et chaque année porte alors légitimement le sien.' }
+    ]
+  },
   '13.74': {
     date: 'Novembre 2026',
     items: [
