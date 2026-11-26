@@ -14,6 +14,19 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# Les versions d'actions ci-dessous ont été relevées le 26/11/2026 après trois
+# échecs sur quatre à l'étape de déploiement : « No artifacts named github-pages
+# were found for this workflow run », alors que l'artefact existait bel et bien
+# (2 Mo, nom correct, non expiré). actions/deploy-pages@v4 datait de mars 2024 et
+# ne lisait plus les métadonnées produites par la génération actuelle de
+# actions/upload-artifact ; GitHub forçait par ailleurs ces actions, écrites pour
+# Node.js 20, à tourner sur Node.js 24. Toutes celles retenues ici déclarent
+# node24.
+#
+# Au passage, upload-pages-artifact exclut les fichiers cachés depuis sa v4.
+# C'est voulu : .agents/ et .gitignore étaient jusqu'ici servis publiquement.
+# .nojekyll devient inutile — avec la source « GitHub Actions », le contenu est
+# servi tel quel, sans passage par Jekyll.
 jobs:
   deploy:
     environment:
@@ -22,16 +35,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
