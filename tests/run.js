@@ -978,43 +978,69 @@ async function tousLesCas() {
     window._askPlacementValues = () => { affichages++; };
     window._placementsSuivis = () => [{ id: 'liv_x', name: 'Test' }];
 
-    const cleTrim = 'budget_pv_snooze_' + CURRENT_USER_ID;
+    const cleMois = 'budget_pv_snooze_' + CURRENT_USER_ID;
     const cleJour = 'budget_pv_jour_' + CURRENT_USER_ID;
-    const nettoyer = () => { try { localStorage.removeItem(cleTrim); localStorage.removeItem(cleJour); } catch {} };
-    const d = new Date();
-    const dansLaFenetre = [3, 6, 9].includes(d.getMonth()) && d.getDate() <= 10;
+    const nettoyer = () => { try { localStorage.removeItem(cleMois); localStorage.removeItem(cleJour); } catch {} };
+    const le = (an, mois, jour) => new Date(an, mois, jour, 12, 0, 0);
+
+    // Le rappel est MENSUEL depuis le 15, et non plus trimestriel sur dix jours.
+    nettoyer(); affichages = 0;
+    _maybeRemindPlacements(le(2026, 1, 14));
+    check('rappel placements \u00b7 rien avant le 15 du mois', affichages === 0, affichages);
 
     nettoyer(); affichages = 0;
-    _maybeRemindPlacements();
-    _maybeRemindPlacements();
-    _maybeRemindPlacements();
-    if (dansLaFenetre) {
-      check('rappel placements · une seule fois par jour, pas à chaque ouverture',
-        affichages === 1, `${affichages} affichage(s) pour 3 lancements`);
-      check('rappel placements · le frein du jour est écrit à l’affichage',
-        localStorage.getItem(cleJour) === d.toISOString().slice(0, 10),
-        localStorage.getItem(cleJour));
-    } else {
-      check('rappel placements · rien hors de la fenêtre de début de trimestre',
-        affichages === 0, affichages);
-    }
+    _maybeRemindPlacements(le(2026, 1, 15));
+    check('rappel placements \u00b7 propos\u00e9 le 15', affichages === 1, affichages);
 
-    // « Plus de rappel ce trimestre » doit tenir même après un nouveau jour
+    // La fen\u00eatre reste ouverte jusqu'\u00e0 la fin du mois
+    nettoyer(); affichages = 0;
+    _maybeRemindPlacements(le(2026, 1, 25));
+    check('rappel placements \u00b7 propos\u00e9 encore le 25', affichages === 1, affichages);
+
+    // F\u00e9vrier n'\u00e9tait pas un mois de rappel du temps du trimestre
+    nettoyer(); affichages = 0;
+    [0, 1, 2, 4, 7, 10].forEach(m => { nettoyer(); _maybeRemindPlacements(le(2026, m, 16)); });
+    check('rappel placements \u00b7 tous les mois, pas seulement avril/juillet/octobre',
+      affichages === 6, `${affichages} affichage(s) pour 6 mois`);
+
+    // Un seul affichage par jour, quel que soit le nombre de lancements
+    nettoyer(); affichages = 0;
+    _maybeRemindPlacements(le(2026, 1, 15));
+    _maybeRemindPlacements(le(2026, 1, 15));
+    _maybeRemindPlacements(le(2026, 1, 15));
+    check('rappel placements \u00b7 une seule fois par jour, pas \u00e0 chaque ouverture',
+      affichages === 1, `${affichages} affichage(s) pour 3 lancements`);
+    check('rappel placements \u00b7 le frein du jour est \u00e9crit \u00e0 l\u2019affichage',
+      localStorage.getItem(cleJour) === le(2026, 1, 15).toISOString().slice(0, 10),
+      localStorage.getItem(cleJour));
+
+    // La p\u00e9riode est le mois, pas le trimestre
+    check('rappel placements \u00b7 la p\u00e9riode m\u00e9moris\u00e9e est un mois',
+      _periodePv(le(2026, 1, 15)) === '2026-02', _periodePv(le(2026, 1, 15)));
+
+    // \u00ab Plus de rappel ce mois-ci \u00bb doit tenir m\u00eame apr\u00e8s un nouveau jour
     nettoyer(); affichages = 0;
     _snoozePlacements(true);
     _maybeRemindPlacements();
-    check('rappel placements · le report trimestriel coupe tout',
-      affichages === 0 && localStorage.getItem(cleTrim) === _trimestreCourant(),
-      `${affichages} affichage(s), frein=${localStorage.getItem(cleTrim)}`);
+    check('rappel placements \u00b7 le report du mois coupe tout',
+      affichages === 0 && localStorage.getItem(cleMois) === _periodePv(),
+      `${affichages} affichage(s), frein=${localStorage.getItem(cleMois)}`);
 
-    // Stockage saturé : ne jamais harceler sans pouvoir s'arrêter
+    // ... mais le mois suivant, le rappel revient
+    nettoyer(); affichages = 0;
+    localStorage.setItem(cleMois, '2026-01');
+    _maybeRemindPlacements(le(2026, 1, 15));
+    check('rappel placements \u00b7 un report ne vaut que pour son mois',
+      affichages === 1, affichages);
+
+    // Stockage satur\u00e9 : ne jamais harceler sans pouvoir s'arr\u00eater
     nettoyer(); affichages = 0;
     const vraiSafe = window._safeSetItem;
     window._safeSetItem = () => false;
-    _maybeRemindPlacements();
-    _maybeRemindPlacements();
-    check('rappel placements · stockage saturé → la fenêtre ne s’affiche pas',
-      affichages === 0, `${affichages} affichage(s) alors que le frein ne peut pas être écrit`);
+    _maybeRemindPlacements(le(2026, 1, 15));
+    _maybeRemindPlacements(le(2026, 1, 15));
+    check('rappel placements \u00b7 stockage satur\u00e9 \u2192 la fen\u00eatre ne s\u2019affiche pas',
+      affichages === 0, `${affichages} affichage(s) alors que le frein ne peut pas \u00eatre \u00e9crit`);
     window._safeSetItem = vraiSafe;
 
     nettoyer();

@@ -2792,7 +2792,7 @@ function _finishLogin(id) {
         if (document.getElementById('tab-config')?.classList.contains('active')) renderConfigTab();
         startRealtimeSync();
         setTimeout(_maybeRemindOpeningBalances, 1200); // après adoption des données cloud
-        setTimeout(_maybeRemindPlacements, 2000);      // puis, hors janvier, la valeur des placements
+        setTimeout(_maybeRemindPlacements, 2000);      // puis, à partir du 15, la valeur des placements
         setTimeout(_maybeRemindSauvegardeCloud, 4000); // enfin, la sauvegarde en ligne si elle manque
       }).catch(err => {
         // Ce catch a masqué pendant des jours une exception qui avortait tout le
@@ -11821,8 +11821,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.75';
-const SW_VERSION = 'v355';
+const APP_VERSION = '13.76';
+const SW_VERSION = 'v356';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -13725,6 +13725,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.76': {
+    date: 'Novembre 2026',
+    items: [
+      { icon: '📊', text: 'La fenêtre « Valeur de vos placements » est désormais proposée <b>tous les mois, à partir du 15</b>. Elle ne venait qu’une fois par trimestre — avril, juillet, octobre, et seulement dans les dix premiers jours — ce qui laissait trois mois de plus-values s’accumuler avant d’être inscrites. Une valeur de placement bouge en continu : une fois par mois colle mieux à la réalité.' },
+      { icon: '📅', text: 'Elle reste disponible jusqu’à la fin du mois : qui n’ouvre pas l’application le 15 la verra le 18 ou le 25, une seule fois. Les deux freins sont conservés — au plus une fois par jour, et « Plus de rappel ce mois-ci » la coupe jusqu’au mois suivant.' }
+    ]
+  },
   '13.75': {
     date: 'Novembre 2026',
     items: [
@@ -17767,10 +17774,10 @@ function _saveAccountConfig(accId, useYear) {
 // Fenêtre de mise à jour de la valeur des placements. Un champ par placement,
 // prérempli avec la valeur calculée : il suffit de recopier le chiffre de la
 // banque. L'écart part en plus ou moins-value sur le mois en cours.
-function _askPlacementValues(trimestriel) {
+function _askPlacementValues(rappel) {
   if (document.getElementById('_pv-overlay')) return;
   const placements = _placementsSuivis();
-  if (!placements.length) { if (!trimestriel) showToast('Aucun placement à mettre à jour'); return; }
+  if (!placements.length) { if (!rappel) showToast('Aucun placement à mettre à jour'); return; }
   const annee = String(new Date().getFullYear());
   const mois = new Date().getMonth();
   const champs = placements.map(l => {
@@ -17787,12 +17794,12 @@ function _askPlacementValues(trimestriel) {
   o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px';
   o.innerHTML = `<div style="background:var(--surface);border-radius:16px;padding:20px 22px;width:360px;max-width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,.5)">
       <div style="font-size:16px;font-weight:800;margin-bottom:4px">📊 Valeur de vos placements</div>
-      <div style="font-size:12px;color:var(--gray);margin-bottom:14px;line-height:1.5">Reprenez la valeur affichée par votre banque aujourd'hui. Un champ laissé tel quel ne change rien.${trimestriel ? '<br>Proposé une fois par jour en début de trimestre, au plus.' : ''}</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:14px;line-height:1.5">Reprenez la valeur affichée par votre banque aujourd'hui. Un champ laissé tel quel ne change rien.${rappel ? `<br>Proposé une fois par mois, à partir du ${PV_JOUR_RAPPEL}.` : ''}</div>
       <div style="overflow-y:auto;flex:1;padding-right:2px">${champs}</div>
       <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap">
-        ${trimestriel ? `<button onclick="_snoozePlacements()" style="background:none;border:none;padding:6px 0;font-size:11px;cursor:pointer;color:var(--gray);text-decoration:underline">Plus de rappel ce trimestre</button>` : '<span></span>'}
+        ${rappel ? `<button onclick="_snoozePlacements()" style="background:none;border:none;padding:6px 0;font-size:11px;cursor:pointer;color:var(--gray);text-decoration:underline">Plus de rappel ce mois-ci</button>` : '<span></span>'}
         <div style="display:flex;gap:8px">
-          <button onclick="document.getElementById('_pv-overlay').remove()" title="${trimestriel ? 'La fenêtre ne reviendra pas aujourd’hui' : ''}" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">${trimestriel ? 'Plus tard' : 'Annuler'}</button>
+          <button onclick="document.getElementById('_pv-overlay').remove()" title="${rappel ? 'La fenêtre ne reviendra pas aujourd’hui' : ''}" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text)">${rappel ? 'Plus tard' : 'Annuler'}</button>
           <button onclick="_savePlacementValues()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✅ Enregistrer</button>
         </div>
       </div>
@@ -17821,30 +17828,38 @@ function _savePlacementValues() {
     showToast('Aucun écart à enregistrer');
   }
 }
-function _trimestreCourant() {
-  const d = new Date();
-  return `${d.getFullYear()}T${Math.floor(d.getMonth() / 3) + 1}`;
+// Jour du mois à partir duquel la valeur des placements est demandée. Le 15
+// plutôt que le 1er : les relevés de la banque sont à jour, et le rappel des
+// soldes réels du 1er janvier ne se retrouve plus en concurrence.
+const PV_JOUR_RAPPEL = 15;
+function _periodePv(refDate) {
+  const d = refDate || new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
-function _cleTrimestrePv() { return 'budget_pv_snooze_' + CURRENT_USER_ID; }
-function _cleJourPv()      { return 'budget_pv_jour_'   + CURRENT_USER_ID; }
+function _clePeriodePv() { return 'budget_pv_snooze_' + CURRENT_USER_ID; }
+function _cleJourPv()    { return 'budget_pv_jour_'   + CURRENT_USER_ID; }
 function _snoozePlacements(silencieux) {
   // `_safeSetItem` et non `localStorage.setItem` : sur un stockage saturé,
   // l'écriture échouait en silence et le rappel revenait à l'infini. C'est
   // exactement le défaut qui avait brisé la synchro en 13.22.
-  if (!_safeSetItem(_cleTrimestrePv(), _trimestreCourant())) {
+  if (!_safeSetItem(_clePeriodePv(), _periodePv())) {
     _syncLog('report du rappel placements impossible — stockage saturé ?');
   }
   if (!silencieux) document.getElementById('_pv-overlay')?.remove();
 }
-// Rappel trimestriel : avril, juillet, octobre, dans les dix premiers jours.
-// Janvier est volontairement exclu — le rappel des soldes réels s'en charge déjà
-// et demande la valeur de tous les comptes, placements compris.
+// Rappel MENSUEL, à partir du 15 du mois. Il était trimestriel — avril, juillet,
+// octobre, dans les dix premiers jours — ce qui laissait trois mois de
+// plus-values s'accumuler avant d'être inscrites au bon mois. Une fois par mois
+// colle mieux à un placement dont la valeur bouge en continu.
+//
+// La fenêtre reste ouverte jusqu'à la fin du mois : qui n'ouvre pas
+// l'application le 15 la verra le 18 ou le 25, une fois.
 //
 // DEUX freins, et non un seul. Le rappel des soldes d'ouverture en a toujours
 // eu deux ; celui-ci n'en avait qu'un, et se rouvrait donc à CHAQUE lancement
-// pendant dix jours dès lors qu'on le fermait sans répondre :
-//   • frein du jour      — posé à l'affichage, quoi que fasse l'utilisateur ;
-//   • frein du trimestre — posé à l'enregistrement ou sur « Pas ce trimestre ».
+// dès lors qu'on le fermait sans répondre :
+//   • frein du jour — posé à l'affichage, quoi que fasse l'utilisateur ;
+//   • frein du mois — posé à l'enregistrement ou sur « Plus de rappel ce mois-ci ».
 // Rappel mensuel aux comptes sans sauvegarde en ligne.
 //
 // Il dit le PROBLÈME — vos données ne sont que sur cet appareil — et propose
@@ -17905,12 +17920,12 @@ function _maybeRemindSauvegardeCloud() {
     document.body.appendChild(b);
   } catch {}
 }
-function _maybeRemindPlacements() {
+function _maybeRemindPlacements(refDate) {
   try {
     if (!DATA || !CURRENT_USER_ID || CURRENT_USER_ID === '_demo' || _compareMode || _isAdminMode) return;
-    const d = new Date();
-    if (![3, 6, 9].includes(d.getMonth()) || d.getDate() > 10) return;
-    if (localStorage.getItem(_cleTrimestrePv()) === _trimestreCourant()) return;
+    const d = refDate || new Date();
+    if (d.getDate() < PV_JOUR_RAPPEL) return;
+    if (localStorage.getItem(_clePeriodePv()) === _periodePv(d)) return;
     const jour = d.toISOString().slice(0, 10);
     if (localStorage.getItem(_cleJourPv()) === jour) return;
     if (!_placementsSuivis().length) return;
