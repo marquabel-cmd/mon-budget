@@ -26,6 +26,8 @@ Les régressions testées sont celles qui ont réellement atteint l'utilisateur 
 | `_ordreAAligner` | Report de l'ordre des lignes, jamais vers les années passées |
 | `computeLivret` / `computeCompte` | Soldes chaînés, `fromBank`, mois payés |
 | `switchTab` | Redessin d'un onglet d'année à l'arrivée |
+| Flèches du filtre Transactions | Déplacement mois/année, passage à l'année voisine, flèches grisées aux bords |
+| Coffre des sauvegardes | Aller-retour IndexedDB, migration depuis localStorage, purge, capture avant remplacement cloud, repli |
 
 ## Ajouter un test
 

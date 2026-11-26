@@ -1295,6 +1295,116 @@ async function tousLesCas() {
     _txFilterYear = null; _txFilterMonth = new Date().getMonth();
   }
 
+  // ── Coffre des sauvegardes : IndexedDB (13.74) ──────────────────
+  {
+    const vraiUser = CURRENT_USER_ID;
+    CURRENT_USER_ID = 'test_coffre';
+    const pfx = bakPrefix();
+    const netToyer = async () => {
+      await bakSupprimer((await bakInventaire(pfx)).map(x => x.cle));
+      Object.keys(localStorage).filter(k => k.startsWith(pfx)).forEach(k => localStorage.removeItem(k));
+    };
+    await netToyer();
+
+    // Aller-retour par IndexedDB, sans passer par localStorage
+    const cle = pfx + '2026-01-15';
+    const contenu = JSON.stringify({ '2026': { marque: 'aller-retour' } });
+    const ecrit = await bakEcrire(cle, contenu);
+    check('coffre \u00b7 l\u2019\u00e9criture r\u00e9ussit', ecrit === true, String(ecrit));
+    check('coffre \u00b7 relecture \u00e0 l\u2019identique', (await bakLire(cle)) === contenu, String(await bakLire(cle)).slice(0, 60));
+    check('coffre \u00b7 rien n\u2019est \u00e9crit dans localStorage',
+      localStorage.getItem(cle) === null, String(localStorage.getItem(cle)).slice(0, 40));
+    check('coffre \u00b7 IndexedDB est bien la source, pas un repli',
+      _bakRepli === false, 'repli actif');
+
+    // Inventaire : cl\u00e9 et taille, sans relire le JSON
+    const inv = await bakInventaire(pfx);
+    check('coffre \u00b7 l\u2019inventaire liste la copie', inv.length === 1 && inv[0].cle === cle, JSON.stringify(inv));
+    check('coffre \u00b7 la taille est m\u00e9moris\u00e9e', inv[0].taille === contenu.length, String(inv[0].taille));
+
+    // Suppression
+    await bakSupprimer(cle);
+    check('coffre \u00b7 la suppression vide l\u2019inventaire',
+      (await bakInventaire(pfx)).length === 0, JSON.stringify(await bakInventaire(pfx)));
+    check('coffre \u00b7 plus rien \u00e0 relire', (await bakLire(cle)) == null, String(await bakLire(cle)));
+
+    // Migration des copies h\u00e9rit\u00e9es de localStorage
+    const cleVieille = pfx + '2026-02-20';
+    localStorage.setItem(cleVieille, contenu);
+    const deplacees = await bakMigrerDepuisLocalStorage();
+    check('coffre \u00b7 la migration d\u00e9place la copie h\u00e9rit\u00e9e', deplacees >= 1, String(deplacees));
+    check('coffre \u00b7 localStorage est lib\u00e9r\u00e9',
+      localStorage.getItem(cleVieille) === null, String(localStorage.getItem(cleVieille)).slice(0, 40));
+    check('coffre \u00b7 la copie migr\u00e9e reste lisible',
+      (await bakLire(cleVieille)) === contenu, String(await bakLire(cleVieille)).slice(0, 60));
+    check('coffre \u00b7 rien \u00e0 migrer au second passage',
+      (await bakMigrerDepuisLocalStorage()) === 0, 'des cl\u00e9s subsistent');
+    await netToyer();
+
+    // Une copie non encore migr\u00e9e reste visible et lisible
+    localStorage.setItem(pfx + '2026-03-01', contenu);
+    const invMixte = await bakInventaire(pfx);
+    check('coffre \u00b7 une copie pas encore migr\u00e9e appara\u00eet dans l\u2019inventaire',
+      invMixte.length === 1, JSON.stringify(invMixte));
+    check('coffre \u00b7 et reste relisible',
+      (await bakLire(pfx + '2026-03-01')) === contenu, 'illisible');
+    await netToyer();
+
+    // Purge : on garde les BAK_JOURS_MAX quotidiennes les plus r\u00e9centes
+    for (let i = 1; i <= BAK_JOURS_MAX + 3; i++) {
+      await bakEcrire(pfx + '2026-' + String(Math.ceil(i / 28)).padStart(2, '0') + '-' + String((i % 28) + 1).padStart(2, '0'), contenu);
+    }
+    const avant = (await bakInventaire(pfx)).length;
+    await bakPurger();
+    const apres = await bakInventaire(pfx);
+    check('coffre \u00b7 la purge ram\u00e8ne au plafond quotidien',
+      apres.length === BAK_JOURS_MAX, avant + ' \u2192 ' + apres.length);
+    check('coffre \u00b7 ce sont les plus anciennes qui partent',
+      apres[0].cle > (pfx + '2026-01-02'), apres[0].cle);
+    await netToyer();
+
+    // Le filet « avant remplacement cloud » doit capturer DATA AVANT de rendre
+    // la main : une capture tardive sauvegarderait les donn\u00e9es d\u2019apr\u00e8s, ce qui
+    // vide la sauvegarde de tout int\u00e9r\u00eat.
+    DATA = { '2026': { soldes: { compteIng: 111, livretInitial: 0, livrets_bal: {} }, vars: {}, revenus: [], charges: [], excludeCalcMethods: [] } };
+    const promesse = _backupBeforeCloudReplace();
+    DATA = { '2026': { soldes: { compteIng: 999, livretInitial: 0, livrets_bal: {} }, vars: {}, revenus: [], charges: [], excludeCalcMethods: [] } };
+    await promesse;
+    const pc = await bakInventaire(pfx + 'pre-cloud_');
+    check('coffre \u00b7 une sauvegarde avant-synchro est cr\u00e9\u00e9e', pc.length === 1, JSON.stringify(pc));
+    if (pc.length) {
+      const copie = JSON.parse(await bakLire(pc[0].cle));
+      check('coffre \u00b7 elle contient les donn\u00e9es D\u2019AVANT le remplacement',
+        copie['2026'].soldes.compteIng === 111, String(copie['2026'].soldes.compteIng));
+    }
+    await netToyer();
+
+    // Aucune sauvegarde ne doit repartir dans localStorage par inadvertance
+    check('coffre \u00b7 plus aucune \u00e9criture directe de sauvegarde dans localStorage',
+      !/localStorage\.setItem\(\s*(bakPrefix\(\)|mk|bk)/.test(String(window.saveData) + String(window.execDelete) + String(window.resetData) + String(window._backupBeforeCloudReplace)),
+      'une \u00e9criture localStorage subsiste');
+    check('coffre \u00b7 la restauration relit le coffre',
+      /bakLire\(/.test(String(window.restoreBackup)), 'restoreBackup ne passe pas par bakLire');
+    check('coffre \u00b7 la liste des sauvegardes passe par l\u2019inventaire',
+      /bakInventaire\(/.test(String(window.openBackups)), 'openBackups ne passe pas par bakInventaire');
+
+    // Navigation priv\u00e9e, stockage bloqu\u00e9 : IndexedDB peut \u00eatre refus\u00e9. Mieux vaut
+    // alors une sauvegarde encombrante dans localStorage qu'aucune sauvegarde.
+    _bakRepli = true;
+    const cleRepli = pfx + '2026-12-25';
+    const ecritRepli = await bakEcrire(cleRepli, contenu);
+    check('repli \u00b7 l\u2019\u00e9criture r\u00e9ussit sans IndexedDB', ecritRepli === true, String(ecritRepli));
+    check('repli \u00b7 elle atterrit dans localStorage',
+      localStorage.getItem(cleRepli) === contenu, 'absente de localStorage');
+    check('repli \u00b7 la relecture la retrouve', (await bakLire(cleRepli)) === contenu, 'illisible');
+    check('repli \u00b7 l\u2019inventaire la liste quand m\u00eame',
+      (await bakInventaire(pfx)).some(x => x.cle === cleRepli), 'absente de l\u2019inventaire');
+    localStorage.removeItem(cleRepli);
+    _bakRepli = false;
+
+    CURRENT_USER_ID = vraiUser;
+  }
+
   DATA = sauve;
   return res;
 }

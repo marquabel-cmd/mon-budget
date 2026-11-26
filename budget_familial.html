@@ -3177,6 +3177,187 @@ function saveUsers() { localStorage.setItem('budget_users', JSON.stringify(USERS
 function dataKey() { return `budget_data_${CURRENT_USER_ID}`; }
 function bakPrefix() { return `budget_bak_${CURRENT_USER_ID}_`; }
 
+// ── COFFRE DES SAUVEGARDES (IndexedDB) ────────────────────────
+// Les sauvegardes locales étaient quinze copies intégrales du budget empilées
+// dans localStorage. Mesuré sur un compte réel : 4,9 Mo de copies pour 0,33 Mo
+// de données vivantes, soit 93 % du quota de 5 Mo du navigateur. Comme chaque
+// copie grossit avec le budget, le plafond tombait vers 340 Ko de données et
+// l'enregistrement se mettait à échouer — c'est toute la raison d'être de
+// _safeSetItem plus bas. IndexedDB offre un quota en gigaoctets : les copies y
+// vivent désormais, et localStorage ne garde que les données vivantes.
+//
+// Deux magasins plutôt qu'un : « copies » porte le JSON, « fiches » sa taille.
+// Lister les sauvegardes ne charge ainsi que quelques centaines d'octets au
+// lieu de relire des mégaoctets de JSON, ce qui compte sur un téléphone.
+const BAK_DB = 'mon-budget-sauvegardes';
+const BAK_MAGASINS = ['copies', 'fiches'];
+const BAK_JOURS_MAX = 30;      // sauvegardes quotidiennes conservées
+const BAK_PRECLOUD_MAX = 10;   // sauvegardes « avant synchro » conservées
+let _bakRepli = false;         // IndexedDB inutilisable : on reste sur localStorage
+let _bakOuverture = null;
+
+function _bakDb() {
+  if (_bakRepli) return Promise.reject(new Error('IndexedDB indisponible'));
+  if (_bakOuverture) return _bakOuverture;
+  _bakOuverture = new Promise((ok, ko) => {
+    let req;
+    try { req = indexedDB.open(BAK_DB, 1); } catch (e) { return ko(e); }
+    req.onupgradeneeded = () => {
+      BAK_MAGASINS.forEach(m => {
+        if (!req.result.objectStoreNames.contains(m)) req.result.createObjectStore(m);
+      });
+    };
+    req.onsuccess = () => ok(req.result);
+    req.onerror = () => ko(req.error || new Error('ouverture refusée'));
+    req.onblocked = () => ko(new Error('base bloquée'));
+  }).catch(e => {
+    _bakRepli = true;
+    if (typeof _syncLog === 'function') _syncLog('IndexedDB indisponible — sauvegardes conservées dans localStorage');
+    throw e;
+  });
+  return _bakOuverture;
+}
+
+// Une transaction par opération : le navigateur avorte celles qui attendent
+// autre chose entre deux appels. `travail` rend une requête, un tableau de
+// requêtes, ou rien du tout.
+function _bakTx(mode, travail) {
+  return _bakDb().then(db => new Promise((ok, ko) => {
+    const tx = db.transaction(BAK_MAGASINS, mode);
+    let req;
+    try { req = travail(tx.objectStore('copies'), tx.objectStore('fiches')); }
+    catch (e) { return ko(e); }
+    tx.onerror = tx.onabort = () => ko(tx.error || new Error('transaction avortée'));
+    tx.oncomplete = () => ok(Array.isArray(req) ? req.map(r => r.result) : (req ? req.result : undefined));
+  }));
+}
+
+// Écrit une copie. En dernier recours seulement, retombe sur localStorage :
+// mieux vaut une sauvegarde encombrante qu'aucune sauvegarde.
+async function bakEcrire(cle, json) {
+  try {
+    await _bakTx('readwrite', (copies, fiches) => {
+      copies.put(json, cle);
+      fiches.put({ taille: json.length, cree: new Date().toISOString() }, cle);
+    });
+    return true;
+  } catch { return _safeSetItem(cle, json); }
+}
+
+// Relit une copie. localStorage sert de recours : une copie peut encore
+// attendre sa migration, ou avoir été écrite par le repli ci-dessus.
+async function bakLire(cle) {
+  try {
+    const v = await _bakTx('readonly', copies => copies.get(cle));
+    if (typeof v === 'string') return v;
+  } catch {}
+  return localStorage.getItem(cle);
+}
+
+async function bakSupprimer(cles) {
+  const liste = [].concat(cles);
+  if (!liste.length) return;
+  try {
+    await _bakTx('readwrite', (copies, fiches) => {
+      liste.forEach(c => { copies.delete(c); fiches.delete(c); });
+    });
+  } catch {}
+  liste.forEach(c => { try { localStorage.removeItem(c); } catch {} });
+}
+
+// Inventaire trié par clé : { cle, taille }. Réunit les deux sources pour que
+// la liste reste complète pendant la bascule.
+async function bakInventaire(prefixe) {
+  const vu = new Map();
+  try {
+    const [cles, fiches] = await _bakTx('readonly', (copies, f) => [f.getAllKeys(), f.getAll()]);
+    (cles || []).forEach((c, i) => {
+      if (String(c).startsWith(prefixe)) vu.set(String(c), (fiches[i] && fiches[i].taille) || 0);
+    });
+  } catch {}
+  Object.keys(localStorage).forEach(c => {
+    if (c.startsWith(prefixe) && !vu.has(c)) vu.set(c, (localStorage.getItem(c) || '').length);
+  });
+  return [...vu.entries()].map(([cle, taille]) => ({ cle, taille }))
+    .sort((a, b) => a.cle < b.cle ? -1 : (a.cle > b.cle ? 1 : 0));
+}
+
+// Bascule unique des copies déjà présentes dans localStorage. Chaque copie est
+// déplacée indépendamment : interrompue, la migration reprend au lancement
+// suivant. Tous les profils sont traités, la clé portant déjà l'identifiant.
+async function bakMigrerDepuisLocalStorage() {
+  const cles = Object.keys(localStorage).filter(c => c.startsWith('budget_bak_'));
+  if (!cles.length) return 0;
+  let faits = 0, octets = 0;
+  for (const cle of cles) {
+    const json = localStorage.getItem(cle);
+    if (json == null) continue;
+    try {
+      await _bakTx('readwrite', (copies, fiches) => {
+        copies.put(json, cle);
+        fiches.put({ taille: json.length, cree: '' }, cle);
+      });
+    } catch { break; }   // IndexedDB indisponible : on ne retire rien
+    try { localStorage.removeItem(cle); } catch { continue; }
+    faits++; octets += (json.length + cle.length) * 2;
+  }
+  if (faits && typeof _syncLog === 'function') {
+    _syncLog(`${faits} sauvegarde(s) déplacée(s) vers IndexedDB — ${(octets / 1048576).toFixed(2)} Mo libérés`);
+  }
+  return faits;
+}
+
+// Purge périodique, lancée après chaque enregistrement.
+async function bakPurger() {
+  if (!CURRENT_USER_ID) return 0;
+  const pfx = bakPrefix();
+  const tout = (await bakInventaire(pfx)).map(x => x.cle);
+  const aJeter = [];
+  // Quotidiennes : garder les BAK_JOURS_MAX plus récentes
+  const jours = tout.filter(c => !c.includes('pre-cloud') && !c.includes('pre-reset'));
+  if (jours.length > BAK_JOURS_MAX) aJeter.push(...jours.slice(0, jours.length - BAK_JOURS_MAX));
+  // Avant-synchro : rien au-delà de 30 jours, 3 par jour au plus, puis
+  // BAK_PRECLOUD_MAX au total
+  const limite = new Date(); limite.setDate(limite.getDate() - 30);
+  const parJour = {};
+  tout.filter(c => c.startsWith(pfx + 'pre-cloud_')).forEach(c => {
+    const m = c.match(/pre-cloud_(\d{4}-\d{2}-\d{2})/);
+    if (!m) return;
+    if (new Date(m[1]) < limite) { aJeter.push(c); return; }
+    (parJour[m[1]] = parJour[m[1]] || []).push(c);
+  });
+  Object.values(parJour).forEach(cs => {
+    if (cs.length > 3) aJeter.push(...cs.sort().slice(0, cs.length - 3));
+  });
+  const restants = Object.values(parJour).flat().filter(c => !aJeter.includes(c)).sort();
+  if (restants.length > BAK_PRECLOUD_MAX) aJeter.push(...restants.slice(0, restants.length - BAK_PRECLOUD_MAX));
+  const lot = [...new Set(aJeter)];
+  if (lot.length) await bakSupprimer(lot);
+  return lot.length;
+}
+
+// Complète le diagnostic de stockage une fois le coffre interrogé : IndexedDB
+// étant asynchrone, le panneau se dessine sans l'attendre.
+async function _majDiagCoffre() {
+  const el = document.getElementById('diag-coffre');
+  if (!el) return;
+  try {
+    const inv = await bakInventaire(bakPrefix());
+    if (!inv.length) { el.textContent = 'Aucune sauvegarde locale pour l’instant.'; return; }
+    const mo = (inv.reduce((t, x) => t + x.taille * 2, 0) / 1048576).toFixed(2);
+    const ou = _bakRepli
+      ? 'dans localStorage — IndexedDB indisponible ici'
+      : 'dans IndexedDB, hors du quota ci-dessus';
+    el.innerHTML = `Sauvegardes locales : <b>${inv.length}</b> copie${inv.length > 1 ? 's' : ''}, ${mo} Mo ${ou}`;
+  } catch { el.textContent = ''; }
+}
+
+// Efface toutes les copies d'un profil — quand l'appareil est libéré.
+async function bakViderProfil(userId) {
+  if (!userId) return;
+  await bakSupprimer((await bakInventaire(`budget_bak_${userId}_`)).map(x => x.cle));
+}
+
 // ── STOCKAGE LOCAL SATURÉ ────────────────────────────────────────────────
 // Un localStorage plein faisait échouer l'enregistrement des données APRÈS une
 // fusion pourtant réussie : l'appareil n'adoptait jamais le cloud et restait
@@ -3189,6 +3370,9 @@ function _storageUsedBytes() {
   try { Object.keys(localStorage).forEach(k => { n += k.length + (localStorage.getItem(k) || '').length; }); } catch {}
   return n * 2; // UTF-16
 }
+// Soupape de dernière extrémité pour _safeSetItem. Depuis que les sauvegardes
+// vivent dans IndexedDB, elle ne trouve normalement plus rien à sacrifier :
+// elle ne sert plus qu'aux copies pas encore migrées et au repli localStorage.
 function _pruneBackups(keep) {
   const pfx = bakPrefix();
   const keys = Object.keys(localStorage).filter(k => k.startsWith(pfx)).sort();
@@ -3394,10 +3578,13 @@ function _mergeBudgetData(local, cloud, opts) {
   return result;
 }
 // Crée un backup avant remplacement cloud — max 1 par heure, 5 au total
-function _backupBeforeCloudReplace() {
+async function _backupBeforeCloudReplace() {
   if (!_hasYearData(DATA) || !CURRENT_USER_ID) return;
+  // Sérialisé AVANT toute attente : les appelants remplacent DATA dans la
+  // foulée, et une capture tardive sauvegarderait les données d'après.
+  const json = JSON.stringify(DATA);
   const pfx = bakPrefix() + 'pre-cloud_';
-  const existing = Object.keys(localStorage).filter(k => k.startsWith(pfx)).sort();
+  const existing = (await bakInventaire(pfx)).map(x => x.cle);
   // Throttle : pas de nouveau backup si un a été créé il y a moins de 60 minutes
   if (existing.length > 0) {
     const lastKey = existing[existing.length - 1];
@@ -3413,10 +3600,9 @@ function _backupBeforeCloudReplace() {
   // n'adoptait alors jamais le cloud, sans aucune trace. Et comme l'écriture échouait
   // toujours, aucune clé n'était créée : l'anti-répétition d'une heure ne s'armait
   // jamais et l'échec se reproduisait à chaque tentative.
-  if (!_safeSetItem(key, JSON.stringify(DATA))) return;
-  // Garder max 5 pre-cloud au total
-  const all = Object.keys(localStorage).filter(k => k.startsWith(pfx)).sort();
-  if (all.length > 5) all.slice(0, all.length - 5).forEach(k => localStorage.removeItem(k));
+  if (!await bakEcrire(key, json)) return;
+  const all = (await bakInventaire(pfx)).map(x => x.cle);
+  if (all.length > BAK_PRECLOUD_MAX) await bakSupprimer(all.slice(0, all.length - BAK_PRECLOUD_MAX));
 }
 
 function updateUserDisplay() {
@@ -4375,7 +4561,7 @@ function execDelete() {
   if (document.getElementById('del-confirm-backup').checked) {
     const now = new Date();
     const mk = bakPrefix() + `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    localStorage.setItem(mk, JSON.stringify(DATA));
+    bakEcrire(mk, JSON.stringify(DATA));
     showToast(t('toast.backup_created'));
   }
   if (_pendingDeleteFn) { _pendingDeleteFn(); _pendingDeleteFn = null; }
@@ -8997,8 +9183,9 @@ function saveData(silent = false) {
   }
   const now = new Date();
   const dateKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-  // Sauvegarde du jour : accessoire, ne doit jamais empêcher l'enregistrement principal
-  try { localStorage.setItem(bakPrefix() + dateKey, json); } catch { _pruneBackups(3); }
+  // Sauvegarde du jour : accessoire, ne doit jamais empêcher l'enregistrement
+  // principal — d'où l'absence de `await`.
+  bakEcrire(bakPrefix() + dateKey, json);
   // Si on sauvegarde suite à une synchro cloud (cloud gagne), utiliser le timestamp cloud
   // pour éviter que budget_lastsave_ > _cloudPushTime au prochain chargement (boucle de reversion)
   const isoNow = (_cloudSyncTimestamp > 0)
@@ -9006,26 +9193,7 @@ function saveData(silent = false) {
     : now.toISOString();
   _cloudSyncTimestamp = 0; // Réinitialiser après usage
   localStorage.setItem('budget_lastsave_' + CURRENT_USER_ID, isoNow);
-  // Backups quotidiens : garder les 30 derniers jours
-  const pfx = bakPrefix();
-  const dayBaks = Object.keys(localStorage)
-    .filter(k => k.startsWith(pfx) && !k.includes('pre-cloud') && !k.includes('pre-reset'))
-    .sort();
-  // 10 jours suffisent : 30 copies du budget saturaient le stockage des téléphones,
-  // au point de bloquer l'enregistrement des données elles-mêmes.
-  if (dayBaks.length > 10) dayBaks.slice(0, dayBaks.length - 10).forEach(k => localStorage.removeItem(k));
-  // Pre-cloud : garder max 3 par jour, supprimer ceux de plus de 30 jours
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
-  const preCloud = Object.keys(localStorage).filter(k => k.startsWith(pfx + 'pre-cloud_')).sort();
-  const pcByDay = {};
-  preCloud.forEach(k => {
-    const m = k.match(/pre-cloud_(\d{4}-\d{2}-\d{2})/);
-    if (!m) return;
-    const d = new Date(m[1]);
-    if (d < cutoff) { localStorage.removeItem(k); return; }
-    (pcByDay[m[1]] = pcByDay[m[1]] || []).push(k);
-  });
-  Object.values(pcByDay).forEach(ks => { if (ks.length > 3) ks.sort().slice(0, ks.length - 3).forEach(k => localStorage.removeItem(k)); });
+  bakPurger();   // sans `await` : la purge ne doit pas retarder l'affichage
   if (!silent) showToast(t('toast.saved'));
   updateLastSaveDisplay();
   // ── Protections multi-couches ──
@@ -9072,12 +9240,12 @@ function toggleTheme() {
   }
 })();
 
-function openBackups() {
+async function openBackups() {
   const pfx = bakPrefix();
-  // Purge des pre-cloud en excès (garder les 5 plus récents)
-  const pcKeys = Object.keys(localStorage).filter(k => k.startsWith(pfx + 'pre-cloud_')).sort();
-  if (pcKeys.length > 5) pcKeys.slice(0, pcKeys.length - 5).forEach(k => localStorage.removeItem(k));
-  const keys = Object.keys(localStorage).filter(k => k.startsWith(pfx)).sort().reverse();
+  await bakPurger();
+  const inv = await bakInventaire(pfx);
+  const tailles = new Map(inv.map(x => [x.cle, x.taille]));
+  const keys = inv.map(x => x.cle).reverse();
   const MOIS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
   const list = document.getElementById('backup-list');
   const lastSave = localStorage.getItem('budget_lastsave_' + CURRENT_USER_ID);
@@ -9121,7 +9289,7 @@ function openBackups() {
     </div>`;
     byDay[day].forEach(k => {
       const raw = k.replace(pfx, '');
-      const size = Math.round((localStorage.getItem(k)||'').length / 1024);
+      const size = Math.round((tailles.get(k) || 0) / 1024);
       let label, icon = '💾';
       if (raw.startsWith('pre-cloud_')) {
         const m = raw.match(/pre-cloud_\d{4}-\d{2}-\d{2}_(\d{2})h(\d{2})/);
@@ -9146,10 +9314,12 @@ function openBackups() {
 
 function closeBackups() { document.getElementById('backup-modal').classList.remove('open'); }
 
-function restoreBackup(key) {
+async function restoreBackup(key) {
   if (!confirm(t('toast.confirm_restore'))) return;
   try {
-    DATA = JSON.parse(localStorage.getItem(key));
+    const json = await bakLire(key);
+    if (json == null) { showToast(t('toast.error') + ' — sauvegarde introuvable'); return; }
+    DATA = JSON.parse(json);
     // Remove panel divs for years no longer in DATA
     document.querySelectorAll('[id^="tab-y"]').forEach(el => {
       const y = el.id.replace('tab-y','');
@@ -9186,6 +9356,9 @@ function disconnectSession() {
 function disconnectFull() {
   if (!confirm('Libérer cet appareil pour un autre utilisateur ?\n\nToutes vos données locales ET vos credentials seront effacés.\nVos données cloud Firebase restent intactes.')) return;
   stopRealtimeSync();
+  // Les sauvegardes ne sont plus dans localStorage : les effacer explicitement,
+  // sans quoi l'appareil « libéré » garderait le budget du profil précédent.
+  bakViderProfil(CURRENT_USER_ID);
   Object.keys(localStorage).filter(k => k.startsWith('budget_') || k.startsWith('mbudget-')).forEach(k => localStorage.removeItem(k));
   sessionStorage.clear();
   setTimeout(() => location.reload(), 400);
@@ -9193,7 +9366,7 @@ function disconnectFull() {
 
 function resetData() {
   const bk = bakPrefix() + 'pre-reset_' + new Date().toISOString().slice(0,10);
-  localStorage.setItem(bk, JSON.stringify(DATA));
+  bakEcrire(bk, JSON.stringify(DATA));
   const years = getYears();
   const nbAns = years.length;
   const nbTx = years.reduce((s,y) => s + getVarCats().reduce((ss,c) => ss + (DATA[y]?.vars?.[c.key]?.length||0), 0), 0);
@@ -10431,9 +10604,11 @@ function renderConfigTab() {
                 const used = _storageUsedBytes();
                 const mo = (used / 1048576).toFixed(2);
                 const chaud = used > 4 * 1048576; // le quota tourne autour de 5 Mo
+                setTimeout(_majDiagCoffre, 0);   // le coffre répond de façon asynchrone
                 return `<div style="font-size:11px;color:${chaud ? '#f0c040' : 'var(--gray)'};margin-bottom:10px">
                   Stockage local : <b>${mo} Mo</b>${chaud ? ' — proche de la limite du navigateur' : ''}
                   ${_storageFull ? '<br><b style="color:#ffb3b3">Saturé : l\'enregistrement des données échoue.</b>' : ''}
+                  <br><span id="diag-coffre" style="opacity:.85"></span>
                 </div>`;
               })()}
               <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin:12px 0 6px">🔎 Journal de synchro</div>
@@ -11612,8 +11787,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.73';
-const SW_VERSION = 'v353';
+const APP_VERSION = '13.74';
+const SW_VERSION = 'v354';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -13471,6 +13646,7 @@ function _setVersionDisplays() {
 _setVersionDisplays(); // exécution immédiate (script en bas du body)
 document.addEventListener('DOMContentLoaded', () => {
   _setVersionDisplays();
+  bakMigrerDepuisLocalStorage();   // bascule des copies héritées, une seule fois
   // Apply saved language on load
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
@@ -13515,6 +13691,14 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.74': {
+    date: 'Novembre 2026',
+    items: [
+      { icon: '🗄️', text: 'Les sauvegardes locales quittent le stockage du navigateur pour IndexedDB. Elles y étaient quinze copies intégrales du budget : sur un compte réel, 4,9 Mo de copies pour 0,33 Mo de données, soit 93 % des 5 Mo que le navigateur accorde. Comme chaque copie grossit avec le budget, le plafond était atteint vers 340 Ko de données et l’enregistrement se mettait à échouer. Le déplacement se fait tout seul au premier lancement.' },
+      { icon: '📅', text: 'La place gagnée sert à garder plus d’historique : 30 sauvegardes quotidiennes au lieu de 10, et 10 sauvegardes avant synchronisation au lieu de 5. Le panneau Backups les liste comme avant, groupées par jour.' },
+      { icon: '🔎', text: 'Le diagnostic de stockage, dans Configuration, distingue maintenant les données vivantes des sauvegardes et dit où ces dernières sont rangées.' }
+    ]
+  },
   '13.73': {
     date: 'Novembre 2026',
     items: [
