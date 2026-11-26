@@ -11821,8 +11821,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.76';
-const SW_VERSION = 'v356';
+const APP_VERSION = '13.77';
+const SW_VERSION = 'v357';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -13725,6 +13725,14 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.77': {
+    date: 'Novembre 2026',
+    items: [
+      { icon: '⚠️', text: 'La fenêtre « Valeur de vos placements » prévient désormais quand le versement du mois n’est pas encore pointé comme payé. L’écart enregistré est la différence entre la valeur que vous saisissez et la valeur calculée, laquelle n’additionne que les mouvements cochés : saisir la valeur de la banque avant de pointer la domiciliation du mois faisait passer ce versement pour un gain. Sur un ordre permanent de 50 €, c’était une plus-value de 50 € inventée de toutes pièces, en silence.' },
+      { icon: '✓', text: 'Un bouton « Pointer ce mouvement et recalculer » règle le cas d’un clic : la ligne est pointée et la valeur calculée se met à jour avant que vous ne validiez. L’avertissement n’apparaît que si c’est nécessaire, et ne bloque rien.' },
+      { icon: '📖', text: 'L’aide, en français et en anglais, suit : nouvelle fréquence mensuelle, ordre des gestes, et pourquoi la régularité compte plus que la date choisie.' }
+    ]
+  },
   '13.76': {
     date: 'Novembre 2026',
     items: [
@@ -17774,6 +17782,39 @@ function _saveAccountConfig(accId, useYear) {
 // Fenêtre de mise à jour de la valeur des placements. Un champ par placement,
 // prérempli avec la valeur calculée : il suffit de recopier le chiffre de la
 // banque. L'écart part en plus ou moins-value sur le mois en cours.
+// Mouvements du mois saisis mais pas encore cochés comme payés. La valeur
+// calculée ne les compte pas : saisir la valeur réelle de la banque avant de les
+// cocher fait passer le versement pour un gain. Sur un ordre permanent de 50 €,
+// c'est une plus-value de 50 € inventée de toutes pièces, et rien ne le
+// signalait. Le cas arrive dès qu'on ouvre l'application avant que la
+// domiciliation du mois soit pointée.
+//
+// Les lignes de valorisation (fromBank) sont exclues : ce sont les plus et
+// moins-values elles-mêmes, pas des mouvements à pointer.
+function _versementsNonCoches(year, livId, mois) {
+  const isMain = !livId || livId === 'liv_main';
+  const aCeLivret = r => isMain ? (!r.livretId || r.livretId === 'liv_main') : r.livretId === livId;
+  return (DATA[year]?.charges || []).filter(r =>
+    !r.fromBank && !r._adjust && r.inCalc !== false && aCeLivret(r)
+    && (r.cat === 'livret_in' || r.cat === 'livret_out')
+    && Math.abs(parseFloat(r.v[mois]) || 0) > 0
+    && !r.paid[mois]);
+}
+// Pointe les mouvements du mois, puis rouvre la fenêtre pour que la valeur
+// calculée les intègre. Sans cette réouverture, le champ garderait l'ancien
+// chiffre et l'écart resterait faux.
+function _cocherVersementsMois(livId, rappel) {
+  const annee = String(new Date().getFullYear());
+  const mois = new Date().getMonth();
+  const lignes = _versementsNonCoches(annee, livId, mois);
+  if (!lignes.length) return;
+  lignes.forEach(r => { r.paid[mois] = true; });
+  dSave();
+  getYears().forEach(y => renderYear(y));
+  renderSummary();
+  document.getElementById('_pv-overlay')?.remove();
+  _askPlacementValues(rappel);
+}
 function _askPlacementValues(rappel) {
   if (document.getElementById('_pv-overlay')) return;
   const placements = _placementsSuivis();
@@ -17782,11 +17823,20 @@ function _askPlacementValues(rappel) {
   const mois = new Date().getMonth();
   const champs = placements.map(l => {
     const calc = Math.round(computeLivret(annee, l.id) * 100) / 100;
+    const attente = _versementsNonCoches(annee, l.id, mois);
+    const ecartFausse = attente.reduce((t, r) => t + Math.abs(parseFloat(r.v[mois]) || 0), 0);
+    const alerte = attente.length ? `<div style="background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.45);border-radius:8px;padding:8px 10px;margin-top:5px;font-size:11px;line-height:1.5;color:var(--text)">
+        ⚠️ ${attente.length > 1 ? `${attente.length} mouvements de` : 'Le mouvement de'} ${getMonths()[mois].toLowerCase()} ${attente.length > 1 ? 'ne sont pas pointés' : 'n\'est pas pointé'} comme payé${attente.length > 1 ? 's' : ''} : <b>${fmt(ecartFausse)}</b>.
+        La valeur calculée ne ${attente.length > 1 ? 'les' : 'le'} compte pas encore, l'écart serait donc faux d'autant.
+        <button onclick="_cocherVersementsMois('${l.id}', ${!!rappel})"
+          style="display:block;width:100%;margin-top:7px;background:#F5A623;color:#1a1a2e;border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer">✓ Pointer ${attente.length > 1 ? 'ces mouvements' : 'ce mouvement'} et recalculer</button>
+      </div>` : '';
     return `<div style="margin-bottom:11px">
         <label for="_pv_${l.id}" style="font-size:11px;font-weight:700;color:#27ae60;text-transform:uppercase;display:block;margin-bottom:4px">📈 ${_esc(l.name)}</label>
         <input id="_pv_${l.id}" type="number" step="0.01" inputmode="decimal" value="${calc}" data-liv="${l.id}"
                style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:700;background:var(--surface-alt);color:var(--text)">
         <div style="font-size:10px;color:var(--gray);margin-top:3px">Valeur calculée. L'écart sera inscrit en ${getMonths()[mois].toLowerCase()} ${annee}.</div>
+        ${alerte}
       </div>`;
   }).join('');
   const o = document.createElement('div');

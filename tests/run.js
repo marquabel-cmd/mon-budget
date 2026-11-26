@@ -1490,6 +1490,89 @@ async function tousLesCas() {
       String((srcAddYear.match(/meta\.tauxPret = r\.tauxPret/g) || []).length) + ' occurrence(s)');
   }
 
+  // ── Garde-fou : mouvement du mois non pointé (13.77) ──────────────
+  {
+    const vraiUser = CURRENT_USER_ID;
+    CURRENT_USER_ID = 'test_pointage';
+    const AN = String(new Date().getFullYear());
+    const M = new Date().getMonth();
+    const mk = (over) => Object.assign({
+      label: 'Ordre permanent', cat: 'livret_in', livretId: 'liv_x',
+      v: Array(12).fill(0), paid: Array(12).fill(false)
+    }, over);
+    const poser = (...lignes) => {
+      DATA = { [AN]: annee() };
+      DATA[AN].soldes.livrets_bal = { liv_x: 0 };
+      DATA[AN].charges = lignes;
+    };
+    const v50 = () => { const v = Array(12).fill(0); v[M] = 50; return v; };
+
+    // Le cas vis\u00e9 : versement du mois saisi, pas encore point\u00e9
+    poser(mk({ v: v50() }));
+    check('pointage \u00b7 un versement du mois non point\u00e9 est d\u00e9tect\u00e9',
+      _versementsNonCoches(AN, 'liv_x', M).length === 1,
+      String(_versementsNonCoches(AN, 'liv_x', M).length));
+
+    // Une fois point\u00e9, plus rien \u00e0 signaler
+    poser(mk({ v: v50(), paid: Array(12).fill(true) }));
+    check('pointage \u00b7 rien \u00e0 signaler quand c\u2019est point\u00e9',
+      _versementsNonCoches(AN, 'liv_x', M).length === 0,
+      String(_versementsNonCoches(AN, 'liv_x', M).length));
+
+    // Un mois \u00e0 z\u00e9ro n'est pas un mouvement en attente
+    poser(mk({}));
+    check('pointage \u00b7 un mois \u00e0 z\u00e9ro n\u2019est pas un mouvement',
+      _versementsNonCoches(AN, 'liv_x', M).length === 0,
+      String(_versementsNonCoches(AN, 'liv_x', M).length));
+
+    // Les lignes de valorisation sont les plus/moins-values elles-m\u00eames :
+    // les signaler reviendrait \u00e0 demander de pointer ce qu'on s'appr\u00eate \u00e0 \u00e9crire
+    poser(mk({ label: '\ud83d\udcc8 Plus-value', v: v50(), fromBank: true }));
+    check('pointage \u00b7 une ligne de valorisation est ignor\u00e9e',
+      _versementsNonCoches(AN, 'liv_x', M).length === 0,
+      String(_versementsNonCoches(AN, 'liv_x', M).length));
+
+    // Ligne exclue des calculs, ou appartenant \u00e0 un autre placement
+    poser(mk({ v: v50(), inCalc: false }));
+    check('pointage \u00b7 une ligne hors calcul est ignor\u00e9e',
+      _versementsNonCoches(AN, 'liv_x', M).length === 0,
+      String(_versementsNonCoches(AN, 'liv_x', M).length));
+
+    poser(mk({ v: v50(), livretId: 'liv_autre' }));
+    check('pointage \u00b7 le placement voisin n\u2019est pas concern\u00e9',
+      _versementsNonCoches(AN, 'liv_x', M).length === 0,
+      String(_versementsNonCoches(AN, 'liv_x', M).length));
+
+    // Un retrait non point\u00e9 fausse l'\u00e9cart autant qu'un versement
+    poser(mk({ label: 'Retrait', cat: 'livret_out', v: v50() }));
+    check('pointage \u00b7 un retrait non point\u00e9 compte aussi',
+      _versementsNonCoches(AN, 'liv_x', M).length === 1,
+      String(_versementsNonCoches(AN, 'liv_x', M).length));
+
+    // Le bouton pointe et la valeur calcul\u00e9e int\u00e8gre alors le versement
+    const vraiSave = window.dSave, vraiYear = window.renderYear,
+          vraiSum = window.renderSummary, vraiAskPv = window._askPlacementValues;
+    window.dSave = () => {}; window.renderYear = () => {}; window.renderSummary = () => {};
+    let rouvert = 0; window._askPlacementValues = () => { rouvert++; };
+    poser(mk({ v: v50() }));
+    const avant = computeLivret(AN, 'liv_x');
+    _cocherVersementsMois('liv_x', true);
+    const apres = computeLivret(AN, 'liv_x');
+    check('pointage \u00b7 le bouton pointe le mouvement',
+      DATA[AN].charges[0].paid[M] === true, String(DATA[AN].charges[0].paid[M]));
+    check('pointage \u00b7 la valeur calcul\u00e9e int\u00e8gre alors le versement',
+      Math.round((apres - avant) * 100) / 100 === 50, `${avant} \u2192 ${apres}`);
+    check('pointage \u00b7 la fen\u00eatre est rouverte avec le nouveau calcul',
+      rouvert === 1, String(rouvert));
+    check('pointage \u00b7 plus rien \u00e0 signaler ensuite',
+      _versementsNonCoches(AN, 'liv_x', M).length === 0,
+      String(_versementsNonCoches(AN, 'liv_x', M).length));
+    window.dSave = vraiSave; window.renderYear = vraiYear;
+    window.renderSummary = vraiSum; window._askPlacementValues = vraiAskPv;
+
+    CURRENT_USER_ID = vraiUser;
+  }
+
   DATA = sauve;
   return res;
 }
