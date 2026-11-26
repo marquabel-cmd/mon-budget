@@ -7900,6 +7900,52 @@ function refreshMonthSummary(year) {
 
 // ── RÉSUMÉ TAB ──
 function goToTxWidget(){const t=document.querySelector('.tab[data-tab="resume"]')||document.querySelector('.tab[onclick*="resume"]');switchTab('resume',t);setTimeout(()=>document.getElementById('tx-widget-container')?.scrollIntoView({behavior:'smooth'}),120);}
+// Fleches de navigation du widget Transactions. Le mois roule sur l'annee
+// voisine lorsqu'elle existe, l'annee saute a la suivante de la liste ; dans les
+// deux cas la fleche est grisee quand il n'y a rien au-dela.
+function _txAnneeCourante() {
+  return (_txFilterYear && DATA[_txFilterYear]) ? _txFilterYear : _anneeParDefaut();
+}
+function _txCibleMois(pas) {
+  let m = _txFilterMonth + pas, y = parseInt(_txAnneeCourante());
+  if (m < 0) { m = 11; y -= 1; } else if (m > 11) { m = 0; y += 1; }
+  return { m: m, y: String(y) };
+}
+function _txMoisDisponible(pas) {
+  const annees = getYears();
+  if (!annees.length) return false;
+  return annees.includes(_txCibleMois(pas).y);
+}
+function _txDecalerMois(pas) {
+  if (!_txMoisDisponible(pas)) return;
+  const cible = _txCibleMois(pas);
+  _txFilterMonth = cible.m;
+  _txFilterYear = cible.y;
+  renderRecentTx();
+}
+function _txCibleAnnee(pas) {
+  const annees = getYears();
+  const i = annees.indexOf(_txAnneeCourante());
+  if (i < 0) return null;
+  return annees[i + pas] || null;
+}
+function _txAnneeDisponible(pas) { return _txCibleAnnee(pas) !== null; }
+function _txDecalerAnnee(pas) {
+  const cible = _txCibleAnnee(pas);
+  if (!cible) return;
+  _txFilterYear = cible;
+  renderRecentTx();
+}
+// Bouton fleche : meme habillage que la liste qu'il encadre, inerte et grise
+// quand la navigation n'a pas de destination.
+function _txFleche(glyphe, titre, appel, actif) {
+  return '<button onclick="' + appel + '" title="' + titre + '" aria-label="' + titre + '"'
+    + (actif ? '' : ' disabled')
+    + ' style="border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);'
+    + 'font-size:13px;line-height:1;padding:5px 7px;flex-shrink:0;'
+    + 'cursor:' + (actif ? 'pointer' : 'default') + ';opacity:' + (actif ? '1' : '.3') + '">'
+    + glyphe + '</button>';
+}
 let _txFilterMonth = new Date().getMonth(); // mois courant par défaut
 let _txFilterYear  = null; // null = année la plus récente
 function renderRecentTx() {
@@ -7989,9 +8035,17 @@ function renderRecentTx() {
   wrap.innerHTML = `<div class="tx-widget">
     <div class="tx-widget-header">
       <span class="tx-widget-title">Transactions — <span style="color:var(--blue)">${MONTH_LONG[m]} ${activeYear}</span></span>
-      <div style="display:flex;align-items:center;gap:6px">
-        <select onchange="_txFilterMonth=+this.value;renderRecentTx()" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--surface);color:var(--text)">${monthOpts}</select>
-        <select onchange="_txFilterYear=this.value;renderRecentTx()" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--surface);color:var(--text)">${yearOpts}</select>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:3px">
+          ${_txFleche('◀', 'Mois précédent', '_txDecalerMois(-1)', _txMoisDisponible(-1))}
+          <select onchange="_txFilterMonth=+this.value;renderRecentTx()" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--surface);color:var(--text)">${monthOpts}</select>
+          ${_txFleche('▶', 'Mois suivant', '_txDecalerMois(1)', _txMoisDisponible(1))}
+        </div>
+        <div style="display:flex;align-items:center;gap:3px">
+          ${_txFleche('◀', 'Année précédente', '_txDecalerAnnee(-1)', _txAnneeDisponible(-1))}
+          <select onchange="_txFilterYear=this.value;renderRecentTx()" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--surface);color:var(--text)">${yearOpts}</select>
+          ${_txFleche('▶', 'Année suivante', '_txDecalerAnnee(1)', _txAnneeDisponible(1))}
+        </div>
       </div>
     </div>
     ${legend?`<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px">${legend}</div>`:''}
@@ -11558,8 +11612,8 @@ const FREE_MAX_CATS  = 3;
 const FREE_MAX_YEARS = 1;
 
 // ── CHANGELOG ──
-const APP_VERSION = '13.72';
-const SW_VERSION = 'v352';
+const APP_VERSION = '13.73';
+const SW_VERSION = 'v353';
 
 // ── AUTO-UPDATE CHECK ──
 // `_versionAnnoncee` plutôt qu'un simple booléen : fermer la bannière d'une
@@ -13461,6 +13515,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 // EmailJS SDK supprimé — emails via Cloudflare Worker
 const CHANGELOG = {
+  '13.73': {
+    date: 'Novembre 2026',
+    items: [
+      { icon: '◀', text: 'Le widget Transactions du Résumé se parcourt à la flèche : une paire de part et d’autre du mois, une autre de part et d’autre de l’année. Plus besoin d’ouvrir un menu déroulant pour passer de juin à juillet — décembre enchaîne sur janvier de l’année suivante, et la flèche se grise quand il n’y a plus d’année au-delà. Les listes restent là pour sauter directement à un mois lointain.' }
+    ]
+  },
   '13.72': {
     date: 'Novembre 2026',
     items: [

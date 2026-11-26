@@ -1211,6 +1211,90 @@ async function tousLesCas() {
     faux.remove();
   }
 
+  // ── Flèches du filtre Transactions (13.73) ───────────────────
+  {
+    DATA = { '2025': annee(), '2026': annee(), '2027': annee() };
+
+    // Mois : cas courant, au milieu d'une année
+    _txFilterYear = '2026'; _txFilterMonth = 5;
+    _txDecalerMois(1);
+    check('flèches · mois suivant au milieu de l’année',
+      _txFilterMonth === 6 && _txFilterYear === '2026',
+      _txFilterMonth + ' ' + _txFilterYear);
+
+    _txDecalerMois(-1);
+    check('flèches · mois précédent au milieu de l’année',
+      _txFilterMonth === 5 && _txFilterYear === '2026',
+      _txFilterMonth + ' ' + _txFilterYear);
+
+    // Décembre mène à janvier de l'année suivante, janvier à décembre de la précédente
+    _txFilterYear = '2026'; _txFilterMonth = 11;
+    _txDecalerMois(1);
+    check('flèches · décembre → janvier de l’année suivante',
+      _txFilterMonth === 0 && _txFilterYear === '2027',
+      _txFilterMonth + ' ' + _txFilterYear);
+
+    _txFilterYear = '2026'; _txFilterMonth = 0;
+    _txDecalerMois(-1);
+    check('flèches · janvier → décembre de l’année précédente',
+      _txFilterMonth === 11 && _txFilterYear === '2025',
+      _txFilterMonth + ' ' + _txFilterYear);
+
+    // Aux bords, pas de saut dans une année qui n'existe pas
+    _txFilterYear = '2025'; _txFilterMonth = 0;
+    check('flèches · flèche grisée avant la première année',
+      _txMoisDisponible(-1) === false, String(_txMoisDisponible(-1)));
+    _txDecalerMois(-1);
+    check('flèches · aucun déplacement avant la première année',
+      _txFilterMonth === 0 && _txFilterYear === '2025',
+      _txFilterMonth + ' ' + _txFilterYear);
+
+    _txFilterYear = '2027'; _txFilterMonth = 11;
+    check('flèches · flèche grisée après la dernière année',
+      _txMoisDisponible(1) === false, String(_txMoisDisponible(1)));
+    _txDecalerMois(1);
+    check('flèches · aucun déplacement après la dernière année',
+      _txFilterMonth === 11 && _txFilterYear === '2027',
+      _txFilterMonth + ' ' + _txFilterYear);
+
+    // Année : saut d'une année à l'autre, le mois ne bouge pas
+    _txFilterYear = '2026'; _txFilterMonth = 3;
+    _txDecalerAnnee(1);
+    check('flèches · année suivante sans toucher au mois',
+      _txFilterYear === '2027' && _txFilterMonth === 3,
+      _txFilterYear + ' ' + _txFilterMonth);
+
+    _txDecalerAnnee(-1);
+    check('flèches · année précédente sans toucher au mois',
+      _txFilterYear === '2026' && _txFilterMonth === 3,
+      _txFilterYear + ' ' + _txFilterMonth);
+
+    _txFilterYear = '2027';
+    check('flèches · plus d’année au-delà de la dernière',
+      _txAnneeDisponible(1) === false, String(_txAnneeDisponible(1)));
+    _txDecalerAnnee(1);
+    check('flèches · la dernière année ne bouge pas',
+      _txFilterYear === '2027', _txFilterYear);
+
+    _txFilterYear = '2025';
+    check('flèches · plus d’année en deçà de la première',
+      _txAnneeDisponible(-1) === false, String(_txAnneeDisponible(-1)));
+
+    // Année supprimée entre deux rendus : on repart de l'année par défaut
+    _txFilterYear = '2099'; _txFilterMonth = 4;
+    _txDecalerAnnee(-1);
+    check('flèches · année filtrée disparue → on navigue depuis l’année par défaut',
+      _txFilterYear === '2025', _txFilterYear);
+
+    // Un seul bouton de chaque cóté des deux listes
+    const srcTx = String(window.renderRecentTx);
+    check('flèches · les quatre flèches entourent les listes',
+      (srcTx.match(/_txFleche\(/g) || []).length === 4,
+      String((srcTx.match(/_txFleche\(/g) || []).length));
+
+    _txFilterYear = null; _txFilterMonth = new Date().getMonth();
+  }
+
   DATA = sauve;
   return res;
 }
